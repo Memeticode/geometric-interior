@@ -11,9 +11,9 @@ Rather than layering complexity, the work seeks tension within minimal systems:
 
 Each iteration refines the relationship between constraint and expression. Forms evolve not through ornament, but through alignment, distortion, and internal pressure.
 
-Geometric Interior is not a gallery of images.  
+Geometric Interior is not simply a gallery of images.  
 It is an investigation into how space can be felt.
 
 ---
 
-Deployed via Cloudflare at **geometric-interior.org**
+Deployed via Cloudflare at [geometric-interior.org](https://www.geometric-interior.org).
