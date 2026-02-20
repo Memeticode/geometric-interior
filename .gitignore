@@ -22,3 +22,7 @@ rad.json
 TestResults.xml
 #Claude Code settings
 .claude/
+
+# Node
+node_modules/
+dist/
