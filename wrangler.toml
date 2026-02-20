@@ -1,0 +1,9 @@
+name = "geometric-interior"
+compatibility_date = "2025-01-01"
+
+# Cloudflare Pages static site deployment
+# Build command: npm run build
+# Output directory: dist
+
+[site]
+bucket = "./dist"
