@@ -1,10 +1,19 @@
 /**
  * Seamless animation interpolation: Catmull-Rom splines, time-warp, cosine easing.
+ *
+ * Interpolates continuous controls (density, luminosity, fracture, depth, coherence).
+ * Discrete controls (topology, palette) use nearest-keyframe value.
  */
 
 import { clamp01, lerp } from './prng.js';
 
 export const TIME_WARP_STRENGTH = 0.78;
+
+/** Numeric control keys that get smoothly interpolated. */
+const NUMERIC_KEYS = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
+
+/** Discrete control keys — use nearest keyframe value. */
+const DISCRETE_KEYS = ['topology', 'palette'];
 
 export function smootherstep(t) {
     t = clamp01(t);
@@ -31,26 +40,38 @@ export function catmullRom(p0, p1, p2, p3, t) {
     );
 }
 
-export function evalAspectsAt(tNorm, landmarks) {
+/**
+ * Evaluate interpolated controls at a normalized time position.
+ * Landmarks should have a `.controls` property with both numeric and discrete keys.
+ *
+ * @param {number} tNorm - Normalized time [0, 1)
+ * @param {Array<{controls: object}>} landmarks
+ * @returns {object|null} Interpolated controls object
+ */
+export function evalControlsAt(tNorm, landmarks) {
     const n = landmarks.length;
     if (n < 2) return null;
 
+    // Find nearest landmark for discrete values
+    const nearestIdx = Math.round(tNorm * n) % n;
+    const discrete = {};
+    for (const key of DISCRETE_KEYS) {
+        discrete[key] = landmarks[nearestIdx].controls[key];
+    }
+
     if (n === 2) {
-        const a0 = landmarks[0].aspects;
-        const a1 = landmarks[1].aspects;
+        const c0 = landmarks[0].controls;
+        const c1 = landmarks[1].controls;
 
         const phase = (tNorm < 0.5) ? (tNorm * 2) : (2 - tNorm * 2);
         const warped = warpSegmentT(phase, TIME_WARP_STRENGTH * 0.55);
         const u = cosineEase(warped);
 
-        return {
-            coherence: lerp(a0.coherence, a1.coherence, u),
-            tension: lerp(a0.tension, a1.tension, u),
-            recursion: lerp(a0.recursion, a1.recursion, u),
-            motion: lerp(a0.motion, a1.motion, u),
-            vulnerability: lerp(a0.vulnerability, a1.vulnerability, u),
-            radiance: lerp(a0.radiance, a1.radiance, u),
-        };
+        const result = { ...discrete };
+        for (const key of NUMERIC_KEYS) {
+            result[key] = lerp(c0[key], c1[key], u);
+        }
+        return result;
     }
 
     const seg = tNorm * n;
@@ -63,17 +84,17 @@ export function evalAspectsAt(tNorm, landmarks) {
     const i2 = (i1 + 1) % n;
     const i3 = (i1 + 2) % n;
 
-    const A0 = landmarks[i0].aspects;
-    const A1 = landmarks[i1].aspects;
-    const A2 = landmarks[i2].aspects;
-    const A3 = landmarks[i3].aspects;
+    const C0 = landmarks[i0].controls;
+    const C1 = landmarks[i1].controls;
+    const C2 = landmarks[i2].controls;
+    const C3 = landmarks[i3].controls;
 
-    return {
-        coherence: clamp01(catmullRom(A0.coherence, A1.coherence, A2.coherence, A3.coherence, t)),
-        tension: clamp01(catmullRom(A0.tension, A1.tension, A2.tension, A3.tension, t)),
-        recursion: clamp01(catmullRom(A0.recursion, A1.recursion, A2.recursion, A3.recursion, t)),
-        motion: clamp01(catmullRom(A0.motion, A1.motion, A2.motion, A3.motion, t)),
-        vulnerability: clamp01(catmullRom(A0.vulnerability, A1.vulnerability, A2.vulnerability, A3.vulnerability, t)),
-        radiance: clamp01(catmullRom(A0.radiance, A1.radiance, A2.radiance, A3.radiance, t)),
-    };
+    const result = { ...discrete };
+    for (const key of NUMERIC_KEYS) {
+        result[key] = clamp01(catmullRom(C0[key], C1[key], C2[key], C3[key], t));
+    }
+    return result;
 }
+
+// Backward compatibility alias
+export const evalAspectsAt = evalControlsAt;
