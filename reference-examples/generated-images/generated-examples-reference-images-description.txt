@@ -1,0 +1,37 @@
+GENERATED EXAMPLES – REFERENCE IMAGES SUMMARY
+
+1)  prismatic-energy-intersections.png
+    -   Dense, multi-core luminous intersections.
+    -   Iridescent spectral refraction across translucent planar shards.
+    -   High-energy, overlapping geometry with strong additive glow.
+    -   Emphasis on light as structural origin.
+2)  teal-volumetric-plane-burst.png
+    -   Unified cyan/teal chromatic family.
+    -   Off-axis luminous core with elongated crystalline planes.
+    -   Strong depth attenuation and volumetric light feel.
+    -   Softer spectral variation; more cohesive palette.
+3)  faceted-iridescent-crystal-lattice.png
+    -   Tightly interlocked polygonal shards with sharp edge definition.
+    -   Highly reflective, glass-like surfaces.
+    -   Strong edge geometry; architectural precision.
+    -   Visible structural tension through intersecting facets.
+4)  warm-spectrum-layered-field.png
+    -   Unified warm gradient (gold, rose, violet blend).
+    -   Layered 2.5D planar transparency stack.
+    -   Controlled scale stratification (large sheets + medium shards).
+    -   Calm but luminous psychological space.
+5)  violet-depth-plane-cluster.png
+    -   Monochrome violet spectrum.
+    -   Deep space background with clustered translucent planes.
+    -   Strong compositional coherence through narrow hue band.
+    -   Emphasis on depth layering and soft internal glow.
+
+GENERAL NOTES FOR GENERATIVE IMPLEMENTATION
+
+-   All examples demonstrate translucent planar geometry with additive
+    light blending.
+-   Depth sorting, glow, and subtle internal texture are critical.
+-   Variation axes include: chromatic unification, edge complexity,
+    light distribution, and structural density.
+-   These images are appropriate reference examples for a WebGL-based
+    generative crystalline-plane system.
