@@ -130,8 +130,8 @@ void main() {
         float facing = 0.4 + 0.6 * max(abs(dot(normal, nodeDir)), 0.0);
         nodeIllumination += att * facing;
     }
-    // Multiple lights genuinely brighten — moderate multiplier to preserve color
-    nodeIllumination *= uNodeBrightness * 0.25;
+    // Multiple lights genuinely brighten — strong enough for vivid saturated face fill
+    nodeIllumination *= uNodeBrightness * 0.40;
 
     // Ambient emissive: faint material texture, NOT a light source
     float emissiveNoise = fbm(vWorldPos * 0.5, 3);
@@ -142,10 +142,9 @@ void main() {
     float totalLight = ambientEmissive + nodeIllumination;
     totalLight = totalLight / (1.0 + totalLight * 0.60);
 
-    // Base color: dark when unlit, colored when near light sources.
-    // Cap brightness to preserve palette color (prevent white-out).
-    // Faces should be colored mid-tones so bright edges stand out.
-    float brightness = min(0.06 + totalLight, 0.55);
+    // Base color: strongly saturated when near light sources.
+    // High cap lets lit faces show vivid palette color; bloom creates the glow.
+    float brightness = min(0.08 + totalLight, 0.85);
     vec3 color = uBaseColor * brightness;
 
     // Caustic texture — only visible when illuminated
@@ -156,14 +155,14 @@ void main() {
     vec3 iriColor = iridescence(NdotV, color);
     color = mix(color, iriColor, min(1.0, nodeIllumination * 2.0));
 
-    // Fresnel edge glow — boosted near nodes
-    float edgeGlow = uEdgeGlowStrength * (0.5 + nodeIllumination * 0.3);
-    color += uEdgeColor * fresnel * edgeGlow;
+    // Fresnel edge glow — very subtle brightening at grazing angles near lights
+    float edgeGlow = uEdgeGlowStrength * nodeIllumination * 0.2;
+    color += color * fresnel * edgeGlow;
 
-    // Barycentric edge overlay: clear visible borders on every crystal face
-    // Edges are bright lines against the colored face interior
-    float edgeIntensity = edge * uEdgeBrightness * (0.4 + nodeIllumination * 1.0);
-    color += uEdgeColor * edgeIntensity;
+    // Barycentric edge overlay: subtly brightens the face's own color at boundaries
+    // Uses face color (not separate edge color) for seamless integration
+    float edgeIntensity = edge * uEdgeBrightness * nodeIllumination * 0.6;
+    color += color * edgeIntensity;
 
     // Depth fog
     float viewDistance = length(vWorldPos - cameraPosition);
@@ -172,13 +171,15 @@ void main() {
     fogFactor = clamp(fogFactor, 0.0, 0.85);
     color = mix(color, uFogColor, fogFactor);
 
-    // Final alpha — illumination does NOT increase opacity (prevents white-out from overlap)
-    float alpha = uOpacity * (1.0 + fresnel * 0.4);
+    // Alpha strongly gated by illumination: bright faces are translucent, dark faces vanish.
+    // Low per-face opacity lets many layers show through for translucent depth.
+    float illumAlpha = smoothstep(0.0, 0.8, nodeIllumination);
+    float alpha = uOpacity * (0.08 + illumAlpha * 0.55) * (1.0 + fresnel * 0.15);
     alpha *= vFade;
     alpha *= (1.0 - fogFactor * 0.3);
-    // Edges boost opacity so borders are clearly visible
-    alpha += edge * 0.35;
-    alpha = clamp(alpha, 0.0, 0.85);
+    // Subtle edge accent on lit faces
+    alpha += edge * 0.03 * illumAlpha;
+    alpha = clamp(alpha, 0.0, 0.45);
 
     gl_FragColor = vec4(color, alpha);
 }

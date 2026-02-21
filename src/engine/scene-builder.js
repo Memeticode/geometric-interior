@@ -76,7 +76,7 @@ function addDot(scene, pos, dotSize, spriteTexture, glowTexture, white, lightInt
     const core = new THREE.Sprite(coreMat);
     core.scale.set(dotSize, dotSize, 1);
     core.position.copy(pos);
-    core.renderOrder = 1;
+    core.renderOrder = 10;
     scene.add(core);
 
     // Glow halo — additive, larger than the core, intensity scales with size
@@ -92,7 +92,7 @@ function addDot(scene, pos, dotSize, spriteTexture, glowTexture, white, lightInt
     const glow = new THREE.Sprite(glowMat);
     glow.scale.set(glowScale, glowScale, 1);
     glow.position.copy(pos);
-    glow.renderOrder = 0;
+    glow.renderOrder = 9;
     scene.add(glow);
 
     // Point light — every dot emanates light, small dots get a faint one
@@ -167,39 +167,44 @@ export function buildScene(params, rng, scene) {
 
     let crystalFaceCount = 0;
 
-    // Helper: create a crystal cluster at a position and add its faces to the scene
-    function addCrystalCluster(clusterPos, scale, faces_max) {
+    // Helper: create a crystal cluster and add its faces to the scene
+    function addCrystalCluster(clusterPos, scale, maxFaces) {
         const shapeType = pickShapeType(rng, fracture);
         const orientation = new THREE.Quaternion().setFromEuler(
             new THREE.Euler(rng() * Math.PI * 2, rng() * Math.PI * 2, rng() * Math.PI * 2),
         );
-        const faces = extractFaces(shapeType, clusterPos, orientation, scale, rng, faces_max, unfoldAmount);
+        const faces = extractFaces(shapeType, clusterPos, orientation, scale, rng, maxFaces, unfoldAmount);
 
         const hue = params.baseHue + (rng() * 2 - 1) * (params.hueRange * 0.5);
-        const baseColor = hslToRgb01(hue, params.saturation, params.lightness);
+        // Boost saturation and deepen lightness for vivid crystal colors
+        const sat = Math.min(1.0, params.saturation * 1.6);
+        const lit = params.lightness * 0.70;
+        const baseColor = hslToRgb01(hue, sat, lit);
 
         // Planes are passive — lit by dots, not self-luminous.
-        // Thin crisp edges, low emissive, light shines through.
+        // Strong node brightness so lit faces show saturated color fill.
+        // Near-zero emissive so unlit faces disappear into darkness.
+        // Low per-face opacity; overlapping translucent layers create luminous depth
         const material = createShardMaterial({
             baseColor,
             edgeColor: params.edgeColor,
             fogColor: params.fogColor,
-            opacity: params.opacity,
-            emissiveStrength: params.emissiveStrength * 0.3,
+            opacity: params.opacity * 1.6,
+            emissiveStrength: params.emissiveStrength * 0.03,
             fresnelPower: params.fresnelPower,
-            edgeGlowStrength: params.edgeGlowStrength * 0.25,
+            edgeGlowStrength: params.edgeGlowStrength * 0.02,
             fogDensity: params.fogDensity,
             cameraDistance: params.cameraDistance,
             nodePositions: largeDotPositions,
             nodeIntensities: largeDotIntensities,
             nodeCount: Math.min(8, largeDotPositions.length),
-            nodeBrightness: params.nodeBrightness * 0.25,
-            nodeRadius: Math.min(params.nodeRadius, 2.5),
+            nodeBrightness: params.nodeBrightness,
+            nodeRadius: Math.min(params.nodeRadius, 4.0),
             causticStrength: params.causticStrength,
             iridescenceStrength: params.iridescenceStrength,
             lightFractalLevel,
-            edgeThickness: 8.0,
-            edgeBrightness: params.edgeBrightness * 0.35,
+            edgeThickness: 1.5,
+            edgeBrightness: params.edgeBrightness * 0.04,
         });
 
         for (const face of faces) {
@@ -207,38 +212,60 @@ export function buildScene(params, rng, scene) {
             const mesh = new THREE.Mesh(geometry, material);
             mesh.position.copy(position);
             mesh.quaternion.copy(quaternion);
-            mesh.renderOrder = 2;
+            mesh.renderOrder = 0;
             scene.add(mesh);
         }
         crystalFaceCount += faces.length;
     }
 
-    // --- Primary clusters: one per anchor dot, 3–5 faces each ---
-    for (let i = 0; i < largeDotCount; i++) {
-        const dotPos = largeDotPositions[i];
-        const offDist = 0.5 + rng() * 0.8;
-        const offTheta = rng() * Math.PI * 2;
-        const offPhi = Math.acos(rng() * 2 - 1);
-        const crystalPos = dotPos.clone().add(new THREE.Vector3(
-            offDist * Math.sin(offPhi) * Math.cos(offTheta),
-            offDist * Math.sin(offPhi) * Math.sin(offTheta),
-            offDist * Math.cos(offPhi),
-        ));
-        const scale = 0.8 + rng() * 1.5;
-        const maxFaces = 3 + Math.round(fracture * 2);
-        addCrystalCluster(crystalPos, scale, maxFaces);
+    // Random spherical offset helper
+    function sphericalOffset(dist) {
+        const theta = rng() * Math.PI * 2;
+        const phi = Math.acos(rng() * 2 - 1);
+        return new THREE.Vector3(
+            dist * Math.sin(phi) * Math.cos(theta),
+            dist * Math.sin(phi) * Math.sin(theta),
+            dist * Math.cos(phi),
+        );
     }
 
-    // --- Secondary planes: scattered throughout the volume ---
-    const secondaryCount = Math.round(3 + params.density * 10);
+    // --- Tier 1: Primary planes — large, near anchor dots ---
+    const primaryCount = params.planeCountPrimary || 20;
+    const primaryPerDot = Math.ceil(primaryCount / largeDotCount);
+    for (let d = 0; d < largeDotCount; d++) {
+        for (let p = 0; p < primaryPerDot; p++) {
+            const offDist = 1.0 + rng() * 2.0;
+            const crystalPos = largeDotPositions[d].clone().add(sphericalOffset(offDist));
+            const scale = 1.5 + rng() * 3.5;
+            const maxFaces = 3 + Math.round(fracture * 2);
+            addCrystalCluster(crystalPos, scale, maxFaces);
+        }
+    }
+
+    // --- Tier 2: Secondary planes — medium, scattered throughout volume ---
+    const secondaryCount = params.planeCountSecondary || 60;
+    const wideRange = scatterRange * 2.0;
     for (let i = 0; i < secondaryCount; i++) {
         const pos = new THREE.Vector3(
-            (rng() * 2 - 1) * scatterRange * 1.4,
-            (rng() * 2 - 1) * scatterRange * 1.0,
+            (rng() * 2 - 1) * wideRange * 1.5,
+            (rng() * 2 - 1) * wideRange * 1.1,
+            (rng() * 2 - 1) * wideRange * 0.8,
+        );
+        const scale = 0.6 + rng() * 1.8;
+        const maxFaces = 2 + Math.round(fracture * 2);
+        addCrystalCluster(pos, scale, maxFaces);
+    }
+
+    // --- Tier 3: Micro planes — small detail, fracture-controlled ---
+    const microCount = params.planeCountMicro || 30;
+    for (let i = 0; i < microCount; i++) {
+        const pos = new THREE.Vector3(
+            (rng() * 2 - 1) * scatterRange * 1.5,
+            (rng() * 2 - 1) * scatterRange * 1.1,
             (rng() * 2 - 1) * scatterRange * 0.8,
         );
-        const scale = 0.5 + rng() * 1.2;
-        const maxFaces = 2 + Math.round(fracture * 2);
+        const scale = 0.2 + rng() * 0.8;
+        const maxFaces = 1 + Math.round(fracture);
         addCrystalCluster(pos, scale, maxFaces);
     }
 

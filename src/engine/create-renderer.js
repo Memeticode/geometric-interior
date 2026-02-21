@@ -57,11 +57,11 @@ export function createRenderer(canvas) {
     // Effects
     const bloomEffect = new BloomEffect({
         blendFunction: BlendFunction.SCREEN,
-        luminanceThreshold: 0.5,
-        luminanceSmoothing: 0.05,
+        luminanceThreshold: 0.15,
+        luminanceSmoothing: 0.15,
         mipmapBlur: true,
-        intensity: 1.0,
-        radius: 0.5,
+        intensity: 1.5,
+        radius: 0.85,
     });
 
     const chromaticAberrationEffect = new ChromaticAberrationEffect({
@@ -75,8 +75,8 @@ export function createRenderer(canvas) {
         darkness: 0.5,
     });
 
-    // Tonemapping: Reinhard2 preserves dark backgrounds while compressing HDR.
-    // The shader's soft clamp on totalLight prevents per-fragment overflow.
+    // Tonemapping: Reinhard2 controls blowout while preserving color.
+    // Bloom on bright dot sprites creates the luminous center glow.
     const toneMappingEffect = new ToneMappingEffect({
         mode: ToneMappingMode.REINHARD2,
     });

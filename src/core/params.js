@@ -80,11 +80,11 @@ export function deriveParams(controls, rng) {
     const bgColor = pal.bgColor;
     const backgroundLightness = lerp(0.02, 0.06, c.luminosity);
 
-    // --- Postprocessing (bloom subtle enough to preserve color and edge detail) ---
-    const bloomStrength = lerp(0.25, 0.65, c.luminosity);
-    const bloomThreshold = lerp(0.45, 0.70, 1 - c.luminosity);
+    // --- Postprocessing (bloom creates the luminous glow around lit planes) ---
+    const bloomStrength = lerp(1.2, 2.5, c.luminosity);
+    const bloomThreshold = lerp(0.10, 0.25, 1 - c.luminosity);
     const chromaticAberration = lerp(0.0, 0.004, c.fracture);
-    const vignetteStrength = lerp(0.3, 0.7, 1 - c.luminosity);
+    const vignetteStrength = lerp(0.5, 0.85, 1 - c.luminosity);
 
     // --- Camera ---
     const cameraDistance = lerp(5, 10, 1 - c.depth * 0.3);
