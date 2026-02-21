@@ -82,6 +82,13 @@ const el = {
     infoModalTitle: document.getElementById('infoModalTitle'),
     infoModalBody: document.getElementById('infoModalBody'),
     infoModalClose: document.getElementById('infoModalClose'),
+
+    configSpinner: document.getElementById('configSpinner'),
+    configInner: document.getElementById('configInner'),
+    profilesSpinner: document.getElementById('profilesSpinner'),
+    profilesInner: document.getElementById('profilesInner'),
+    stageSpinner: document.getElementById('stageSpinner'),
+    stageInner: document.getElementById('stageInner'),
 };
 
 /* ---------------------------
@@ -471,6 +478,12 @@ function showCanvasOverlay(text, showSpinner = false) {
 function hideCanvasOverlay() {
     el.canvasOverlay.classList.add('hidden');
     loadingAnim.stop();
+}
+
+/* Zone loading reveal — swap spinners for real content */
+function revealAllZones() {
+    for (const s of [el.configSpinner, el.profilesSpinner, el.stageSpinner]) s.classList.add('ready');
+    for (const i of [el.configInner, el.profilesInner, el.stageInner]) i.classList.add('ready');
 }
 
 /* Typewriter effect */
@@ -1430,21 +1443,19 @@ updateAspectLabels(readAspectsFromUI());
 
 setMode('image');
 
-// Start loading animation immediately — defer all heavy work so it gets
-// clean rAF frames before any thumbnail renders block the main thread.
-showCanvasOverlay('', true);
+// Zone spinners are visible; hide canvas overlay until needed for subsequent renders.
+el.canvasOverlay.classList.add('hidden');
 
+// Defer heavy work so the browser paints the spinners first.
 requestAnimationFrame(() => {
-    // Gallery builds DOM + queues staggered thumbnail renders (via cache/queue)
     refreshProfileGallery();
     refreshAnimProfileGallery();
     refreshLoopList();
 
-    // Let the loading animation play smoothly, then render the main image
-    setTimeout(() => {
-        const seed = el.seed.value.trim() || 'seed';
-        const aspects = readAspectsFromUI();
-        renderAndUpdate(seed, aspects, { animate: true });
-        setStillRendered(true);
-    }, 600);
+    const seed = el.seed.value.trim() || 'seed';
+    const aspects = readAspectsFromUI();
+    renderAndUpdate(seed, aspects, { animate: false });
+    setStillRendered(true);
+
+    revealAllZones();
 });

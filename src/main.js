@@ -107,8 +107,8 @@ const loadingAnim = createLoadingAnimation(document.querySelector('.canvas-overl
  * ---------------------------
  */
 const thumbOffscreen = document.createElement('canvas');
-thumbOffscreen.width = 1400;
-thumbOffscreen.height = 900;
+thumbOffscreen.width = 280;
+thumbOffscreen.height = 180;
 const thumbRenderer = createRenderer(thumbOffscreen);
 
 const thumbCache = new Map();
@@ -135,13 +135,22 @@ function drainThumbQueue() {
     if (thumbProcessing || thumbQueue.length === 0) return;
     thumbProcessing = true;
     setTimeout(() => {
-        const item = thumbQueue.shift();
-        if (item && item.destImg.isConnected) {
-            if (item.paletteTweaks) updatePalette(item.controls.palette, item.paletteTweaks);
-            thumbRenderer.renderWith(item.seed, item.controls);
-            const url = thumbOffscreen.toDataURL('image/png');
-            thumbCache.set(item.key, url);
-            item.destImg.src = url;
+        try {
+            const item = thumbQueue.shift();
+            // Re-check cache — another queued item with the same key may
+            // have already rendered (e.g. the custom-select and gallery
+            // share profiles, so both queue the same keys at startup).
+            if (item && thumbCache.has(item.key)) {
+                if (item.destImg.isConnected) item.destImg.src = thumbCache.get(item.key);
+            } else if (item && item.destImg.isConnected) {
+                if (item.paletteTweaks) updatePalette(item.controls.palette, item.paletteTweaks);
+                thumbRenderer.renderWith(item.seed, item.controls);
+                const url = thumbOffscreen.toDataURL('image/png');
+                thumbCache.set(item.key, url);
+                item.destImg.src = url;
+            }
+        } catch (err) {
+            console.error('[thumb] render error:', err);
         }
         thumbProcessing = false;
         drainThumbQueue();

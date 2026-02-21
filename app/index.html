@@ -482,7 +482,7 @@
             gap: 0.5rem;
         }
 
-        .collapsible-content > .pillbar {
+        .collapsible-content .pillbar {
             margin-top: 0.375rem;
         }
 
@@ -1433,6 +1433,27 @@
             display: none !important;
         }
 
+        /* ── Zone loading spinners ── */
+        .zone-loading { display: none; }
+        .zone-loading.ready { display: contents; }
+        .zone-spinner {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 0;
+        }
+        .zone-spinner.ready { display: none; }
+        .zone-spinner::after {
+            content: '';
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border-strong);
+            border-top-color: var(--accent-text);
+            border-radius: 50%;
+            animation: zone-spin 0.6s linear infinite;
+        }
+        @keyframes zone-spin { to { transform: rotate(360deg); } }
+
         /* ── Responsive: Tablet ── */
         @media (max-width: 1023px) {
             .app-body {
@@ -1551,6 +1572,8 @@
                     <span class="collapsible-chevron">&#9662;</span>
                 </button>
                 <div class="collapsible-content collapsed" id="configContent">
+                    <div class="zone-spinner" id="configSpinner"></div>
+                    <div class="zone-loading" id="configInner">
                     <div class="pillbar">
                         <button id="modeImage" class="active">Image</button>
                         <button id="modeAnim">Animation</button>
@@ -1654,6 +1677,7 @@
 
             </section>
 
+                    </div><!-- /configInner -->
                 </div>
             </div>
 
@@ -1663,6 +1687,8 @@
                     <span class="collapsible-chevron">&#9662;</span>
                 </button>
                 <div class="collapsible-content collapsed" id="profilesContent">
+                    <div class="zone-spinner" id="profilesSpinner"></div>
+                    <div class="zone-loading" id="profilesInner">
                     <button class="sub-collapsible-toggle" aria-expanded="true" data-target="imageProfilesContent">
                         <span class="sub-collapsible-chevron">&#9662;</span>
                         Image Profiles
@@ -1678,6 +1704,7 @@
                     <div class="sub-collapsible-content" id="animProfilesContent">
                         <div id="animProfileGallery" class="profile-gallery"></div>
                     </div>
+                    </div><!-- /profilesInner -->
                 </div>
             </div>
 
@@ -1686,6 +1713,8 @@
 
         <main class="stage">
             <div class="stage-content">
+                <div class="zone-spinner" id="stageSpinner"></div>
+                <div class="zone-loading" id="stageInner">
                 <div class="stage-header-btns">
                     <button id="renderBtn" class="primary">Render</button>
                     <button id="saveProfile">Save Profile</button>
@@ -1707,6 +1736,7 @@
                 <div class="progress hidden" id="progressContainer" aria-label="Animation progress">
                     <div id="progressBar"></div>
                 </div>
+                </div><!-- /stageInner -->
             </div>
 
         <footer class="app-footer">
