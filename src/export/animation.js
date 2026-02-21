@@ -7,7 +7,7 @@
  *           when available, falls back to PNG frame sequence otherwise.
  */
 
-import { evalAspectsAt } from '../core/interpolation.js';
+import { evalControlsAt } from '../core/interpolation.js';
 import { Muxer, ArrayBufferTarget } from '../vendor/mp4-muxer.mjs';
 
 export const ANIM_FPS = 24;
@@ -24,7 +24,7 @@ const PRE_ROLL_FRAMES = 12;
  * @param {HTMLCanvasElement} opts.canvas
  * @param {object} opts.renderer - createRenderer() instance
  * @param {object} opts.motionBlur - createMotionBlur() instance
- * @param {Array} opts.landmarks - ordered landmark objects with .aspects
+ * @param {Array} opts.landmarks - ordered landmark objects with .controls
  * @param {string} opts.seed - animation seed string
  * @param {number} opts.durationMs - total loop duration in milliseconds
  * @param {number} [opts.fps=24] - frames per second
@@ -42,7 +42,7 @@ export async function preRenderFrames(opts) {
     motionBlur.clear();
     for (let p = PRE_ROLL_FRAMES; p > 0; p--) {
         const preT = (((-p / totalFrames) % 1) + 1) % 1;
-        const aspects = evalAspectsAt(preT, landmarks);
+        const aspects = evalControlsAt(preT, landmarks);
         renderer.renderWith(seed, aspects);
         motionBlur.apply();
     }
@@ -56,7 +56,7 @@ export async function preRenderFrames(opts) {
         }
 
         const tNorm = f / totalFrames;
-        const aspects = evalAspectsAt(tNorm, landmarks);
+        const aspects = evalControlsAt(tNorm, landmarks);
         renderer.renderWith(seed, aspects);
         motionBlur.apply();
 

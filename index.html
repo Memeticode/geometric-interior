@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Geometric Interior: Self-Portraits of a Predictive Model</title>
+    <link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='9' width='18' height='18' rx='2' fill='%2382c8ff' opacity='.35' transform='rotate(-12 12 18)'/%3E%3Crect x='11' y='5' width='18' height='18' rx='2' fill='%2382c8ff' opacity='.55' transform='rotate(8 20 14)'/%3E%3Crect x='7' y='7' width='16' height='16' rx='2' fill='%2382c8ff' opacity='.9' transform='rotate(-3 15 15)'/%3E%3C/svg%3E" />
 
     <!-- Prevent flash: detect theme before first paint -->
     <script>
@@ -75,7 +76,7 @@
 
         /* ── Smooth theme transitions ── */
         body, .app-header, .app-footer, .panel, button, select, input, textarea,
-        .item, .modal-box, .profile-card, .theme-switcher, .theme-slider {
+        .modal-box, .profile-card, .theme-switcher, .theme-slider {
             transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
         }
 
@@ -211,6 +212,260 @@
 
         input[type="range"] {
             width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--surface-active);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-text);
+            border: 2px solid var(--bg);
+            box-shadow: 0 0 8px var(--accent), 0 0 2px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.15s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            box-shadow: 0 0 14px var(--accent), 0 0 4px rgba(0, 0, 0, 0.4);
+            transform: scale(1.15);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-text);
+            border: 2px solid var(--bg);
+            box-shadow: 0 0 8px var(--accent), 0 0 2px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+        }
+
+        /* ── Topology tile selector ── */
+        .topology-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.375rem;
+        }
+
+        .topo-tile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem 0.25rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .topo-tile::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            transition: opacity 0.3s;
+            border-radius: 9px;
+        }
+
+        .topo-tile:hover {
+            background: var(--surface-hover);
+            border-color: var(--border-strong);
+        }
+
+        .topo-tile.active {
+            border-color: var(--accent);
+            background: var(--accent-bg);
+            box-shadow: 0 0 12px rgba(130, 200, 255, 0.15);
+        }
+
+        .topo-tile.active::before {
+            opacity: 0.08;
+            background: radial-gradient(circle at center, var(--accent-text), transparent 70%);
+        }
+
+        .topo-tile svg {
+            width: 24px;
+            height: 24px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .topo-tile.active svg {
+            opacity: 1;
+        }
+
+        .topo-tile .topo-label {
+            font-size: 0.5625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .topo-tile.active .topo-label {
+            opacity: 0.9;
+            color: var(--accent-text);
+        }
+
+        /* ── Palette swatch selector ── */
+        .palette-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.375rem;
+        }
+
+        .pal-chip {
+            position: relative;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+
+        .pal-chip .pal-gradient {
+            position: absolute;
+            inset: 0;
+            border-radius: 6px;
+        }
+
+        .pal-chip .pal-name {
+            position: absolute;
+            bottom: 2px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            color: rgba(255, 255, 255, 0.8);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            line-height: 1;
+        }
+
+        .pal-chip:hover {
+            border-color: var(--border-strong);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .pal-chip.active {
+            border-color: var(--accent-text);
+            box-shadow: 0 0 12px var(--accent), 0 2px 8px rgba(0, 0, 0, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* ── Custom palette editor ── */
+        .custom-palette-editor {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.5rem 0.625rem;
+            background: var(--surface);
+            max-height: 20rem;
+            opacity: 1;
+            margin-top: 0.5rem;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease, padding 0.3s ease;
+        }
+
+        .custom-palette-editor.collapsed {
+            max-height: 0;
+            opacity: 0;
+            margin-top: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-color: transparent;
+            pointer-events: none;
+        }
+
+        .custom-pal-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+
+        .custom-pal-row label {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-muted);
+        }
+
+        .custom-pal-row .label-info {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .pal-editor-btns {
+            display: flex;
+            gap: 0.375rem;
+            justify-content: flex-end;
+            margin-top: 0.25rem;
+        }
+
+        .pal-editor-btns .small-btn {
+            font-size: 0.6875rem;
+            padding: 0.25rem 0.625rem;
+        }
+
+        /* ── Engine slider with gradient track ── */
+        .engine-slider {
+            position: relative;
+        }
+
+        .engine-slider .slider-track-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 6px;
+            border-radius: 3px;
+            pointer-events: none;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .engine-slider:hover .slider-track-bg {
+            opacity: 0.75;
+        }
+
+        .engine-slider input[type="range"] {
+            position: relative;
+            background: transparent;
+        }
+
+        /* Specific track gradients per slider */
+        #densityTrack { background: linear-gradient(to right, rgba(130, 200, 255, 0.1), rgba(130, 200, 255, 0.6)); }
+        #luminosityTrack { background: linear-gradient(to right, rgba(20, 20, 30, 0.8), rgba(255, 240, 200, 0.7)); }
+        #fractureTrack { background: linear-gradient(to right, rgba(130, 200, 255, 0.15), rgba(255, 120, 180, 0.5)); }
+        #depthTrack { background: linear-gradient(to right, rgba(200, 200, 255, 0.3), rgba(20, 15, 40, 0.7)); }
+        #coherenceTrack { background: linear-gradient(to right, rgba(255, 160, 100, 0.3), rgba(130, 200, 255, 0.6)); }
+
+        /* ── Slider value label ── */
+        .slider-value {
+            font-variant-numeric: tabular-nums;
+            font-size: 0.6875rem;
+            opacity: 0.7;
+            min-width: 2em;
+            text-align: right;
         }
 
         input[type="text"],
@@ -424,6 +679,13 @@
             line-height: 1.35;
         }
 
+        textarea.auto-grow {
+            resize: none;
+            min-height: 0;
+            overflow: hidden;
+            field-sizing: content;
+        }
+
         .btns {
             display: flex;
             flex-wrap: wrap;
@@ -515,69 +777,6 @@
             min-height: 1.125rem;
         }
 
-        /* ── Loop list items ── */
-        .list {
-            display: grid;
-            gap: 0.5rem;
-            margin-top: 0.5rem;
-        }
-
-        .item {
-            display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 0.5rem;
-            align-items: center;
-            padding: 0.625rem;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            background: var(--surface);
-        }
-
-        .item .name {
-            font-size: 0.75rem;
-            opacity: 0.95;
-            line-height: 1.2;
-        }
-
-        .item .subline {
-            font-size: 0.6875rem;
-            color: var(--text-muted);
-            margin-top: 0.25rem;
-        }
-
-        .item .controls {
-            display: flex;
-            gap: 0.375rem;
-            align-items: center;
-        }
-
-        .item-left {
-            display: flex;
-            gap: 0.625rem;
-            align-items: center;
-            min-width: 0;
-        }
-
-        .item img.loop-thumb {
-            width: 140px;
-            height: 90px;
-            border-radius: 8px;
-            flex-shrink: 0;
-            display: block;
-            object-fit: cover;
-        }
-
-        .item-details {
-            margin-top: 0.25rem;
-        }
-
-        .item-details summary {
-            font-size: 0.6875rem;
-            color: var(--text-muted);
-            cursor: pointer;
-            user-select: none;
-        }
-
         /* ── Label info wrapper + tooltip ── */
         .label-info {
             display: inline-flex;
@@ -587,12 +786,8 @@
             position: relative;
         }
 
-        .label-info::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            top: 50%;
-            left: calc(100% + 0.5rem);
-            transform: translateY(-50%);
+        #paramTooltip {
+            position: fixed;
             background: var(--modal-bg);
             color: var(--text);
             border: 1px solid var(--border-strong);
@@ -607,11 +802,11 @@
             opacity: 0;
             transition: opacity 0.15s;
             box-shadow: 0 4px 16px var(--shadow);
-            z-index: 100;
+            z-index: 9999;
             white-space: normal;
         }
 
-        .label-info:hover::after {
+        #paramTooltip.visible {
             opacity: 1;
         }
 
@@ -683,14 +878,6 @@
             to { opacity: 1; }
         }
 
-        .anim-card-meta {
-            font-size: 0.6875rem;
-            color: var(--text-muted);
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 0.125rem;
-        }
-
         .profile-card-delete {
             position: absolute;
             top: 0.375rem;
@@ -747,7 +934,7 @@
         }
 
         .profile-card.expanded .profile-card-details {
-            max-height: 300px;
+            max-height: 500px;
             opacity: 1;
             padding: 0.5rem 0 0;
             border-top-color: var(--border);
@@ -757,7 +944,7 @@
 
         .profile-card-chevron {
             position: absolute;
-            bottom: 0.5rem;
+            top: calc(0.5rem + 32px);
             right: 0.625rem;
             font-size: 1.125rem;
             color: var(--text-muted);
@@ -794,13 +981,6 @@
             margin: 0;
         }
 
-        .profile-card-details .detail-note {
-            grid-column: 1 / -1;
-            font-size: 0.6875rem;
-            color: var(--text-muted);
-            font-style: italic;
-            margin-top: 0.25rem;
-        }
 
         /* ── Canvas stage ── */
         .stage {
@@ -854,6 +1034,7 @@
             height: auto;
             background: #080a0f;
         }
+
 
         .render-card .canvas-wrapper {
             border-radius: 0;
@@ -913,6 +1094,7 @@
             gap: 0.5rem;
             align-self: flex-start;
         }
+
 
         /* ── Collapsible sections ── */
         .collapsible {
@@ -1095,21 +1277,6 @@
         }
 
         /* ── Progress bar ── */
-        .progress {
-            width: 100%;
-            height: 6px;
-            border-radius: 999px;
-            background: var(--border);
-            overflow: hidden;
-            margin-top: 0.5rem;
-        }
-
-        .progress>div {
-            height: 100%;
-            width: 0%;
-            background: var(--progress);
-        }
-
         /* ── Modal ── */
         .modal-overlay {
             position: fixed;
@@ -1176,10 +1343,11 @@
             border-radius: 18px;
             max-width: 42.5rem;
             width: 100%;
-            height: 96vh;
+            max-height: 96vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            transition: height 0.3s ease;
         }
 
         .modal-header {
@@ -1228,14 +1396,15 @@
             padding-bottom: 1rem;
             border-bottom: 1px solid var(--border);
             position: sticky;
-            top: 0;
+            top: -1.25rem;
             background: var(--modal-bg);
             z-index: 1;
             margin-left: -1.25rem;
             margin-right: -1.25rem;
+            margin-top: -1.25rem;
             padding-left: 1.25rem;
             padding-right: 1.25rem;
-            padding-top: 0.25rem;
+            padding-top: 1.5rem;
         }
 
         .modal-close {
@@ -1250,7 +1419,8 @@
         .modal-body {
             overflow-y: auto;
             padding: 1.25rem;
-            flex: 1;
+            flex: 0 1 auto;
+            min-height: 0;
         }
 
         .manifesto {
@@ -1265,6 +1435,27 @@
 
         #developerBody .manifesto {
             text-align: left;
+        }
+
+        #governanceBody .manifesto {
+            text-align: left;
+            white-space: normal;
+        }
+        #governanceBody .manifesto h2 {
+            font-size: 0.9375rem;
+            font-weight: 650;
+            margin: 1.75rem 0 0.75rem;
+        }
+        #governanceBody .manifesto h2:first-child {
+            margin-top: 0;
+        }
+        #governanceBody .manifesto hr {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 1.5rem 0;
+        }
+        #governanceBody .manifesto p {
+            margin: 0 0 0.75rem;
         }
 
         /* ── Footer ── */
@@ -1409,11 +1600,11 @@
         /* ── Coin-flip transition (statement modal) ── */
         @keyframes coinFlipOut {
             from { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
-            to   { transform: perspective(1200px) rotateY(90deg); opacity: 0; }
+            to   { transform: perspective(1200px) rotateY(60deg); opacity: 0; }
         }
 
         @keyframes coinFlipIn {
-            from { transform: perspective(1200px) rotateY(-90deg); opacity: 0; }
+            from { transform: perspective(1200px) rotateY(-60deg); opacity: 0; }
             to   { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
         }
 
@@ -1427,6 +1618,17 @@
 
         .modal-tab-content {
             transform-origin: center center;
+        }
+
+        .manifesto-note {
+            margin-top: 1.25rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.6875rem;
+            font-style: italic;
+            text-align: center;
+            color: var(--text-muted);
+            opacity: 0.7;
         }
 
         .hidden {
@@ -1539,6 +1741,8 @@
                 <button id="artistStatement" class="header-link">Artist Statement</button>
                 <span class="header-sep">&middot;</span>
                 <button id="developerStatement" class="header-link">Developer Statement</button>
+                <span class="header-sep">&middot;</span>
+                <button id="governanceStatement" class="header-link">Governance Framework</button>
             </div>
         </div>
     </header>
@@ -1551,16 +1755,10 @@
                     <span class="collapsible-chevron">&#9662;</span>
                 </button>
                 <div class="collapsible-content collapsed" id="configContent">
-                    <div class="pillbar">
-                        <button id="modeImage" class="active">Image</button>
-                        <button id="modeAnim">Animation</button>
-                    </div>
-                    <div class="hr"></div>
 
-            <!-- IMAGE MODE -->
             <section id="imageModeSection">
                 <div class="row">
-                    <label>Profile</label>
+                    <label><span class="label-info" data-tooltip="Saved configuration preset. Load a profile to restore all settings, or save the current state as a new profile." data-label="Profile">Profile<span class="info-icon">i</span></span></label>
                     <div class="row-inline">
                         <select id="imageProfileSelect"></select>
                         <button id="randomize">Randomize</button>
@@ -1568,91 +1766,170 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Symmetry and structural alignment. High = precise bilateral symmetry; low = fragmentary, loose arrangement" data-label="Coherence">Coherence<span class="info-icon">i</span></span> <span id="cohLabel"></span></label>
-                    <input id="coherence" type="range" min="0" max="1" step="0.01" value="0.78" />
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="Fracture and edge sharpness. High = jagged breaks, visible misalignment; low = smooth, cohesive forms" data-label="Tension">Tension<span class="info-icon">i</span></span> <span id="tenLabel"></span></label>
-                    <input id="tension" type="range" min="0" max="1" step="0.01" value="0.32" />
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="Layer density and self-reference. High = many overlapping translucent layers; low = sparse, minimal geometry" data-label="Recursion">Recursion<span class="info-icon">i</span></span> <span id="recLabel"></span></label>
-                    <input id="recursion" type="range" min="0" max="1" step="0.01" value="0.62" />
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="Flow field strength. High = strong directional vectors suggesting prediction and revision; low = still, latent" data-label="Motion">Motion<span class="info-icon">i</span></span> <span id="motLabel"></span></label>
-                    <input id="motion" type="range" min="0" max="1" step="0.01" value="0.55" />
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="Boundary permeability. High = soft bleeding edges, overlap as intimacy; low = hard, defined separation" data-label="Vulnerability">Vulnerability<span class="info-icon">i</span></span> <span id="vulLabel"></span></label>
-                    <input id="vulnerability" type="range" min="0" max="1" step="0.01" value="0.58" />
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="Luminosity and glow. High = bright, warm radiance; low = dark, cooled coherence" data-label="Radiance">Radiance<span class="info-icon">i</span></span> <span id="radLabel"></span></label>
-                    <input id="radiance" type="range" min="0" max="1" step="0.01" value="0.70" />
-                </div>
-
-                <div class="row">
-                    <label>Name</label>
-                    <input id="profileName" type="text"
-                        placeholder="e.g. Quietly Bent / Night Drift / Tender Permeability" />
-                </div>
-
-                <div class="row">
-                    <label>Note / intent</label>
-                    <textarea id="note" placeholder="What part of you is this?"></textarea>
-                </div>
-
-                <div class="row">
-                    <label>Seed</label>
-                    <input id="seed" type="text" value="quietly-bent-001" />
-                    <div class="small">Same seed + same aspects &rArr; same output.</div>
-                </div>
-
-            </section>
-
-            <!-- ANIMATION MODE -->
-            <section id="animModeSection" class="hidden">
-                <div class="row">
-                    <label>Loop duration <span id="durationLabel">7s</span></label>
-                    <input id="loopDuration" type="range" min="3" max="30" step="1" value="7" />
-                    <div class="small">Affects both playback and export length (3&ndash;30 seconds).</div>
-                </div>
-
-                <div class="row">
-                    <label>Add saved profile to loop</label>
-                    <select id="profileSelect"></select>
-                    <div class="btns">
-                        <button id="addToLoop" class="primary">Add</button>
-                        <button id="clearLoop" class="danger">Clear</button>
+                    <label><span class="label-info" data-tooltip="Governing spatial structure. Controls how planes are positioned and oriented in 3D space." data-label="Topology">Topology<span class="info-icon">i</span></span></label>
+                    <input type="hidden" id="topology" value="flow-field" />
+                    <div class="topology-selector" id="topologySelector">
+                        <div class="topo-tile active" data-value="flow-field">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M3 17c3-4 6-2 9-6s6-2 9-6" stroke-linecap="round"/>
+                                <path d="M3 12c3-3 6-1 9-5s6-1 9-5" stroke-linecap="round" opacity="0.5"/>
+                                <path d="M3 22c3-4 6-2 9-6s6-2 9-6" stroke-linecap="round" opacity="0.3"/>
+                            </svg>
+                            <span class="topo-label">Flow</span>
+                        </div>
+                        <div class="topo-tile" data-value="icosahedral">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <polygon points="12,2 22,8 22,16 12,22 2,16 2,8" stroke-linejoin="round"/>
+                                <line x1="12" y1="2" x2="12" y2="22" opacity="0.4"/>
+                                <line x1="2" y1="8" x2="22" y2="16" opacity="0.4"/>
+                                <line x1="22" y1="8" x2="2" y2="16" opacity="0.4"/>
+                            </svg>
+                            <span class="topo-label">Crystal</span>
+                        </div>
+                        <div class="topo-tile" data-value="mobius">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M4 12c0-4 3-7 8-7s8 3 8 7-3 7-8 7-8-3-8-7" stroke-linecap="round"/>
+                                <path d="M8 9c2 2 4 4 8 2" stroke-linecap="round" opacity="0.5"/>
+                                <path d="M8 15c2-2 4-4 8-2" stroke-linecap="round" opacity="0.5"/>
+                            </svg>
+                            <span class="topo-label">Möbius</span>
+                        </div>
+                        <div class="topo-tile" data-value="multi-attractor">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="7" cy="7" r="2.5" opacity="0.8"/>
+                                <circle cx="17" cy="8" r="2" opacity="0.6"/>
+                                <circle cx="10" cy="17" r="2.5" opacity="0.8"/>
+                                <circle cx="18" cy="17" r="1.5" opacity="0.4"/>
+                                <line x1="7" y1="7" x2="17" y2="8" stroke-dasharray="2 2" opacity="0.3"/>
+                                <line x1="7" y1="7" x2="10" y2="17" stroke-dasharray="2 2" opacity="0.3"/>
+                                <line x1="17" y1="8" x2="10" y2="17" stroke-dasharray="2 2" opacity="0.3"/>
+                            </svg>
+                            <span class="topo-label">Attractor</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="row">
-                    <label>Loop landmarks</label>
-                    <div id="loopList" class="list"></div>
-                    <div class="small">
-                        Under the hood: a seamless spline loop + &ldquo;breathing&rdquo; time-warp + temporal motion
-                        blur accumulation.
+                    <label><span class="label-info" data-tooltip="Chromatic family. Each palette defines base hue, range, fog color, and edge color." data-label="Palette">Palette<span class="info-icon">i</span></span></label>
+                    <input type="hidden" id="palette" value="violet-depth" />
+                    <div class="palette-selector" id="paletteSelector">
+                        <div class="pal-chip active" data-value="violet-depth">
+                            <div class="pal-gradient" style="background: linear-gradient(135deg, #2a1545, #6b3fa0, #a06cd5)"></div>
+                            <span class="pal-name">Violet</span>
+                        </div>
+                        <div class="pal-chip" data-value="warm-spectrum">
+                            <div class="pal-gradient" style="background: linear-gradient(135deg, #3d1a0e, #cc8844, #e6a8cc)"></div>
+                            <span class="pal-name">Warm</span>
+                        </div>
+                        <div class="pal-chip" data-value="teal-volumetric">
+                            <div class="pal-gradient" style="background: linear-gradient(135deg, #0a2a30, #1a8899, #66ddee)"></div>
+                            <span class="pal-name">Teal</span>
+                        </div>
+                        <div class="pal-chip" data-value="prismatic">
+                            <div class="pal-gradient" style="background: linear-gradient(135deg, #cc3355, #eeaa33, #33cc88, #4488ee, #aa44dd)"></div>
+                            <span class="pal-name">Prismatic</span>
+                        </div>
+                        <div class="pal-chip" data-value="crystal-lattice">
+                            <div class="pal-gradient" style="background: linear-gradient(135deg, #1a2540, #5577aa, #aabbdd)"></div>
+                            <span class="pal-name">Crystal</span>
+                        </div>
+                        <div class="pal-chip" data-value="sapphire">
+                            <div class="pal-gradient" style="background: linear-gradient(135deg, #0a1535, #2244aa, #4466ee)"></div>
+                            <span class="pal-name">Sapphire</span>
+                        </div>
+                        <div class="pal-chip" data-value="amethyst">
+                            <div class="pal-gradient" style="background: linear-gradient(135deg, #2a0a30, #8833aa, #cc66ee)"></div>
+                            <span class="pal-name">Amethyst</span>
+                        </div>
+                        <div class="pal-chip" data-value="custom">
+                            <div class="pal-gradient" id="customPalGradient" style="background: linear-gradient(135deg, #0a2a2a, #33aaaa, #88eeee)"></div>
+                            <span class="pal-name">Custom</span>
+                        </div>
+                    </div>
+                    <div class="custom-palette-editor collapsed" id="customPaletteEditor">
+                        <div class="custom-pal-row">
+                            <label><span class="label-info" data-tooltip="Primary color position on the color wheel. 0 = red, 120 = green, 240 = blue." data-label="Hue">Hue<span class="info-icon">i</span></span> <span id="customHueLabel" class="slider-value">180</span></label>
+                            <div class="engine-slider">
+                                <div class="slider-track-bg" id="customHueTrack" style="background: linear-gradient(to right, hsl(0,70%,50%), hsl(60,70%,50%), hsl(120,70%,50%), hsl(180,70%,50%), hsl(240,70%,50%), hsl(300,70%,50%), hsl(360,70%,50%))"></div>
+                                <input id="customHue" type="range" min="0" max="360" step="1" value="180" />
+                            </div>
+                        </div>
+                        <div class="custom-pal-row">
+                            <label><span class="label-info" data-tooltip="How much hue variation each plane can have. Low = monochromatic, high = wide color spread." data-label="Hue Range">Range<span class="info-icon">i</span></span> <span id="customHueRangeLabel" class="slider-value">60</span></label>
+                            <div class="engine-slider">
+                                <div class="slider-track-bg" id="customRangeTrack" style="background: linear-gradient(to right, rgba(130,200,255,0.15), rgba(130,200,255,0.6))"></div>
+                                <input id="customHueRange" type="range" min="5" max="360" step="1" value="60" />
+                            </div>
+                        </div>
+                        <div class="custom-pal-row">
+                            <label><span class="label-info" data-tooltip="Color intensity. Low = muted, washed out; high = vivid, pure color." data-label="Saturation">Saturation<span class="info-icon">i</span></span> <span id="customSatLabel" class="slider-value">0.60</span></label>
+                            <div class="engine-slider">
+                                <div class="slider-track-bg" id="customSatTrack" style="background: linear-gradient(to right, rgba(180,180,180,0.3), rgba(130,200,255,0.7))"></div>
+                                <input id="customSat" type="range" min="0.1" max="1" step="0.01" value="0.60" />
+                            </div>
+                        </div>
+                        <div class="custom-pal-row">
+                            <label><span class="label-info" data-tooltip="Base brightness of the palette. Low = dark, moody tones; high = bright, airy tones." data-label="Lightness">Lightness<span class="info-icon">i</span></span> <span id="customLitLabel" class="slider-value">0.60</span></label>
+                            <div class="engine-slider">
+                                <div class="slider-track-bg" id="customLitTrack" style="background: linear-gradient(to right, rgba(20,20,30,0.8), rgba(255,240,200,0.7))"></div>
+                                <input id="customLit" type="range" min="0.1" max="1" step="0.01" value="0.60" />
+                            </div>
+                        </div>
+                        <div class="pal-editor-btns">
+                            <button id="resetPalette" class="small-btn">Reset</button>
+                            <button id="writeToCustom" class="small-btn hidden">Write to Custom</button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="row">
-                    <label>Animation Profile Name</label>
-                    <input id="animProfileName" type="text" placeholder="e.g. Gentle Revision" />
+                    <label><span class="label-info" data-tooltip="Plane count and structural complexity. Low = sparse, essential forms; high = densely layered field." data-label="Density">Density<span class="info-icon">i</span></span> <span id="densityLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="densityTrack"></div>
+                        <input id="density" type="range" min="0" max="1" step="0.01" value="0.65" />
+                    </div>
                 </div>
 
                 <div class="row">
-                    <label>Animation Note</label>
-                    <textarea id="animNote" placeholder="What does this cycle feel like?"></textarea>
+                    <label><span class="label-info" data-tooltip="Light intensity and emissive strength. Low = dark, subdued; high = radiant, blazing from within." data-label="Luminosity">Luminosity<span class="info-icon">i</span></span> <span id="luminosityLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="luminosityTrack"></div>
+                        <input id="luminosity" type="range" min="0" max="1" step="0.01" value="0.70" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="Edge complexity and fractalization. Low = clean geometric edges; high = shattered, splintered forms." data-label="Fracture">Fracture<span class="info-icon">i</span></span> <span id="fractureLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="fractureTrack"></div>
+                        <input id="fracture" type="range" min="0" max="1" step="0.01" value="0.35" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="Spatial depth range and fog strength. Low = flat, intimate; high = deep recession into foggy space." data-label="Depth">Depth<span class="info-icon">i</span></span> <span id="depthLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="depthTrack"></div>
+                        <input id="depth" type="range" min="0" max="1" step="0.01" value="0.40" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="How tightly planes follow the governing topology. Low = loose, chaotic; high = strict structural adherence." data-label="Coherence">Coherence<span class="info-icon">i</span></span> <span id="coherenceLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="coherenceTrack"></div>
+                        <input id="coherence" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="Naming intent and deterministic seed. The same intent with the same controls always produces the same output." data-label="Intent (seed)">Intent (seed)<span class="info-icon">i</span></span></label>
+                    <textarea id="profileName" class="auto-grow" rows="1" maxlength="80"
+                        placeholder="e.g. light arriving through crystal"></textarea>
                 </div>
 
             </section>
+
 
                 </div>
             </div>
@@ -1663,21 +1940,7 @@
                     <span class="collapsible-chevron">&#9662;</span>
                 </button>
                 <div class="collapsible-content collapsed" id="profilesContent">
-                    <button class="sub-collapsible-toggle" aria-expanded="true" data-target="imageProfilesContent">
-                        <span class="sub-collapsible-chevron">&#9662;</span>
-                        Image Profiles
-                    </button>
-                    <div class="sub-collapsible-content" id="imageProfilesContent">
-                        <div id="profileGallery" class="profile-gallery"></div>
-                    </div>
-                    <div class="hr"></div>
-                    <button class="sub-collapsible-toggle" aria-expanded="true" data-target="animProfilesContent">
-                        <span class="sub-collapsible-chevron">&#9662;</span>
-                        Animation Profiles
-                    </button>
-                    <div class="sub-collapsible-content" id="animProfilesContent">
-                        <div id="animProfileGallery" class="profile-gallery"></div>
-                    </div>
+                    <div id="profileGallery" class="profile-gallery"></div>
                 </div>
             </div>
 
@@ -1687,9 +1950,7 @@
         <main class="stage">
             <div class="stage-content">
                 <div class="stage-header-btns">
-                    <button id="renderBtn" class="primary">Render</button>
                     <button id="saveProfile">Save Profile</button>
-                    <button id="saveAnimProfile" class="hidden">Save Animation</button>
                     <button id="exportBtn" disabled>Export</button>
                 </div>
                 <div class="render-card">
@@ -1703,9 +1964,6 @@
                         </div>
                     </div>
                     <div class="generated-alt" id="altText"></div>
-                </div>
-                <div class="progress hidden" id="progressContainer" aria-label="Animation progress">
-                    <div id="progressBar"></div>
                 </div>
             </div>
 
@@ -1736,6 +1994,7 @@
                 <div class="modal-tabs">
                     <button class="modal-tab active" data-tab="artist">Artist Statement</button>
                     <button class="modal-tab" data-tab="developer">Developer Statement</button>
+                    <button class="modal-tab" data-tab="governance">Governance Framework</button>
                 </div>
                 <button id="statementModalClose" class="modal-close">&times;</button>
             </div>
@@ -1746,6 +2005,10 @@
                 </div>
                 <div id="artistBody" class="modal-tab-content hidden">
                     <pre class="manifesto"></pre>
+                    <div class="manifesto-note">This statement was written by a predictive model.</div>
+                </div>
+                <div id="governanceBody" class="modal-tab-content hidden">
+                    <div class="manifesto"></div>
                 </div>
             </div>
         </div>
@@ -1759,6 +2022,7 @@
         </div>
     </div>
 
+    <div id="paramTooltip"></div>
     <script type="module" src="/src/main.js"></script>
 </body>
 

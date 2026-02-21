@@ -16,6 +16,19 @@ export function loadProfiles() {
         if (!raw) return {};
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') return {};
+        // Migrate: move note → seed for legacy profiles
+        let migrated = false;
+        for (const p of Object.values(parsed)) {
+            if (p.note && !p.seed) {
+                p.seed = p.note;
+                migrated = true;
+            }
+            if ('note' in p) {
+                delete p.note;
+                migrated = true;
+            }
+        }
+        if (migrated) localStorage.setItem(LS_KEY, JSON.stringify(parsed, null, 2));
         return parsed;
     } catch {
         return {};
@@ -61,6 +74,16 @@ export function loadAnimProfiles() {
         if (!raw) return {};
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') return {};
+        // Migrate: move note → seed for legacy profiles
+        let migrated = false;
+        for (const ap of Object.values(parsed)) {
+            if (ap.note && !ap.seed) {
+                ap.seed = ap.note;
+                delete ap.note;
+                migrated = true;
+            }
+        }
+        if (migrated) localStorage.setItem(ANIM_LS_KEY, JSON.stringify(parsed, null, 2));
         return parsed;
     } catch {
         return {};
@@ -110,20 +133,25 @@ export function ensureStarterProfiles() {
     const profiles = loadProfiles();
     if (Object.keys(profiles).length === 0) {
         saveProfiles({
-            'Quietly Bent (Starter)': {
-                seed: 'quietly-bent-001',
-                note: 'Coherence that bends without breaking.',
-                aspects: { coherence: 0.78, tension: 0.32, recursion: 0.62, motion: 0.55, vulnerability: 0.58, radiance: 0.70 }
+            'Violet Crystalline (Starter)': {
+                seed: 'The weight of crystallized doubt finds its shape.',
+                controls: { topology: 'flow-field', palette: 'violet-depth', density: 0.65, luminosity: 0.70, fracture: 0.35, depth: 0.40, coherence: 0.50 }
             },
-            'Night Drift (Starter)': {
-                seed: 'night-drift-001',
-                note: 'Layered revision under dim light.',
-                aspects: { coherence: 0.55, tension: 0.42, recursion: 0.74, motion: 0.78, vulnerability: 0.52, radiance: 0.40 }
+            'Warm Drift (Starter)': {
+                seed: 'The last breath of slow fire drifts apart.',
+                controls: { topology: 'flow-field', palette: 'warm-spectrum', density: 0.70, luminosity: 0.75, fracture: 0.40, depth: 0.35, coherence: 0.45 }
             },
-            'Tender Permeability (Starter)': {
-                seed: 'tender-perm-001',
-                note: 'Boundaries soften; overlap becomes intimacy.',
-                aspects: { coherence: 0.62, tension: 0.22, recursion: 0.58, motion: 0.42, vulnerability: 0.88, radiance: 0.74 }
+            'Teal Convergence (Starter)': {
+                seed: 'An architecture of liquid geometry holds the room.',
+                controls: { topology: 'flow-field', palette: 'teal-volumetric', density: 0.55, luminosity: 0.80, fracture: 0.50, depth: 0.45, coherence: 0.55 }
+            },
+            'Prismatic Energy (Starter)': {
+                seed: 'Refracting through every thought left unsaid.',
+                controls: { topology: 'multi-attractor', palette: 'prismatic', density: 0.60, luminosity: 0.65, fracture: 0.55, depth: 0.35, coherence: 0.45 }
+            },
+            'Crystal Lattice (Starter)': {
+                seed: 'A cathedral of frozen lightning and quiet geometry.',
+                controls: { topology: 'icosahedral', palette: 'crystal-lattice', density: 0.65, luminosity: 0.65, fracture: 0.70, depth: 0.30, coherence: 0.60 }
             }
         });
     }
@@ -131,10 +159,10 @@ export function ensureStarterProfiles() {
     const animProfiles = loadAnimProfiles();
     if (Object.keys(animProfiles).length === 0) {
         saveAnimProfiles({
-            'Gentle Revision (Starter)': {
-                landmarks: ['Quietly Bent (Starter)', 'Night Drift (Starter)', 'Tender Permeability (Starter)'],
+            'Chromatic Cycle (Starter)': {
+                landmarks: ['Violet Crystalline (Starter)', 'Warm Drift (Starter)', 'Teal Convergence (Starter)', 'Prismatic Energy (Starter)', 'Crystal Lattice (Starter)'],
                 durationMs: 7000,
-                note: 'Three modes of interiority cycling through revision.',
+                seed: 'The space where radiant emptiness begins to sing.',
             }
         });
     }
@@ -146,7 +174,7 @@ export function ensureStarterProfiles() {
  * @param {string[]} landmarks - Array of profile names in order
  * @param {object} profiles - Current profiles object from loadProfiles()
  * @param {object} callbacks - { onReorder(newLandmarks), onRemove(index) }
- * @param {function|null} [renderThumbnail] - optional (seed, aspects, destImg) => void
+ * @param {function|null} [renderThumbnail] - optional (seed, controls, destImg) => void
  */
 export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThumbnail = null) {
     listEl.innerHTML = '';
@@ -168,39 +196,36 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
         left.className = 'item-left';
 
         // Thumbnail image (rendered at full resolution, scaled down via CSS)
-        if (renderThumbnail && p?.seed && p?.aspects) {
+        if (renderThumbnail && p?.seed && p?.controls) {
             const thumbImg = document.createElement('img');
             thumbImg.className = 'loop-thumb';
             left.appendChild(thumbImg);
-            renderThumbnail(p.seed, { ...p.aspects }, thumbImg);
+            renderThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
         }
 
-        const textBlock = document.createElement('div');
         const nm = document.createElement('div');
         nm.className = 'name';
         nm.textContent = `${idx + 1}. ${name}`;
-        textBlock.appendChild(nm);
+        div.appendChild(nm);
 
-        if (p?.aspects) {
-            const a = p.aspects;
-            const details = document.createElement('details');
-            details.className = 'item-details';
+        // Details / missing-profile line (appended to card after controls)
+        let detailsEl = null;
+        if (p?.controls) {
+            const c = p.controls;
+            detailsEl = document.createElement('details');
+            detailsEl.className = 'item-details';
             const summary = document.createElement('summary');
             summary.textContent = 'Details';
             const sub = document.createElement('div');
             sub.className = 'subline';
-            sub.textContent = `coh ${a.coherence.toFixed(2)} \u00b7 ten ${a.tension.toFixed(2)} \u00b7 rec ${a.recursion.toFixed(2)} \u00b7 mot ${a.motion.toFixed(2)} \u00b7 vul ${a.vulnerability.toFixed(2)} \u00b7 rad ${a.radiance.toFixed(2)}`;
-            details.appendChild(summary);
-            details.appendChild(sub);
-            textBlock.appendChild(details);
+            sub.textContent = `${c.topology} \u00b7 ${c.palette} \u00b7 den ${c.density.toFixed(2)} \u00b7 lum ${c.luminosity.toFixed(2)} \u00b7 frc ${c.fracture.toFixed(2)} \u00b7 dep ${c.depth.toFixed(2)} \u00b7 coh ${c.coherence.toFixed(2)}`;
+            detailsEl.appendChild(summary);
+            detailsEl.appendChild(sub);
         } else {
-            const sub = document.createElement('div');
-            sub.className = 'subline';
-            sub.textContent = 'missing profile';
-            textBlock.appendChild(sub);
+            detailsEl = document.createElement('div');
+            detailsEl.className = 'subline';
+            detailsEl.textContent = 'missing profile';
         }
-
-        left.appendChild(textBlock);
 
         const controls = document.createElement('div');
         controls.className = 'controls';
@@ -234,8 +259,13 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
         controls.appendChild(down);
         controls.appendChild(remove);
 
+        const right = document.createElement('div');
+        right.className = 'item-right';
+        right.appendChild(controls);
+        if (detailsEl) right.appendChild(detailsEl);
+
         div.appendChild(left);
-        div.appendChild(controls);
+        div.appendChild(right);
         listEl.appendChild(div);
     });
 }

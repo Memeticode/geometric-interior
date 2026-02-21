@@ -5,7 +5,7 @@
 import { xmur3, mulberry32 } from '../core/prng.js';
 import { deriveParams } from '../core/params.js';
 import { generateTitle, generateAltText, generateAnimAltText } from '../core/text.js';
-import { evalAspectsAt } from '../core/interpolation.js';
+import { evalControlsAt } from '../core/interpolation.js';
 import { ANIM_FPS, MOTION_BLUR_ENABLED, MB_DECAY, MB_ADD } from './animation.js';
 
 export function downloadBlob(filename, blob) {
@@ -101,19 +101,18 @@ export function computeKeyframeText(seedForTitles, landmarks) {
     for (const k of landmarks) {
         const seedFn = xmur3(seedForTitles + '::' + k.name);
         const rng = mulberry32(seedFn());
-        const title = generateTitle(k.aspects, rng);
+        const title = generateTitle(k.controls, rng);
 
         const seedFn2 = xmur3(seedForTitles + '::alt::' + k.name);
         const rng2 = mulberry32(seedFn2());
-        const derived = deriveParams(k.aspects, rng2);
+        const derived = deriveParams(k.controls, rng2);
         const nodeCount = derived.nodeCount;
 
-        const alt = generateAltText(k.aspects, nodeCount, title);
+        const alt = generateAltText(k.controls, nodeCount, title);
 
         out.push({
             name: k.name,
-            note: k.note ?? '',
-            aspects: k.aspects,
+            controls: k.controls,
             title,
             altText: alt
         });
@@ -122,7 +121,7 @@ export function computeKeyframeText(seedForTitles, landmarks) {
 }
 
 export function computeLoopSummaryTitleAlt(seed, landmarks, durationSecs) {
-    const a0 = evalAspectsAt(0.0, landmarks);
+    const a0 = evalControlsAt(0.0, landmarks);
     const seedFn = xmur3(seed + '::bundle');
     const rng = mulberry32(seedFn());
     const title = generateTitle(a0, rng);
@@ -136,7 +135,7 @@ export function computeLoopSummaryTitleAlt(seed, landmarks, durationSecs) {
 /**
  * Package and download a still image ZIP.
  */
-export async function packageStillZip(canvas, { seed, aspects, note, meta }) {
+export async function packageStillZip(canvas, { seed, controls, meta }) {
     const JSZip = window.JSZip;
     if (!JSZip) throw new Error('JSZip not loaded');
 
@@ -152,13 +151,11 @@ export async function packageStillZip(canvas, { seed, aspects, note, meta }) {
     zip.file(`${base}/image.png`, pngBlob);
     zip.file(`${base}/title.txt`, meta.title + '\n');
     zip.file(`${base}/alt-text.txt`, meta.altText + '\n');
-    zip.file(`${base}/note.txt`, (note || '') + '\n');
 
     const metadata = {
         kind: 'still',
         seed,
-        note,
-        aspects,
+        controls,
         title: meta.title,
         generated_at: new Date().toISOString(),
         canvas: { width: canvas.width, height: canvas.height }
