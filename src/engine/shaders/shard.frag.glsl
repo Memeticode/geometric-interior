@@ -1,6 +1,6 @@
 // Shard fragment shader — translucent crystalline plane material
-// Light emanates from energy node orbs and illuminates nearby crystal planes.
-// Fresnel edge brightening, caustic texture, iridescence, depth fog.
+// Light from energy node orbs illuminates crystal planes. Planes are dark unless lit.
+// Barycentric edge detection, Fresnel, caustics, iridescence, depth fog.
 
 uniform vec3 uBaseColor;
 uniform vec3 uEdgeColor;
@@ -15,6 +15,10 @@ uniform float uCausticStrength;
 uniform float uIridescenceStrength;
 uniform float uLightFractalLevel;
 
+// Edge border controls
+uniform float uEdgeThickness;
+uniform float uEdgeBrightness;
+
 // Energy node light sources
 uniform vec3 uNodePositions[8];
 uniform float uNodeIntensities[8];
@@ -27,6 +31,7 @@ varying vec3 vNormal;
 varying vec3 vViewDir;
 varying vec2 vUv;
 varying float vFade;
+varying vec3 vBarycentric;
 
 // --- Noise utilities ---
 
@@ -63,6 +68,14 @@ float fbm(vec3 p, int octaves) {
     return value;
 }
 
+// --- Barycentric edge detection ---
+
+float edgeFactor(vec3 bary, float thickness) {
+    vec3 d = fwidth(bary);
+    vec3 f = smoothstep(vec3(0.0), d * thickness, bary);
+    return 1.0 - min(min(f.x, f.y), f.z);
+}
+
 // --- Caustic internal texture ---
 
 float causticPattern(vec2 uv, vec3 worldPos) {
@@ -74,7 +87,6 @@ float causticPattern(vec2 uv, vec3 worldPos) {
     float c2 = noise3D(vec3(warpedUV * 8.0, worldPos.z * 0.3 + 10.0));
     float caustic = c1 * 0.6 + c2 * 0.4;
 
-    // Sharpen into bright lines
     caustic = pow(caustic, 0.6) * 1.5;
     return clamp(caustic, 0.0, 1.0);
 }
@@ -103,6 +115,9 @@ void main() {
     float NdotV = max(dot(normal, viewDir), 0.0);
     float fresnel = pow(1.0 - NdotV, uFresnelPower);
 
+    // Barycentric edge detection
+    float edge = edgeFactor(vBarycentric, uEdgeThickness);
+
     // --- Node illumination: light from energy node orbs ---
     float nodeIllumination = 0.0;
     float radiusSq = uNodeRadius * uNodeRadius;
@@ -110,56 +125,60 @@ void main() {
         if (i >= uNodeCount) break;
         vec3 toNode = vWorldPos - uNodePositions[i];
         float distSq = dot(toNode, toNode);
-        // Gaussian falloff from each node
         float att = uNodeIntensities[i] * exp(-distSq / (2.0 * radiusSq));
-        // Directional factor: planes facing the node receive more light
         vec3 nodeDir = normalize(uNodePositions[i] - vWorldPos);
         float facing = 0.4 + 0.6 * max(abs(dot(normal, nodeDir)), 0.0);
         nodeIllumination += att * facing;
     }
-    // Normalize by node count to prevent blowout with many nodes
-    float nodeNorm = 1.0 / max(float(uNodeCount), 1.0);
-    nodeIllumination *= uNodeBrightness * nodeNorm;
+    // Multiple lights genuinely brighten — moderate multiplier to preserve color
+    nodeIllumination *= uNodeBrightness * 0.25;
 
-    // Ambient emissive core (from fracture/texture — NOT luminosity)
+    // Ambient emissive: faint material texture, NOT a light source
     float emissiveNoise = fbm(vWorldPos * 0.5, 3);
     float fractalDetail = fbm(vWorldPos * 2.0, 4) * uLightFractalLevel;
-    float ambientEmissive = uEmissiveStrength * (0.3 + 0.7 * emissiveNoise + 0.3 * fractalDetail);
+    float ambientEmissive = uEmissiveStrength * 0.05 * (0.3 + 0.7 * emissiveNoise + 0.3 * fractalDetail);
 
-    // Total illumination: ambient self-emission + light received from nodes
+    // Total illumination dominated by node light
     float totalLight = ambientEmissive + nodeIllumination;
-    // Soft clamp: prevents individual faces from being extremely HDR.
-    // With polyhedra, multiple faces overlap — bloom creates glow, not raw brightness.
-    totalLight = totalLight / (1.0 + totalLight * 0.30);
+    totalLight = totalLight / (1.0 + totalLight * 0.60);
 
-    // Base color modulated by illumination
-    vec3 color = uBaseColor * (0.9 + totalLight);
+    // Base color: dark when unlit, colored when near light sources.
+    // Cap brightness to preserve palette color (prevent white-out).
+    // Faces should be colored mid-tones so bright edges stand out.
+    float brightness = min(0.06 + totalLight, 0.55);
+    vec3 color = uBaseColor * brightness;
 
-    // Caustic internal texture — stronger near light sources
+    // Caustic texture — only visible when illuminated
     float caustic = causticPattern(vUv, vWorldPos);
-    color += uBaseColor * caustic * uCausticStrength * (0.3 + nodeIllumination * 0.5 + ambientEmissive * 0.2);
+    color += uBaseColor * caustic * uCausticStrength * (0.05 + nodeIllumination * 0.5);
 
-    // Iridescence (chromatic micro-shift)
-    color = iridescence(NdotV, color);
+    // Iridescence — gated by illumination
+    vec3 iriColor = iridescence(NdotV, color);
+    color = mix(color, iriColor, min(1.0, nodeIllumination * 2.0));
 
-    // Fresnel edge glow — slightly boosted near nodes
-    float edgeGlow = uEdgeGlowStrength * (1.0 + nodeIllumination * 0.3);
+    // Fresnel edge glow — boosted near nodes
+    float edgeGlow = uEdgeGlowStrength * (0.5 + nodeIllumination * 0.3);
     color += uEdgeColor * fresnel * edgeGlow;
 
-    // Depth fog — relative to camera distance for zoom consistency
+    // Barycentric edge overlay: clear visible borders on every crystal face
+    // Edges are bright lines against the colored face interior
+    float edgeIntensity = edge * uEdgeBrightness * (0.4 + nodeIllumination * 1.0);
+    color += uEdgeColor * edgeIntensity;
+
+    // Depth fog
     float viewDistance = length(vWorldPos - cameraPosition);
     float relativeDepth = viewDistance / max(uCameraDistance, 1.0);
     float fogFactor = 1.0 - exp(-uFogDensity * relativeDepth * 8.0);
     fogFactor = clamp(fogFactor, 0.0, 0.85);
     color = mix(color, uFogColor, fogFactor);
 
-    // Final alpha — boosted by node illumination (brighter planes more opaque)
-    // and by Fresnel (edges more visible as in real translucent crystal)
-    float alpha = uOpacity * (1.0 + fresnel * 0.5 + nodeIllumination * 0.15);
-    // Per-vertex fade gradient: planes fade non-uniformly across their surface
+    // Final alpha — illumination does NOT increase opacity (prevents white-out from overlap)
+    float alpha = uOpacity * (1.0 + fresnel * 0.4);
     alpha *= vFade;
     alpha *= (1.0 - fogFactor * 0.3);
-    alpha = clamp(alpha, 0.0, 0.85); // never fully opaque
+    // Edges boost opacity so borders are clearly visible
+    alpha += edge * 0.35;
+    alpha = clamp(alpha, 0.0, 0.85);
 
     gl_FragColor = vec4(color, alpha);
 }

@@ -33,6 +33,47 @@ export function createMultiAttractor({ rng, params }) {
     }
 
     return {
+        scaffoldPoints(count, rng) {
+            const all = [];
+            const ptsPerAttractor = Math.max(3, Math.ceil(count * 0.7 / attractors.length));
+            const bridgePts = Math.max(2, count - ptsPerAttractor * attractors.length);
+
+            // Concentric shells around each attractor
+            for (const a of attractors) {
+                const radii = [range * 0.1, range * 0.25, range * 0.45];
+                const ptsPerShell = Math.ceil(ptsPerAttractor / radii.length);
+                for (const r of radii) {
+                    for (let k = 0; k < ptsPerShell; k++) {
+                        const theta = (k / ptsPerShell) * Math.PI * 2 + rng() * 0.3;
+                        const phi = Math.acos(2 * rng() - 1);
+                        all.push(a.position.clone().add(new THREE.Vector3(
+                            Math.sin(phi) * Math.cos(theta) * r,
+                            Math.sin(phi) * Math.sin(theta) * r,
+                            Math.cos(phi) * r * 0.7,
+                        )));
+                    }
+                }
+            }
+
+            // Evenly-spaced bridge points
+            if (bridges.length > 0) {
+                const ptsPerBridge = Math.max(2, Math.ceil(bridgePts / bridges.length));
+                for (const bridge of bridges) {
+                    for (let k = 0; k < ptsPerBridge; k++) {
+                        const t = (k + 0.5) / ptsPerBridge;
+                        all.push(attractors[bridge.a].position.clone()
+                            .lerp(attractors[bridge.b].position, t));
+                    }
+                }
+            }
+
+            for (let i = all.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [all[i], all[j]] = [all[j], all[i]];
+            }
+            return all.slice(0, count);
+        },
+
         samplePoint(rng) {
             // 70%: cluster near an attractor; 30%: along a bridge
             if (rng() < 0.7 || bridges.length === 0) {

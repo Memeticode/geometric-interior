@@ -414,6 +414,18 @@
             letter-spacing: 0.3px;
         }
 
+        .pal-editor-btns {
+            display: flex;
+            gap: 0.375rem;
+            justify-content: flex-end;
+            margin-top: 0.25rem;
+        }
+
+        .pal-editor-btns .small-btn {
+            font-size: 0.6875rem;
+            padding: 0.25rem 0.625rem;
+        }
+
         /* ── Engine slider with gradient track ── */
         .engine-slider {
             position: relative;
@@ -667,6 +679,13 @@
             line-height: 1.35;
         }
 
+        textarea.auto-grow {
+            resize: none;
+            min-height: 0;
+            overflow: hidden;
+            field-sizing: content;
+        }
+
         .btns {
             display: flex;
             flex-wrap: wrap;
@@ -769,7 +788,7 @@
             display: grid;
             grid-template-columns: 1fr auto;
             gap: 0.5rem;
-            align-items: center;
+            align-items: start;
             padding: 0.625rem;
             border-radius: 12px;
             border: 1px solid var(--border);
@@ -777,6 +796,7 @@
         }
 
         .item .name {
+            grid-column: 1 / -1;
             font-size: 0.75rem;
             opacity: 0.95;
             line-height: 1.2;
@@ -801,6 +821,13 @@
             min-width: 0;
         }
 
+        .item-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.375rem;
+        }
+
         .item img.loop-thumb {
             width: 140px;
             height: 90px;
@@ -811,7 +838,7 @@
         }
 
         .item-details {
-            margin-top: 0.25rem;
+            margin-top: 0;
         }
 
         .item-details summary {
@@ -1923,6 +1950,10 @@
                                 <input id="customLit" type="range" min="0.1" max="1" step="0.01" value="0.60" />
                             </div>
                         </div>
+                        <div class="pal-editor-btns">
+                            <button id="resetPalette" class="small-btn">Reset</button>
+                            <button id="writeToCustom" class="small-btn hidden">Write to Custom</button>
+                        </div>
                     </div>
                 </div>
 
@@ -1968,8 +1999,8 @@
 
                 <div class="row">
                     <label><span class="label-info" data-tooltip="Naming intent and deterministic seed. The same intent with the same controls always produces the same output." data-label="Intent (seed)">Intent (seed)<span class="info-icon">i</span></span></label>
-                    <input id="profileName" type="text"
-                        placeholder="e.g. light arriving through crystal" />
+                    <textarea id="profileName" class="auto-grow" rows="1" maxlength="80"
+                        placeholder="e.g. light arriving through crystal"></textarea>
                 </div>
 
             </section>
@@ -2002,7 +2033,8 @@
 
                 <div class="row">
                     <label><span class="label-info" data-tooltip="The seed phrase for this animation. Shapes the generative identity of the loop.">Intent (seed)</span></label>
-                    <input id="animIntent" type="text" placeholder="e.g. light arriving through crystal" />
+                    <textarea id="animIntent" class="auto-grow" rows="1" maxlength="80"
+                        placeholder="e.g. light arriving through crystal"></textarea>
                 </div>
 
             </section>

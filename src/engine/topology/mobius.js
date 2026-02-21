@@ -66,6 +66,25 @@ export function createMobius({ rng, params }) {
     }
 
     return {
+        scaffoldPoints(count, rng) {
+            // Evenly-spaced grid on the ribbon surface
+            const uSteps = Math.max(8, Math.ceil(Math.sqrt(count * 2)));
+            const vSteps = Math.max(3, Math.ceil(count / uSteps));
+            const all = [];
+            for (let ui = 0; ui < uSteps; ui++) {
+                const u = (ui / uSteps) * Math.PI * 2;
+                for (let vi = 0; vi < vSteps; vi++) {
+                    const v = ((vi / (vSteps - 1)) * 2 - 1) * halfWidth;
+                    all.push(evaluate(u, v));
+                }
+            }
+            for (let i = all.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [all[i], all[j]] = [all[j], all[i]];
+            }
+            return all.slice(0, count);
+        },
+
         samplePoint(rng) {
             const u = rng() * Math.PI * 2;
             const v = (rng() * 2 - 1) * halfWidth;

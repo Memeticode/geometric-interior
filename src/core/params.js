@@ -43,17 +43,17 @@ export function deriveParams(controls, rng) {
     const saturation = pal.saturation * lerp(0.8, 1.15, rng());
     const lightness = pal.lightness * lerp(0.85, 1.15, c.luminosity);
 
-    // Per-face opacity: high because each polyhedron shows only 2-3 faces,
-    // so there's much less overlap. Light diffuses through the crystalline structure.
-    // Crystals should feel solid, not ghostly.
-    const opacity = lerp(0.40, 0.72, c.density * 0.3 + c.luminosity * 0.4);
+    // Per-face opacity: moderate so overlapping faces create translucent layers.
+    // Edges boost alpha separately, so borders show through even on dim faces.
+    const opacity = lerp(0.25, 0.50, c.density * 0.3 + c.luminosity * 0.4);
 
-    // Ambient emissive: self-emission from crystal material.
-    const emissiveStrength = lerp(1.2, 3.5, c.fracture * 0.3 + c.luminosity * 0.4);
+    // Ambient emissive: faint material texture (light comes from nodes, not self-emission)
+    const emissiveStrength = lerp(0.5, 1.5, c.fracture * 0.3 + c.luminosity * 0.4);
 
-    // Node light source parameters — PRIMARY spatial luminosity driver.
+    // Node light source parameters — PRIMARY luminosity driver.
+    // Moderate brightness so shapes show color, not blown-out white.
     const nodeBrightness = lerp(2.0, 6.0, c.luminosity ** 1.2);
-    const nodeRadius = lerp(2.5, 7.0, c.luminosity * 0.4 + c.depth * 0.3);
+    const nodeRadius = lerp(3.5, 10.0, c.luminosity * 0.4 + c.depth * 0.3);
 
     // Fresnel
     const fresnelPower = lerp(2.0, 5.0, 1 - c.fracture * 0.3);
@@ -67,15 +67,22 @@ export function deriveParams(controls, rng) {
     const causticStrength = lerp(0.0, 0.5, c.fracture * c.luminosity);
     const iridescenceStrength = lerp(0.0, 0.3, c.fracture * 0.5 + c.luminosity * 0.3);
 
+    // Edge borders (barycentric edge detection) — bright lines on mid-tone faces
+    const edgeThickness = lerp(12.0, 40.0, c.fracture * 0.3 + 0.5);
+    const edgeBrightness = lerp(1.5, 3.5, c.luminosity * 0.5 + 0.3);
+
+    // Unfolding (adjacent face hinge rotation)
+    const unfoldAmount = lerp(0.0, 0.8, c.fracture * 0.5 + 0.2);
+
     // --- Atmosphere ---
     const fogDensity = lerp(0.01, 0.10, c.depth);
     const fogColor = pal.fogColor;
     const bgColor = pal.bgColor;
     const backgroundLightness = lerp(0.02, 0.06, c.luminosity);
 
-    // --- Postprocessing (tuned for dramatic bloom) ---
-    const bloomStrength = lerp(0.5, 1.3, c.luminosity);
-    const bloomThreshold = lerp(0.35, 0.60, 1 - c.luminosity);
+    // --- Postprocessing (bloom subtle enough to preserve color and edge detail) ---
+    const bloomStrength = lerp(0.25, 0.65, c.luminosity);
+    const bloomThreshold = lerp(0.45, 0.70, 1 - c.luminosity);
     const chromaticAberration = lerp(0.0, 0.004, c.fracture);
     const vignetteStrength = lerp(0.3, 0.7, 1 - c.luminosity);
 
@@ -86,6 +93,9 @@ export function deriveParams(controls, rng) {
     const fov = lerp(50, 70, c.depth);
 
     return {
+        density: c.density,
+        fracture: c.fracture,
+        luminosity: c.luminosity,
         planeCountPrimary,
         planeCountSecondary,
         planeCountMicro,
@@ -112,6 +122,9 @@ export function deriveParams(controls, rng) {
         lightFractalLevel,
         causticStrength,
         iridescenceStrength,
+        edgeThickness,
+        edgeBrightness,
+        unfoldAmount,
         edgeColor: pal.edgeColor,
 
         nodeBrightness,

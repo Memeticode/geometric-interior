@@ -42,6 +42,41 @@ export function createFlowField({ rng, params }) {
     }
 
     return {
+        scaffoldPoints(count, rng) {
+            // Trace streamlines through the curl field from seed points
+            const seedCount = Math.max(4, Math.ceil(count / 8));
+            const stepsPerLine = Math.max(4, Math.ceil(count / seedCount));
+            const stepSize = range * 0.15;
+            const all = [];
+
+            for (let s = 0; s < seedCount; s++) {
+                let pos = new THREE.Vector3(
+                    (rng() * 2 - 1) * range * 1.2,
+                    (rng() * 2 - 1) * range * 0.8,
+                    (rng() * 2 - 1) * range * 0.5,
+                );
+                all.push(pos.clone());
+                for (let step = 1; step < stepsPerLine; step++) {
+                    const curl = curlAt(pos.x, pos.y, pos.z);
+                    const len = curl.length();
+                    if (len < 1e-6) break;
+                    curl.normalize();
+                    pos = pos.clone().addScaledVector(curl, stepSize);
+                    // Keep within bounds
+                    pos.x = Math.max(-range * 1.8, Math.min(range * 1.8, pos.x));
+                    pos.y = Math.max(-range * 1.2, Math.min(range * 1.2, pos.y));
+                    pos.z = Math.max(-range * 0.8, Math.min(range * 0.8, pos.z));
+                    all.push(pos.clone());
+                }
+            }
+
+            for (let i = all.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [all[i], all[j]] = [all[j], all[i]];
+            }
+            return all.slice(0, count);
+        },
+
         samplePoint(rng) {
             return new THREE.Vector3(
                 (rng() * 2 - 1) * range * 1.8,

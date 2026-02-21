@@ -92,6 +92,11 @@ export const PALETTES = {
     },
 };
 
+/** Frozen snapshots of original palette values (for reset after editing). */
+export const PALETTE_DEFAULTS = Object.fromEntries(
+    Object.entries(PALETTES).map(([k, v]) => [k, Object.freeze({ ...v, fogColor: [...v.fogColor], bgColor: [...v.bgColor], edgeColor: [...v.edgeColor] })])
+);
+
 export const PALETTE_KEYS = [...Object.keys(PALETTES), 'custom'];
 
 /* ── Custom palette (mutable) ── */
@@ -130,16 +135,37 @@ export const customPalette = {
     ...deriveCustomColors(180),
 };
 
-export function updateCustomPalette({ baseHue, hueRange, saturation, lightness }) {
+/** Update any palette in-place (built-in or custom). Derives fog/bg/edge from baseHue. */
+export function updatePalette(key, { baseHue, hueRange, saturation, lightness }) {
+    const target = key === 'custom' ? customPalette : PALETTES[key];
+    if (!target) return;
     const derived = deriveCustomColors(baseHue);
-    customPalette.baseHue = baseHue;
-    customPalette.hueRange = hueRange;
-    customPalette.saturation = saturation;
-    customPalette.lightness = lightness;
-    customPalette.fogColor = derived.fogColor;
-    customPalette.bgColor = derived.bgColor;
-    customPalette.edgeColor = derived.edgeColor;
-    customPalette.accentHue = derived.accentHue;
+    target.baseHue = baseHue;
+    target.hueRange = hueRange;
+    target.saturation = saturation;
+    target.lightness = lightness;
+    target.fogColor = derived.fogColor;
+    target.bgColor = derived.bgColor;
+    target.edgeColor = derived.edgeColor;
+    target.accentHue = derived.accentHue;
+}
+
+/** Backward-compat alias. */
+export function updateCustomPalette(settings) {
+    updatePalette('custom', settings);
+}
+
+/** Reset a built-in palette to its original hand-tuned defaults. */
+export function resetPalette(key) {
+    const defaults = PALETTE_DEFAULTS[key];
+    if (!defaults || !PALETTES[key]) return;
+    Object.assign(PALETTES[key], { ...defaults, fogColor: [...defaults.fogColor], bgColor: [...defaults.bgColor], edgeColor: [...defaults.edgeColor] });
+}
+
+/** Get the original default values for a palette (read-only). */
+export function getPaletteDefaults(key) {
+    if (key === 'custom') return { baseHue: 180, hueRange: 60, saturation: 0.6, lightness: 0.6 };
+    return PALETTE_DEFAULTS[key] || PALETTE_DEFAULTS['violet-depth'];
 }
 
 export function getPalette(key) {

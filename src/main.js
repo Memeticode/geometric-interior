@@ -6,7 +6,7 @@
 import { createRenderer } from './engine/create-renderer.js';
 import { createMotionBlur } from './export/motion-blur.js';
 import { evalControlsAt, TIME_WARP_STRENGTH } from './core/interpolation.js';
-import { PALETTE_KEYS, updateCustomPalette, customPalette } from './core/palettes.js';
+import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults } from './core/palettes.js';
 import { loadProfiles, saveProfiles, deleteProfile, refreshProfileSelect, ensureStarterProfiles, renderLoopList, loadAnimProfiles, saveAnimProfiles, deleteAnimProfile, findAnimProfilesReferencingImage, removeImageFromAnimProfiles } from './ui/profiles.js';
 import { createAnimationController, preRenderFrames, exportFromBuffer, ANIM_FPS, MOTION_BLUR_ENABLED, MB_DECAY, MB_ADD } from './export/animation.js';
 import { packageStillZip, packageAnimZip, computeLoopSummaryTitleAlt } from './export/export.js';
@@ -99,6 +99,16 @@ const el = {
     customPalGradient: document.getElementById('customPalGradient'),
 };
 
+/* Auto-grow textareas (fallback for browsers without field-sizing: content) */
+function autoGrow(ta) {
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+}
+for (const ta of document.querySelectorAll('textarea.auto-grow')) {
+    ta.addEventListener('input', () => autoGrow(ta));
+    autoGrow(ta);
+}
+
 const SLIDER_KEYS = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
 const TOPOLOGY_VALUES = ['flow-field', 'icosahedral', 'mobius', 'multi-attractor'];
 
@@ -132,17 +142,19 @@ const thumbCache = new Map();
 const thumbQueue = [];
 let thumbProcessing = false;
 
-function thumbCacheKey(seed, controls) {
-    return seed + '|' + JSON.stringify(controls);
+function thumbCacheKey(seed, controls, paletteTweaks) {
+    let k = seed + '|' + JSON.stringify(controls);
+    if (paletteTweaks) k += '|' + JSON.stringify(paletteTweaks);
+    return k;
 }
 
-function queueThumbnail(seed, controls, destImg) {
-    const key = thumbCacheKey(seed, controls);
+function queueThumbnail(seed, controls, destImg, paletteTweaks) {
+    const key = thumbCacheKey(seed, controls, paletteTweaks);
     if (thumbCache.has(key)) {
         destImg.src = thumbCache.get(key);
         return;
     }
-    thumbQueue.push({ seed, controls, destImg, key });
+    thumbQueue.push({ seed, controls, destImg, key, paletteTweaks });
     drainThumbQueue();
 }
 
@@ -152,6 +164,7 @@ function drainThumbQueue() {
     setTimeout(() => {
         const item = thumbQueue.shift();
         if (item && item.destImg.isConnected) {
+            if (item.paletteTweaks) updatePalette(item.controls.palette, item.paletteTweaks);
             thumbRenderer.renderWith(item.seed, item.controls);
             const url = thumbOffscreen.toDataURL('image/png');
             thumbCache.set(item.key, url);
@@ -227,7 +240,7 @@ function wrapSelect(selectEl, { getProfile }) {
         if (profile?.seed && profile?.controls) {
             const img = document.createElement('img');
             img.className = 'cs-thumb';
-            queueThumbnail(profile.seed, profile.controls, img);
+            queueThumbnail(profile.seed, profile.controls, img, profile.paletteTweaks);
             trigger.appendChild(img);
         }
 
@@ -258,7 +271,7 @@ function wrapSelect(selectEl, { getProfile }) {
                 if (profile?.seed && profile?.controls) {
                     const img = document.createElement('img');
                     img.className = 'cs-thumb';
-                    queueThumbnail(profile.seed, profile.controls, img);
+                    queueThumbnail(profile.seed, profile.controls, img, profile.paletteTweaks);
                     div.appendChild(img);
                 }
             }
@@ -334,54 +347,42 @@ function setTopologyUI(value) {
  * Palette swatch selector
  * ---------------------------
  */
-function initPaletteSelector() {
-    const chips = el.paletteSelector.querySelectorAll('.pal-chip');
-    chips.forEach(chip => {
-        chip.addEventListener('click', () => {
-            const isCustom = chip.dataset.value === 'custom';
-            const alreadyActive = chip.classList.contains('active');
+/* ── Chip gradient cache (for restoring after edits) ── */
+const originalChipGradients = new Map();
 
-            chips.forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
-            el.palette.value = chip.dataset.value;
-
-            if (isCustom && alreadyActive) {
-                // Toggle editor closed/open when re-clicking active custom chip
-                el.customPaletteEditor.classList.toggle('collapsed');
-            } else {
-                el.customPaletteEditor.classList.toggle('collapsed', !isCustom);
-            }
-            if (isCustom) syncCustomPalette();
-            onControlChange();
-        });
-    });
-
-    // Wire custom palette sliders
-    for (const id of ['customHue', 'customHueRange', 'customSat', 'customLit']) {
-        el[id].addEventListener('input', () => {
-            syncCustomPalette();
-            if (el.palette.value === 'custom') onControlChange();
-        });
+function cacheChipGradients() {
+    for (const chip of el.paletteSelector.querySelectorAll('.pal-chip')) {
+        const g = chip.querySelector('.pal-gradient');
+        if (g) originalChipGradients.set(chip.dataset.value, g.style.background);
     }
 }
 
-function setPaletteUI(value) {
-    el.palette.value = value;
-    const chips = el.paletteSelector.querySelectorAll('.pal-chip');
-    chips.forEach(c => {
-        c.classList.toggle('active', c.dataset.value === value);
-    });
-    el.customPaletteEditor.classList.toggle('collapsed', value !== 'custom');
-    if (value === 'custom') syncCustomPalette();
+function restoreChipGradient(key) {
+    const orig = originalChipGradients.get(key);
+    if (!orig) return;
+    const chip = el.paletteSelector.querySelector(`.pal-chip[data-value="${key}"]`);
+    const g = chip?.querySelector('.pal-gradient');
+    if (g) g.style.background = orig;
 }
 
-/* ---------------------------
- * Custom palette helpers
- * ---------------------------
- */
-const CUSTOM_PAL_LS_KEY = 'geo_self_portrait_custom_palette_v1';
+function updateActiveChipGradient(key, settings) {
+    const chip = el.paletteSelector.querySelector(`.pal-chip[data-value="${key}"]`);
+    const g = chip?.querySelector('.pal-gradient');
+    if (!g) return;
+    const h = settings.baseHue;
+    const hr = settings.hueRange;
+    const h1 = ((h - hr / 2) + 360) % 360;
+    const h3 = (h + hr / 2) % 360;
+    g.style.background =
+        `linear-gradient(135deg, hsl(${h1} 50% 15%), hsl(${h} 60% 45%), hsl(${h3} 60% 70%))`;
+}
 
-function readCustomPaletteFromUI() {
+/* ── Palette editor (works for all palettes) ── */
+
+const PAL_LS_PREFIX = 'geo_self_portrait_palette_v2_';
+function paletteLSKey(key) { return PAL_LS_PREFIX + key; }
+
+function readPaletteFromUI() {
     return {
         baseHue: parseInt(el.customHue.value, 10),
         hueRange: parseInt(el.customHueRange.value, 10),
@@ -390,10 +391,33 @@ function readCustomPaletteFromUI() {
     };
 }
 
-function syncCustomPalette() {
-    const settings = readCustomPaletteFromUI();
-    updateCustomPalette(settings);
-    localStorage.setItem(CUSTOM_PAL_LS_KEY, JSON.stringify(settings));
+function loadPaletteIntoEditor(key) {
+    const defaults = getPaletteDefaults(key);
+    let vals = defaults;
+    try {
+        const raw = localStorage.getItem(paletteLSKey(key));
+        if (raw) {
+            const s = JSON.parse(raw);
+            vals = {
+                baseHue: s.baseHue ?? defaults.baseHue,
+                hueRange: s.hueRange ?? defaults.hueRange,
+                saturation: s.saturation ?? defaults.saturation,
+                lightness: s.lightness ?? defaults.lightness,
+            };
+        }
+    } catch { /* ignore */ }
+    el.customHue.value = vals.baseHue;
+    el.customHueRange.value = vals.hueRange;
+    el.customSat.value = vals.saturation;
+    el.customLit.value = vals.lightness;
+    syncPaletteEditor();
+}
+
+function syncPaletteEditor() {
+    const key = el.palette.value;
+    const settings = readPaletteFromUI();
+    updatePalette(key, settings);
+    localStorage.setItem(paletteLSKey(key), JSON.stringify(settings));
 
     // Update labels
     el.customHueLabel.textContent = settings.baseHue;
@@ -401,26 +425,132 @@ function syncCustomPalette() {
     el.customSatLabel.textContent = settings.saturation.toFixed(2);
     el.customLitLabel.textContent = settings.lightness.toFixed(2);
 
-    // Update gradient preview on chip
-    const h = settings.baseHue;
-    const hr = settings.hueRange;
-    const h1 = ((h - hr / 2) + 360) % 360;
-    const h3 = (h + hr / 2) % 360;
-    el.customPalGradient.style.background =
-        `linear-gradient(135deg, hsl(${h1} 50% 15%), hsl(${h} 60% 45%), hsl(${h3} 60% 70%))`;
+    updateActiveChipGradient(key, settings);
+
+    // Show/hide "Write to Custom" button
+    const wtc = document.getElementById('writeToCustom');
+    if (wtc) wtc.classList.toggle('hidden', key === 'custom');
 }
 
-function restoreCustomPaletteFromStorage() {
+function initPaletteSelector() {
+    cacheChipGradients();
+
+    const chips = el.paletteSelector.querySelectorAll('.pal-chip');
+    chips.forEach(chip => {
+        chip.addEventListener('click', () => {
+            const key = chip.dataset.value;
+            const alreadyActive = chip.classList.contains('active');
+            const prevKey = el.palette.value;
+
+            // Reset previous built-in palette when switching away
+            if (prevKey !== key && prevKey !== 'custom') {
+                resetPalette(prevKey);
+                restoreChipGradient(prevKey);
+            }
+
+            chips.forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            el.palette.value = key;
+
+            if (alreadyActive) {
+                el.customPaletteEditor.classList.toggle('collapsed');
+            } else {
+                el.customPaletteEditor.classList.remove('collapsed');
+                loadPaletteIntoEditor(key);
+            }
+            onControlChange();
+        });
+    });
+
+    // Wire palette sliders (work for any active palette)
+    for (const id of ['customHue', 'customHueRange', 'customSat', 'customLit']) {
+        el[id].addEventListener('input', () => {
+            syncPaletteEditor();
+            onControlChange();
+        });
+    }
+
+    // "Reset" button — restore palette to factory defaults
+    const resetBtn = document.getElementById('resetPalette');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            const key = el.palette.value;
+            if (key !== 'custom') resetPalette(key);
+            localStorage.removeItem(paletteLSKey(key));
+            restoreChipGradient(key);
+            const defaults = getPaletteDefaults(key);
+            el.customHue.value = defaults.baseHue;
+            el.customHueRange.value = defaults.hueRange;
+            el.customSat.value = defaults.saturation;
+            el.customLit.value = defaults.lightness;
+            syncPaletteEditor();
+            onControlChange();
+        });
+    }
+
+    // "Write to Custom" button
+    const wtc = document.getElementById('writeToCustom');
+    if (wtc) {
+        wtc.addEventListener('click', () => {
+            const settings = readPaletteFromUI();
+            updatePalette('custom', settings);
+            localStorage.setItem(paletteLSKey('custom'), JSON.stringify(settings));
+            // Reset the current built-in palette
+            const prevKey = el.palette.value;
+            if (prevKey !== 'custom') {
+                resetPalette(prevKey);
+                restoreChipGradient(prevKey);
+            }
+            // Switch UI to custom
+            el.palette.value = 'custom';
+            chips.forEach(c => c.classList.toggle('active', c.dataset.value === 'custom'));
+            syncPaletteEditor();
+            onControlChange();
+        });
+    }
+}
+
+function setPaletteUI(value) {
+    const prevKey = el.palette.value;
+    if (prevKey !== value && prevKey !== 'custom') {
+        resetPalette(prevKey);
+        restoreChipGradient(prevKey);
+    }
+    el.palette.value = value;
+    const chips = el.paletteSelector.querySelectorAll('.pal-chip');
+    chips.forEach(c => c.classList.toggle('active', c.dataset.value === value));
+    loadPaletteIntoEditor(value);
+    el.customPaletteEditor.classList.add('collapsed');
+}
+
+function restorePaletteTweaksFromStorage() {
+    // Migrate old custom palette key
+    const OLD_KEY = 'geo_self_portrait_custom_palette_v1';
     try {
-        const raw = localStorage.getItem(CUSTOM_PAL_LS_KEY);
-        if (!raw) return;
-        const s = JSON.parse(raw);
-        if (s.baseHue != null) el.customHue.value = s.baseHue;
-        if (s.hueRange != null) el.customHueRange.value = s.hueRange;
-        if (s.saturation != null) el.customSat.value = s.saturation;
-        if (s.lightness != null) el.customLit.value = s.lightness;
-        syncCustomPalette();
-    } catch { /* ignore corrupt data */ }
+        const old = localStorage.getItem(OLD_KEY);
+        if (old && !localStorage.getItem(paletteLSKey('custom'))) {
+            localStorage.setItem(paletteLSKey('custom'), old);
+        }
+        localStorage.removeItem(OLD_KEY);
+    } catch { /* ignore */ }
+
+    // Restore custom palette
+    try {
+        const raw = localStorage.getItem(paletteLSKey('custom'));
+        if (raw) {
+            const s = JSON.parse(raw);
+            updatePalette('custom', s);
+        }
+    } catch { /* ignore */ }
+
+    // Restore active built-in palette tweaks
+    const activeKey = el.palette.value;
+    if (activeKey && activeKey !== 'custom') {
+        try {
+            const raw = localStorage.getItem(paletteLSKey(activeKey));
+            if (raw) updatePalette(activeKey, JSON.parse(raw));
+        } catch { /* ignore */ }
+    }
 }
 
 /* ---------------------------
@@ -534,16 +664,21 @@ function loadProfileIntoUI(name) {
     if (!p) return;
     // Intent field serves as both name and seed
     el.profileName.value = p.seed || name;
+    autoGrow(el.profileName);
     if (p.controls) {
-        if (p.controls.palette === 'custom' && p.customPalette) {
-            el.customHue.value = p.customPalette.baseHue;
-            el.customHueRange.value = p.customPalette.hueRange;
-            el.customSat.value = p.customPalette.saturation;
-            el.customLit.value = p.customPalette.lightness;
-            syncCustomPalette();
+        const tweaks = p.paletteTweaks || (p.controls.palette === 'custom' ? p.customPalette : null);
+        if (tweaks) {
+            el.customHue.value = tweaks.baseHue;
+            el.customHueRange.value = tweaks.hueRange;
+            el.customSat.value = tweaks.saturation;
+            el.customLit.value = tweaks.lightness;
+            updatePalette(p.controls.palette, tweaks);
+        } else if (p.controls.palette !== 'custom') {
+            resetPalette(p.controls.palette);
         }
         setControlsInUI(p.controls);
     }
+    el.customPaletteEditor.classList.add('collapsed');
     loadedProfileName = name;
 }
 
@@ -860,8 +995,9 @@ el.saveProfile.addEventListener('click', () => {
         seed: el.seed.value.trim() || 'seed',
         controls,
     };
+    profileData.paletteTweaks = readPaletteFromUI();
     if (controls.palette === 'custom') {
-        profileData.customPalette = readCustomPaletteFromUI();
+        profileData.customPalette = profileData.paletteTweaks;
     }
     profiles[name.trim()] = profileData;
     saveProfiles(profiles);
@@ -939,17 +1075,16 @@ function generateIntent() {
 
 el.randomize.addEventListener('click', () => {
     el.profileName.value = generateIntent();
+    autoGrow(el.profileName);
 
     setTopologyUI(TOPOLOGY_VALUES[Math.floor(Math.random() * TOPOLOGY_VALUES.length)]);
     const chosenPalette = PALETTE_KEYS[Math.floor(Math.random() * PALETTE_KEYS.length)];
     setPaletteUI(chosenPalette);
-    if (chosenPalette === 'custom') {
-        el.customHue.value = Math.floor(Math.random() * 360);
-        el.customHueRange.value = Math.floor(20 + Math.random() * 140);
-        el.customSat.value = (0.3 + Math.random() * 0.5).toFixed(2);
-        el.customLit.value = (0.4 + Math.random() * 0.35).toFixed(2);
-        syncCustomPalette();
-    }
+    el.customHue.value = Math.floor(Math.random() * 360);
+    el.customHueRange.value = Math.floor(20 + Math.random() * 140);
+    el.customSat.value = (0.3 + Math.random() * 0.5).toFixed(2);
+    el.customLit.value = (0.4 + Math.random() * 0.35).toFixed(2);
+    syncPaletteEditor();
     for (const id of SLIDER_KEYS) {
         el[id].value = Math.random().toFixed(2);
     }
@@ -997,7 +1132,7 @@ function refreshProfileGallery() {
         thumbImg.className = 'profile-thumb';
         card.appendChild(thumbImg);
         if (p.seed && p.controls) {
-            queueThumbnail(p.seed, p.controls, thumbImg);
+            queueThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
         }
 
         const body = document.createElement('div');
@@ -1060,12 +1195,12 @@ function refreshProfileGallery() {
             const c = p.controls;
             addRow('Topology', c.topology || '\u2014');
             addRow('Palette', c.palette || '\u2014');
-            if (c.palette === 'custom' && p.customPalette) {
-                const cp = p.customPalette;
-                addRow('  Hue', String(cp.baseHue));
-                addRow('  Range', String(cp.hueRange));
-                addRow('  Saturation', cp.saturation.toFixed(2));
-                addRow('  Lightness', cp.lightness.toFixed(2));
+            const pt = p.paletteTweaks || (c.palette === 'custom' ? p.customPalette : null);
+            if (pt) {
+                addRow('  Hue', String(pt.baseHue));
+                addRow('  Range', String(pt.hueRange));
+                addRow('  Saturation', pt.saturation.toFixed(2));
+                addRow('  Lightness', pt.lightness.toFixed(2));
             }
             addRow('Density', c.density.toFixed(2));
             addRow('Luminosity', c.luminosity.toFixed(2));
@@ -1148,7 +1283,7 @@ function refreshAnimProfileGallery() {
         const firstLandmark = ap.landmarks[0];
         const fp = imageProfiles[firstLandmark];
         if (fp?.seed && fp?.controls) {
-            queueThumbnail(fp.seed, fp.controls, thumbImg);
+            queueThumbnail(fp.seed, fp.controls, thumbImg, fp.paletteTweaks);
         }
 
         const body = document.createElement('div');
@@ -1179,6 +1314,7 @@ function refreshAnimProfileGallery() {
             el.loopDuration.value = secs;
             el.durationLabel.textContent = `${secs}s`;
             el.animIntent.value = ap.seed || name;
+            autoGrow(el.animIntent);
             invalidateFrameBuffer();
             refreshLoopList();
             toast(`Loaded animation: ${name}`);
@@ -1522,7 +1658,7 @@ if (window.innerWidth > 767) {
  */
 initTopologySelector();
 initPaletteSelector();
-restoreCustomPaletteFromStorage();
+restorePaletteTweaksFromStorage();
 initTheme(document.getElementById('themeSwitcher'));
 statementContentReady = loadStatementContent();
 ensureStarterProfiles();

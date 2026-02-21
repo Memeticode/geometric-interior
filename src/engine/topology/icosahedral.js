@@ -29,7 +29,49 @@ const FACE_NORMALS = FACES.map(([a, b, c]) =>
 export function createIcosahedral({ rng, params }) {
     const range = params.depthRange * 0.9;
 
+    // Precompute unique edges
+    const edgeSet = new Set();
+    for (const [a, b, c] of FACES) {
+        for (const [i, j] of [[a, b], [b, c], [a, c]]) {
+            edgeSet.add(Math.min(i, j) + ',' + Math.max(i, j));
+        }
+    }
+    const edgePairs = [...edgeSet].map(k => k.split(',').map(Number));
+
+    function shellPoints(radius) {
+        const pts = [];
+        for (const v of VERTS) pts.push(v.clone().multiplyScalar(radius));
+        for (const [i, j] of edgePairs) {
+            pts.push(VERTS[i].clone().add(VERTS[j]).normalize().multiplyScalar(radius));
+        }
+        for (const fn of FACE_NORMALS) pts.push(fn.clone().multiplyScalar(radius));
+        return pts; // 62 per shell
+    }
+
     return {
+        scaffoldPoints(count, rng) {
+            const all = [
+                ...shellPoints(range),
+                ...shellPoints(range * 0.55),
+                ...shellPoints(range * 0.25),
+            ];
+            // Extra subdivision if needed
+            if (count > all.length) {
+                for (const [i, j] of edgePairs) {
+                    for (const r of [range, range * 0.55]) {
+                        all.push(VERTS[i].clone().lerp(VERTS[j], 0.33).normalize().multiplyScalar(r));
+                        all.push(VERTS[i].clone().lerp(VERTS[j], 0.67).normalize().multiplyScalar(r));
+                    }
+                }
+            }
+            for (const p of all) { p.x *= 1.8; p.y *= 1.2; p.z *= 0.8; }
+            for (let i = all.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [all[i], all[j]] = [all[j], all[i]];
+            }
+            return all.slice(0, count);
+        },
+
         samplePoint(rng) {
             // Spherical distribution within range, stretched to fill frame
             const theta = rng() * Math.PI * 2;

@@ -200,35 +200,32 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
             const thumbImg = document.createElement('img');
             thumbImg.className = 'loop-thumb';
             left.appendChild(thumbImg);
-            renderThumbnail(p.seed, p.controls, thumbImg);
+            renderThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
         }
 
-        const textBlock = document.createElement('div');
         const nm = document.createElement('div');
         nm.className = 'name';
         nm.textContent = `${idx + 1}. ${name}`;
-        textBlock.appendChild(nm);
+        div.appendChild(nm);
 
+        // Details / missing-profile line (appended to card after controls)
+        let detailsEl = null;
         if (p?.controls) {
             const c = p.controls;
-            const details = document.createElement('details');
-            details.className = 'item-details';
+            detailsEl = document.createElement('details');
+            detailsEl.className = 'item-details';
             const summary = document.createElement('summary');
             summary.textContent = 'Details';
             const sub = document.createElement('div');
             sub.className = 'subline';
             sub.textContent = `${c.topology} \u00b7 ${c.palette} \u00b7 den ${c.density.toFixed(2)} \u00b7 lum ${c.luminosity.toFixed(2)} \u00b7 frc ${c.fracture.toFixed(2)} \u00b7 dep ${c.depth.toFixed(2)} \u00b7 coh ${c.coherence.toFixed(2)}`;
-            details.appendChild(summary);
-            details.appendChild(sub);
-            textBlock.appendChild(details);
+            detailsEl.appendChild(summary);
+            detailsEl.appendChild(sub);
         } else {
-            const sub = document.createElement('div');
-            sub.className = 'subline';
-            sub.textContent = 'missing profile';
-            textBlock.appendChild(sub);
+            detailsEl = document.createElement('div');
+            detailsEl.className = 'subline';
+            detailsEl.textContent = 'missing profile';
         }
-
-        left.appendChild(textBlock);
 
         const controls = document.createElement('div');
         controls.className = 'controls';
@@ -262,8 +259,13 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
         controls.appendChild(down);
         controls.appendChild(remove);
 
+        const right = document.createElement('div');
+        right.className = 'item-right';
+        right.appendChild(controls);
+        if (detailsEl) right.appendChild(detailsEl);
+
         div.appendChild(left);
-        div.appendChild(controls);
+        div.appendChild(right);
         listEl.appendChild(div);
     });
 }

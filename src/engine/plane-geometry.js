@@ -115,10 +115,14 @@ export function createFaceGeometry(face) {
 
     fades.push(fadeValues[0], fadeValues[1], fadeValues[2]);
 
+    // Barycentric coordinates for edge detection in fragment shader
+    const barycentrics = [1, 0, 0, 0, 1, 0, 0, 0, 1];
+
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
     geometry.setAttribute('aFade', new THREE.Float32BufferAttribute(fades, 1));
+    geometry.setAttribute('aBarycentric', new THREE.Float32BufferAttribute(barycentrics, 3));
     geometry.computeVertexNormals();
 
     return { geometry, position: centroid.clone(), quaternion: toWorldQuat };

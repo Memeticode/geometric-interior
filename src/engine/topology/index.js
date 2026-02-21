@@ -2,9 +2,10 @@
  * Topology factory — routes topology mode to implementation.
  *
  * Each topology implements:
- *   samplePoint(rng)      → THREE.Vector3
- *   sampleFrame(position) → { tangent, normal, binormal }
- *   influence(position)   → number [0,1]
+ *   scaffoldPoints(count, rng) → THREE.Vector3[]   (structured placement points)
+ *   samplePoint(rng)           → THREE.Vector3      (random fallback)
+ *   sampleFrame(position)      → { tangent, normal, binormal }
+ *   influence(position)        → number [0,1]
  */
 
 import { createIcosahedral } from './icosahedral.js';
