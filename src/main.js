@@ -4,14 +4,12 @@
  */
 
 import { createRenderer } from './engine/create-renderer.js';
-import { createMotionBlur } from './export/motion-blur.js';
-import { evalControlsAt, TIME_WARP_STRENGTH } from './core/interpolation.js';
 import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults } from './core/palettes.js';
-import { loadProfiles, saveProfiles, deleteProfile, refreshProfileSelect, ensureStarterProfiles, renderLoopList, loadAnimProfiles, saveAnimProfiles, deleteAnimProfile, findAnimProfilesReferencingImage, removeImageFromAnimProfiles } from './ui/profiles.js';
-import { createAnimationController, preRenderFrames, exportFromBuffer, ANIM_FPS, MOTION_BLUR_ENABLED, MB_DECAY, MB_ADD } from './export/animation.js';
-import { packageStillZip, packageAnimZip, computeLoopSummaryTitleAlt } from './export/export.js';
+import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles } from './ui/profiles.js';
+import { packageStillZip } from './export/export.js';
 import { initTheme } from './ui/theme.js';
 import { createLoadingAnimation } from './ui/loading-animation.js';
+import { createFaviconAnimation } from './ui/animated-favicon.js';
 
 /* ---------------------------
  * DOM references
@@ -20,11 +18,6 @@ import { createLoadingAnimation } from './ui/loading-animation.js';
 const canvas = document.getElementById('c');
 
 const el = {
-    modeImage: document.getElementById('modeImage'),
-    modeAnim: document.getElementById('modeAnim'),
-    imageSection: document.getElementById('imageModeSection'),
-    animSection: document.getElementById('animModeSection'),
-
     seed: document.getElementById('profileName'),
 
     // Discrete controls (hidden inputs driven by tile/swatch UI)
@@ -50,18 +43,6 @@ const el = {
     saveProfile: document.getElementById('saveProfile'),
     randomize: document.getElementById('randomize'),
     profileGallery: document.getElementById('profileGallery'),
-    animProfileGallery: document.getElementById('animProfileGallery'),
-    saveAnimProfile: document.getElementById('saveAnimProfile'),
-    animIntent: document.getElementById('animIntent'),
-
-    profileSelect: document.getElementById('profileSelect'),
-    addToLoop: document.getElementById('addToLoop'),
-    clearLoop: document.getElementById('clearLoop'),
-    loopList: document.getElementById('loopList'),
-    progressBar: document.getElementById('progressBar'),
-
-    loopDuration: document.getElementById('loopDuration'),
-    durationLabel: document.getElementById('durationLabel'),
 
     titleText: document.getElementById('titleText'),
     altText: document.getElementById('altText'),
@@ -74,11 +55,12 @@ const el = {
     statementTitle: document.getElementById('statementTitle'),
     developerBody: document.getElementById('developerBody'),
     artistBody: document.getElementById('artistBody'),
+    governanceStatement: document.getElementById('governanceStatement'),
+    governanceBody: document.getElementById('governanceBody'),
 
     canvasOverlay: document.getElementById('canvasOverlay'),
     canvasOverlayText: document.getElementById('canvasOverlayText'),
     exportBtn: document.getElementById('exportBtn'),
-    progressContainer: document.getElementById('progressContainer'),
     imageProfileSelect: document.getElementById('imageProfileSelect'),
 
     infoModal: document.getElementById('infoModal'),
@@ -117,15 +99,6 @@ const TOPOLOGY_VALUES = ['flow-field', 'icosahedral', 'mobius', 'multi-attractor
  * ---------------------------
  */
 const renderer = createRenderer(canvas);
-
-// Motion blur uses a 2D overlay — for now, create a minimal stub since
-// the WebGL renderer writes directly to the canvas. The animation system
-// still expects this interface; we'll integrate it properly in Phase 5.
-const motionBlur = {
-    setEnabled() {},
-    clear() {},
-    apply() {},
-};
 
 const loadingAnim = createLoadingAnimation(document.querySelector('.canvas-overlay-inner'));
 
@@ -313,9 +286,6 @@ function wrapSelect(selectEl, { getProfile }) {
 }
 
 const imageSelectUI = wrapSelect(el.imageProfileSelect, {
-    getProfile: name => loadProfiles()[name],
-});
-const animSelectUI = wrapSelect(el.profileSelect, {
     getProfile: name => loadProfiles()[name],
 });
 
@@ -557,20 +527,8 @@ function restorePaletteTweaksFromStorage() {
  * State
  * ---------------------------
  */
-let currentMode = 'image';
-let loopLandmarks = [];
-let loopDurationMs = 7_000;
-
 let stillRendered = false;
 let loadedProfileName = '';
-
-const frameBuffer = {
-    frames: [],
-    rendered: false,
-    durationMs: 0,
-    seed: '',
-    rendering: false,
-};
 
 /* ---------------------------
  * Controls reading/writing
@@ -607,30 +565,6 @@ function setControlsInUI(controls) {
     updateSliderLabels(readControlsFromUI());
 }
 
-
-/* ---------------------------
- * Frame buffer management
- * ---------------------------
- */
-function invalidateFrameBuffer() {
-    animController.stop();
-    for (const bm of frameBuffer.frames) {
-        try { bm.close(); } catch { /* ignore */ }
-    }
-    frameBuffer.frames = [];
-    frameBuffer.rendered = false;
-    frameBuffer.durationMs = 0;
-    frameBuffer.seed = '';
-
-    el.exportBtn.disabled = true;
-    el.progressBar.style.width = '0%';
-
-    if (currentMode === 'anim') {
-        showCanvasOverlay('Render to preview');
-        el.titleText.textContent = '';
-        el.altText.textContent = '';
-    }
-}
 
 /* ---------------------------
  * Helpers
@@ -771,39 +705,6 @@ function renderAndUpdate(seed, controls, { animate = false } = {}) {
     return meta;
 }
 
-function getLandmarkControlsOrdered() {
-    const profiles = loadProfiles();
-    const arr = [];
-    for (const name of loopLandmarks) {
-        const p = profiles[name];
-        if (p?.controls) arr.push({ name, ...p });
-    }
-    return arr;
-}
-
-function deriveAnimSeed() {
-    const landmarks = getLandmarkControlsOrdered();
-    if (landmarks.length === 0) return 'anim-seed';
-    const combined = landmarks.map(l => l.seed || l.name).join('::');
-    return 'anim::' + combined;
-}
-
-function refreshLoopList() {
-    const profiles = loadProfiles();
-    renderLoopList(el.loopList, loopLandmarks, profiles, {
-        onReorder(newLandmarks) {
-            loopLandmarks = newLandmarks;
-            invalidateFrameBuffer();
-            refreshLoopList();
-        },
-        onRemove(idx) {
-            loopLandmarks.splice(idx, 1);
-            invalidateFrameBuffer();
-            refreshLoopList();
-        },
-    }, queueThumbnail);
-}
-
 /* ---------------------------
  * Live render on control change
  * ---------------------------
@@ -816,93 +717,10 @@ function renderStillCanvas() {
 }
 
 function onControlChange() {
-    if (currentMode === 'image') {
-        renderStillCanvas();
-        clearStillText();
-        setStillRendered(false);
-    }
+    renderStillCanvas();
+    clearStillText();
+    setStillRendered(false);
 }
-
-/* ---------------------------
- * Animation controller
- * ---------------------------
- */
-const animController = createAnimationController({
-    drawFrame(bitmap) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) ctx.drawImage(bitmap, 0, 0);
-    },
-    onFrame(tNorm) {
-        el.progressBar.style.width = `${(tNorm * 100).toFixed(2)}%`;
-    },
-    onPlayStateChange() {},
-});
-
-/* ---------------------------
- * Duration slider
- * ---------------------------
- */
-el.loopDuration.addEventListener('input', () => {
-    const secs = parseInt(el.loopDuration.value, 10);
-    loopDurationMs = secs * 1000;
-    el.durationLabel.textContent = `${secs}s`;
-    invalidateFrameBuffer();
-});
-
-/* ---------------------------
- * Mode switching
- * ---------------------------
- */
-function setMode(mode) {
-    currentMode = mode;
-
-    el.modeImage.classList.toggle('active', mode === 'image');
-    el.modeAnim.classList.toggle('active', mode === 'anim');
-
-    const enterSection = mode === 'image' ? el.imageSection : el.animSection;
-    const leaveSection = mode === 'image' ? el.animSection : el.imageSection;
-    leaveSection.classList.add('hidden');
-    enterSection.classList.remove('hidden');
-    enterSection.classList.add('mode-enter');
-    enterSection.addEventListener('animationend', () => {
-        enterSection.classList.remove('mode-enter');
-    }, { once: true });
-
-    if (mode === 'image') {
-        el.progressContainer.classList.add('hidden');
-        hideCanvasOverlay();
-        animController.stop();
-        motionBlur.setEnabled(false);
-        motionBlur.clear();
-        renderStillCanvas();
-        clearStillText();
-        setStillRendered(false);
-    } else {
-        el.progressContainer.classList.remove('hidden');
-        motionBlur.setEnabled(MOTION_BLUR_ENABLED);
-        motionBlur.clear();
-
-        refreshProfileSelect(el.profileSelect); animSelectUI.refresh();
-        refreshLoopList();
-
-        if (frameBuffer.rendered) {
-            hideCanvasOverlay();
-            el.exportBtn.disabled = false;
-            animController.playFromBuffer(frameBuffer.frames, frameBuffer.durationMs);
-        } else {
-            showCanvasOverlay('Render to preview');
-            el.titleText.textContent = '';
-            el.altText.textContent = '';
-            el.exportBtn.disabled = true;
-        }
-    }
-    el.saveProfile.classList.toggle('hidden', mode !== 'image');
-    el.saveAnimProfile.classList.toggle('hidden', mode !== 'anim');
-    refreshProfileGallery();
-}
-
-el.modeImage.addEventListener('click', () => setMode('image'));
-el.modeAnim.addEventListener('click', () => setMode('anim'));
 
 /* ---------------------------
  * Slider + control event listeners
@@ -912,66 +730,6 @@ for (const id of SLIDER_KEYS) {
     el[id].addEventListener('input', onControlChange);
 }
 el.seed.addEventListener('change', onControlChange);
-
-/* ---------------------------
- * Render / export buttons
- * ---------------------------
- */
-async function renderAnimation() {
-    const landmarks = getLandmarkControlsOrdered();
-    if (landmarks.length < 2) { toast('Add 2+ landmarks.'); return; }
-
-    animController.stop();
-    invalidateFrameBuffer();
-
-    frameBuffer.rendering = true;
-    el.exportBtn.disabled = true;
-
-    showCanvasOverlay('Rendering\u2026', true);
-
-    const seed = deriveAnimSeed();
-
-    try {
-        const frames = await preRenderFrames({
-            canvas,
-            renderer,
-            motionBlur,
-            landmarks,
-            seed,
-            durationMs: loopDurationMs,
-            fps: ANIM_FPS,
-            onProgress(done, total) {
-                el.progressBar.style.width = `${((done / total) * 100).toFixed(1)}%`;
-            },
-            isCancelled() { return !frameBuffer.rendering; },
-        });
-
-        if (!frames) {
-            showCanvasOverlay('Render to preview');
-            toast('Render cancelled.');
-            return;
-        }
-
-        frameBuffer.frames = frames;
-        frameBuffer.rendered = true;
-        frameBuffer.durationMs = loopDurationMs;
-        frameBuffer.seed = seed;
-
-        el.exportBtn.disabled = false;
-
-        const summary = computeLoopSummaryTitleAlt(seed, landmarks, loopDurationMs / 1000);
-        playRevealAnimation(summary.title, summary.altText);
-
-        animController.playFromBuffer(frames, loopDurationMs);
-        toast(`Rendered ${frames.length} frames.`);
-    } catch (err) {
-        console.error(err);
-        showCanvasOverlay('Render to preview');
-        toast('Render failed.');
-    } finally {
-        frameBuffer.rendering = false;
-    }
-}
 
 el.imageProfileSelect.addEventListener('change', () => {
     const name = el.imageProfileSelect.value;
@@ -1001,31 +759,12 @@ el.saveProfile.addEventListener('click', () => {
     }
     profiles[name.trim()] = profileData;
     saveProfiles(profiles);
-    refreshProfileSelect(el.profileSelect); animSelectUI.refresh();
+
     refreshImageProfileSelect();
     refreshProfileGallery();
-    refreshAnimProfileGallery();
     loadedProfileName = name.trim();
     updateActiveProfileIndicator();
     toast(`Saved profile: ${name.trim()}`);
-});
-
-el.saveAnimProfile.addEventListener('click', () => {
-    if (loopLandmarks.length < 2) { toast('Add 2+ landmarks to save.'); return; }
-
-    const defaultName = el.animIntent.value.trim() || 'Untitled Animation';
-    const name = prompt('Animation profile name:', defaultName);
-    if (!name || !name.trim()) return;
-
-    const animProfiles = loadAnimProfiles();
-    animProfiles[name.trim()] = {
-        landmarks: [...loopLandmarks],
-        durationMs: loopDurationMs,
-        seed: el.animIntent.value.trim() || 'anim-seed',
-    };
-    saveAnimProfiles(animProfiles);
-    refreshAnimProfileGallery();
-    toast(`Saved animation: ${name.trim()}`);
 });
 
 /* ---------------------------
@@ -1122,7 +861,7 @@ function refreshProfileGallery() {
         card.className = 'profile-card';
         card.dataset.profileName = name;
 
-        if (name === loadedProfileName && currentMode === 'image') {
+        if (name === loadedProfileName) {
             card.classList.add('active-profile');
         }
 
@@ -1147,31 +886,19 @@ function refreshProfileGallery() {
         actions.className = 'profile-card-actions';
 
         const actionBtn = document.createElement('button');
-        if (currentMode === 'image') {
-            actionBtn.textContent = 'Load';
-            actionBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                loadProfileIntoUI(name);
-                el.imageProfileSelect.value = name;
-                imageSelectUI.refresh();
-                const seed = el.seed.value.trim() || 'seed';
-                const controls = readControlsFromUI();
-                renderAndUpdate(seed, controls, { animate: true });
-                setStillRendered(true);
-                updateActiveProfileIndicator();
-                toast(`Loaded: ${name}`);
-            });
-        } else {
-            actionBtn.textContent = 'Add';
-            actionBtn.classList.add('primary');
-            actionBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                loopLandmarks.push(name);
-                invalidateFrameBuffer();
-                refreshLoopList();
-                toast(`Added: ${name}`);
-            });
-        }
+        actionBtn.textContent = 'Load';
+        actionBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            loadProfileIntoUI(name);
+            el.imageProfileSelect.value = name;
+            imageSelectUI.refresh();
+            const seed = el.seed.value.trim() || 'seed';
+            const controls = readControlsFromUI();
+            renderAndUpdate(seed, controls, { animate: true });
+            setStillRendered(true);
+            updateActiveProfileIndicator();
+            toast(`Loaded: ${name}`);
+        });
 
         actions.appendChild(actionBtn);
         body.appendChild(actions);
@@ -1222,19 +949,9 @@ function refreshProfileGallery() {
         deleteBtn.innerHTML = TRASH_SVG;
         deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const refs = findAnimProfilesReferencingImage(name);
-            if (refs.length > 0) {
-                const animNames = refs.map(r => r.animName).join('\n  - ');
-                const msg = `"${name}" is used by:\n  - ${animNames}\n\n` +
-                            `Deleting will remove it from those animation profiles. Continue?`;
-                if (!confirm(msg)) return;
-                removeImageFromAnimProfiles(name);
-            }
             deleteProfile(name);
-            refreshProfileSelect(el.profileSelect); animSelectUI.refresh();
             refreshImageProfileSelect();
             refreshProfileGallery();
-            refreshAnimProfileGallery();
             toast(`Deleted: ${name}`);
         });
         card.appendChild(deleteBtn);
@@ -1246,217 +963,29 @@ function refreshProfileGallery() {
 function updateActiveProfileIndicator() {
     const cards = el.profileGallery.querySelectorAll('.profile-card');
     cards.forEach(card => {
-        const isActive = card.dataset.profileName === loadedProfileName && currentMode === 'image';
+        const isActive = card.dataset.profileName === loadedProfileName;
         card.classList.toggle('active-profile', isActive);
     });
 }
-
-/* ---------------------------
- * Animation profile gallery
- * ---------------------------
- */
-function refreshAnimProfileGallery() {
-    const animProfiles = loadAnimProfiles();
-    const imageProfiles = loadProfiles();
-    const names = Object.keys(animProfiles).sort((a, b) => a.localeCompare(b));
-    el.animProfileGallery.innerHTML = '';
-
-    if (names.length === 0) {
-        const d = document.createElement('div');
-        d.className = 'small';
-        d.textContent = 'No saved animation profiles yet.';
-        el.animProfileGallery.appendChild(d);
-        return;
-    }
-
-    for (const name of names) {
-        const ap = animProfiles[name];
-        const card = document.createElement('div');
-        card.className = 'profile-card';
-        card.dataset.animProfileName = name;
-
-        card.addEventListener('click', () => card.classList.toggle('expanded'));
-
-        const thumbImg = document.createElement('img');
-        thumbImg.className = 'profile-thumb';
-        card.appendChild(thumbImg);
-        const firstLandmark = ap.landmarks[0];
-        const fp = imageProfiles[firstLandmark];
-        if (fp?.seed && fp?.controls) {
-            queueThumbnail(fp.seed, fp.controls, thumbImg, fp.paletteTweaks);
-        }
-
-        const body = document.createElement('div');
-        body.className = 'profile-card-body';
-
-        const nm = document.createElement('div');
-        nm.className = 'profile-card-name';
-        nm.textContent = name;
-        body.appendChild(nm);
-
-        const meta = document.createElement('div');
-        meta.className = 'anim-card-meta';
-        const validCount = ap.landmarks.filter(n => imageProfiles[n]).length;
-        meta.textContent = `${validCount} landmark${validCount !== 1 ? 's' : ''} \u00b7 ${Math.round(ap.durationMs / 1000)}s`;
-        body.appendChild(meta);
-
-        const actions = document.createElement('div');
-        actions.className = 'profile-card-actions';
-
-        const actionBtn = document.createElement('button');
-        actionBtn.textContent = 'Load';
-        actionBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            setMode('anim');
-            loopLandmarks = [...ap.landmarks];
-            loopDurationMs = ap.durationMs;
-            const secs = Math.round(ap.durationMs / 1000);
-            el.loopDuration.value = secs;
-            el.durationLabel.textContent = `${secs}s`;
-            el.animIntent.value = ap.seed || name;
-            autoGrow(el.animIntent);
-            invalidateFrameBuffer();
-            refreshLoopList();
-            toast(`Loaded animation: ${name}`);
-        });
-
-        actions.appendChild(actionBtn);
-        body.appendChild(actions);
-        card.appendChild(body);
-
-        const details = document.createElement('div');
-        details.className = 'profile-card-details';
-
-        const dl = document.createElement('dl');
-        const addRow = (label, value) => {
-            const dt = document.createElement('dt');
-            dt.textContent = label;
-            const dd = document.createElement('dd');
-            dd.textContent = value;
-            dl.appendChild(dt);
-            dl.appendChild(dd);
-        };
-
-        if (ap.seed) addRow('Intent', ap.seed);
-        addRow('Duration', `${Math.round(ap.durationMs / 1000)}s`);
-        addRow('Landmarks', ap.landmarks.length.toString());
-        for (let i = 0; i < ap.landmarks.length; i++) {
-            const lName = ap.landmarks[i];
-            const ip = imageProfiles[lName];
-            if (ip) {
-                addRow(`  ${i + 1}. ${lName}`, `${ip.controls.topology} \u00b7 ${ip.controls.palette}`);
-            } else {
-                addRow(`  ${i + 1}.`, `${lName} (missing)`);
-            }
-        }
-        details.appendChild(dl);
-        card.appendChild(details);
-
-        const chevron = document.createElement('span');
-        chevron.className = 'profile-card-chevron';
-        chevron.textContent = '\u25be';
-        card.appendChild(chevron);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'profile-card-delete';
-        deleteBtn.title = 'Delete';
-        deleteBtn.innerHTML = TRASH_SVG;
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteAnimProfile(name);
-            refreshAnimProfileGallery();
-            toast(`Deleted animation: ${name}`);
-        });
-        card.appendChild(deleteBtn);
-
-        el.animProfileGallery.appendChild(card);
-    }
-}
-
-/* ---------------------------
- * Animation mode controls
- * ---------------------------
- */
-el.addToLoop.addEventListener('click', () => {
-    const name = el.profileSelect.value;
-    if (!name) { toast('Select a profile.'); return; }
-    loopLandmarks.push(name);
-    invalidateFrameBuffer();
-    refreshLoopList();
-    toast(`Added: ${name}`);
-});
-
-el.clearLoop.addEventListener('click', () => {
-    loopLandmarks = [];
-    invalidateFrameBuffer();
-    refreshLoopList();
-    motionBlur.clear();
-    toast('Cleared.');
-});
 
 /* ---------------------------
  * Export
  * ---------------------------
  */
 el.exportBtn.addEventListener('click', async () => {
-    if (currentMode === 'image') {
-        if (!stillRendered) { toast('Render first.'); return; }
-        if (!window.JSZip) { toast('JSZip missing (offline?).'); return; }
+    if (!stillRendered) { toast('Render first.'); return; }
+    if (!window.JSZip) { toast('JSZip missing (offline?).'); return; }
 
-        const seed = el.seed.value.trim() || 'seed';
-        const controls = readControlsFromUI();
-        motionBlur.setEnabled(false);
-        motionBlur.clear();
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    const meta = renderAndUpdate(seed, controls);
 
-        const meta = renderAndUpdate(seed, controls);
-
-        try {
-            await packageStillZip(canvas, { seed, controls, meta });
-            toast('Exported still ZIP.');
-        } catch (err) {
-            console.error(err);
-            toast('Still export failed.');
-        }
-    } else {
-        if (!window.JSZip) { toast('JSZip missing (offline?).'); return; }
-        if (!frameBuffer.rendered || frameBuffer.frames.length === 0) {
-            toast('Render the animation first.');
-            return;
-        }
-
-        animController.stop();
-
-        const seed = frameBuffer.seed;
-        const landmarks = getLandmarkControlsOrdered();
-
-        try {
-            toast('Encoding animation...');
-            el.exportBtn.disabled = true;
-
-            const rec = await exportFromBuffer({
-                frames: frameBuffer.frames,
-                fps: ANIM_FPS,
-                durationMs: frameBuffer.durationMs,
-                seed,
-                canvas,
-                onProgress(tNorm) {
-                    el.progressBar.style.width = `${(tNorm * 100).toFixed(2)}%`;
-                },
-            });
-
-            await packageAnimZip(rec, {
-                landmarks,
-                loopLandmarkNames: loopLandmarks,
-                timeWarpStrength: TIME_WARP_STRENGTH,
-            });
-
-            toast(rec.kind === 'video' ? 'Exported animation MP4.' : 'Exported animation frames.');
-        } catch (err) {
-            console.error(err);
-            toast('Animation export failed.');
-        } finally {
-            el.exportBtn.disabled = false;
-        }
+    try {
+        await packageStillZip(canvas, { seed, controls, meta });
+        toast('Exported still ZIP.');
+    } catch (err) {
+        console.error(err);
+        toast('Still export failed.');
     }
 });
 
@@ -1464,7 +993,20 @@ el.exportBtn.addEventListener('click', async () => {
  * Statement modal
  * ---------------------------
  */
-const STATEMENT_TITLES = { developer: '', artist: '' };
+const STATEMENT_TITLES = { developer: '', artist: '', governance: '' };
+
+function simpleMarkdownToHtml(md) {
+    return md
+        .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+        .replace(/^---$/gm, '<hr>')
+        .split(/\n\n+/)
+        .map(block => {
+            block = block.trim();
+            if (!block || block.startsWith('<h2>') || block === '<hr>') return block;
+            return `<p>${block}</p>`;
+        })
+        .join('\n');
+}
 
 async function loadStatementContent() {
     const files = {
@@ -1472,15 +1014,19 @@ async function loadStatementContent() {
         artistTitle: 'txt/artist-statement-title.txt',
         developerContent: 'txt/developer-statement-content.txt',
         artistContent: 'txt/artist-statement-content.txt',
+        governanceTitle: 'txt/governance-framework-title.txt',
+        governanceContent: 'md/governance-framework-content.md',
     };
     try {
-        const [devTitle, artTitle, devContent, artContent] = await Promise.all(
+        const [devTitle, artTitle, devContent, artContent, govTitle, govContent] = await Promise.all(
             Object.values(files).map(f => fetch(f).then(r => r.text()))
         );
         STATEMENT_TITLES.developer = devTitle.trim();
         STATEMENT_TITLES.artist = artTitle.trim();
+        STATEMENT_TITLES.governance = govTitle.trim();
         el.developerBody.querySelector('.manifesto').textContent = devContent.trim();
         el.artistBody.querySelector('.manifesto').textContent = artContent.trim();
+        el.governanceBody.querySelector('.manifesto').innerHTML = simpleMarkdownToHtml(govContent.trim());
     } catch (err) {
         console.error('Failed to load statement content:', err);
     }
@@ -1518,7 +1064,8 @@ function closeStatementModal() {
 }
 
 function switchStatementTab(tab, animate = true) {
-    const currentTab = el.developerBody.classList.contains('hidden') ? 'artist' : 'developer';
+    const bodyMap = { developer: el.developerBody, artist: el.artistBody, governance: el.governanceBody };
+    const currentTab = Object.keys(bodyMap).find(k => !bodyMap[k].classList.contains('hidden')) || 'artist';
 
     el.statementModal.querySelectorAll('.modal-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tab);
@@ -1526,14 +1073,15 @@ function switchStatementTab(tab, animate = true) {
 
     if (!animate || currentTab === tab || statementFlipping) {
         el.statementTitle.textContent = STATEMENT_TITLES[tab] || '';
-        el.developerBody.classList.toggle('hidden', tab !== 'developer');
-        el.artistBody.classList.toggle('hidden', tab !== 'artist');
+        for (const [k, body] of Object.entries(bodyMap)) {
+            body.classList.toggle('hidden', k !== tab);
+        }
         return;
     }
 
     statementFlipping = true;
-    const outgoing = currentTab === 'developer' ? el.developerBody : el.artistBody;
-    const incoming = tab === 'developer' ? el.developerBody : el.artistBody;
+    const outgoing = bodyMap[currentTab];
+    const incoming = bodyMap[tab];
     const modalBody = el.statementModal.querySelector('.modal-body');
     const modalBox = el.statementModal.querySelector('.modal-box');
     const FLIP_OUT_MS = 300;
@@ -1577,6 +1125,7 @@ function switchStatementTab(tab, animate = true) {
 
 el.developerStatement.addEventListener('click', () => openStatementModal('developer'));
 el.artistStatement.addEventListener('click', () => openStatementModal('artist'));
+el.governanceStatement.addEventListener('click', () => openStatementModal('governance'));
 el.statementModalClose.addEventListener('click', closeStatementModal);
 el.statementModal.addEventListener('click', (e) => {
     if (e.target === el.statementModal) closeStatementModal();
@@ -1674,22 +1223,18 @@ initTopologySelector();
 initPaletteSelector();
 restorePaletteTweaksFromStorage();
 initTheme(document.getElementById('themeSwitcher'));
+createFaviconAnimation().start();
 statementContentReady = loadStatementContent();
 ensureStarterProfiles();
-refreshProfileSelect(el.profileSelect); animSelectUI.refresh();
 refreshImageProfileSelect();
 
 loadProfileIntoUI(el.imageProfileSelect.value);
 updateSliderLabels(readControlsFromUI());
 
-setMode('image');
-
 showCanvasOverlay('', true);
 
 requestAnimationFrame(() => {
     refreshProfileGallery();
-    refreshAnimProfileGallery();
-    refreshLoopList();
 
     setTimeout(() => {
         const seed = el.seed.value.trim() || 'seed';
