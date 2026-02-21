@@ -1534,12 +1534,20 @@ function switchStatementTab(tab, animate = true) {
     statementFlipping = true;
     const outgoing = currentTab === 'developer' ? el.developerBody : el.artistBody;
     const incoming = tab === 'developer' ? el.developerBody : el.artistBody;
+    const modalBody = el.statementModal.querySelector('.modal-body');
+    const modalBox = el.statementModal.querySelector('.modal-box');
     const FLIP_OUT_MS = 300;
+
+    /* Hide scrollbar for the entire transition (flip-out + flip-in) */
+    modalBody.style.overflow = 'hidden';
 
     outgoing.classList.add('coin-flip-out');
     el.statementTitle.classList.add('coin-flip-out');
 
     setTimeout(() => {
+        /* Suppress the modal-box height transition so it snaps instantly */
+        modalBox.style.transition = 'none';
+
         outgoing.classList.remove('coin-flip-out');
         outgoing.classList.add('hidden');
 
@@ -1550,11 +1558,17 @@ function switchStatementTab(tab, animate = true) {
         incoming.classList.add('coin-flip-in');
         el.statementTitle.classList.add('coin-flip-in');
 
-        el.statementModal.querySelector('.modal-body').scrollTop = 0;
+        modalBody.scrollTop = 0;
+
+        /* Force reflow so the box settles at its new height before
+           re-enabling transitions */
+        void modalBox.offsetHeight;
+        modalBox.style.transition = '';
 
         const cleanup = () => {
             incoming.classList.remove('coin-flip-in');
             el.statementTitle.classList.remove('coin-flip-in');
+            modalBody.style.overflow = '';
             statementFlipping = false;
         };
         incoming.addEventListener('animationend', cleanup, { once: true });
