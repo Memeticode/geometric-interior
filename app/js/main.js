@@ -9,7 +9,6 @@ import { loadProfiles, saveProfiles, deleteProfile, refreshProfileSelect, ensure
 import { createAnimationController, preRenderFrames, exportFromBuffer, ANIM_FPS, MOTION_BLUR_ENABLED, MB_DECAY, MB_ADD } from './animation.js';
 import { packageStillZip, packageAnimZip, computeLoopSummaryTitleAlt } from './export.js';
 import { initTheme } from './theme.js';
-import { createLoadingAnimation } from './loading-animation.js';
 
 /* ---------------------------
  * DOM references
@@ -73,6 +72,7 @@ const el = {
 
     canvasOverlay: document.getElementById('canvasOverlay'),
     canvasOverlayText: document.getElementById('canvasOverlayText'),
+    canvasSpinner: document.getElementById('canvasSpinner'),
     renderBtn: document.getElementById('renderBtn'),
     exportBtn: document.getElementById('exportBtn'),
     progressContainer: document.getElementById('progressContainer'),
@@ -97,7 +97,6 @@ const el = {
  */
 const renderer = createRenderer(canvas, ctx);
 const motionBlur = createMotionBlur(canvas, ctx, { decay: MB_DECAY, add: MB_ADD });
-const loadingAnim = createLoadingAnimation(document.querySelector('.canvas-overlay-inner'));
 
 /* ---------------------------
  * Thumbnail generator (full-resolution offscreen → dataURL → <img>)
@@ -468,22 +467,18 @@ function clearStillText() {
 function showCanvasOverlay(text, showSpinner = false) {
     el.canvasOverlayText.textContent = text;
     el.canvasOverlay.classList.remove('hidden');
-    if (showSpinner) {
-        loadingAnim.start();
-    } else {
-        loadingAnim.stop();
-    }
+    el.canvasSpinner.style.display = showSpinner ? '' : 'none';
 }
 
 function hideCanvasOverlay() {
     el.canvasOverlay.classList.add('hidden');
-    loadingAnim.stop();
+    el.canvasSpinner.style.display = 'none';
 }
 
-/* Zone loading reveal — swap spinners for real content */
-function revealAllZones() {
-    for (const s of [el.configSpinner, el.profilesSpinner, el.stageSpinner]) s.classList.add('ready');
-    for (const i of [el.configInner, el.profilesInner, el.stageInner]) i.classList.add('ready');
+/* Zone loading reveal — swap spinner for real content */
+function revealZone(spinner, inner) {
+    spinner.classList.add('ready');
+    inner.classList.add('ready');
 }
 
 /* Typewriter effect */
@@ -546,7 +541,7 @@ function renderAndUpdate(seed, aspects, { animate = false } = {}) {
     if (animate) {
         // Hide canvas behind overlay before rendering new content
         el.canvasOverlay.classList.remove('hidden');
-        loadingAnim.stop();
+        el.canvasSpinner.style.display = 'none';
         el.canvasOverlayText.textContent = '';
     }
     const meta = renderer.renderWith(seed, aspects);
@@ -885,9 +880,12 @@ function refreshProfileGallery() {
         });
 
         // Thumbnail
+        const thumbWrap = document.createElement('div');
+        thumbWrap.className = 'thumb-wrap';
         const thumbImg = document.createElement('img');
         thumbImg.className = 'profile-thumb';
-        card.appendChild(thumbImg);
+        thumbWrap.appendChild(thumbImg);
+        card.appendChild(thumbWrap);
         if (p.seed && p.aspects) {
             queueThumbnail(p.seed, { ...p.aspects }, thumbImg);
         }
@@ -1043,9 +1041,12 @@ function refreshAnimProfileGallery() {
         });
 
         // Thumbnail: first landmark's image
+        const thumbWrap = document.createElement('div');
+        thumbWrap.className = 'thumb-wrap';
         const thumbImg = document.createElement('img');
         thumbImg.className = 'profile-thumb';
-        card.appendChild(thumbImg);
+        thumbWrap.appendChild(thumbImg);
+        card.appendChild(thumbWrap);
         const firstLandmark = ap.landmarks[0];
         const fp = imageProfiles[firstLandmark];
         if (fp?.seed && fp?.aspects) {
@@ -1446,16 +1447,21 @@ setMode('image');
 // Zone spinners are visible; hide canvas overlay until needed for subsequent renders.
 el.canvasOverlay.classList.add('hidden');
 
-// Defer heavy work so the browser paints the spinners first.
+// Staged reveal: render the main image first, then build menus.
 requestAnimationFrame(() => {
-    refreshProfileGallery();
-    refreshAnimProfileGallery();
-    refreshLoopList();
-
+    // Phase 1 — render the main image and reveal the stage
     const seed = el.seed.value.trim() || 'seed';
     const aspects = readAspectsFromUI();
     renderAndUpdate(seed, aspects, { animate: false });
     setStillRendered(true);
+    revealZone(el.stageSpinner, el.stageInner);
 
-    revealAllZones();
+    // Phase 2 — build galleries and reveal menus (next frame)
+    requestAnimationFrame(() => {
+        refreshProfileGallery();
+        refreshAnimProfileGallery();
+        refreshLoopList();
+        revealZone(el.configSpinner, el.configInner);
+        revealZone(el.profilesSpinner, el.profilesInner);
+    });
 });
