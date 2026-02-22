@@ -106,10 +106,18 @@ const loadingAnim = createLoadingAnimation(document.querySelector('.canvas-overl
  * Thumbnail generator
  * ---------------------------
  */
-const thumbOffscreen = document.createElement('canvas');
-thumbOffscreen.width = 280;
-thumbOffscreen.height = 180;
-const thumbRenderer = createRenderer(thumbOffscreen);
+let thumbOffscreen = null;
+let thumbRenderer = null;
+
+function getThumbRenderer() {
+    if (!thumbRenderer) {
+        thumbOffscreen = document.createElement('canvas');
+        thumbOffscreen.width = 280;
+        thumbOffscreen.height = 180;
+        thumbRenderer = createRenderer(thumbOffscreen);
+    }
+    return thumbRenderer;
+}
 
 const thumbCache = new Map();
 const thumbQueue = [];
@@ -144,7 +152,7 @@ function drainThumbQueue() {
                 if (item.destImg.isConnected) item.destImg.src = thumbCache.get(item.key);
             } else if (item && item.destImg.isConnected) {
                 if (item.paletteTweaks) updatePalette(item.controls.palette, item.paletteTweaks);
-                thumbRenderer.renderWith(item.seed, item.controls);
+                getThumbRenderer().renderWith(item.seed, item.controls);
                 const url = thumbOffscreen.toDataURL('image/png');
                 thumbCache.set(item.key, url);
                 item.destImg.src = url;
@@ -154,7 +162,7 @@ function drainThumbQueue() {
         }
         thumbProcessing = false;
         drainThumbQueue();
-    }, 50);
+    }, 100);
 }
 
 /* ---------------------------
@@ -350,10 +358,22 @@ function updateActiveChipGradient(key, settings) {
     if (!g) return;
     const h = settings.baseHue;
     const hr = settings.hueRange;
-    const h1 = ((h - hr / 2) + 360) % 360;
-    const h3 = (h + hr / 2) % 360;
-    g.style.background =
-        `linear-gradient(135deg, hsl(${h1} 50% 15%), hsl(${h} 60% 45%), hsl(${h3} 60% 70%))`;
+    if (hr >= 180) {
+        // Wide hue range: 5-stop rainbow across the full span
+        const stops = [];
+        for (let i = 0; i < 5; i++) {
+            const t = i / 4;
+            const hue = ((h - hr / 2) + hr * t + 360) % 360;
+            const lit = 15 + t * 55;
+            stops.push(`hsl(${hue} 65% ${lit}%)`);
+        }
+        g.style.background = `linear-gradient(135deg, ${stops.join(', ')})`;
+    } else {
+        const h1 = ((h - hr / 2) + 360) % 360;
+        const h3 = (h + hr / 2) % 360;
+        g.style.background =
+            `linear-gradient(135deg, hsl(${h1} 50% 15%), hsl(${h} 60% 45%), hsl(${h3} 60% 70%))`;
+    }
 }
 
 /* ── Palette editor (works for all palettes) ── */
@@ -432,9 +452,15 @@ function initPaletteSelector() {
             el.palette.value = key;
 
             if (alreadyActive) {
+                // Re-click: toggle editor open/closed
                 el.customPaletteEditor.classList.toggle('collapsed');
-            } else {
+            } else if (key === 'custom') {
+                // Custom always opens editor
                 el.customPaletteEditor.classList.remove('collapsed');
+                loadPaletteIntoEditor(key);
+            } else {
+                // Non-custom preset: keep editor in its current state
+                // (stays open if already open, stays closed if closed)
                 loadPaletteIntoEditor(key);
             }
             onControlChange();
@@ -682,15 +708,19 @@ function playRevealAnimation(titleText, altText) {
     el.titleText.textContent = '';
     el.altText.textContent = '';
 
-    const cancelTitle = typewriterEffect(el.titleText, titleText, 30, () => {
-        hideCanvasOverlay();
-        const wrapper = document.querySelector('.canvas-wrapper');
-        const wipe = document.createElement('div');
-        wipe.className = 'reveal-wipe';
-        wrapper.appendChild(wipe);
-        wipe.addEventListener('animationend', () => wipe.remove());
+    // Canvas fades in immediately via 200ms CSS transition
+    hideCanvasOverlay();
 
-        const cancelAlt = typewriterEffect(el.altText, altText, 8, () => {
+    // Reveal wipe as visual polish over the fading-in canvas
+    const wrapper = document.querySelector('.canvas-wrapper');
+    const wipe = document.createElement('div');
+    wipe.className = 'reveal-wipe';
+    wrapper.appendChild(wipe);
+    wipe.addEventListener('animationend', () => wipe.remove());
+
+    // Text types as non-blocking decoration below the canvas
+    const cancelTitle = typewriterEffect(el.titleText, titleText, 20, () => {
+        const cancelAlt = typewriterEffect(el.altText, altText, 6, () => {
             typewriterAbort = null;
         });
         typewriterAbort = cancelAlt;
@@ -1243,12 +1273,9 @@ updateSliderLabels(readControlsFromUI());
 showCanvasOverlay('', true);
 
 requestAnimationFrame(() => {
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    renderAndUpdate(seed, controls, { animate: true });
+    setStillRendered(true);
     refreshProfileGallery();
-
-    setTimeout(() => {
-        const seed = el.seed.value.trim() || 'seed';
-        const controls = readControlsFromUI();
-        renderAndUpdate(seed, controls, { animate: true });
-        setStillRendered(true);
-    }, 600);
 });
