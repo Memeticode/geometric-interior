@@ -131,11 +131,26 @@ export function removeImageFromAnimProfiles(imageName) {
  * ---------------------------
  */
 
+export function loadPortraits() {
+    return structuredClone(starterProfiles);
+}
+
+export function getPortraitNames() {
+    return Object.keys(starterProfiles);
+}
+
 export function ensureStarterProfiles() {
+    // Migration: remove starter profiles from user storage (they now live in Portraits section)
     const profiles = loadProfiles();
-    if (Object.keys(profiles).length === 0) {
-        saveProfiles(structuredClone(starterProfiles));
+    const portraitNames = getPortraitNames();
+    let changed = false;
+    for (const name of portraitNames) {
+        if (profiles[name]) {
+            delete profiles[name];
+            changed = true;
+        }
     }
+    if (changed) saveProfiles(profiles);
 
     const animProfiles = loadAnimProfiles();
     if (Object.keys(animProfiles).length === 0) {

@@ -41,7 +41,7 @@ export function deriveParams(controls, rng) {
     ];
 
     // --- Camera (depth — zoom only) ---
-    const cameraZ = cl(dep, 2.8, 3.5, 4.5);
+    const cameraZ = cl(dep, 3.5, 3.5, 4.5);
     const cameraFov = cl(dep, 42, 50, 60);
     const cameraOffsetX = 0;
     const cameraOffsetY = 0;
@@ -111,11 +111,12 @@ export function deriveParams(controls, rng) {
     const edgeOpacityFadeScale = cl(frac, 0.008, 0.015, 0.025);
     const crackExtendScale = cl(frac, 1.04, 1.12, 1.22);
 
-    // --- Illumination (luminosity) ---
-    const backLightFactor = cl(c.luminosity, 1.0, 2.0, 3.2);
-    const illuminationCap = cl(c.luminosity, 1.2, 1.8, 2.5);
+    // --- Illumination (luminosity, with density attenuation for face lighting) ---
+    const faceDensityAtten = cl(c.density, 0.90, 1.0, 2.5);
+    const backLightFactor = cl(c.luminosity, 1.0, 2.0, 3.2) / faceDensityAtten;
+    const illuminationCap = cl(c.luminosity, 1.2, 1.8, 2.5) / faceDensityAtten;
     const ambientLight = cl(c.luminosity, 0.008, 0.02, 0.04);
-    const frontLightFactor = cl(c.luminosity, 0.15, 0.3, 0.5);
+    const frontLightFactor = cl(c.luminosity, 0.15, 0.3, 0.5) / faceDensityAtten;
     const edgeFadeThreshold = cl(frac, 0.30, 0.22, 0.14);
 
     // --- Atmospheric scatter (density) ---
@@ -124,49 +125,53 @@ export function deriveParams(controls, rng) {
     // --- Density auto-compensation ---
     // More dots = more light sources. Scale down per-dot glow to keep
     // total brightness roughly constant as density changes.
-    const densityScale = cl(c.density, 0.5, 1.0, 1.7);
+    const densityScale = cl(c.density, 0.35, 1.0, 5.5);
 
     // --- Dots ---
     const heroSpreadScale = cl(frac, 0.5, 1.0, 1.75);
     const dotConfig = {
-        heroDotCount: Math.round(cl(c.density, 2, 3, 5)),
+        heroDotCount: Math.round(cl(c.density, 3, 5, 9)),
         heroDotSpread: [0.08 * heroSpreadScale, 0.06 * heroSpreadScale, 0.08 * heroSpreadScale],
         heroDotRadiusBase: 0.028,
         heroDotRadiusRange: 0.05,
         heroDotGlowBase: cl(c.luminosity, 20, 34, 50) / densityScale,
         heroDotGlowRange: 14,
 
-        mediumDotCount: Math.round(cl(c.density, 4, 8, 14)),
+        mediumDotCount: Math.round(cl(c.density, 3, 8, 20)),
         mediumDotJitter: 0.02,
         mediumDotRadiusBase: 0.012,
         mediumDotRadiusRange: 0.020,
         mediumDotGlowBase: cl(c.luminosity, 10, 16, 24) / densityScale,
         mediumDotGlowRange: 8,
 
-        smallDotDensity: { primary: 0.28, secondary: 0.16, tertiary: 0.09 },
+        smallDotDensity: {
+            primary:   0.28 * cl(c.density, 0.25, 1.0, 2.0),
+            secondary: 0.16 * cl(c.density, 0.25, 1.0, 2.0),
+            tertiary:  0.09 * cl(c.density, 0.25, 1.0, 2.0),
+        },
         smallDotRadiusBase: 0.003,
         smallDotRadiusRange: 0.008,
         smallDotGlowBase: cl(c.luminosity, 6, 10, 16) / densityScale,
-        smallDotLightnessBase: 0.35,
+        smallDotLightnessBase: cl(c.luminosity, 0.25, 0.35, 0.50),
         smallDotLightnessRange: 0.35,
 
-        interiorDotCount: Math.round(cl(c.density, 25, 50, 80)),
+        interiorDotCount: Math.round(cl(c.density, 18, 50, 180)),
         interiorDotSpread: [
-            cl(frac, 0.40, 0.65, 0.90),
-            cl(frac, 0.30, 0.48, 0.66),
-            cl(frac, 0.36, 0.58, 0.80),
+            cl(frac, 0.40, 0.65, 0.90) * cl(c.density, 0.85, 1.0, 1.25),
+            cl(frac, 0.30, 0.48, 0.66) * cl(c.density, 0.85, 1.0, 1.25),
+            cl(frac, 0.36, 0.58, 0.80) * cl(c.density, 0.85, 1.0, 1.25),
         ],
 
-        microDotCount: Math.round(cl(c.density, 100, 220, 380)),
+        microDotCount: Math.round(cl(c.density, 70, 220, 800)),
         microDotSpread: [
-            cl(frac, 0.55, 0.90, 1.25),
-            cl(frac, 0.38, 0.62, 0.86),
-            cl(frac, 0.46, 0.75, 1.04),
+            cl(frac, 0.55, 0.90, 1.25) * cl(c.density, 0.85, 1.0, 1.25),
+            cl(frac, 0.38, 0.62, 0.86) * cl(c.density, 0.85, 1.0, 1.25),
+            cl(frac, 0.46, 0.75, 1.04) * cl(c.density, 0.85, 1.0, 1.25),
         ],
         microDotRadiusBase: 0.002,
         microDotRadiusRange: 0.006,
         microDotGlowBase: cl(c.luminosity, 7, 12, 18) / densityScale,
-        microDotLightnessBase: 0.30,
+        microDotLightnessBase: cl(c.luminosity, 0.20, 0.30, 0.45),
         microDotLightnessRange: 0.40,
 
         dotBaseHue: baseHue,
@@ -184,7 +189,8 @@ export function deriveParams(controls, rng) {
     };
 
     // --- Postprocessing ---
-    const bloomStrength = cl(c.luminosity, 0.10, 0.20, 0.35);
+    const bloomDensityAtten = cl(c.density, 1.0, 1.0, 1.8);
+    const bloomStrength = cl(c.luminosity, 0.10, 0.20, 0.35) / bloomDensityAtten;
     const bloomThreshold = cl(c.coherence, 0.55, 0.70, 0.85);
     const chromaticAberration = cl(frac, 0.001, 0.002, 0.004);
     const vignetteStrength = cl(dep, 0.35, 0.50, 0.68);

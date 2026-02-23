@@ -5,7 +5,7 @@
 
 import { createRenderer } from './engine/create-renderer.js';
 import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults, getPalette } from './core/palettes.js';
-import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles } from './ui/profiles.js';
+import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles, loadPortraits, getPortraitNames } from './ui/profiles.js';
 import { packageStillZip, packageStillZipFromBlob } from './export/export.js';
 import { initTheme } from './ui/theme.js';
 import { createFaviconAnimation } from './ui/animated-favicon.js';
@@ -53,10 +53,16 @@ const el = {
 
     profileNameField: document.getElementById('profileNameField'),
     saveProfile: document.getElementById('saveProfile'),
-    profileGallery: document.getElementById('profileGallery'),
-    configControls: document.getElementById('configControls'),
-    configControlsHome: document.getElementById('configControlsHome'),
-    profilesToggle: document.getElementById('profilesToggle'),
+    portraitGallery: document.getElementById('portraitGallery'),
+    userGallery: document.getElementById('userGallery'),
+    galleryToggle: document.getElementById('galleryToggle'),
+    galleryContent: document.getElementById('galleryContent'),
+    activeSection: document.getElementById('activeSection'),
+    activeCard: document.getElementById('activeCard'),
+    activeCardToggle: document.getElementById('activeCardToggle'),
+    activePreviewThumb: document.getElementById('activePreviewThumb'),
+    activePreviewName: document.getElementById('activePreviewName'),
+    activePreviewSeed: document.getElementById('activePreviewSeed'),
 
     titleText: document.getElementById('titleText'),
     altText: document.getElementById('altText'),
@@ -79,7 +85,6 @@ const el = {
     canvasOverlay: document.getElementById('canvasOverlay'),
     canvasOverlayText: document.getElementById('canvasOverlayText'),
     exportBtn: document.getElementById('exportBtn'),
-    fullscreenBtn: document.getElementById('fullscreenBtn'),
 
     infoModal: document.getElementById('infoModal'),
     infoModalTitle: document.getElementById('infoModalTitle'),
@@ -288,7 +293,9 @@ function drainThumbQueue() {
             if (item && thumbCache.has(item.key)) {
                 if (item.destImg.isConnected) item.destImg.src = thumbCache.get(item.key);
             } else if (item && item.destImg.isConnected) {
-                if (item.paletteTweaks) updatePalette(item.controls.palette, item.paletteTweaks);
+                const palKey = item.controls.palette;
+                resetPalette(palKey);
+                if (item.paletteTweaks) updatePalette(palKey, item.paletteTweaks);
                 getThumbRenderer().renderWith(item.seed, item.controls);
                 const url = thumbOffscreen.toDataURL('image/png');
                 thumbCache.set(item.key, url);
@@ -567,6 +574,7 @@ function restorePaletteTweaksFromStorage() {
  */
 let stillRendered = false;
 let loadedProfileName = '';
+let loadedFromPortrait = false;
 
 /* ---------------------------
  * Render dispatch
@@ -679,9 +687,14 @@ function setControlsInUI(controls) {
  * ---------------------------
  */
 function toast(msg) {
-    el.toast.textContent = msg;
     if (!msg) return;
-    setTimeout(() => { if (el.toast.textContent === msg) el.toast.textContent = ''; }, 2400);
+    el.toast.textContent = msg;
+    el.toast.classList.add('visible');
+    setTimeout(() => {
+        if (el.toast.textContent === msg) {
+            el.toast.classList.remove('visible');
+        }
+    }, 2400);
 }
 
 function syncDisplayFields() {
@@ -689,15 +702,18 @@ function syncDisplayFields() {
     el.displayIntent.textContent = el.seed.value.trim();
 }
 
-function loadProfileIntoUI(name) {
-    if (!name) return;
-    const profiles = loadProfiles();
-    const p = profiles[name];
-    if (!p) return;
+function loadProfileDataIntoUI(name, p) {
+    if (!name || !p) return;
     el.profileNameField.value = name;
+    autoGrow(el.profileNameField);
     el.seed.value = p.seed || name;
     autoGrow(el.seed);
     if (p.controls) {
+        setControlsInUI(p.controls);
+
+        // Apply profile's stored palette tweaks AFTER setControlsInUI
+        // (setControlsInUI calls loadPaletteIntoEditor which reads from
+        // localStorage and would overwrite profile-specific tweaks)
         const tweaks = p.paletteTweaks || (p.controls.palette === 'custom' ? p.customPalette : null);
         if (tweaks) {
             el.customHue.value = tweaks.baseHue;
@@ -705,39 +721,53 @@ function loadProfileIntoUI(name) {
             el.customSat.value = tweaks.saturation;
             el.customLit.value = tweaks.lightness;
             updatePalette(p.controls.palette, tweaks);
-        } else if (p.controls.palette !== 'custom') {
-            resetPalette(p.controls.palette);
+            updateActiveChipGradient(p.controls.palette, tweaks);
         }
-        setControlsInUI(p.controls);
     }
     el.customPaletteEditor.classList.add('collapsed');
-    loadedProfileName = name;
     syncDisplayFields();
     setDirty(false);
     userEdited = false;
 }
 
+function loadProfileIntoUI(name) {
+    if (!name) return;
+    const profiles = loadProfiles();
+    const p = profiles[name];
+    if (!p) return;
+    loadProfileDataIntoUI(name, p);
+    loadedProfileName = name;
+    loadedFromPortrait = false;
+}
+
+function loadProfileFromData(name, isPortrait) {
+    if (isPortrait) {
+        const portraits = loadPortraits();
+        const p = portraits[name];
+        if (!p) return;
+        loadProfileDataIntoUI(name, p);
+    } else {
+        const profiles = loadProfiles();
+        const p = profiles[name];
+        if (!p) return;
+        loadProfileDataIntoUI(name, p);
+    }
+    loadedProfileName = name;
+    loadedFromPortrait = isPortrait;
+}
+
 function setStillRendered(value) {
     stillRendered = value;
     el.exportBtn.disabled = !value;
-    if (el.fullscreenBtn) el.fullscreenBtn.disabled = !value;
 }
 
 let dirty = false;
 let userEdited = false;
+
 function setDirty(value) {
     dirty = value;
     el.saveProfile.disabled = !value;
-    const stageSave = document.getElementById('stageSaveBtn');
-    if (stageSave) stageSave.disabled = !value;
-    const expandedCard = el.profileGallery.querySelector('.profile-card.expanded');
-    if (expandedCard) {
-        expandedCard.classList.toggle('dirty', value);
-        if (value) {
-            const nameEl = expandedCard.querySelector('.profile-card-name');
-            if (nameEl) nameEl.textContent = el.profileNameField.value || 'Untitled';
-        }
-    }
+    updateActiveSection();
 }
 
 function clearStillText() {
@@ -934,11 +964,6 @@ el.profileNameField.addEventListener('input', () => {
     userEdited = true;
     setDirty(true);
     syncDisplayFields();
-    const expandedCard = el.profileGallery.querySelector('.profile-card.expanded');
-    if (expandedCard) {
-        const nameEl = expandedCard.querySelector('.profile-card-name');
-        if (nameEl) nameEl.textContent = el.profileNameField.value || 'Untitled';
-    }
 });
 
 function saveCurrentProfile() {
@@ -946,7 +971,15 @@ function saveCurrentProfile() {
     if (!name) { toast('Enter a name first.'); return; }
 
     const profiles = loadProfiles();
-    if (profiles[name] && name !== loadedProfileName) {
+    const portraitNames = getPortraitNames();
+
+    // If loaded from a portrait, always create a new User entry
+    // Also prevent overwriting a portrait name in user storage
+    if (loadedFromPortrait || portraitNames.includes(name)) {
+        if (profiles[name]) {
+            if (!confirm(`User profile "${name}" already exists. Overwrite?`)) return;
+        }
+    } else if (profiles[name] && name !== loadedProfileName) {
         if (!confirm(`Profile "${name}" already exists. Overwrite?`)) return;
     }
 
@@ -963,6 +996,7 @@ function saveCurrentProfile() {
     saveProfiles(profiles);
 
     loadedProfileName = name;
+    loadedFromPortrait = false;
     refreshProfileGallery();
     setDirty(false);
     userEdited = false;
@@ -1036,6 +1070,7 @@ function restoreSnapshot(snap) {
     el.seed.value = snap.seed;
     autoGrow(el.seed);
     el.profileNameField.value = snap.name;
+    autoGrow(el.profileNameField);
     setControlsInUI(snap.controls);
     el.customHue.value = snap.paletteTweaks.baseHue;
     el.customHueRange.value = snap.paletteTweaks.hueRange;
@@ -1045,6 +1080,7 @@ function restoreSnapshot(snap) {
     updateSliderLabels(snap.controls);
     syncDisplayFields();
     loadedProfileName = '';
+    loadedFromPortrait = false;
     dirty = true;
     userEdited = false;
     refreshProfileGallery();
@@ -1057,6 +1093,40 @@ function updateHistoryButtons() {
     const fwd = document.getElementById('historyForwardBtn');
     if (back) back.disabled = historyIndex <= 0;
     if (fwd) fwd.disabled = historyIndex >= randHistory.length - 1;
+}
+
+/** Populate UI with random configuration (no confirmation dialog, no render). */
+function randomizeUI() {
+    el.seed.value = generateIntent();
+    autoGrow(el.seed);
+
+    // Topology hidden — always flow-field
+    setTopologyUI('flow-field');
+    const chosenPalette = PALETTE_KEYS[Math.floor(Math.random() * PALETTE_KEYS.length)];
+    setPaletteUI(chosenPalette);
+    el.customHue.value = Math.floor(Math.random() * 360);
+    el.customHueRange.value = Math.floor(20 + Math.random() * 140);
+    el.customSat.value = (0.3 + Math.random() * 0.5).toFixed(2);
+    el.customLit.value = (0.4 + Math.random() * 0.35).toFixed(2);
+    syncPaletteEditor();
+    for (const id of SLIDER_KEYS) {
+        el[id].value = Math.random().toFixed(2);
+    }
+
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    updateSliderLabels(controls);
+
+    // Generate a descriptive name from the randomized controls
+    const nameRng = mulberry32(xmur3(seed + ':name')());
+    el.profileNameField.value = generateTitle(controls, nameRng);
+    autoGrow(el.profileNameField);
+
+    // Detach from any loaded profile so this becomes a new unsaved draft
+    loadedProfileName = '';
+    loadedFromPortrait = false;
+    dirty = true;
+    userEdited = false;
 }
 
 async function randomize() {
@@ -1099,34 +1169,7 @@ async function randomize() {
         if (result === 'save') saveCurrentProfile();
     }
 
-    el.seed.value = generateIntent();
-    autoGrow(el.seed);
-
-    // Topology hidden — always flow-field
-    setTopologyUI('flow-field');
-    const chosenPalette = PALETTE_KEYS[Math.floor(Math.random() * PALETTE_KEYS.length)];
-    setPaletteUI(chosenPalette);
-    el.customHue.value = Math.floor(Math.random() * 360);
-    el.customHueRange.value = Math.floor(20 + Math.random() * 140);
-    el.customSat.value = (0.3 + Math.random() * 0.5).toFixed(2);
-    el.customLit.value = (0.4 + Math.random() * 0.35).toFixed(2);
-    syncPaletteEditor();
-    for (const id of SLIDER_KEYS) {
-        el[id].value = Math.random().toFixed(2);
-    }
-
-    const seed = el.seed.value.trim() || 'seed';
-    const controls = readControlsFromUI();
-    updateSliderLabels(controls);
-
-    // Generate a descriptive name from the randomized controls
-    const nameRng = mulberry32(xmur3(seed + ':name')());
-    el.profileNameField.value = generateTitle(controls, nameRng);
-
-    // Detach from any loaded profile so this becomes a new unsaved draft
-    loadedProfileName = '';
-    dirty = true;
-    userEdited = false;
+    randomizeUI();
     refreshProfileGallery();
 
     // Push to history (truncate any forward entries)
@@ -1138,7 +1181,7 @@ async function randomize() {
     historyIndex = randHistory.length - 1;
     updateHistoryButtons();
 
-    renderAndUpdate(seed, controls, { animate: true });
+    renderAndUpdate(el.seed.value.trim() || 'seed', readControlsFromUI(), { animate: true });
     setStillRendered(true);
 }
 
@@ -1148,48 +1191,83 @@ async function randomize() {
  */
 const TRASH_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0v-6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>';
 
-function collapseCurrentCard() {
-    const expanded = el.profileGallery.querySelector('.profile-card.expanded');
-    if (!expanded) return;
-    el.configControlsHome.appendChild(el.configControls);
-    expanded.classList.remove('expanded');
-}
-
-function expandCard(cardEl) {
-    const profileName = cardEl.dataset.profileName;
-
-    collapseCurrentCard();
-
-    // Load profile data into controls (skip for draft cards which already have UI state)
-    if (profileName && profileName !== '__draft__') {
-        loadProfileIntoUI(profileName);
-    }
-
-    // Reparent config controls into this card
-    const slot = cardEl.querySelector('.profile-card-expansion');
-    slot.appendChild(el.configControls);
-
-    cardEl.classList.add('expanded');
-
-    // Mark as active
-    el.profileGallery.querySelectorAll('.profile-card').forEach(c =>
+function clearActiveCards() {
+    el.portraitGallery.querySelectorAll('.profile-card').forEach(c =>
         c.classList.remove('active-profile')
     );
+    el.userGallery.querySelectorAll('.profile-card').forEach(c =>
+        c.classList.remove('active-profile')
+    );
+}
+
+function updateActiveSection() {
+    updateActivePreview();
+}
+
+function updateActivePreview() {
+    const name = el.profileNameField.value.trim() || 'Untitled';
+    const seed = el.seed.value.trim() || '';
+    el.activePreviewName.textContent = name;
+    el.activePreviewSeed.textContent = seed;
+
+    // Queue a thumbnail for the current config
+    const controls = readControlsFromUI();
+    const paletteTweaks = readPaletteFromUI();
+    queueThumbnail(seed || 'seed', controls, el.activePreviewThumb, paletteTweaks);
+}
+
+async function selectCard(cardEl) {
+    const profileName = cardEl.dataset.profileName;
+    const isPortrait = cardEl.classList.contains('portrait-card');
+    if (dirty && userEdited) {
+        // User made config changes — offer to save
+        const currentName = el.profileNameField.value.trim() || 'Untitled';
+        const result = await showConfirm(
+            'Unsaved Changes',
+            `Save "${currentName}" before switching?`,
+            [
+                { label: 'Cancel', value: 'cancel' },
+                { label: 'Discard', value: 'discard' },
+                { label: 'Save', value: 'save', primary: true },
+            ]
+        );
+        if (result === 'cancel') return;
+        if (result === 'save') saveCurrentProfile();
+    } else if (!loadedProfileName) {
+        // Unsaved image with no user edits — push to history
+        const snap = captureSnapshot();
+        if (historyIndex >= 0 && historyIndex < randHistory.length) {
+            randHistory[historyIndex] = snap;
+            historyIndex++;
+        } else {
+            randHistory.push(snap);
+            if (randHistory.length > HISTORY_MAX) randHistory.shift();
+            historyIndex = randHistory.length;
+        }
+        updateHistoryButtons();
+    }
+
+    // Load profile data into Active section controls
+    loadProfileFromData(profileName, isPortrait);
+
+    // Mark as active across both galleries
+    clearActiveCards();
     cardEl.classList.add('active-profile');
+
+    // Update active section header
+    updateActiveSection();
 
     // Trigger render
     const seed = el.seed.value.trim() || 'seed';
     const controls = readControlsFromUI();
     renderAndUpdate(seed, controls, { animate: true });
     setStillRendered(true);
-
-    // Scroll into view
-    setTimeout(() => cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
 }
 
-function buildProfileCard(name, p) {
+function buildProfileCard(name, p, { isPortrait = false } = {}) {
     const card = document.createElement('div');
     card.className = 'profile-card';
+    if (isPortrait) card.classList.add('portrait-card');
     card.dataset.profileName = name;
 
     // Header (clickable area)
@@ -1211,110 +1289,84 @@ function buildProfileCard(name, p) {
     nm.textContent = name;
     body.appendChild(nm);
 
-    const unsavedLabel = document.createElement('div');
-    unsavedLabel.className = 'profile-card-unsaved-label';
-    unsavedLabel.textContent = '(unsaved)';
-    body.appendChild(unsavedLabel);
+    if (p.seed) {
+        const seedEl = document.createElement('div');
+        seedEl.className = 'profile-card-seed';
+        seedEl.textContent = p.seed;
+        body.appendChild(seedEl);
+    }
 
     header.appendChild(body);
-
-    // Save button (visible when dirty via CSS)
-    const saveBtn = document.createElement('button');
-    saveBtn.className = 'profile-card-save';
-    saveBtn.textContent = 'Save';
-    saveBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        saveCurrentProfile();
-    });
-    card.appendChild(saveBtn);
-
-    // Delete button
-    const deleteBtn = document.createElement('button');
-    deleteBtn.className = 'profile-card-delete';
-    deleteBtn.title = 'Delete';
-    deleteBtn.innerHTML = TRASH_SVG;
-    deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const realName = card.dataset.profileName;
-        if (realName && realName !== '__draft__') {
-            deleteProfile(realName);
-            if (realName === loadedProfileName) loadedProfileName = null;
-        }
-        refreshProfileGallery();
-    });
-    card.appendChild(deleteBtn);
-
     card.appendChild(header);
 
-    // Expansion slot
-    const expansion = document.createElement('div');
-    expansion.className = 'profile-card-expansion';
-    card.appendChild(expansion);
+    // Delete button (user profiles only)
+    if (!isPortrait) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'profile-card-delete';
+        deleteBtn.title = 'Delete';
+        deleteBtn.innerHTML = TRASH_SVG;
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const realName = card.dataset.profileName;
+            if (realName) {
+                deleteProfile(realName);
+                if (realName === loadedProfileName) {
+                    loadedProfileName = '';
+                    loadedFromPortrait = false;
+                    setDirty(true);
+                }
+            }
+            refreshProfileGallery();
+        });
+        card.appendChild(deleteBtn);
+    }
 
-    // Click handler: accordion toggle
+    // Single click: select card
     header.addEventListener('click', (e) => {
-        if (e.target.closest('.profile-card-delete') ||
-            e.target.closest('.profile-card-save')) return;
-
-        const isCurrentlyExpanded = card.classList.contains('expanded');
-        if (isCurrentlyExpanded) {
-            collapseCurrentCard();
-        } else {
-            expandCard(card);
-        }
+        if (e.target.closest('.profile-card-delete')) return;
+        selectCard(card);
     });
 
     return card;
 }
 
 function refreshProfileGallery() {
-    const profiles = loadProfiles();
-    const names = Object.keys(profiles).sort((a, b) => a.localeCompare(b));
+    // --- Portraits section ---
+    const portraits = loadPortraits();
+    const portraitNames = Object.keys(portraits).sort((a, b) => a.localeCompare(b));
+    el.portraitGallery.innerHTML = '';
 
-    // Park config controls before rebuilding
-    collapseCurrentCard();
+    for (const name of portraitNames) {
+        const card = buildProfileCard(name, portraits[name], { isPortrait: true });
+        el.portraitGallery.appendChild(card);
 
-    el.profileGallery.innerHTML = '';
-
-    // Draft card at top if unsaved without a loaded profile
-    if (!loadedProfileName && dirty) {
-        const draftName = el.profileNameField.value.trim() || 'Untitled';
-        const draftData = {
-            seed: el.seed.value.trim() || 'seed',
-            controls: readControlsFromUI(),
-            paletteTweaks: readPaletteFromUI(),
-        };
-        const draftCard = buildProfileCard(draftName, draftData);
-        draftCard.dataset.profileName = '__draft__';
-        draftCard.classList.add('dirty');
-        el.profileGallery.appendChild(draftCard);
-
-        // Auto-expand draft card
-        const slot = draftCard.querySelector('.profile-card-expansion');
-        slot.appendChild(el.configControls);
-        draftCard.classList.add('expanded', 'active-profile');
+        if (name === loadedProfileName && loadedFromPortrait) {
+            card.classList.add('active-profile');
+        }
     }
 
-    if (names.length === 0 && !loadedProfileName && !dirty) {
+    // --- Users section ---
+    const profiles = loadProfiles();
+    const userNames = Object.keys(profiles).sort((a, b) => a.localeCompare(b));
+    el.userGallery.innerHTML = '';
+
+    if (userNames.length === 0) {
         const d = document.createElement('div');
         d.className = 'small';
         d.textContent = 'No saved profiles yet.';
-        el.profileGallery.appendChild(d);
-        return;
+        el.userGallery.appendChild(d);
     }
 
-    for (const name of names) {
+    for (const name of userNames) {
         const card = buildProfileCard(name, profiles[name]);
-        el.profileGallery.appendChild(card);
+        el.userGallery.appendChild(card);
 
-        // Auto-expand the loaded profile
-        if (name === loadedProfileName) {
-            const slot = card.querySelector('.profile-card-expansion');
-            slot.appendChild(el.configControls);
-            card.classList.add('expanded', 'active-profile');
-            card.classList.toggle('dirty', dirty);
+        if (name === loadedProfileName && !loadedFromPortrait) {
+            card.classList.add('active-profile');
         }
     }
+
+    updateActiveSection();
 }
 
 /* ---------------------------
@@ -1372,6 +1424,8 @@ const importModal = document.getElementById('importModal');
 const importFileInput = document.getElementById('importFile');
 const importJsonArea = document.getElementById('importJson');
 const importError = document.getElementById('importError');
+const fileDropZone = document.getElementById('fileDropZone');
+const fileDropName = document.getElementById('fileDropName');
 
 function showImportError(msg) {
     importError.textContent = msg;
@@ -1382,6 +1436,7 @@ function clearImportModal() {
     importFileInput.value = '';
     importJsonArea.value = '';
     importError.style.display = 'none';
+    fileDropName.textContent = '';
 }
 
 function openImportModal() {
@@ -1492,12 +1547,25 @@ document.getElementById('importConfirmBtn').addEventListener('click', () => {
 // Auto-populate textarea when a file is selected
 importFileInput.addEventListener('change', () => {
     if (importFileInput.files.length > 0) {
+        fileDropName.textContent = importFileInput.files[0].name;
         const reader = new FileReader();
         reader.onload = () => {
             importJsonArea.value = reader.result;
             importError.style.display = 'none';
         };
         reader.readAsText(importFileInput.files[0]);
+    }
+});
+
+// Drag-and-drop visual feedback
+fileDropZone.addEventListener('dragover', (e) => { e.preventDefault(); fileDropZone.classList.add('drag-over'); });
+fileDropZone.addEventListener('dragleave', () => { fileDropZone.classList.remove('drag-over'); });
+fileDropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileDropZone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length > 0) {
+        importFileInput.files = e.dataTransfer.files;
+        importFileInput.dispatchEvent(new Event('change'));
     }
 });
 
@@ -1714,22 +1782,59 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* ---------------------------
- * Parameter tooltips (fixed-position to escape overflow)
+ * Tooltips (unified, fixed-position to escape overflow)
  * ---------------------------
  */
 const paramTooltip = document.getElementById('paramTooltip');
-document.querySelectorAll('.label-info[data-tooltip]').forEach(label => {
-    label.addEventListener('mouseenter', () => {
-        const rect = label.getBoundingClientRect();
-        paramTooltip.textContent = label.getAttribute('data-tooltip');
+
+function showTooltip(el) {
+    const rect = el.getBoundingClientRect();
+    paramTooltip.textContent = el.getAttribute('data-tooltip');
+    if (el.closest('.panel')) {
         paramTooltip.style.left = (rect.right + 8) + 'px';
         paramTooltip.style.top = (rect.top + rect.height / 2) + 'px';
         paramTooltip.style.transform = 'translateY(-50%)';
-        paramTooltip.classList.add('visible');
-    });
-    label.addEventListener('mouseleave', () => {
-        paramTooltip.classList.remove('visible');
-    });
+    } else {
+        paramTooltip.style.left = (rect.left + rect.width / 2) + 'px';
+        paramTooltip.style.top = (rect.bottom + 6) + 'px';
+        paramTooltip.style.transform = 'translateX(-50%)';
+    }
+    paramTooltip.classList.add('visible');
+}
+
+function hideTooltip() {
+    paramTooltip.classList.remove('visible');
+}
+
+document.querySelectorAll('[data-tooltip]').forEach(el => {
+    el.addEventListener('mouseenter', () => showTooltip(el));
+    el.addEventListener('mouseleave', hideTooltip);
+
+    // Long-press on buttons: show tooltip instead of activating
+    if (el.tagName === 'BUTTON') {
+        let pressTimer = null;
+        let didLongPress = false;
+
+        el.addEventListener('touchstart', (e) => {
+            didLongPress = false;
+            pressTimer = setTimeout(() => {
+                didLongPress = true;
+                showTooltip(el);
+            }, 400);
+        }, { passive: true });
+
+        el.addEventListener('touchend', (e) => {
+            clearTimeout(pressTimer);
+            if (didLongPress) {
+                e.preventDefault();
+                setTimeout(hideTooltip, 1500);
+            }
+        });
+
+        el.addEventListener('touchmove', () => {
+            clearTimeout(pressTimer);
+        }, { passive: true });
+    }
 });
 
 /* ---------------------------
@@ -1752,13 +1857,29 @@ document.querySelectorAll('.sub-collapsible-toggle').forEach(btn => {
     });
 });
 
-/* Profiles header toggle */
-el.profilesToggle.addEventListener('click', () => {
-    const expanded = el.profilesToggle.getAttribute('aria-expanded') === 'true';
-    el.profilesToggle.setAttribute('aria-expanded', String(!expanded));
-    el.profileGallery.style.display = expanded ? 'none' : '';
+/* Gallery header toggle */
+el.galleryToggle.addEventListener('click', () => {
+    const expanded = el.galleryToggle.getAttribute('aria-expanded') === 'true';
+    el.galleryToggle.setAttribute('aria-expanded', String(!expanded));
+    el.galleryContent.classList.toggle('collapsed', expanded);
 });
 
+/* Gallery sub-section toggles */
+document.querySelectorAll('.gallery-section-header').forEach(header => {
+    header.addEventListener('click', () => {
+        const expanded = header.getAttribute('aria-expanded') === 'true';
+        header.setAttribute('aria-expanded', String(!expanded));
+        const target = document.getElementById(header.dataset.target);
+        if (target) target.classList.toggle('collapsed', expanded);
+    });
+});
+
+/* Active card config toggle (chevron) */
+el.activeCardToggle.addEventListener('click', () => {
+    const expanded = el.activeCardToggle.getAttribute('aria-expanded') === 'true';
+    el.activeCardToggle.setAttribute('aria-expanded', String(!expanded));
+    document.getElementById('configControls').classList.toggle('collapsed', expanded);
+});
 
 /* Config randomize button */
 document.getElementById('configRandomizeBtn').addEventListener('click', async (e) => {
@@ -1777,15 +1898,6 @@ document.getElementById('historyForwardBtn').addEventListener('click', () => {
     if (historyIndex < randHistory.length - 1) {
         historyIndex++;
         restoreSnapshot(randHistory[historyIndex]);
-    }
-});
-
-/* Stage save button */
-document.getElementById('stageSaveBtn').addEventListener('click', () => {
-    saveCurrentProfile();
-    if (!dirty) {
-        userEdited = false;
-        toast('Profile saved.');
     }
 });
 
@@ -1834,67 +1946,11 @@ function initPanelToggle() {
     }
 }
 
-/* ── Fullscreen ── */
-
-const renderCard = document.getElementById('renderCard');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-const fullscreenCloseBtn = document.getElementById('fullscreenClose');
-
-function initFullscreen() {
-    if (!renderCard || !fullscreenBtn) return;
-
-    fullscreenBtn.addEventListener('click', () => {
-        if (renderCard.requestFullscreen) {
-            renderCard.requestFullscreen();
-        } else if (renderCard.webkitRequestFullscreen) {
-            renderCard.webkitRequestFullscreen();
-        }
-    });
-
-    if (fullscreenCloseBtn) {
-        fullscreenCloseBtn.addEventListener('click', () => {
-            if (document.fullscreenElement || document.webkitFullscreenElement) {
-                (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-            }
-        });
-    }
-
-    function onFullscreenChange() {
-        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
-        if (isFullscreen) {
-            cancelPendingRender();
-            showCanvasOverlay('');
-            requestAnimationFrame(() => {
-                const seed = el.seed.value.trim() || 'seed';
-                const controls = readControlsFromUI();
-                updateSliderLabels(controls);
-                sendRenderRequest(seed, controls, {
-                    deliberate: true,
-                    callback() {
-                        scheduleTextRefresh();
-                        hideCanvasOverlay();
-                    },
-                });
-            });
-        } else {
-            // Re-render at normal size — ResizeObserver clears the WebGL buffer on shrink
-            requestAnimationFrame(() => {
-                const seed = el.seed.value.trim() || 'seed';
-                const controls = readControlsFromUI();
-                sendRenderRequest(seed, controls);
-            });
-        }
-    }
-    document.addEventListener('fullscreenchange', onFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
-}
-
 /* ---------------------------
  * Init
  * ---------------------------
  */
 initPanelToggle();
-initFullscreen();
 initTopologySelector();
 initPaletteSelector();
 restorePaletteTweaksFromStorage();
@@ -1903,11 +1959,14 @@ createFaviconAnimation().start();
 statementContentReady = loadStatementContent();
 ensureStarterProfiles();
 
-// Load the first available profile
-const startProfiles = loadProfiles();
-const startNames = Object.keys(startProfiles).sort((a, b) => a.localeCompare(b));
-if (startNames.length > 0) loadProfileIntoUI(startNames[0]);
-updateSliderLabels(readControlsFromUI());
+// Move configControls into the Active section (starts collapsed)
+const configControls = document.getElementById('configControls');
+el.activeSection.appendChild(configControls);
+configControls.style.display = '';
+configControls.classList.add('collapsed');
+
+// Random configuration on every page load
+randomizeUI();
 refreshProfileGallery();
 
 showCanvasOverlay('');
