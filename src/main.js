@@ -119,6 +119,7 @@ const TOPOLOGY_VALUES = ['flow-field', 'icosahedral', 'mobius', 'multi-attractor
 let renderWorker = null;
 let workerReady = false;
 let fallbackRenderer = null;
+let initComplete = false;
 let requestIdCounter = 0;
 const pendingCallbacks = new Map();
 
@@ -908,6 +909,7 @@ function renderStillCanvas() {
 }
 
 function onControlChange() {
+    if (!initComplete) return;
     updateSliderLabels(readControlsFromUI());
     scheduleTextRefresh();
     setStillRendered(false);
@@ -1916,6 +1918,7 @@ function doInitialRender() {
     renderAndUpdate(seed, controls, { animate: true });
     setStillRendered(true);
     refreshProfileGallery();
+    initComplete = true;
 }
 
 if (!renderWorker) {

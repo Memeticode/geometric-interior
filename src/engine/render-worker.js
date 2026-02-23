@@ -13,6 +13,7 @@ let offscreenCanvas = null;
 /* ── Request coalescing ── */
 let pendingRender = null;
 let renderScheduled = false;
+let lastRenderReq = null;
 
 function scheduleFrame(fn) {
     if (typeof requestAnimationFrame === 'function') {
@@ -49,6 +50,7 @@ function doRender() {
         }
 
         const meta = renderer.renderWith(req.seed, req.controls);
+        lastRenderReq = req;
 
         self.postMessage({
             type: 'rendered',
@@ -88,8 +90,17 @@ self.onmessage = function (e) {
 
         case 'resize':
             if (renderer) {
-                renderer.resize(msg.width, msg.height);
                 if (msg.dpr) renderer.setDPR(msg.dpr);
+                // Don't resize eagerly — it clears the framebuffer.
+                // Instead, re-render at the new size so the canvas is never blank.
+                if (lastRenderReq) {
+                    lastRenderReq.width = msg.width;
+                    lastRenderReq.height = msg.height;
+                    pendingRender = lastRenderReq;
+                    scheduleRender();
+                } else {
+                    renderer.resize(msg.width, msg.height);
+                }
             }
             break;
 
