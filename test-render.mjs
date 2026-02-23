@@ -1,16 +1,26 @@
 import { chromium } from 'playwright';
+import { unlinkSync } from 'fs';
 
 const COMBOS = [
-    // Matched to reference: violet-depth-plane-cluster.png
-    { name: 'violet-flow', topology: 'flow-field', palette: 'violet-depth', density: 0.65, luminosity: 0.70, fracture: 0.35, depth: 0.40, coherence: 0.50 },
-    // Matched to reference: warm-spectrum-layered-field.png
+    // Midpoint: all sliders at 0.5 = exact demo defaults
+    { name: 'midpoint', topology: 'flow-field', palette: 'violet-depth', density: 0.50, luminosity: 0.50, fracture: 0.50, depth: 0.50, coherence: 0.50 },
+    // Extremes: each slider at 0 or 1, others at 0.5
+    { name: 'density-lo', topology: 'flow-field', palette: 'violet-depth', density: 0.00, luminosity: 0.50, fracture: 0.50, depth: 0.50, coherence: 0.50 },
+    { name: 'density-hi', topology: 'flow-field', palette: 'violet-depth', density: 1.00, luminosity: 0.50, fracture: 0.50, depth: 0.50, coherence: 0.50 },
+    { name: 'luminosity-lo', topology: 'flow-field', palette: 'violet-depth', density: 0.50, luminosity: 0.00, fracture: 0.50, depth: 0.50, coherence: 0.50 },
+    { name: 'luminosity-hi', topology: 'flow-field', palette: 'violet-depth', density: 0.50, luminosity: 1.00, fracture: 0.50, depth: 0.50, coherence: 0.50 },
+    { name: 'fracture-lo', topology: 'flow-field', palette: 'violet-depth', density: 0.50, luminosity: 0.50, fracture: 0.00, depth: 0.50, coherence: 0.50 },
+    { name: 'fracture-hi', topology: 'flow-field', palette: 'violet-depth', density: 0.50, luminosity: 0.50, fracture: 1.00, depth: 0.50, coherence: 0.50 },
+    { name: 'depth-lo', topology: 'flow-field', palette: 'violet-depth', density: 0.50, luminosity: 0.50, fracture: 0.50, depth: 0.00, coherence: 0.50 },
+    { name: 'depth-hi', topology: 'flow-field', palette: 'violet-depth', density: 0.50, luminosity: 0.50, fracture: 0.50, depth: 1.00, coherence: 0.50 },
+    { name: 'coherence-lo', topology: 'flow-field', palette: 'violet-depth', density: 0.50, luminosity: 0.50, fracture: 0.50, depth: 0.50, coherence: 0.00 },
+    { name: 'coherence-hi', topology: 'flow-field', palette: 'violet-depth', density: 0.50, luminosity: 0.50, fracture: 0.50, depth: 0.50, coherence: 1.00 },
+    // All extremes
+    { name: 'all-zero', topology: 'flow-field', palette: 'violet-depth', density: 0.00, luminosity: 0.00, fracture: 0.00, depth: 0.00, coherence: 0.00 },
+    { name: 'all-one', topology: 'flow-field', palette: 'violet-depth', density: 1.00, luminosity: 1.00, fracture: 1.00, depth: 1.00, coherence: 1.00 },
+    // Starter profiles
     { name: 'warm-flow', topology: 'flow-field', palette: 'warm-spectrum', density: 0.70, luminosity: 0.75, fracture: 0.40, depth: 0.35, coherence: 0.45 },
-    // Matched to reference: teal-volumetric-plane-burst.png
-    { name: 'teal-flow', topology: 'flow-field', palette: 'teal-volumetric', density: 0.55, luminosity: 0.80, fracture: 0.50, depth: 0.45, coherence: 0.55 },
-    // Matched to reference: prismatic-energy-intersections.png
     { name: 'prismatic-attractor', topology: 'multi-attractor', palette: 'prismatic', density: 0.60, luminosity: 0.65, fracture: 0.55, depth: 0.35, coherence: 0.45 },
-    // Matched to reference: faceted-iridescent-crystal-lattice.png
-    { name: 'crystal-icosahedral', topology: 'icosahedral', palette: 'crystal-lattice', density: 0.65, luminosity: 0.65, fracture: 0.70, depth: 0.30, coherence: 0.60 },
 ];
 
 const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle'] });
@@ -19,7 +29,7 @@ const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
 const errors = [];
 page.on('pageerror', err => errors.push(err.message));
 
-await page.goto('http://localhost:5204', { waitUntil: 'networkidle', timeout: 15000 });
+await page.goto('http://localhost:5204', { waitUntil: 'domcontentloaded', timeout: 30000 });
 await page.waitForTimeout(3000);
 
 for (const combo of COMBOS) {
@@ -75,5 +85,13 @@ if (errors.length) {
     console.log('\n=== PAGE ERRORS ===');
     for (const e of errors) console.log(e);
 }
+
+// Clean up test images
+console.log('\nCleaning up test images...');
+for (const combo of COMBOS) {
+    const path = `test-${combo.name}.png`;
+    try { unlinkSync(path); } catch { /* already gone */ }
+}
+console.log('Done.');
 
 await browser.close();

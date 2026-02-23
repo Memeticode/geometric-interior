@@ -2,6 +2,8 @@
  * Profile storage (localStorage) and loop list UI rendering.
  */
 
+import starterProfiles from '../core/starter-profiles.json';
+
 const LS_KEY = 'geo_self_portrait_profiles_v3';
 const ANIM_LS_KEY = 'geo_self_portrait_anim_profiles_v1';
 
@@ -132,35 +134,14 @@ export function removeImageFromAnimProfiles(imageName) {
 export function ensureStarterProfiles() {
     const profiles = loadProfiles();
     if (Object.keys(profiles).length === 0) {
-        saveProfiles({
-            'Violet Crystalline (Starter)': {
-                seed: 'The weight of crystallized doubt finds its shape.',
-                controls: { topology: 'flow-field', palette: 'violet-depth', density: 0.65, luminosity: 0.70, fracture: 0.35, depth: 0.40, coherence: 0.50 }
-            },
-            'Warm Drift (Starter)': {
-                seed: 'The last breath of slow fire drifts apart.',
-                controls: { topology: 'flow-field', palette: 'warm-spectrum', density: 0.70, luminosity: 0.75, fracture: 0.40, depth: 0.35, coherence: 0.45 }
-            },
-            'Teal Convergence (Starter)': {
-                seed: 'An architecture of liquid geometry holds the room.',
-                controls: { topology: 'flow-field', palette: 'teal-volumetric', density: 0.55, luminosity: 0.80, fracture: 0.50, depth: 0.45, coherence: 0.55 }
-            },
-            'Prismatic Energy (Starter)': {
-                seed: 'Refracting through every thought left unsaid.',
-                controls: { topology: 'multi-attractor', palette: 'prismatic', density: 0.60, luminosity: 0.65, fracture: 0.55, depth: 0.35, coherence: 0.45 }
-            },
-            'Crystal Lattice (Starter)': {
-                seed: 'A cathedral of frozen lightning and quiet geometry.',
-                controls: { topology: 'icosahedral', palette: 'crystal-lattice', density: 0.65, luminosity: 0.65, fracture: 0.70, depth: 0.30, coherence: 0.60 }
-            }
-        });
+        saveProfiles(structuredClone(starterProfiles));
     }
 
     const animProfiles = loadAnimProfiles();
     if (Object.keys(animProfiles).length === 0) {
         saveAnimProfiles({
-            'Chromatic Cycle (Starter)': {
-                landmarks: ['Violet Crystalline (Starter)', 'Warm Drift (Starter)', 'Teal Convergence (Starter)', 'Prismatic Energy (Starter)', 'Crystal Lattice (Starter)'],
+            'Chromatic Cycle': {
+                landmarks: ['Violet Crystalline', 'Warm Drift', 'Teal Convergence', 'Prismatic Energy', 'Crystal Lattice'],
                 durationMs: 7000,
                 seed: 'The space where radiant emptiness begins to sing.',
             }

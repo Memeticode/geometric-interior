@@ -210,6 +210,11 @@
             border-right-color: transparent;
         }
 
+        /* ── Panel drawer backdrop (tablet/mobile only) ── */
+        .panel-backdrop {
+            display: none;
+        }
+
         .sub {
             font-size: 0.75rem;
             color: var(--text-muted);
@@ -561,7 +566,7 @@
 
         textarea.auto-grow {
             resize: none;
-            min-height: 0;
+            min-height: unset;
             overflow: hidden;
             field-sizing: content;
         }
@@ -653,12 +658,15 @@
 
         .toast {
             font-size: 0.75rem;
-            opacity: 0.9;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
         }
 
         .toast:not(:empty) {
             margin-top: 0.625rem;
             min-height: 1.125rem;
+            opacity: 0.9;
         }
 
         /* ── Label info wrapper + tooltip ── */
@@ -716,6 +724,7 @@
             display: grid;
             gap: 0.5rem;
             margin-top: 0.375rem;
+            overflow: hidden;
         }
 
         .profile-card {
@@ -729,7 +738,7 @@
             border: 1px solid var(--border);
             background: var(--surface);
             cursor: pointer;
-            transition: background-color 0.2s, border-color 0.2s;
+            transition: background-color 0.35s ease, border-color 0.35s ease;
         }
 
         .profile-card img.profile-thumb {
@@ -744,6 +753,10 @@
             font-size: 0.75rem;
             margin-bottom: 0.375rem;
             line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding-right: 2.5rem;
         }
 
         .profile-card-actions {
@@ -799,6 +812,49 @@
             background: var(--accent-bg);
         }
 
+        /* ── Unsaved profile card state ── */
+        .active-profile-display.dirty .profile-thumb {
+            filter: grayscale(1) opacity(0.5);
+        }
+
+        .profile-card-unsaved-label {
+            font-size: 0.625rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+            display: none;
+        }
+
+        .active-profile-display.dirty .profile-card-unsaved-label {
+            display: block;
+        }
+
+        .profile-card-save {
+            position: absolute;
+            top: 0.375rem;
+            right: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.6875rem;
+            border-radius: 6px;
+            border: 1px solid var(--accent);
+            background: var(--accent-bg);
+            color: var(--text);
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: none;
+        }
+
+        .active-profile-display.dirty .profile-card-save {
+            display: block;
+        }
+
+        .profile-card-save:hover {
+            background: var(--accent);
+        }
+
+        .active-profile-display.dirty .profile-card-delete {
+            display: none;
+        }
+
         .profile-card-details {
             grid-column: 1 / -1;
             padding: 0;
@@ -826,26 +882,6 @@
             pointer-events: auto;
         }
 
-        .profile-card-chevron {
-            position: absolute;
-            top: calc(0.5rem + 32px);
-            right: 0.625rem;
-            font-size: 1.125rem;
-            color: var(--text-muted);
-            opacity: 0.4;
-            transition: transform 0.3s ease, opacity 0.2s;
-            pointer-events: none;
-            transform: rotate(-90deg);
-        }
-
-        .profile-card:hover .profile-card-chevron {
-            opacity: 0.8;
-        }
-
-        .profile-card.expanded .profile-card-chevron {
-            transform: rotate(0deg);
-        }
-
         /* ── Profile gallery pane (toggled by active card click) ── */
         .profile-gallery-pane {
             overflow: hidden;
@@ -857,6 +893,61 @@
         .profile-gallery-pane.collapsed {
             max-height: 0;
             opacity: 0;
+        }
+
+        /* ── Profiles wrapper (mirrors .collapsible hover indicator) ── */
+        .profiles-wrapper {
+            border: 1px solid transparent;
+            border-radius: 12px;
+            padding: 0.125rem;
+            transition: border-color 0.2s;
+        }
+
+        .profiles-wrapper:has(.profiles-header:hover) {
+            border-color: var(--border-strong);
+        }
+
+        /* ── Profiles header (mirrors .collapsible-toggle) ── */
+        .profiles-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 0.5rem 0.25rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 8px;
+        }
+
+        .profiles-header-right {
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .config-randomize-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            border: 1px solid var(--border-strong);
+            background: var(--surface-hover);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            padding: 0.5625rem 0.6875rem;
+        }
+
+        .config-randomize-btn:hover {
+            background: var(--surface-active);
+            color: var(--text);
+        }
+
+        .profiles-header[aria-expanded="false"] .collapsible-chevron {
+            transform: rotate(-90deg);
         }
 
         .profile-card-details dl {
@@ -902,25 +993,40 @@
             max-width: 100vw;
         }
 
+        /* ── Stage header (buttons above name + seed) ── */
+        .stage-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0 1rem;
+        }
+
+        .stage-header-info {
+            min-width: 0;
+            text-align: center;
+            width: 100%;
+        }
+
         /* ── Render card ── */
         .render-card {
-            border: 1px solid var(--border);
             border-radius: 18px;
             overflow: hidden;
-            box-shadow: 0 20px 80px var(--shadow);
+        }
+
+        .generated-text-wrap {
+            border-top: 1px solid var(--border);
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.35s ease;
         }
 
         .render-card .generated-title {
-            padding: 0.875rem 1rem 0.5rem;
+            padding: 0.625rem 1rem 0;
         }
 
         .render-card .generated-alt {
-            padding: 0.625rem 1rem 0.875rem;
-        }
-
-        .render-card .generated-title:empty,
-        .render-card .generated-alt:empty {
-            padding: 0;
+            padding: 0.25rem 1rem 0.875rem;
         }
 
         .canvas-wrapper {
@@ -1022,11 +1128,8 @@
 
         .render-card:fullscreen .canvas-wrapper canvas,
         .render-card:-webkit-full-screen .canvas-wrapper canvas {
-            width: auto;
-            height: auto;
-            max-width: 100vw;
-            max-height: 100vh;
-            object-fit: contain;
+            width: 100vw;
+            height: 100vh;
         }
 
         .render-card:fullscreen .generated-title,
@@ -1057,6 +1160,11 @@
             background: rgba(0, 0, 0, 0.7);
         }
 
+        .render-card:fullscreen .canvas-overlay,
+        .render-card:-webkit-full-screen .canvas-overlay {
+            background: #000;
+        }
+
         .render-card:fullscreen .fullscreen-close,
         .render-card:-webkit-full-screen .fullscreen-close {
             display: block;
@@ -1066,7 +1174,15 @@
         .stage-header-btns {
             display: flex;
             gap: 0.5rem;
-            align-self: flex-end;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .stage-header-btns .btn-sep {
+            width: 1px;
+            align-self: stretch;
+            background: var(--border);
+            margin: 0.125rem 0;
         }
 
 
@@ -1124,7 +1240,8 @@
             opacity: 0;
         }
 
-        .collapsible-content.no-transition {
+        .collapsible-content.no-transition,
+        .panel.no-transition {
             transition: none;
         }
 
@@ -1233,18 +1350,37 @@
             50% { background: transparent; }
         }
 
-        .generated-title {
+        .display-name {
+            font-size: 1rem;
             font-weight: 650;
+            text-align: left;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .display-intent {
+            font-size: 0.8125rem;
+            font-style: italic;
+            color: var(--text-muted);
+            text-align: left;
+            max-width: 100%;
+            line-height: 1.4;
+        }
+
+        .generated-title {
+            font-weight: 600;
             font-size: 0.8125rem;
             letter-spacing: 0.3px;
-            text-align: left;
+            text-align: center;
             max-width: 100%;
         }
 
         .generated-alt {
             font-size: 0.75rem;
             line-height: 1.5;
-            text-align: left;
+            text-align: center;
             max-width: 100%;
             color: var(--text-muted);
             white-space: pre-wrap;
@@ -1395,6 +1531,37 @@
             padding: 1.25rem;
             flex: 0 1 auto;
             min-height: 0;
+        }
+
+        .confirm-actions {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0 1.25rem 1.25rem;
+            justify-content: center;
+        }
+
+        .confirm-actions button {
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            transition: background-color 0.2s;
+        }
+
+        .confirm-actions button:hover {
+            background: var(--surface-hover);
+        }
+
+        .confirm-actions button.primary {
+            background: var(--accent-bg);
+            border-color: var(--accent);
+        }
+
+        .confirm-actions button.primary:hover {
+            filter: brightness(1.1);
         }
 
         .manifesto {
@@ -1613,26 +1780,55 @@
         @media (max-width: 1023px) {
             .app-body {
                 grid-template-columns: 1fr;
-                grid-template-rows: auto 1fr;
+                grid-template-rows: 1fr;
             }
 
             .panel {
-                width: auto;
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-                overflow: visible;
-                transition: max-height 0.35s ease, padding 0.3s ease, opacity 0.25s ease, border-color 0.3s ease;
-                max-height: 2000px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                width: min(22.5rem, 85vw);
+                max-height: none;
+                border-right: 1px solid var(--border);
+                border-bottom: none;
+                overflow-y: auto;
+                overflow-x: hidden;
+                z-index: 500;
+                transform: translateX(0);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                            opacity 0.3s ease,
+                            visibility 0.3s;
+                opacity: 1;
+                visibility: visible;
+                box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
             }
 
             .panel.panel-collapsed {
-                width: auto;
-                max-height: 0;
-                padding-top: 0;
-                padding-bottom: 0;
+                transform: translateX(-100%);
                 opacity: 0;
-                overflow: hidden;
-                border-bottom-color: transparent;
+                visibility: hidden;
+                width: min(22.5rem, 85vw);
+                max-height: none;
+                padding: 0.5rem;
+                box-shadow: none;
+            }
+
+            .panel-backdrop {
+                display: block;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 499;
+                opacity: 1;
+                visibility: visible;
+                transition: opacity 0.3s ease, visibility 0.3s;
+            }
+
+            .panel-backdrop.hidden {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
             }
 
             .app-container {
@@ -1651,14 +1847,12 @@
                 font-size: 0.75rem;
             }
 
-            .app-body {
-                grid-template-columns: 1fr;
+            .panel {
+                width: min(20rem, 85vw);
+                padding: 0.375rem;
             }
 
-            .panel {
-                border-right: none;
-                border-bottom: 1px solid var(--border);
-                overflow: visible;
+            .panel.panel-collapsed {
                 padding: 0.375rem;
             }
 
@@ -1671,13 +1865,8 @@
                 width: 100%;
             }
 
-            .stage-header-btns {
-                width: 100%;
-                align-self: stretch;
-            }
-
-            .stage-header-btns button {
-                flex: 1;
+            .stage-header {
+                padding: 0 0.5rem;
             }
 
             .render-card {
@@ -1742,35 +1931,43 @@
     </header>
 
     <div class="app-body">
-        <aside class="panel">
+        <script>
+            if (localStorage.getItem('geo-self-portrait-panel-collapsed') === 'false') {
+                document.write('<aside class="panel no-transition" aria-label="Controls panel" aria-hidden="false">');
+            } else {
+                document.write('<aside class="panel panel-collapsed no-transition" aria-label="Controls panel" aria-hidden="true">');
+            }
+        </script>
             <section id="imageModeSection">
-                <div id="activeProfileDisplay" class="active-profile-display"></div>
-                <div class="profile-gallery-pane collapsed" id="profilesContent">
-                    <div id="profileGallery" class="profile-gallery"></div>
+                <div class="profiles-wrapper">
+                    <div class="profiles-header" id="profilesToggle" aria-expanded="false">
+                        <span class="collapsible-label">Profiles</span>
+                        <span class="profiles-header-right">
+                            <span class="collapsible-chevron">&#9662;</span>
+                        </span>
+                    </div>
+                    <div id="activeProfileDisplay" class="active-profile-display"></div>
+                    <div class="profile-gallery-pane collapsed" id="profilesContent">
+                        <div id="profileGallery" class="profile-gallery"></div>
+                    </div>
                 </div>
 
                 <div class="collapsible">
-                    <button class="collapsible-toggle" aria-expanded="false" data-target="configContent" data-desktop-expand>
+                    <button class="collapsible-toggle" aria-expanded="false" data-target="configContent">
                         <span class="collapsible-label">Configuration</span>
                         <span class="collapsible-chevron">&#9662;</span>
                     </button>
                     <div class="collapsible-content collapsed" id="configContent">
 
                 <div class="row">
-                    <div class="row-inline row-inline-even">
-                        <button id="saveProfile" disabled>Save Profile</button>
-                        <button id="randomize">Randomize</button>
-                    </div>
-                </div>
-
-                <div class="row">
                     <label><span class="label-info" data-tooltip="Display name for this configuration. Used when saving a profile." data-label="Name">Name<span class="info-icon">i</span></span></label>
-                    <input type="text" id="profileNameField" maxlength="80" placeholder="e.g. Violet Crystalline" />
+                    <textarea id="profileNameField" class="auto-grow" rows="1" maxlength="40"
+                        placeholder="e.g. Violet Crystalline"></textarea>
                 </div>
 
                 <div class="row">
                     <label><span class="label-info" data-tooltip="Deterministic seed phrase. The same intent with the same controls always produces the same output." data-label="Intent (seed)">Intent (seed)<span class="info-icon">i</span></span></label>
-                    <textarea id="profileName" class="auto-grow" rows="1" maxlength="80"
+                    <textarea id="profileName" class="auto-grow" rows="1" maxlength="60"
                         placeholder="e.g. light arriving through crystal"></textarea>
                 </div>
 
@@ -1848,7 +2045,7 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Plane count and structural complexity. Low = sparse, essential forms; high = densely layered field." data-label="Density">Density<span class="info-icon">i</span></span> <span id="densityLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="Geometry count and structural mass. Low = sparse, minimal forms; high = densely layered field." data-label="Density">Density<span class="info-icon">i</span></span> <span id="densityLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="densityTrack"></div>
                         <input id="density" type="range" min="0" max="1" step="0.01" value="0.65" />
@@ -1856,7 +2053,7 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Light intensity and emissive strength. Low = dark, subdued; high = radiant, blazing from within." data-label="Luminosity">Luminosity<span class="info-icon">i</span></span> <span id="luminosityLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="Light intensity and glow. Low = dark, subdued; high = radiant, blazing from within." data-label="Luminosity">Luminosity<span class="info-icon">i</span></span> <span id="luminosityLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="luminosityTrack"></div>
                         <input id="luminosity" type="range" min="0" max="1" step="0.01" value="0.70" />
@@ -1864,7 +2061,7 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Edge complexity and fractalization. Low = clean geometric edges; high = shattered, splintered forms." data-label="Fracture">Fracture<span class="info-icon">i</span></span> <span id="fractureLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="Spatial complexity and fragmentation. Low = compact, smooth veils; high = expansive, shattered forms." data-label="Fracture">Fracture<span class="info-icon">i</span></span> <span id="fractureLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="fractureTrack"></div>
                         <input id="fracture" type="range" min="0" max="1" step="0.01" value="0.35" />
@@ -1872,7 +2069,7 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Spatial depth range and fog strength. Low = flat, intimate; high = deep recession into foggy space." data-label="Depth">Depth<span class="info-icon">i</span></span> <span id="depthLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="Camera zoom level. Low = close, intimate view; high = wide, expansive perspective." data-label="Depth">Depth<span class="info-icon">i</span></span> <span id="depthLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="depthTrack"></div>
                         <input id="depth" type="range" min="0" max="1" step="0.01" value="0.40" />
@@ -1880,14 +2077,14 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="How tightly planes follow the governing topology. Low = loose, chaotic; high = strict structural adherence." data-label="Coherence">Coherence<span class="info-icon">i</span></span> <span id="coherenceLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="Structural order. Low = loose, organic flow; high = tight, cohesive geometry." data-label="Coherence">Coherence<span class="info-icon">i</span></span> <span id="coherenceLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="coherenceTrack"></div>
                         <input id="coherence" type="range" min="0" max="1" step="0.01" value="0.50" />
                     </div>
                 </div>
 
-                <div class="row">
+                <div class="row" style="display:none">
                     <label><span class="label-info" data-tooltip="Governing spatial structure. Controls how planes are positioned and oriented in 3D space." data-label="Topology">Topology<span class="info-icon">i</span></span></label>
                     <input type="hidden" id="topology" value="flow-field" />
                     <div class="topology-selector" id="topologySelector">
@@ -1931,6 +2128,10 @@
                     </div>
                 </div>
 
+                <div class="row" style="margin-top: 0.75rem;">
+                    <button id="saveProfile" class="primary" disabled style="width:100%">Save to Browser Storage</button>
+                </div>
+
                     </div>
                 </div>
 
@@ -1938,19 +2139,66 @@
 
             <div class="toast" id="toast"></div>
         </aside>
+        <div class="panel-backdrop hidden" id="panelBackdrop"></div>
 
         <main class="stage">
             <div class="stage-content">
-                <div class="stage-header-btns">
-                    <button id="exportBtn" disabled>Export</button>
-                    <button id="fullscreenBtn" aria-label="View fullscreen">
-                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" style="vertical-align: -2px; margin-right: 0.25rem;">
-                            <path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>Fullscreen
-                    </button>
+                <div class="stage-header">
+                    <div class="stage-header-btns">
+                        <button id="fullscreenBtn" aria-label="View fullscreen" title="View fullscreen" disabled>
+                            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+                                <path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </button>
+                        <span class="btn-sep"></span>
+                        <button id="historyBackBtn" title="Previous randomization" disabled>
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <path d="M10 3L5 8l5 5"/>
+                            </svg>
+                        </button>
+                        <button class="config-randomize-btn" id="configRandomizeBtn"
+                                title="Randomize all configuration settings">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <rect x="2" y="2" width="12" height="12" rx="2"/>
+                                <circle cx="5.5" cy="5.5" r="0.75" fill="currentColor" stroke="none"/>
+                                <circle cx="10.5" cy="5.5" r="0.75" fill="currentColor" stroke="none"/>
+                                <circle cx="8" cy="8" r="0.75" fill="currentColor" stroke="none"/>
+                                <circle cx="5.5" cy="10.5" r="0.75" fill="currentColor" stroke="none"/>
+                                <circle cx="10.5" cy="10.5" r="0.75" fill="currentColor" stroke="none"/>
+                            </svg>
+                        </button>
+                        <button id="historyForwardBtn" title="Next randomization" disabled>
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <path d="M6 3l5 5-5 5"/>
+                            </svg>
+                        </button>
+                        <span class="btn-sep"></span>
+                        <button id="stageSaveBtn" title="Save profile" disabled>
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/>
+                                <path d="M5 1v4h6V1"/>
+                                <rect x="4" y="9" width="8" height="4"/>
+                            </svg>
+                        </button>
+                        <button id="exportBtn" disabled title="Export">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <path d="M8 2v8M4 7l4 4 4-4"/>
+                                <path d="M2 12v2h12v-2"/>
+                            </svg>
+                        </button>
+                        <button id="importBtn" title="Import profile">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <path d="M8 10V2M4 5l4-4 4 4"/>
+                                <path d="M2 12v2h12v-2"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="stage-header-info">
+                        <div class="display-name" id="displayName"></div>
+                        <div class="display-intent" id="displayIntent"></div>
+                    </div>
                 </div>
                 <div class="render-card" id="renderCard">
-                    <div class="generated-title" id="titleText"></div>
                     <button class="fullscreen-close" id="fullscreenClose" aria-label="Exit fullscreen">
                         <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
                             <line x1="5" y1="5" x2="15" y2="15" stroke-linecap="round"/>
@@ -1965,18 +2213,17 @@
                             </div>
                         </div>
                     </div>
-                    <div class="generated-alt" id="altText"></div>
+                    <div class="generated-text-wrap" id="textWrap">
+                        <div class="generated-text-inner" id="textInner">
+                            <div class="generated-title" id="titleText"></div>
+                            <div class="generated-alt" id="altText"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
         <footer class="app-footer">
             <div class="footer-content">
-                <div class="theme-switcher" id="themeSwitcher">
-                    <div class="theme-slider" id="themeSlider"></div>
-                    <button class="theme-option" data-theme="system">System</button>
-                    <button class="theme-option" data-theme="light">Light</button>
-                    <button class="theme-option" data-theme="dark">Dark</button>
-                </div>
                 <a href="https://github.com/Memeticode/symmetrical-barnacle" target="_blank" rel="noopener"
                     class="footer-link footer-github">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -1984,6 +2231,12 @@
                     </svg>
                     GitHub
                 </a>
+                <div class="theme-switcher" id="themeSwitcher">
+                    <div class="theme-slider" id="themeSlider"></div>
+                    <button class="theme-option" data-theme="system">System</button>
+                    <button class="theme-option" data-theme="light">Light</button>
+                    <button class="theme-option" data-theme="dark">Dark</button>
+                </div>
             </div>
         </footer>
         </main>
@@ -2016,11 +2269,46 @@
         </div>
     </div>
 
+    <div id="confirmModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width: 24rem;">
+            <div class="modal-header">
+                <span class="modal-title" id="confirmTitle"></span>
+            </div>
+            <div class="modal-body" id="confirmBody" style="text-align: center; padding: 1.25rem;"></div>
+            <div class="confirm-actions" id="confirmActions"></div>
+        </div>
+    </div>
+
     <div id="infoModal" class="info-modal-overlay hidden" role="dialog" aria-modal="true">
         <div class="info-modal-box">
             <div class="info-modal-title" id="infoModalTitle"></div>
             <div class="info-modal-body" id="infoModalBody"></div>
             <button id="infoModalClose" class="info-modal-close">&times;</button>
+        </div>
+    </div>
+
+    <div id="importModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width: 30rem;">
+            <div class="modal-header">
+                <span class="modal-title">Import Profile</span>
+                <button id="importModalClose" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <div class="section-label">Upload JSON file</div>
+                    <input type="file" id="importFile" accept=".json,application/json" style="font-size: 0.75rem; width: 100%;" />
+                </div>
+                <div style="text-align: center; font-size: 0.6875rem; color: var(--text-muted);">or</div>
+                <div>
+                    <div class="section-label">Paste JSON</div>
+                    <textarea id="importJson" rows="8" placeholder='{"Profile Name": {"seed": "...", "controls": {...}}}'></textarea>
+                </div>
+                <div id="importError" style="font-size: 0.75rem; color: #ff6666; display: none;"></div>
+                <div class="confirm-actions">
+                    <button id="importCancelBtn">Cancel</button>
+                    <button id="importConfirmBtn" class="primary">Import</button>
+                </div>
+            </div>
         </div>
     </div>
 

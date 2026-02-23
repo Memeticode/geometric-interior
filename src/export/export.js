@@ -167,6 +167,40 @@ export async function packageStillZip(canvas, { seed, controls, meta }) {
 }
 
 /**
+ * Package and download a still image ZIP from a pre-rendered PNG blob
+ * (used when canvas is owned by a Web Worker via OffscreenCanvas).
+ */
+export async function packageStillZipFromBlob(pngBlob, { seed, controls, meta, canvasWidth, canvasHeight }) {
+    const JSZip = window.JSZip;
+    if (!JSZip) throw new Error('JSZip not loaded');
+
+    const enrichedPng = await injectPngTextChunks(pngBlob, [
+        { keyword: 'Title', text: meta.title },
+        { keyword: 'Description', text: meta.altText },
+    ]);
+    const ts = toIsoLocalish(new Date());
+    const base = `still_${safeName(seed)}_${ts}`;
+
+    const zip = new JSZip();
+    zip.file(`${base}/image.png`, enrichedPng);
+    zip.file(`${base}/title.txt`, meta.title + '\n');
+    zip.file(`${base}/alt-text.txt`, meta.altText + '\n');
+
+    const metadata = {
+        kind: 'still',
+        seed,
+        controls,
+        title: meta.title,
+        generated_at: new Date().toISOString(),
+        canvas: { width: canvasWidth, height: canvasHeight },
+    };
+    zip.file(`${base}/metadata.json`, JSON.stringify(metadata, null, 2) + '\n');
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    downloadBlob(`${base}.zip`, zipBlob);
+}
+
+/**
  * Package and download an animation ZIP.
  */
 export async function packageAnimZip(rec, { landmarks, loopLandmarkNames, timeWarpStrength }) {

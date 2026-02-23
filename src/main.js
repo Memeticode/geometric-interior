@@ -6,18 +6,28 @@
 import { createRenderer } from './engine/create-renderer.js';
 import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults, getPalette } from './core/palettes.js';
 import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles } from './ui/profiles.js';
-import { packageStillZip } from './export/export.js';
+import { packageStillZip, packageStillZipFromBlob } from './export/export.js';
 import { initTheme } from './ui/theme.js';
-import { createLoadingAnimation } from './ui/loading-animation.js';
 import { createFaviconAnimation } from './ui/animated-favicon.js';
-import { generateTitle } from './core/text.js';
+import { generateTitle, generateAltText } from './core/text.js';
 import { xmur3, mulberry32 } from './core/prng.js';
 
 /* ---------------------------
  * DOM references
  * ---------------------------
  */
-const canvas = document.getElementById('c');
+let canvas = document.getElementById('c');
+
+// After Vite HMR, the canvas may have been transferred to a previous worker.
+// Detect this by checking the marker attribute set before transfer.
+if (canvas.dataset.transferred) {
+    const fresh = document.createElement('canvas');
+    fresh.id = canvas.id;
+    fresh.width = canvas.width;
+    fresh.height = canvas.height;
+    canvas.replaceWith(fresh);
+    canvas = fresh;
+}
 
 const el = {
     seed: document.getElementById('profileName'),
@@ -43,12 +53,16 @@ const el = {
 
     profileNameField: document.getElementById('profileNameField'),
     saveProfile: document.getElementById('saveProfile'),
-    randomize: document.getElementById('randomize'),
     profileGallery: document.getElementById('profileGallery'),
     activeProfileDisplay: document.getElementById('activeProfileDisplay'),
+    profilesToggle: document.getElementById('profilesToggle'),
 
     titleText: document.getElementById('titleText'),
     altText: document.getElementById('altText'),
+    textWrap: document.getElementById('textWrap'),
+    textInner: document.getElementById('textInner'),
+    displayName: document.getElementById('displayName'),
+    displayIntent: document.getElementById('displayIntent'),
     toast: document.getElementById('toast'),
 
     developerStatement: document.getElementById('developerStatement'),
@@ -64,6 +78,7 @@ const el = {
     canvasOverlay: document.getElementById('canvasOverlay'),
     canvasOverlayText: document.getElementById('canvasOverlayText'),
     exportBtn: document.getElementById('exportBtn'),
+    fullscreenBtn: document.getElementById('fullscreenBtn'),
 
     infoModal: document.getElementById('infoModal'),
     infoModalTitle: document.getElementById('infoModalTitle'),
@@ -100,9 +115,127 @@ const TOPOLOGY_VALUES = ['flow-field', 'icosahedral', 'mobius', 'multi-attractor
  * Module instances
  * ---------------------------
  */
-const renderer = createRenderer(canvas);
+let renderWorker = null;
+let workerReady = false;
+let fallbackRenderer = null;
+let requestIdCounter = 0;
+const pendingCallbacks = new Map();
 
-const loadingAnim = createLoadingAnimation(document.querySelector('.canvas-overlay-inner'));
+let workerInitTimer = null;
+
+function activateFallbackRenderer() {
+    if (fallbackRenderer) return; // already activated
+    console.warn('[render] Activating main-thread fallback renderer');
+    // After transferControlToOffscreen(), the original canvas can't render
+    // on the main thread. Replace it with a fresh canvas element.
+    const newCanvas = document.createElement('canvas');
+    newCanvas.id = canvas.id;
+    newCanvas.width = canvas.width;
+    newCanvas.height = canvas.height;
+    canvas.replaceWith(newCanvas);
+    canvas = newCanvas;
+    renderWorker = null;
+    workerReady = false;
+    fallbackRenderer = createRenderer(canvas);
+    doInitialRender();
+}
+
+function initWorkerRenderer() {
+    if (!canvas.transferControlToOffscreen) return null;
+    try {
+        const offscreen = canvas.transferControlToOffscreen();
+        canvas.dataset.transferred = '1';
+        const worker = new Worker(
+            new URL('./engine/render-worker.js', import.meta.url),
+            { type: 'module' },
+        );
+        worker.onmessage = onWorkerMessage;
+        worker.onerror = (err) => {
+            console.error('[render] Worker error:', err.message);
+            if (workerInitTimer) { clearTimeout(workerInitTimer); workerInitTimer = null; }
+            activateFallbackRenderer();
+        };
+        const rect = canvas.getBoundingClientRect();
+        worker.postMessage({
+            type: 'init',
+            canvas: offscreen,
+            width: rect.width,
+            height: rect.height,
+            dpr: window.devicePixelRatio,
+        }, [offscreen]);
+
+        // Timeout: if worker doesn't respond within 8s, fall back
+        workerInitTimer = setTimeout(() => {
+            workerInitTimer = null;
+            if (!workerReady) {
+                console.warn('[render] Worker init timed out, falling back');
+                activateFallbackRenderer();
+            }
+        }, 8000);
+
+        return worker;
+    } catch (err) {
+        console.warn('[render] Worker init failed, using main-thread fallback:', err);
+        return null;
+    }
+}
+
+function onWorkerMessage(e) {
+    const msg = e.data;
+    switch (msg.type) {
+        case 'ready':
+            if (workerInitTimer) { clearTimeout(workerInitTimer); workerInitTimer = null; }
+            workerReady = true;
+            doInitialRender();
+            break;
+        case 'rendered': {
+            lastNodeCount = msg.meta.nodeCount || 0;
+            const cb = pendingCallbacks.get(msg.requestId);
+            if (cb) { pendingCallbacks.delete(msg.requestId); cb(msg.meta); }
+            break;
+        }
+        case 'exported': {
+            const cb = pendingCallbacks.get(msg.requestId);
+            if (cb) { pendingCallbacks.delete(msg.requestId); cb(msg.blob); }
+            break;
+        }
+        case 'export-error': {
+            const cb = pendingCallbacks.get(msg.requestId);
+            if (cb) { pendingCallbacks.delete(msg.requestId); cb(null); }
+            break;
+        }
+        case 'error':
+            console.error('[render] Worker reported error:', msg.error);
+            if (workerInitTimer) { clearTimeout(workerInitTimer); workerInitTimer = null; }
+            activateFallbackRenderer();
+            break;
+    }
+}
+
+renderWorker = initWorkerRenderer();
+if (!renderWorker) {
+    fallbackRenderer = createRenderer(canvas);
+}
+
+// Track canvas size changes and forward to worker
+if (renderWorker) {
+    const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+            if (entry.target === canvas) {
+                const { width, height } = entry.contentRect;
+                if (width > 0 && height > 0 && workerReady) {
+                    renderWorker.postMessage({
+                        type: 'resize',
+                        width,
+                        height,
+                        dpr: window.devicePixelRatio,
+                    });
+                }
+            }
+        }
+    });
+    resizeObserver.observe(canvas);
+}
 
 /* ---------------------------
  * Thumbnail generator
@@ -434,12 +567,82 @@ let stillRendered = false;
 let loadedProfileName = '';
 
 /* ---------------------------
+ * Render dispatch
+ * ---------------------------
+ */
+let renderPending = false;
+let renderTimerId = null;
+let lastRenderTime = 0;
+const RENDER_THROTTLE_MS = 150;
+
+/**
+ * Send a render request to the worker (or fallback renderer).
+ * @param {string} seed
+ * @param {object} controls
+ * @param {object} [opts]
+ * @param {boolean} [opts.deliberate] - True for profile loads / randomize (not slider tweaks)
+ * @param {Function} [opts.callback] - Called with meta when render completes
+ */
+function sendRenderRequest(seed, controls, { deliberate = false, callback = null } = {}) {
+    const id = ++requestIdCounter;
+    if (callback) pendingCallbacks.set(id, callback);
+
+    if (renderWorker && workerReady) {
+        // Gather palette tweaks for the active palette
+        const paletteTweaks = {};
+        paletteTweaks[controls.palette] = readPaletteFromUI();
+
+        renderWorker.postMessage({
+            type: 'render',
+            seed,
+            controls,
+            paletteTweaks,
+            requestId: id,
+            deliberate,
+            width: canvas.clientWidth || canvas.getBoundingClientRect().width,
+            height: canvas.clientHeight || canvas.getBoundingClientRect().height,
+        });
+    } else if (fallbackRenderer) {
+        const meta = fallbackRenderer.renderWith(seed, controls);
+        lastNodeCount = meta.nodeCount || 0;
+        if (callback) { pendingCallbacks.delete(id); callback(meta); }
+    }
+}
+
+function scheduleRender() {
+    if (renderPending) return;
+    renderPending = true;
+    const elapsed = performance.now() - lastRenderTime;
+    const delay = Math.max(0, RENDER_THROTTLE_MS - elapsed);
+    renderTimerId = setTimeout(() => {
+        renderTimerId = null;
+        requestAnimationFrame(doRender);
+    }, delay);
+}
+
+function doRender() {
+    renderPending = false;
+    lastRenderTime = performance.now();
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    sendRenderRequest(seed, controls);
+}
+
+function cancelPendingRender() {
+    if (renderTimerId !== null) {
+        clearTimeout(renderTimerId);
+        renderTimerId = null;
+    }
+    renderPending = false;
+}
+
+/* ---------------------------
  * Controls reading/writing
  * ---------------------------
  */
 function readControlsFromUI() {
     return {
-        topology: el.topology.value,
+        topology: 'flow-field',
         palette: el.palette.value,
         density: parseFloat(el.density.value),
         luminosity: parseFloat(el.luminosity.value),
@@ -479,6 +682,11 @@ function toast(msg) {
     setTimeout(() => { if (el.toast.textContent === msg) el.toast.textContent = ''; }, 2400);
 }
 
+function syncDisplayFields() {
+    el.displayName.textContent = el.profileNameField.value.trim();
+    el.displayIntent.textContent = el.seed.value.trim();
+}
+
 function loadProfileIntoUI(name) {
     if (!name) return;
     const profiles = loadProfiles();
@@ -502,18 +710,29 @@ function loadProfileIntoUI(name) {
     }
     el.customPaletteEditor.classList.add('collapsed');
     loadedProfileName = name;
+    syncDisplayFields();
     setDirty(false);
+    userEdited = false;
 }
 
 function setStillRendered(value) {
     stillRendered = value;
     el.exportBtn.disabled = !value;
+    if (el.fullscreenBtn) el.fullscreenBtn.disabled = !value;
 }
 
 let dirty = false;
+let userEdited = false;
 function setDirty(value) {
     dirty = value;
     el.saveProfile.disabled = !value;
+    const stageSave = document.getElementById('stageSaveBtn');
+    if (stageSave) stageSave.disabled = !value;
+    el.activeProfileDisplay.classList.toggle('dirty', value);
+    if (value) {
+        const nameEl = el.activeProfileDisplay.querySelector('.profile-card-name');
+        if (nameEl) nameEl.textContent = el.profileNameField.value || 'Untitled';
+    }
 }
 
 function clearStillText() {
@@ -523,16 +742,71 @@ function clearStillText() {
     hideCanvasOverlay();
 }
 
-function showCanvasOverlay(text, showSpinner = false) {
+/* Debounced generated-text refresh */
+let lastNodeCount = 0;
+let textRefreshTimer = null;
+
+function refreshGeneratedText(animate) {
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    const titleRng = mulberry32(xmur3(seed + ':title')());
+    const title = generateTitle(controls, titleRng);
+    const altText = generateAltText(controls, lastNodeCount, title);
+    if (animate) {
+        playRevealAnimation(title, altText);
+    } else {
+        el.titleText.textContent = title;
+        el.altText.textContent = altText;
+        syncTextWrapHeight();
+    }
+}
+
+function scheduleTextRefresh() {
+    if (textRefreshTimer) clearTimeout(textRefreshTimer);
+    textRefreshTimer = setTimeout(() => {
+        textRefreshTimer = null;
+        refreshGeneratedText(true);
+    }, 1000);
+}
+
+function cancelTextRefresh() {
+    if (textRefreshTimer) { clearTimeout(textRefreshTimer); textRefreshTimer = null; }
+}
+
+function showCanvasOverlay(text) {
     el.canvasOverlayText.textContent = text;
     el.canvasOverlay.classList.remove('hidden');
-    if (showSpinner) loadingAnim.start();
-    else loadingAnim.stop();
 }
 
 function hideCanvasOverlay() {
     el.canvasOverlay.classList.add('hidden');
-    loadingAnim.stop();
+}
+
+/* Text wrap height animation */
+let textHeightRAF = null;
+
+function syncTextWrapHeight() {
+    const h = el.textInner.scrollHeight;
+    el.textWrap.style.maxHeight = h + 'px';
+}
+
+function startTextHeightSync() {
+    stopTextHeightSync();
+    let lastH = 0;
+    function poll() {
+        const h = el.textInner.scrollHeight;
+        if (h !== lastH) { el.textWrap.style.maxHeight = h + 'px'; lastH = h; }
+        textHeightRAF = requestAnimationFrame(poll);
+    }
+    textHeightRAF = requestAnimationFrame(poll);
+}
+
+function stopTextHeightSync() {
+    if (textHeightRAF) { cancelAnimationFrame(textHeightRAF); textHeightRAF = null; }
+}
+
+function collapseTextWrap() {
+    el.textWrap.style.maxHeight = '0';
 }
 
 /* Typewriter effect */
@@ -565,8 +839,10 @@ function typewriterEffect(element, text, charDelayMs, onComplete) {
 
 function playRevealAnimation(titleText, altText) {
     if (typewriterAbort) { typewriterAbort(); typewriterAbort = null; }
+    stopTextHeightSync();
     el.titleText.textContent = '';
     el.altText.textContent = '';
+    collapseTextWrap();
 
     // Canvas fades in immediately via 200ms CSS transition
     hideCanvasOverlay();
@@ -578,10 +854,15 @@ function playRevealAnimation(titleText, altText) {
     wrapper.appendChild(wipe);
     wipe.addEventListener('animationend', () => wipe.remove());
 
+    // Smoothly grow text area as typewriter adds characters
+    startTextHeightSync();
+
     // Text types as non-blocking decoration below the canvas
     const cancelTitle = typewriterEffect(el.titleText, titleText, 20, () => {
         const cancelAlt = typewriterEffect(el.altText, altText, 6, () => {
             typewriterAbort = null;
+            stopTextHeightSync();
+            syncTextWrapHeight();
         });
         typewriterAbort = cancelAlt;
     });
@@ -589,19 +870,26 @@ function playRevealAnimation(titleText, altText) {
 }
 
 function renderAndUpdate(seed, controls, { animate = false } = {}) {
+    cancelPendingRender();
+    cancelTextRefresh();
     if (animate) {
         el.canvasOverlay.classList.remove('hidden');
-        loadingAnim.stop();
         el.canvasOverlayText.textContent = '';
     }
-    const meta = renderer.renderWith(seed, controls);
-    if (animate) {
-        playRevealAnimation(meta.title, meta.altText);
-    } else {
-        el.titleText.textContent = meta.title;
-        el.altText.textContent = meta.altText;
-    }
-    return meta;
+    sendRenderRequest(seed, controls, {
+        deliberate: true,
+        callback(meta) {
+            lastNodeCount = meta.nodeCount || 0;
+            if (animate) {
+                playRevealAnimation(meta.title, meta.altText);
+            } else {
+                el.titleText.textContent = meta.title;
+                el.altText.textContent = meta.altText;
+                syncTextWrapHeight();
+            }
+            syncDisplayFields();
+        },
+    });
 }
 
 /* ---------------------------
@@ -612,14 +900,16 @@ function renderStillCanvas() {
     const seed = el.seed.value.trim() || 'seed';
     const controls = readControlsFromUI();
     updateSliderLabels(controls);
-    renderer.renderWith(seed, controls);
+    sendRenderRequest(seed, controls);
 }
 
 function onControlChange() {
-    renderStillCanvas();
-    clearStillText();
+    updateSliderLabels(readControlsFromUI());
+    scheduleTextRefresh();
     setStillRendered(false);
+    userEdited = true;
     setDirty(true);
+    scheduleRender();
 }
 
 /* ---------------------------
@@ -630,9 +920,19 @@ for (const id of SLIDER_KEYS) {
     el[id].addEventListener('input', onControlChange);
 }
 el.seed.addEventListener('change', onControlChange);
-el.profileNameField.addEventListener('input', () => setDirty(true));
+el.seed.addEventListener('input', () => {
+    syncDisplayFields();
+    scheduleTextRefresh();
+});
+el.profileNameField.addEventListener('input', () => {
+    userEdited = true;
+    setDirty(true);
+    syncDisplayFields();
+    const nameEl = el.activeProfileDisplay.querySelector('.profile-card-name');
+    if (nameEl) nameEl.textContent = el.profileNameField.value || 'Untitled';
+});
 
-el.saveProfile.addEventListener('click', () => {
+function saveCurrentProfile() {
     const name = el.profileNameField.value.trim();
     if (!name) { toast('Enter a name first.'); return; }
 
@@ -656,8 +956,10 @@ el.saveProfile.addEventListener('click', () => {
     loadedProfileName = name;
     refreshProfileGallery();
     setDirty(false);
-    toast(`Saved profile: ${name}`);
-});
+    userEdited = false;
+}
+
+el.saveProfile.addEventListener('click', saveCurrentProfile);
 
 /* ---------------------------
  * Randomize
@@ -704,11 +1006,95 @@ function generateIntent() {
     return phrase.charAt(0).toUpperCase() + phrase.slice(1) + '.';
 }
 
-el.randomize.addEventListener('click', () => {
+/* ---------------------------
+ * Randomization history
+ * ---------------------------
+ */
+const HISTORY_MAX = 5;
+let randHistory = [];
+let historyIndex = -1;
+
+function captureSnapshot() {
+    return {
+        seed: el.seed.value.trim(),
+        name: el.profileNameField.value.trim(),
+        controls: readControlsFromUI(),
+        paletteTweaks: readPaletteFromUI(),
+    };
+}
+
+function restoreSnapshot(snap) {
+    el.seed.value = snap.seed;
+    autoGrow(el.seed);
+    el.profileNameField.value = snap.name;
+    setControlsInUI(snap.controls);
+    el.customHue.value = snap.paletteTweaks.baseHue;
+    el.customHueRange.value = snap.paletteTweaks.hueRange;
+    el.customSat.value = snap.paletteTweaks.saturation;
+    el.customLit.value = snap.paletteTweaks.lightness;
+    syncPaletteEditor();
+    updateSliderLabels(snap.controls);
+    syncDisplayFields();
+    loadedProfileName = '';
+    refreshProfileGallery();
+    renderAndUpdate(snap.seed, snap.controls, { animate: true });
+    setStillRendered(true);
+    setDirty(true);
+    userEdited = false;
+}
+
+function updateHistoryButtons() {
+    const back = document.getElementById('historyBackBtn');
+    const fwd = document.getElementById('historyForwardBtn');
+    if (back) back.disabled = historyIndex <= 0;
+    if (fwd) fwd.disabled = historyIndex >= randHistory.length - 1;
+}
+
+async function randomize() {
+    if (userEdited) {
+        let result;
+        if (loadedProfileName) {
+            result = await showConfirm(
+                'Unsaved Changes',
+                `Save changes to "${loadedProfileName}"?`,
+                [
+                    { label: 'Cancel', value: 'cancel' },
+                    { label: 'Discard', value: 'discard' },
+                    { label: 'Save', value: 'save', primary: true },
+                ]
+            );
+        } else {
+            const draftName = el.profileNameField.value.trim();
+            if (draftName) {
+                result = await showConfirm(
+                    'Unsaved Changes',
+                    `Save "${draftName}" as a new profile?`,
+                    [
+                        { label: 'Cancel', value: 'cancel' },
+                        { label: 'Discard', value: 'discard' },
+                        { label: 'Save', value: 'save', primary: true },
+                    ]
+                );
+            } else {
+                result = await showConfirm(
+                    'Unsaved Changes',
+                    'Discard unsaved changes and randomize?',
+                    [
+                        { label: 'Cancel', value: 'cancel' },
+                        { label: 'Discard', value: 'discard', primary: true },
+                    ]
+                );
+            }
+        }
+        if (result === 'cancel') return;
+        if (result === 'save') saveCurrentProfile();
+    }
+
     el.seed.value = generateIntent();
     autoGrow(el.seed);
 
-    setTopologyUI(TOPOLOGY_VALUES[Math.floor(Math.random() * TOPOLOGY_VALUES.length)]);
+    // Topology hidden — always flow-field
+    setTopologyUI('flow-field');
     const chosenPalette = PALETTE_KEYS[Math.floor(Math.random() * PALETTE_KEYS.length)];
     setPaletteUI(chosenPalette);
     el.customHue.value = Math.floor(Math.random() * 360);
@@ -728,11 +1114,24 @@ el.randomize.addEventListener('click', () => {
     const nameRng = mulberry32(xmur3(seed + ':name')());
     el.profileNameField.value = generateTitle(controls, nameRng);
 
+    // Detach from any loaded profile so this becomes a new unsaved draft
+    loadedProfileName = '';
+    refreshProfileGallery();
+
+    // Push to history (truncate any forward entries)
+    if (historyIndex < randHistory.length - 1) {
+        randHistory.splice(historyIndex + 1);
+    }
+    randHistory.push(captureSnapshot());
+    if (randHistory.length > HISTORY_MAX) randHistory.shift();
+    historyIndex = randHistory.length - 1;
+    updateHistoryButtons();
+
     renderAndUpdate(seed, controls, { animate: true });
     setStillRendered(true);
     setDirty(true);
-    toast('Randomized.');
-});
+    userEdited = false;
+}
 
 /* ---------------------------
  * Profile gallery
@@ -747,28 +1146,40 @@ function buildProfileCard(name, p, { isActive = false } = {}) {
     if (isActive) {
         card.classList.add('active-profile');
         card.style.cursor = 'pointer';
-        const chevron = document.createElement('span');
-        chevron.className = 'profile-card-chevron';
-        chevron.innerHTML = '&#9662;';
-        card.appendChild(chevron);
         card.addEventListener('click', () => {
             const gallery = document.getElementById('profilesContent');
-            if (gallery) gallery.classList.toggle('collapsed');
-            card.classList.toggle('expanded');
+            const toggle = document.getElementById('profilesToggle');
+            if (!gallery) return;
+            const isOpen = !gallery.classList.contains('collapsed');
+            gallery.classList.toggle('collapsed', isOpen);
+            if (toggle) toggle.setAttribute('aria-expanded', String(!isOpen));
+            if (isOpen) refreshProfileGallery();
         });
     } else {
         card.style.cursor = 'pointer';
         card.addEventListener('click', (e) => {
             if (e.target.closest('.profile-card-delete')) return;
+            // If already loaded, collapse the menu
+            if (name === loadedProfileName) {
+                const gallery = document.getElementById('profilesContent');
+                const toggle = document.getElementById('profilesToggle');
+                if (gallery) gallery.classList.add('collapsed');
+                if (toggle) toggle.setAttribute('aria-expanded', 'false');
+                refreshProfileGallery();
+                return;
+            }
             loadProfileIntoUI(name);
+            expandConfigSection();
             const seed = el.seed.value.trim() || 'seed';
             const controls = readControlsFromUI();
             renderAndUpdate(seed, controls, { animate: true });
             setStillRendered(true);
-            refreshProfileGallery();
-            const gallery = document.getElementById('profilesContent');
-            if (gallery) gallery.classList.add('collapsed');
-            toast(`Loaded: ${name}`);
+            // Highlight this card in the dropdown; unhighlight the top active card
+            el.profileGallery.querySelectorAll('.profile-card').forEach(c =>
+                c.classList.toggle('active-profile', c.dataset.profileName === name)
+            );
+            const topCard = el.activeProfileDisplay.querySelector('.profile-card');
+            if (topCard) topCard.classList.remove('active-profile');
         });
     }
 
@@ -787,7 +1198,25 @@ function buildProfileCard(name, p, { isActive = false } = {}) {
     nm.textContent = name;
     body.appendChild(nm);
 
+    if (isActive) {
+        const unsavedLabel = document.createElement('div');
+        unsavedLabel.className = 'profile-card-unsaved-label';
+        unsavedLabel.textContent = '(unsaved)';
+        body.appendChild(unsavedLabel);
+    }
+
     card.appendChild(body);
+
+    if (isActive) {
+        const saveBtn = document.createElement('button');
+        saveBtn.className = 'profile-card-save';
+        saveBtn.textContent = 'Save';
+        saveBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            saveCurrentProfile();
+        });
+        card.appendChild(saveBtn);
+    }
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'profile-card-delete';
@@ -798,7 +1227,6 @@ function buildProfileCard(name, p, { isActive = false } = {}) {
         deleteProfile(name);
         if (name === loadedProfileName) loadedProfileName = null;
         refreshProfileGallery();
-        toast(`Deleted: ${name}`);
     });
     card.appendChild(deleteBtn);
 
@@ -815,7 +1243,20 @@ function refreshProfileGallery() {
         el.activeProfileDisplay.appendChild(
             buildProfileCard(loadedProfileName, profiles[loadedProfileName], { isActive: true })
         );
+    } else if (!loadedProfileName && dirty) {
+        // Show an unsaved draft card
+        const draftName = el.profileNameField.value.trim() || 'Untitled';
+        const draftData = {
+            seed: el.seed.value.trim() || 'seed',
+            controls: readControlsFromUI(),
+            paletteTweaks: readPaletteFromUI(),
+        };
+        el.activeProfileDisplay.appendChild(
+            buildProfileCard(draftName, draftData, { isActive: true })
+        );
     }
+    // Re-apply dirty class after rebuild
+    el.activeProfileDisplay.classList.toggle('dirty', dirty);
 
     // Dropdown gallery (all other profiles)
     el.profileGallery.innerHTML = '';
@@ -844,14 +1285,177 @@ el.exportBtn.addEventListener('click', async () => {
 
     const seed = el.seed.value.trim() || 'seed';
     const controls = readControlsFromUI();
-    const meta = renderAndUpdate(seed, controls);
 
+    // Generate metadata on main thread (cheap text generation)
+    const titleRng = mulberry32(xmur3(seed + ':title')());
+    const title = generateTitle(controls, titleRng);
+    const altText = generateAltText(controls, lastNodeCount, title);
+    const meta = { title, altText, nodeCount: lastNodeCount };
+
+    if (renderWorker && workerReady) {
+        // Request blob from worker
+        const exportId = ++requestIdCounter;
+        try {
+            const blob = await new Promise((resolve, reject) => {
+                pendingCallbacks.set(exportId, (b) => b ? resolve(b) : reject(new Error('Export failed')));
+                renderWorker.postMessage({ type: 'export', requestId: exportId });
+            });
+            const rect = canvas.getBoundingClientRect();
+            await packageStillZipFromBlob(blob, {
+                seed, controls, meta,
+                canvasWidth: Math.round(rect.width * window.devicePixelRatio),
+                canvasHeight: Math.round(rect.height * window.devicePixelRatio),
+            });
+            toast('Exported still ZIP.');
+        } catch (err) {
+            console.error(err);
+            toast('Still export failed.');
+        }
+    } else {
+        try {
+            await packageStillZip(canvas, { seed, controls, meta });
+            toast('Exported still ZIP.');
+        } catch (err) {
+            console.error(err);
+            toast('Still export failed.');
+        }
+    }
+});
+
+/* ---------------------------
+ * Import profile
+ * ---------------------------
+ */
+const importModal = document.getElementById('importModal');
+const importFileInput = document.getElementById('importFile');
+const importJsonArea = document.getElementById('importJson');
+const importError = document.getElementById('importError');
+
+function showImportError(msg) {
+    importError.textContent = msg;
+    importError.style.display = 'block';
+}
+
+function clearImportModal() {
+    importFileInput.value = '';
+    importJsonArea.value = '';
+    importError.style.display = 'none';
+}
+
+function openImportModal() {
+    clearImportModal();
+    importModal.classList.remove('hidden');
+    importModal.classList.add('modal-entering');
+}
+
+function closeImportModal() {
+    importModal.classList.remove('modal-entering');
+    importModal.classList.add('modal-leaving');
+    setTimeout(() => {
+        importModal.classList.remove('modal-leaving');
+        importModal.classList.add('hidden');
+    }, 250);
+}
+
+function validateAndImportProfile(raw) {
+    let data;
     try {
-        await packageStillZip(canvas, { seed, controls, meta });
-        toast('Exported still ZIP.');
-    } catch (err) {
-        console.error(err);
-        toast('Still export failed.');
+        data = JSON.parse(raw);
+    } catch {
+        showImportError('Invalid JSON.');
+        return;
+    }
+
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+        showImportError('Expected a JSON object.');
+        return;
+    }
+
+    // Detect shape: single profile { seed, controls } or collection { "Name": { seed, controls } }
+    let entries;
+    if (data.controls && typeof data.controls === 'object') {
+        // Single profile — need a name
+        const name = data.name || el.profileNameField.value.trim() || 'Imported';
+        delete data.name;
+        entries = [[name, data]];
+    } else {
+        // Collection — each value should be a profile
+        entries = Object.entries(data);
+        if (entries.length === 0) {
+            showImportError('No profiles found in JSON.');
+            return;
+        }
+    }
+
+    // Validate each profile
+    const required = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
+    for (const [name, profile] of entries) {
+        if (!profile || typeof profile !== 'object') {
+            showImportError(`"${name}" is not a valid profile object.`);
+            return;
+        }
+        if (!profile.controls || typeof profile.controls !== 'object') {
+            showImportError(`"${name}" is missing a controls object.`);
+            return;
+        }
+        for (const key of required) {
+            if (typeof profile.controls[key] !== 'number') {
+                showImportError(`"${name}" controls missing numeric "${key}".`);
+                return;
+            }
+        }
+    }
+
+    // Save all profiles
+    const profiles = loadProfiles();
+    let lastName = '';
+    for (const [name, profile] of entries) {
+        if (!profile.seed) profile.seed = name;
+        if (!profile.controls.topology) profile.controls.topology = 'flow-field';
+        if (!profile.controls.palette) profile.controls.palette = 'violet-depth';
+        profiles[name] = profile;
+        lastName = name;
+    }
+    saveProfiles(profiles);
+
+    // Load the last imported profile into the UI
+    loadProfileIntoUI(lastName);
+    refreshProfileGallery();
+    renderAndUpdate(el.seed.value.trim() || 'seed', readControlsFromUI(), { animate: true });
+    setStillRendered(true);
+
+    closeImportModal();
+    toast(`Imported ${entries.length} profile${entries.length > 1 ? 's' : ''}.`);
+}
+
+document.getElementById('importBtn').addEventListener('click', openImportModal);
+document.getElementById('importModalClose').addEventListener('click', closeImportModal);
+document.getElementById('importCancelBtn').addEventListener('click', closeImportModal);
+importModal.addEventListener('click', (e) => { if (e.target === importModal) closeImportModal(); });
+
+document.getElementById('importConfirmBtn').addEventListener('click', () => {
+    // Prefer file if one was selected
+    if (importFileInput.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = () => validateAndImportProfile(reader.result);
+        reader.onerror = () => showImportError('Failed to read file.');
+        reader.readAsText(importFileInput.files[0]);
+    } else if (importJsonArea.value.trim()) {
+        validateAndImportProfile(importJsonArea.value.trim());
+    } else {
+        showImportError('Upload a file or paste JSON.');
+    }
+});
+
+// Auto-populate textarea when a file is selected
+importFileInput.addEventListener('change', () => {
+    if (importFileInput.files.length > 0) {
+        const reader = new FileReader();
+        reader.onload = () => {
+            importJsonArea.value = reader.result;
+            importError.style.display = 'none';
+        };
+        reader.readAsText(importFileInput.files[0]);
     }
 });
 
@@ -926,6 +1530,41 @@ function closeStatementModal() {
         el.statementModal.classList.add('hidden');
         el.statementModal.classList.remove('modal-leaving');
         statementClosing = false;
+    }, { once: true });
+}
+
+/* ---------------------------
+ * Confirm modal (reusable)
+ * ---------------------------
+ */
+function showConfirm(title, message, actions) {
+    return new Promise(resolve => {
+        const modal = document.getElementById('confirmModal');
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmBody').textContent = message;
+        const actionsEl = document.getElementById('confirmActions');
+        actionsEl.innerHTML = '';
+        actions.forEach(({ label, value, primary }) => {
+            const btn = document.createElement('button');
+            btn.textContent = label;
+            if (primary) btn.classList.add('primary');
+            btn.addEventListener('click', () => { closeConfirm(); resolve(value); });
+            actionsEl.appendChild(btn);
+        });
+        modal.classList.remove('hidden');
+        modal.classList.add('modal-entering');
+        const box = modal.querySelector('.modal-box');
+        box.addEventListener('animationend', () => modal.classList.remove('modal-entering'), { once: true });
+    });
+}
+
+function closeConfirm() {
+    const modal = document.getElementById('confirmModal');
+    modal.classList.add('modal-leaving');
+    const box = modal.querySelector('.modal-box');
+    box.addEventListener('animationend', () => {
+        modal.classList.add('hidden');
+        modal.classList.remove('modal-leaving');
     }, { once: true });
 }
 
@@ -1029,6 +1668,7 @@ document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
     if (!el.infoModal.classList.contains('hidden')) closeInfoModal();
     else if (!el.statementModal.classList.contains('hidden')) closeStatementModal();
+    else if (isPanelOpen()) closePanel();
 });
 
 /* ---------------------------
@@ -1070,16 +1710,53 @@ document.querySelectorAll('.sub-collapsible-toggle').forEach(btn => {
     });
 });
 
-if (window.innerWidth > 767) {
-    document.querySelectorAll('.collapsible-toggle[data-desktop-expand]').forEach(btn => {
-        const content = document.getElementById(btn.dataset.target);
-        content.classList.add('no-transition');
-        btn.setAttribute('aria-expanded', 'true');
-        content.classList.remove('collapsed');
-        content.offsetHeight;
-        content.classList.remove('no-transition');
-    });
+function expandConfigSection() {
+    const configToggle = document.querySelector('.collapsible-toggle[data-target="configContent"]');
+    const configContent = document.getElementById('configContent');
+    if (configToggle && configContent) {
+        configToggle.setAttribute('aria-expanded', 'true');
+        configContent.classList.remove('collapsed');
+    }
 }
+
+/* Profiles header toggle */
+el.profilesToggle.addEventListener('click', () => {
+    const gallery = document.getElementById('profilesContent');
+    const expanded = el.profilesToggle.getAttribute('aria-expanded') === 'true';
+    el.profilesToggle.setAttribute('aria-expanded', String(!expanded));
+    gallery.classList.toggle('collapsed', expanded);
+    if (expanded) refreshProfileGallery(); // sync active display on collapse
+});
+
+
+/* Config randomize button */
+document.getElementById('configRandomizeBtn').addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await randomize();
+});
+
+/* History back/forward buttons */
+document.getElementById('historyBackBtn').addEventListener('click', () => {
+    if (historyIndex > 0) {
+        historyIndex--;
+        restoreSnapshot(randHistory[historyIndex]);
+    }
+});
+document.getElementById('historyForwardBtn').addEventListener('click', () => {
+    if (historyIndex < randHistory.length - 1) {
+        historyIndex++;
+        restoreSnapshot(randHistory[historyIndex]);
+    }
+});
+
+/* Stage save button */
+document.getElementById('stageSaveBtn').addEventListener('click', () => {
+    saveCurrentProfile();
+    if (!dirty) {
+        userEdited = false;
+        toast('Profile saved.');
+    }
+});
 
 /* ---------------------------
  * Panel toggle
@@ -1087,27 +1764,43 @@ if (window.innerWidth > 767) {
  */
 const panelEl = document.querySelector('.panel');
 const panelToggleBtn = document.getElementById('panelToggle');
+const panelBackdrop = document.getElementById('panelBackdrop');
+
+function isPanelOpen() {
+    return panelEl && !panelEl.classList.contains('panel-collapsed');
+}
+
+function openPanel() {
+    if (!panelEl) return;
+    panelEl.classList.remove('panel-collapsed');
+    panelEl.setAttribute('aria-hidden', 'false');
+    if (panelBackdrop) panelBackdrop.classList.remove('hidden');
+    localStorage.setItem('geo-self-portrait-panel-collapsed', 'false');
+}
+
+function closePanel() {
+    if (!panelEl) return;
+    panelEl.classList.add('panel-collapsed');
+    panelEl.setAttribute('aria-hidden', 'true');
+    if (panelBackdrop) panelBackdrop.classList.add('hidden');
+    localStorage.setItem('geo-self-portrait-panel-collapsed', 'true');
+}
 
 function initPanelToggle() {
     if (!panelToggleBtn || !panelEl) return;
 
-    // Restore saved state (default: expanded on desktop, collapsed on mobile)
-    const stored = localStorage.getItem('geo-self-portrait-panel-collapsed');
-    const defaultCollapsed = window.innerWidth < 768;
-    const collapsed = stored !== null ? stored === 'true' : defaultCollapsed;
-
-    if (collapsed) {
-        panelEl.classList.add('no-transition');
-        panelEl.classList.add('panel-collapsed');
-        panelEl.offsetHeight; // force reflow
-        panelEl.classList.remove('no-transition');
-    }
+    // Remove no-transition class set by inline script after first frame
+    requestAnimationFrame(() => panelEl.classList.remove('no-transition'));
 
     panelToggleBtn.addEventListener('click', () => {
-        panelEl.classList.toggle('panel-collapsed');
-        const isCollapsed = panelEl.classList.contains('panel-collapsed');
-        localStorage.setItem('geo-self-portrait-panel-collapsed', String(isCollapsed));
+        if (isPanelOpen()) closePanel();
+        else openPanel();
     });
+
+    // Close drawer when clicking backdrop
+    if (panelBackdrop) {
+        panelBackdrop.addEventListener('click', closePanel);
+    }
 }
 
 /* ── Fullscreen ── */
@@ -1134,6 +1827,35 @@ function initFullscreen() {
             }
         });
     }
+
+    function onFullscreenChange() {
+        const isFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement);
+        if (isFullscreen) {
+            cancelPendingRender();
+            showCanvasOverlay('');
+            requestAnimationFrame(() => {
+                const seed = el.seed.value.trim() || 'seed';
+                const controls = readControlsFromUI();
+                updateSliderLabels(controls);
+                sendRenderRequest(seed, controls, {
+                    deliberate: true,
+                    callback() {
+                        scheduleTextRefresh();
+                        hideCanvasOverlay();
+                    },
+                });
+            });
+        } else {
+            // Re-render at normal size — ResizeObserver clears the WebGL buffer on shrink
+            requestAnimationFrame(() => {
+                const seed = el.seed.value.trim() || 'seed';
+                const controls = readControlsFromUI();
+                sendRenderRequest(seed, controls);
+            });
+        }
+    }
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', onFullscreenChange);
 }
 
 /* ---------------------------
@@ -1157,12 +1879,28 @@ if (startNames.length > 0) loadProfileIntoUI(startNames[0]);
 updateSliderLabels(readControlsFromUI());
 refreshProfileGallery();
 
-showCanvasOverlay('', true);
+showCanvasOverlay('');
 
-requestAnimationFrame(() => {
+function doInitialRender() {
     const seed = el.seed.value.trim() || 'seed';
     const controls = readControlsFromUI();
     renderAndUpdate(seed, controls, { animate: true });
     setStillRendered(true);
     refreshProfileGallery();
-});
+}
+
+if (!renderWorker) {
+    // Fallback: render on main thread
+    requestAnimationFrame(doInitialRender);
+}
+// Worker path: doInitialRender is called from onWorkerMessage when 'ready' arrives
+
+// Vite HMR: clean up worker so the next module instance starts fresh
+if (import.meta.hot) {
+    import.meta.hot.accept();
+    import.meta.hot.dispose(() => {
+        if (workerInitTimer) clearTimeout(workerInitTimer);
+        if (renderWorker) { renderWorker.terminate(); renderWorker = null; }
+        if (fallbackRenderer) { fallbackRenderer.dispose(); fallbackRenderer = null; }
+    });
+}

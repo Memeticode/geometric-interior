@@ -1,0 +1,26 @@
+{
+  "Violet Crystalline": {
+    "seed": "The weight of crystallized doubt finds its shape.",
+    "controls": { "topology": "flow-field", "palette": "violet-depth", "density": 0.50, "luminosity": 0.40, "fracture": 0.50, "depth": 0.50, "coherence": 0.50 }
+  },
+  "Warm Drift": {
+    "seed": "The last breath of slow fire drifts apart.",
+    "controls": { "topology": "flow-field", "palette": "warm-spectrum", "density": 0.70, "luminosity": 0.75, "fracture": 0.60, "depth": 0.65, "coherence": 0.45 }
+  },
+  "Teal Convergence": {
+    "seed": "An architecture of liquid geometry holds the room.",
+    "controls": { "topology": "flow-field", "palette": "teal-volumetric", "density": 0.55, "luminosity": 0.80, "fracture": 0.50, "depth": 0.55, "coherence": 0.55 }
+  },
+  "Prismatic Energy": {
+    "seed": "Refracting through every thought left unsaid.",
+    "controls": { "topology": "multi-attractor", "palette": "prismatic", "density": 0.60, "luminosity": 0.65, "fracture": 0.45, "depth": 0.65, "coherence": 0.45 }
+  },
+  "Crystal Lattice": {
+    "seed": "A cathedral of frozen lightning and quiet geometry.",
+    "controls": { "topology": "icosahedral", "palette": "crystal-lattice", "density": 0.65, "luminosity": 0.65, "fracture": 0.30, "depth": 0.70, "coherence": 0.60 }
+  },
+  "Golden Subdued Structure": {
+    "seed": "What happens when dissolving glass.",
+    "controls": { "topology": "flow-field", "palette": "warm-spectrum", "density": 0.31, "luminosity": 0.28, "fracture": 0.75, "depth": 0.39, "coherence": 0.45 }
+  }
+}
