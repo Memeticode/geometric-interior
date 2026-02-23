@@ -25,8 +25,8 @@ export function createLoadingAnimation(containerEl) {
     let startTime = 0;
 
     /* ── Transition state machine ── */
-    const EMERGE_MS  = 1000;
-    const CONDENSE_MS = 600;
+    const EMERGE_MS  = 500;
+    const CONDENSE_MS = 300;
 
     // phase: 'idle' | 'emerging' | 'running' | 'condensing'
     let phase = 'idle';
