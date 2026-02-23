@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo — Flow-Aligned Curtain Folds</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { overflow: hidden; background: #000000; }
+        canvas { display: block; }
+    </style>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+        }
+    }
+    </script>
+</head>
+<body>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// --- Seeded PRNG (mulberry32) ---
+// Deterministic random: same seed = same scene every time.
+// Override Math.random so all downstream code is deterministic.
+// Use ?seed=N in the URL to explore different variations.
+
+function mulberry32(a) {
+    return function() {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+
+const urlParams = new URLSearchParams(window.location.search);
+const SEED = parseInt(urlParams.get('seed')) || 42;
+Math.random = mulberry32(SEED);
+
+// --- Configurable Parameters ---
+// All visual tuning knobs in one place for easy export/transfer.
+// JSON-serializable: JSON.stringify(CONFIG) to save, Object.assign(CONFIG, saved) to restore.
+
+const CONFIG = {
+    // Envelope
+    envelopeRadii: [1.4, 0.95, 1.15],
+
+    // Camera
+    cameraPosition: [0, 0, 5],
+    cameraFov: 60,
+
+    // Bloom
+    bloomStrength: 0.20,
+    bloomRadius: 0.5,
+    bloomThreshold: 0.7,
+
+    // Background ambience
+    bgInnerColor: [0.003, 0.001, 0.006],
+    bgOuterColor: [0.0, 0.0, 0.0],
+
+    // Edge-on fade
+    edgeFadeThreshold: 0.22,
+
+    // Illumination
+    backLightFactor: 2.0,
+    illuminationCap: 1.8,
+    ambientLight: 0.02,
+    frontLightFactor: 0.3,
+
+    // Edge lines
+    edgeColorOffset: [0, -0.04, 0.04],
+    edgeOpacityBase: 0.003,
+    edgeOpacityFadeScale: 0.015,
+
+    // Chain config (per tier)
+    chains: {
+        primary:   { chainLenBase: 8, chainLenRange: 3, scaleBase: 0.95, scaleRange: 0.5, spread: 0.6, dualProb: 0.75, spacing: 0.11 },
+        secondary: { chainLenBase: 5, chainLenRange: 2, scaleBase: 0.75, scaleRange: 0.35, spread: 0.4, dualProb: 0.50, spacing: 0.13 },
+        tertiary:  { chainLenBase: 3, chainLenRange: 2, scaleBase: 0.45, scaleRange: 0.35, spread: 0.3, dualProb: 0.28, spacing: 0.09 }
+    },
+
+    // Atmospheric scatter
+    atmosphericCount: 8,
+
+    // Hero dots
+    heroDotCount: 3,
+    heroDotSpread: [0.08, 0.06, 0.08],
+    heroDotRadiusBase: 0.028,
+    heroDotRadiusRange: 0.05,
+    heroDotGlowBase: 34,
+    heroDotGlowRange: 14,
+
+    // Medium dots
+    mediumDotCount: 8,
+    mediumDotJitter: 0.02,
+    mediumDotRadiusBase: 0.012,
+    mediumDotRadiusRange: 0.020,
+    mediumDotGlowBase: 16,
+    mediumDotGlowRange: 8,
+
+    // Small dots (curve-following)
+    smallDotDensity: { primary: 0.28, secondary: 0.16, tertiary: 0.09 },
+    smallDotRadiusBase: 0.003,
+    smallDotRadiusRange: 0.008,
+    smallDotGlowBase: 10,
+    smallDotLightnessBase: 0.35,
+    smallDotLightnessRange: 0.35,
+
+    // Interior volume dots
+    interiorDotCount: 50,
+    interiorDotSpread: [0.65, 0.48, 0.58],
+
+    // Micro-dot scatter
+    microDotCount: 220,
+    microDotSpread: [0.90, 0.62, 0.75],
+    microDotRadiusBase: 0.002,
+    microDotRadiusRange: 0.006,
+    microDotGlowBase: 12,
+    microDotLightnessBase: 0.30,
+    microDotLightnessRange: 0.40,
+
+    // Tendril curves
+    tendrilHueBase: 260,
+    tendrilHueRange: 40,
+    tendrilSatBase: 0.4,
+    tendrilSatRange: 0.3,
+    tendrilOpacity: { primary: 0.06, other: 0.03 },
+
+    // Controls
+    autoRotateSpeed: 0.5,
+    dampingFactor: 0.05,
+    minDistance: 2,
+    maxDistance: 12,
+    toneExposure: 1.1,
+
+    // Crack extension beyond plane edges
+    crackExtendScale: 1.12
+};
+
+// --- Utilities ---
+
+function gaussianRandom(mean = 0, stdev = 1) {
+    const u = 1 - Math.random();
+    const v = Math.random();
+    return mean + stdev * Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+// Violet palette: distance-dependent hue (pink center → blue-violet edge), always saturated
+function pickVioletColor(distFromCenter, decayRate, lightnessBoost = 0, familyHue = null) {
+    const fade = Math.exp(-decayRate * distFromCenter * distFromCenter);
+    let baseHue;
+    if (familyHue !== null) {
+        baseHue = familyHue + (Math.random() - 0.5) * 35;
+    } else {
+        const centerHue = 305 + Math.random() * 40;
+        const edgeHue = 220 + Math.random() * 40;
+        baseHue = edgeHue + fade * (centerHue - edgeHue);
+    }
+    const saturation = Math.min(0.75 + Math.random() * 0.25 + (1 - fade) * 0.05, 1.0);
+    const lightness = Math.min(0.06 + Math.random() * 0.08 + fade * (0.22 + Math.random() * 0.22) + lightnessBoost, 0.60);
+    return new THREE.Color().setHSL(baseHue / 360, saturation, lightness);
+}
+
+// Sum inverse-square light contributions from all dots at a given world position
+function computeIllumination(worldPos, lightPositions) {
+    let total = 0;
+    for (const lp of lightPositions) {
+        const d2 = worldPos.distanceToSquared(lp.pos);
+        total += lp.intensity / (1 + d2 * 10);
+    }
+    return Math.min(total, 3.0);
+}
+
+function computeFade(dist, decayRate) {
+    return Math.exp(-decayRate * dist * dist);
+}
+
+// --- Envelope & Guide Curve System ---
+
+const ENVELOPE_RADII = new THREE.Vector3(...CONFIG.envelopeRadii);
+
+function envelopeSDF(p) {
+    const ex = p.x / ENVELOPE_RADII.x;
+    const ey = p.y / ENVELOPE_RADII.y;
+    const ez = p.z / ENVELOPE_RADII.z;
+    const ellipsoid = ex * ex + ey * ey + ez * ez - 1.0;
+    // Gentle medial groove
+    const grooveDepth = 0.2;
+    const grooveWidth = 0.18;
+    const topBias = Math.max(0, p.y / ENVELOPE_RADII.y);
+    const groove = grooveDepth * Math.exp(-p.x * p.x / (grooveWidth * grooveWidth)) * topBias;
+    // Asymmetry noise
+    const n = Math.sin(p.x * 1.1 + 7.3) * Math.sin(p.y * 1.3 + 2.1) * Math.sin(p.z * 0.9 + 5.7);
+    return ellipsoid + groove + n * 0.06;
+}
+
+function envelopeNormal(p) {
+    const eps = 0.01;
+    const dx = envelopeSDF(new THREE.Vector3(p.x + eps, p.y, p.z)) - envelopeSDF(new THREE.Vector3(p.x - eps, p.y, p.z));
+    const dy = envelopeSDF(new THREE.Vector3(p.x, p.y + eps, p.z)) - envelopeSDF(new THREE.Vector3(p.x, p.y - eps, p.z));
+    const dz = envelopeSDF(new THREE.Vector3(p.x, p.y, p.z + eps)) - envelopeSDF(new THREE.Vector3(p.x, p.y, p.z - eps));
+    return new THREE.Vector3(dx, dy, dz).normalize();
+}
+
+function projectToEnvelope(p) {
+    const result = p.clone();
+    for (let iter = 0; iter < 12; iter++) {
+        const val = envelopeSDF(result);
+        if (Math.abs(val) < 0.001) break;
+        const grad = envelopeNormal(result);
+        result.sub(grad.multiplyScalar(val));
+    }
+    return result;
+}
+
+function generateSeedPoints(count) {
+    const seeds = [];
+    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    for (let i = 0; i < count; i++) {
+        const y = 1 - (i / (count - 1)) * 2;
+        const radius = Math.sqrt(1 - y * y);
+        const theta = goldenAngle * i;
+        const raw = new THREE.Vector3(
+            Math.cos(theta) * radius * ENVELOPE_RADII.x,
+            y * ENVELOPE_RADII.y,
+            Math.sin(theta) * radius * ENVELOPE_RADII.z
+        );
+        seeds.push(projectToEnvelope(raw));
+    }
+    return seeds;
+}
+
+function generateGuideCurve(seed, existingCurves, maxSteps, stepSize, curvature) {
+    const points = [seed.clone()];
+    const normal = envelopeNormal(seed);
+    let tangent = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5);
+    tangent.sub(normal.clone().multiplyScalar(tangent.dot(normal))).normalize();
+
+    for (let step = 0; step < maxSteps; step++) {
+        const current = points[points.length - 1];
+        const currentNormal = envelopeNormal(current);
+
+        // Project tangent onto tangent plane
+        tangent.sub(currentNormal.clone().multiplyScalar(tangent.dot(currentNormal))).normalize();
+
+        // Random curvature
+        const q = new THREE.Quaternion().setFromAxisAngle(currentNormal, (Math.random() - 0.5) * curvature);
+        tangent.applyQuaternion(q);
+
+        // Repulsion from other curves
+        const repulsion = new THREE.Vector3();
+        for (const other of existingCurves) {
+            for (let i = 0; i < other.length; i += 3) {
+                const d = current.distanceTo(other[i]);
+                if (d < 0.35 && d > 0.01) {
+                    const away = current.clone().sub(other[i]).normalize();
+                    away.sub(currentNormal.clone().multiplyScalar(away.dot(currentNormal)));
+                    repulsion.add(away.multiplyScalar(0.12 / (d * d)));
+                }
+            }
+        }
+        // Self-repulsion
+        for (let i = 0; i < Math.max(0, points.length - 5); i += 2) {
+            const d = current.distanceTo(points[i]);
+            if (d < 0.25 && d > 0.01) {
+                const away = current.clone().sub(points[i]).normalize();
+                away.sub(currentNormal.clone().multiplyScalar(away.dot(currentNormal)));
+                repulsion.add(away.multiplyScalar(0.06 / (d * d)));
+            }
+        }
+        if (repulsion.length() > 0.001) {
+            tangent.add(repulsion.normalize().multiplyScalar(0.3));
+            tangent.sub(currentNormal.clone().multiplyScalar(tangent.dot(currentNormal))).normalize();
+        }
+
+        const next = current.clone().add(tangent.clone().multiplyScalar(stepSize));
+        const projected = projectToEnvelope(next);
+        if (envelopeSDF(projected) > 0.05 || projected.length() > 1.8) break;
+        points.push(projected);
+        tangent = projected.clone().sub(current).normalize();
+    }
+    return points;
+}
+
+function sampleAlongCurve(curvePoints, spacing) {
+    const samples = [];
+    let accumulated = 0;
+    for (let i = 1; i < curvePoints.length; i++) {
+        accumulated += curvePoints[i].distanceTo(curvePoints[i - 1]);
+        if (accumulated >= spacing) {
+            accumulated -= spacing;
+            const pos = curvePoints[i].clone();
+            const prev = curvePoints[Math.max(0, i - 1)];
+            const next = curvePoints[Math.min(curvePoints.length - 1, i + 1)];
+            const tangent = next.clone().sub(prev).normalize();
+            const normal = envelopeNormal(pos);
+            const binormal = new THREE.Vector3().crossVectors(tangent, normal).normalize();
+            samples.push({ pos, tangent, normal, binormal });
+        }
+    }
+    return samples;
+}
+
+function drapingDirection(sample, spreadFactor) {
+    const dir = sample.normal.clone().multiplyScalar(1.0 - spreadFactor)
+        .add(sample.binormal.clone().multiplyScalar(spreadFactor));
+    dir.add(new THREE.Vector3(
+        (Math.random() - 0.5) * 0.2,
+        (Math.random() - 0.5) * 0.2,
+        (Math.random() - 0.5) * 0.2
+    ));
+    return dir.normalize();
+}
+
+function generateAllGuideCurves() {
+    const allCurves = [];
+
+    // Primary: long sweeping flow lines
+    const primarySeeds = generateSeedPoints(8);
+    for (const seed of primarySeeds) {
+        const curve = generateGuideCurve(seed, allCurves, 40 + Math.floor(Math.random() * 20), 0.06, 0.4);
+        if (curve.length > 8) { curve.tier = 'primary'; allCurves.push(curve); }
+        if (allCurves.filter(c => c.tier === 'primary').length >= 5) break;
+    }
+
+    // Secondary: medium fill
+    const secondarySeeds = generateSeedPoints(18);
+    for (const seed of secondarySeeds) {
+        const curve = generateGuideCurve(seed, allCurves, 15 + Math.floor(Math.random() * 15), 0.05, 0.6);
+        if (curve.length > 5) { curve.tier = 'secondary'; allCurves.push(curve); }
+        if (allCurves.filter(c => c.tier === 'secondary').length >= 10) break;
+    }
+
+    // Tertiary: short accent veils
+    const tertiarySeeds = generateSeedPoints(25);
+    for (const seed of tertiarySeeds) {
+        const curve = generateGuideCurve(seed, allCurves, 5 + Math.floor(Math.random() * 7), 0.04, 0.8);
+        if (curve.length > 3) { curve.tier = 'tertiary'; allCurves.push(curve); }
+        if (allCurves.filter(c => c.tier === 'tertiary').length >= 15) break;
+    }
+
+    return allCurves;
+}
+
+// Compute per-vertex alpha for a world-space position
+function vertexAlpha(worldPos, lightPositions) {
+    const d = worldPos.length();
+    const radial = Math.exp(-1.5 * d * d);
+    const illum = lightPositions ? computeIllumination(worldPos, lightPositions) : 0;
+    return radial * (1.0 + illum * 2.5);
+}
+
+// Shared light uniforms — populated after sphere creation, before plane creation
+let sharedLightUniforms = null;
+
+// --- Geometry Accumulators for Batched Rendering ---
+const faceAccum = { pos: [], norm: [], uv: [], alpha: [], color: [], opacity: [], noiseScale: [], noiseStrength: [], crackExtend: [] };
+const edgeAccum = { pos: [], alpha: [], color: [], opacity: [] };
+
+// Accumulate face + edge vertex data into batch accumulators (no Mesh/Material created)
+function accumulatePlane(geom, color, baseOpacity, edgeOpacity, alphas, noiseScale = 8.0, noiseStrength = 0.3, worldQuat = null, worldOrigin = null) {
+    const fPos = geom.getAttribute('position');
+    const fNorm = geom.getAttribute('normal');
+    const fUv = geom.getAttribute('uv');
+    const vertCount = fPos.count;
+    const eColor = color.clone().offsetHSL(...CONFIG.edgeColorOffset);
+    const tmpV = new THREE.Vector3();
+    const tmpN = new THREE.Vector3();
+
+    for (let i = 0; i < vertCount; i++) {
+        tmpV.set(fPos.getX(i), fPos.getY(i), fPos.getZ(i));
+        tmpN.set(fNorm.getX(i), fNorm.getY(i), fNorm.getZ(i));
+        if (worldQuat) {
+            tmpV.applyQuaternion(worldQuat);
+            tmpN.applyQuaternion(worldQuat);
+        }
+        if (worldOrigin) tmpV.add(worldOrigin);
+
+        faceAccum.pos.push(tmpV.x, tmpV.y, tmpV.z);
+        faceAccum.norm.push(tmpN.x, tmpN.y, tmpN.z);
+        faceAccum.uv.push(fUv.getX(i), fUv.getY(i));
+        faceAccum.alpha.push(alphas ? alphas[i] : 1.0);
+        faceAccum.color.push(color.r, color.g, color.b);
+        faceAccum.opacity.push(baseOpacity);
+        faceAccum.noiseScale.push(noiseScale);
+        faceAccum.noiseStrength.push(noiseStrength);
+        faceAccum.crackExtend.push(1.0);
+    }
+
+    // Edge extraction
+    const edgeGeom = new THREE.EdgesGeometry(geom);
+    const ePos = edgeGeom.getAttribute('position');
+    for (let i = 0; i < ePos.count; i++) {
+        tmpV.set(ePos.getX(i), ePos.getY(i), ePos.getZ(i));
+        // Map alpha from closest face vertex
+        let bestAlpha = 0, bestDist = Infinity;
+        for (let j = 0; j < fPos.count; j++) {
+            const dx = tmpV.x - fPos.getX(j), dy = tmpV.y - fPos.getY(j), dz = tmpV.z - fPos.getZ(j);
+            const d = dx*dx + dy*dy + dz*dz;
+            if (d < bestDist) { bestDist = d; bestAlpha = alphas ? alphas[j] : 1.0; }
+        }
+        if (worldQuat) tmpV.applyQuaternion(worldQuat);
+        if (worldOrigin) tmpV.add(worldOrigin);
+
+        edgeAccum.pos.push(tmpV.x, tmpV.y, tmpV.z);
+        edgeAccum.alpha.push(bestAlpha);
+        edgeAccum.color.push(eColor.r, eColor.g, eColor.b);
+        edgeAccum.opacity.push(edgeOpacity);
+    }
+    edgeGeom.dispose();
+}
+
+// Accumulate "skirt" triangles that extend beyond a plane's boundary for crack bleeding
+function accumulateSkirt(geom, color, baseOpacity, alphas, noiseScale, noiseStrength, worldQuat, worldOrigin) {
+    const pos = geom.getAttribute('position');
+    const uvAttr = geom.getAttribute('uv');
+    const normAttr = geom.getAttribute('normal');
+    const vertCount = pos.count;
+    const scale = CONFIG.crackExtendScale;
+
+    // Read local-space vertices, UVs
+    const verts = [], uvsList = [];
+    for (let i = 0; i < vertCount; i++) {
+        verts.push(new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i)));
+        uvsList.push(new THREE.Vector2(uvAttr.getX(i), uvAttr.getY(i)));
+    }
+    const planeNormal = new THREE.Vector3(normAttr.getX(0), normAttr.getY(0), normAttr.getZ(0));
+
+    // Extract boundary vertices in order
+    let bVerts, bUvs, bAlphas;
+    if (vertCount === 3) {
+        // Triangle: boundary is all 3 edges in winding order
+        bVerts = [verts[0], verts[1], verts[2]];
+        bUvs = [uvsList[0], uvsList[1], uvsList[2]];
+        bAlphas = [alphas[0], alphas[1], alphas[2]];
+    } else {
+        // Quad (6 verts = 2 tris): A(0), B(1), C(2), A(3), D(4), B(5)
+        // Boundary order: A → D → B → C
+        bVerts = [verts[0], verts[4], verts[1], verts[2]];
+        bUvs = [uvsList[0], uvsList[4], uvsList[1], uvsList[2]];
+        bAlphas = [alphas[0], alphas[4], alphas[1], alphas[2]];
+    }
+
+    const n = bVerts.length;
+
+    // Compute centroid
+    const centroid = new THREE.Vector3();
+    const centroidUv = new THREE.Vector2();
+    for (let i = 0; i < n; i++) {
+        centroid.add(bVerts[i]);
+        centroidUv.add(bUvs[i]);
+    }
+    centroid.divideScalar(n);
+    centroidUv.divideScalar(n);
+
+    // Compute expanded vertices (extended outward from centroid)
+    const expanded = [], expandedUvs = [];
+    for (let i = 0; i < n; i++) {
+        expanded.push(centroid.clone().add(bVerts[i].clone().sub(centroid).multiplyScalar(scale)));
+        expandedUvs.push(centroidUv.clone().add(bUvs[i].clone().sub(centroidUv).multiplyScalar(scale)));
+    }
+
+    // For each boundary edge, create 2 skirt triangles
+    const tmpV = new THREE.Vector3();
+    const tmpN = new THREE.Vector3();
+
+    for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+
+        // 2 triangles per edge: (vi, vj, ej') and (vi, ej', ei')
+        const triVerts = [
+            bVerts[i], bVerts[j], expanded[j],
+            bVerts[i], expanded[j], expanded[i]
+        ];
+        const triUvs = [
+            bUvs[i], bUvs[j], expandedUvs[j],
+            bUvs[i], expandedUvs[j], expandedUvs[i]
+        ];
+        const triAlphas = [
+            bAlphas[i], bAlphas[j], bAlphas[j],
+            bAlphas[i], bAlphas[j], bAlphas[i]
+        ];
+        const triCrackExtend = [1.0, 1.0, 0.0, 1.0, 0.0, 0.0];
+
+        for (let k = 0; k < 6; k++) {
+            tmpV.copy(triVerts[k]);
+            tmpN.copy(planeNormal);
+            if (worldQuat) { tmpV.applyQuaternion(worldQuat); tmpN.applyQuaternion(worldQuat); }
+            if (worldOrigin) tmpV.add(worldOrigin);
+
+            faceAccum.pos.push(tmpV.x, tmpV.y, tmpV.z);
+            faceAccum.norm.push(tmpN.x, tmpN.y, tmpN.z);
+            faceAccum.uv.push(triUvs[k].x, triUvs[k].y);
+            faceAccum.alpha.push(triAlphas[k]);
+            faceAccum.color.push(color.r, color.g, color.b);
+            faceAccum.opacity.push(baseOpacity);
+            faceAccum.noiseScale.push(noiseScale);
+            faceAccum.noiseStrength.push(noiseStrength);
+            faceAccum.crackExtend.push(triCrackExtend[k]);
+        }
+    }
+}
+
+// --- Scene Setup ---
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ReinhardToneMapping;
+renderer.toneMappingExposure = CONFIG.toneExposure;
+document.body.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = null; // background handled by gradient quad
+
+const camera = new THREE.PerspectiveCamera(CONFIG.cameraFov, window.innerWidth / window.innerHeight, 0.1, 100);
+camera.position.set(...CONFIG.cameraPosition);
+camera.lookAt(0, 0, 0);
+
+// Background gradient quad
+{
+    const bgGeom = new THREE.PlaneGeometry(2, 2);
+    const bgMat = new THREE.ShaderMaterial({
+        uniforms: {
+            uInnerColor: { value: new THREE.Color(...CONFIG.bgInnerColor) },
+            uOuterColor: { value: new THREE.Color(...CONFIG.bgOuterColor) }
+        },
+        vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = vec4(position.xy, 0.9999, 1.0); }`,
+        fragmentShader: `
+            uniform vec3 uInnerColor; uniform vec3 uOuterColor; varying vec2 vUv;
+            void main() {
+                float d = length(vUv - 0.5) * 2.0;
+                gl_FragColor = vec4(mix(uInnerColor, uOuterColor, d * d), 1.0);
+            }
+        `,
+        depthWrite: false, depthTest: false
+    });
+    const bgQuad = new THREE.Mesh(bgGeom, bgMat);
+    bgQuad.frustumCulled = false;
+    bgQuad.renderOrder = -1;
+    scene.add(bgQuad);
+}
+
+// --- Folding Plane Chains (emerge from dot positions) ---
+
+// Rotate a point around an axis through the origin by a given angle
+function rotateAround(point, axis, angle) {
+    const q = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+    return point.clone().applyQuaternion(q);
+}
+
+// Jitter a vertex slightly for organic irregularity
+function jitterVec(v, amount) {
+    return v.clone().add(new THREE.Vector3(
+        (Math.random() - 0.5) * amount,
+        (Math.random() - 0.5) * amount,
+        (Math.random() - 0.5) * amount
+    ));
+}
+
+// Reflect a point across a line defined by (linePoint, lineDir)
+function reflectAcrossEdge(point, linePoint, lineDir) {
+    const toP = point.clone().sub(linePoint);
+    const proj = lineDir.clone().multiplyScalar(toP.dot(lineDir));
+    const perp = toP.clone().sub(proj);
+    return linePoint.clone().add(proj).sub(perp);
+}
+
+// Create a chain of connected faces (triangles and quads) sharing edges
+function createFoldingChain(origin, chainLength, planeScale, distFromCenter, lightPositions, familyHue = null, tendrilDir = null) {
+    const decayRate = 0.15 + Math.random() * 0.45;
+    const jitterAmt = planeScale * 0.015;
+
+    // Align chain to veil layer normal (tendrilDir) with organic variation
+    let groupQuat;
+    if (tendrilDir) {
+        const forward = tendrilDir.clone().normalize();
+        const up = Math.abs(forward.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+        const mat = new THREE.Matrix4().lookAt(new THREE.Vector3(), forward, up);
+        groupQuat = new THREE.Quaternion().setFromRotationMatrix(mat);
+        const twist = new THREE.Quaternion().setFromAxisAngle(forward, (Math.random() - 0.5) * Math.PI * 0.5);
+        groupQuat.premultiply(twist);
+        const wobbleAxis = up.clone().cross(forward).normalize();
+        const wobble = new THREE.Quaternion().setFromAxisAngle(wobbleAxis, (Math.random() - 0.5) * Math.PI * 0.18);
+        groupQuat.premultiply(wobble);
+    } else {
+        groupQuat = new THREE.Quaternion().setFromEuler(
+            new THREE.Euler(Math.random() * Math.PI * 2, Math.random() * Math.PI * 2, Math.random() * Math.PI * 2));
+    }
+
+    // Generate the first triangle's 3 vertices in local space
+    const randVec = () => new THREE.Vector3(
+        (Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5)
+    ).normalize().multiplyScalar(planeScale * (0.3 + Math.random() * 0.4));
+
+    let vA = randVec();
+    let vB = randVec();
+    let vC = randVec();
+
+    for (let p = 0; p < chainLength; p++) {
+        // Progressive fade: each step further along the chain fades more
+        const chainProgress = p / Math.max(chainLength - 1, 1);
+        const progressFade = 1.0 - chainProgress * 0.7;  // 1.0 → 0.3
+        const thisFade = computeFade(distFromCenter, decayRate) * progressFade;
+
+        // Compute face centroid in world space for illumination
+        const localCenter = vA.clone().add(vB).add(vC).divideScalar(3);
+        const worldCenter = localCenter.clone().applyQuaternion(groupQuat).add(origin);
+        const worldDist = worldCenter.length();
+        const radialFade = Math.exp(-1.5 * worldDist * worldDist);
+        const illum = lightPositions ? computeIllumination(worldCenter, lightPositions) : 0;
+
+        const color = pickVioletColor(distFromCenter + p * 0.1, decayRate, illum * 0.15, familyHue);
+        const baseOpacity = (0.008 + thisFade * 0.04) * (0.4 + Math.random() * 0.6);
+        const edgeFade = thisFade * thisFade;
+        const baseEdgeOpacity = (CONFIG.edgeOpacityBase + edgeFade * CONFIG.edgeOpacityFadeScale) * (0.3 + Math.random() * 0.7);
+
+        // Per-vertex alpha helper: transform local vertex to world, compute alpha
+        const vAlpha = (localV) => {
+            const wp = localV.clone().applyQuaternion(groupQuat).add(origin);
+            return vertexAlpha(wp, lightPositions);
+        };
+
+        // Decide shape: triangle or quad (quad = two triangles sharing the hinge edge)
+        const makeQuad = Math.random() < 0.7;
+
+        if (makeQuad) {
+            // Quad: mirror vC across A-B edge to get vD, jitter both
+            const edgeVec = vB.clone().sub(vA).normalize();
+            const mid = vA.clone().add(vB).multiplyScalar(0.5);
+            const vD = jitterVec(reflectAcrossEdge(vC, mid, edgeVec), jitterAmt);
+            const jA = jitterVec(vA, jitterAmt * 0.3);
+            const jB = jitterVec(vB, jitterAmt * 0.3);
+            const jC = jitterVec(vC, jitterAmt);
+            const jD = jitterVec(vD, jitterAmt);
+
+            const aA = vAlpha(jA), aB = vAlpha(jB), aC = vAlpha(jC), aD = vAlpha(jD);
+            const geom = new THREE.BufferGeometry();
+            geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+                jA.x, jA.y, jA.z, jB.x, jB.y, jB.z, jC.x, jC.y, jC.z,
+                jA.x, jA.y, jA.z, jD.x, jD.y, jD.z, jB.x, jB.y, jB.z
+            ]), 3));
+            geom.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([
+                0, 0.5,  1, 0.5,  0.5, 1,
+                0, 0.5,  0.5, 0,  1, 0.5
+            ]), 2));
+            geom.computeVertexNormals();
+            const avgAlpha = (aA + aB + aC + aD) / 4;
+            const quadAlphas = [aA, aB, aC, aA, aD, aB];
+            const ns = 6 + Math.random() * 8, nst = 0.15 + Math.random() * 0.35;
+            accumulatePlane(geom, color, baseOpacity, baseEdgeOpacity * avgAlpha, quadAlphas, ns, nst, groupQuat, origin);
+            accumulateSkirt(geom, color, baseOpacity, quadAlphas, ns, nst, groupQuat, origin);
+        } else {
+            // Triangle with jittered vertices
+            const jA = jitterVec(vA, jitterAmt);
+            const jB = jitterVec(vB, jitterAmt);
+            const jC = jitterVec(vC, jitterAmt);
+
+            const aA = vAlpha(jA), aB = vAlpha(jB), aC = vAlpha(jC);
+            const geom = new THREE.BufferGeometry();
+            geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array([
+                jA.x, jA.y, jA.z, jB.x, jB.y, jB.z, jC.x, jC.y, jC.z
+            ]), 3));
+            geom.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([
+                0, 0,  1, 0,  0.5, 1
+            ]), 2));
+            geom.computeVertexNormals();
+            const avgAlpha = (aA + aB + aC) / 3;
+            const triAlphas = [aA, aB, aC];
+            const ns = 6 + Math.random() * 8, nst = 0.15 + Math.random() * 0.35;
+            accumulatePlane(geom, color, baseOpacity, baseEdgeOpacity * avgAlpha, triAlphas, ns, nst, groupQuat, origin);
+            accumulateSkirt(geom, color, baseOpacity, triAlphas, ns, nst, groupQuat, origin);
+        }
+
+        // --- Advance to next face ---
+        // Pick hinge edge for the next fold
+        const edgeChoice = Math.random();
+        let sharedA, sharedB, oldFree;
+        if (edgeChoice < 0.4) {
+            sharedA = vB; sharedB = vC; oldFree = vA;
+        } else if (edgeChoice < 0.8) {
+            sharedA = vA; sharedB = vC; oldFree = vB;
+        } else {
+            sharedA = vA; sharedB = vB; oldFree = vC;
+        }
+
+        const edgeVec = sharedB.clone().sub(sharedA).normalize();
+        const midpoint = sharedA.clone().add(sharedB).multiplyScalar(0.5);
+        const reflected = reflectAcrossEdge(oldFree, midpoint, edgeVec);
+
+        // Dihedral fold — gentle angles for sheet-like veils
+        const dihedral = (0.02 + Math.random() * 0.08) * (Math.random() < 0.5 ? 1 : -1);
+        const newFree = midpoint.clone().add(
+            rotateAround(reflected.clone().sub(midpoint), edgeVec, dihedral)
+        );
+
+        // Scale variation: faces shrink slightly along the chain
+        const scaleFactor = 0.92 + Math.random() * 0.12;
+        const center = sharedA.clone().add(sharedB).add(newFree).divideScalar(3);
+        const scaleFrom = (v) => center.clone().add(v.clone().sub(center).multiplyScalar(scaleFactor));
+
+        vA = scaleFrom(sharedA);
+        vB = scaleFrom(sharedB);
+        vC = scaleFrom(newFree);
+    }
+
+}
+
+// Collect all dot positions with intensity weights (used for plane illumination + attachment)
+const allDotPositions = [];
+
+// --- Light Spheres ---
+
+// Shared sphere geometry (reused for all orbs)
+const sphereGeo = new THREE.SphereGeometry(1, 16, 12);
+
+// Circular glow texture for sprites
+function createGlowTexture() {
+    const size = 128;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const half = size / 2;
+    const gradient = ctx.createRadialGradient(half, half, 0, half, half, half);
+    gradient.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+    gradient.addColorStop(0.1, 'rgba(255, 255, 255, 0.25)');
+    gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.10)');
+    gradient.addColorStop(0.6, 'rgba(255, 255, 255, 0.03)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+    return new THREE.CanvasTexture(canvas);
+}
+const glowTexture = createGlowTexture();
+
+// Light sphere data accumulators (built into InstancedMesh + Points later)
+const sphereInstData = [];
+const glowPointData = [];
+
+function registerLightSphere(position, radius, color, glowScale) {
+    sphereInstData.push({ position: position.clone(), radius, color: color.clone() });
+    if (glowScale > 0) {
+        glowPointData.push({ position: position.clone(), size: radius * glowScale });
+    }
+}
+
+// --- Generate Guide Curves ---
+const guideCurves = generateAllGuideCurves();
+
+// --- Light Spheres (curve-guided + interior) ---
+
+// Hero spheres: at bright convergence points near center
+for (let i = 0; i < CONFIG.heroDotCount; i++) {
+    const pos = new THREE.Vector3(gaussianRandom(0, CONFIG.heroDotSpread[0]), gaussianRandom(0, CONFIG.heroDotSpread[1]), gaussianRandom(0, CONFIG.heroDotSpread[2]));
+    const radius = (CONFIG.heroDotRadiusBase + Math.random() * CONFIG.heroDotRadiusRange) * 0.3;
+    registerLightSphere(pos, radius, new THREE.Color(1, 1, 1), CONFIG.heroDotGlowBase + Math.random() * CONFIG.heroDotGlowRange);
+    allDotPositions.push({ pos: pos.clone(), tier: 'hero', intensity: 1.0 });
+}
+
+// Medium spheres along primary curves
+let medCount = 0;
+for (const curve of guideCurves.filter(c => c.tier === 'primary')) {
+    if (medCount >= CONFIG.mediumDotCount) break;
+    const idx = Math.floor(curve.length * (0.3 + Math.random() * 0.4));
+    if (idx < curve.length) {
+        const pos = curve[idx].clone().add(new THREE.Vector3(
+            gaussianRandom(0, CONFIG.mediumDotJitter), gaussianRandom(0, CONFIG.mediumDotJitter), gaussianRandom(0, CONFIG.mediumDotJitter)
+        ));
+        const dist = pos.length();
+        const fade = computeFade(dist, 0.4);
+        const radius = (CONFIG.mediumDotRadiusBase + Math.random() * CONFIG.mediumDotRadiusRange + fade * 0.010) * 0.3;
+        registerLightSphere(pos, radius, new THREE.Color(1, 1, 1), CONFIG.mediumDotGlowBase + Math.random() * CONFIG.mediumDotGlowRange);
+        allDotPositions.push({ pos: pos.clone(), tier: 'medium', intensity: 0.5 });
+        medCount++;
+    }
+}
+
+// Small dots along all curves
+for (const curve of guideCurves) {
+    const density = CONFIG.smallDotDensity[curve.tier] || 0.05;
+    for (let i = 0; i < curve.length; i++) {
+        if (Math.random() < density) {
+            const pos = curve[i].clone().add(new THREE.Vector3(
+                gaussianRandom(0, 0.03), gaussianRandom(0, 0.03), gaussianRandom(0, 0.03)
+            ));
+            const dist = pos.length();
+            const radius = (CONFIG.smallDotRadiusBase + Math.random() * CONFIG.smallDotRadiusRange) * 0.3;
+            const dotFade = Math.exp(-0.3 * dist * dist);
+            const edgeness = Math.pow(1.0 - dotFade, 0.6);
+            const dotHue = (270 + edgeness * 60 + Math.random() * 25) / 360;
+            const dotSat = edgeness * 0.90 + 0.08;
+            const dotLightness = CONFIG.smallDotLightnessBase + dotFade * CONFIG.smallDotLightnessRange;
+            const dotColor = new THREE.Color().setHSL(dotHue, dotSat, dotLightness);
+            registerLightSphere(pos, radius, dotColor, CONFIG.smallDotGlowBase + dotFade * 6 + edgeness * 5 + Math.random() * 4);
+            allDotPositions.push({ pos: pos.clone(), intensity: 0.15 });
+        }
+    }
+}
+
+// Interior volume dots
+for (let i = 0; i < CONFIG.interiorDotCount; i++) {
+    let pos;
+    do {
+        pos = new THREE.Vector3(gaussianRandom(0, CONFIG.interiorDotSpread[0]), gaussianRandom(0, CONFIG.interiorDotSpread[1]), gaussianRandom(0, CONFIG.interiorDotSpread[2]));
+    } while (envelopeSDF(pos) > -0.05);
+    const dist = pos.length();
+    const radius = (CONFIG.smallDotRadiusBase + Math.random() * CONFIG.smallDotRadiusRange) * 0.3;
+    const dotFade = Math.exp(-0.3 * dist * dist);
+    const edgeness = Math.pow(1.0 - dotFade, 0.6);
+    const dotHue = (270 + edgeness * 60 + Math.random() * 25) / 360;
+    const dotSat = edgeness * 0.90 + 0.08;
+    const dotLightness = CONFIG.smallDotLightnessBase + dotFade * CONFIG.smallDotLightnessRange;
+    const dotColor = new THREE.Color().setHSL(dotHue, dotSat, dotLightness);
+    registerLightSphere(pos, radius, dotColor, CONFIG.smallDotGlowBase + dotFade * 6 + edgeness * 5 + Math.random() * 4);
+    allDotPositions.push({ pos: pos.clone(), intensity: 0.15 });
+}
+
+// Micro-dot scatter: dense field of tiny saturated sparkle points
+for (let i = 0; i < CONFIG.microDotCount; i++) {
+    let pos;
+    do {
+        pos = new THREE.Vector3(gaussianRandom(0, CONFIG.microDotSpread[0]), gaussianRandom(0, CONFIG.microDotSpread[1]), gaussianRandom(0, CONFIG.microDotSpread[2]));
+    } while (envelopeSDF(pos) > 0.05);
+    const dist = pos.length();
+    const dotFade = Math.exp(-0.25 * dist * dist);
+    const radius = (CONFIG.microDotRadiusBase + Math.random() * CONFIG.microDotRadiusRange) * 0.3;
+    const edgeness = Math.pow(1.0 - dotFade, 0.6);
+    const dotHue = (260 + edgeness * 70 + Math.random() * 30) / 360;
+    const dotSat = edgeness * 0.85 + 0.12;
+    const dotLightness = CONFIG.microDotLightnessBase + dotFade * CONFIG.microDotLightnessRange;
+    const dotColor = new THREE.Color().setHSL(dotHue, dotSat, dotLightness);
+    registerLightSphere(pos, radius, dotColor, CONFIG.microDotGlowBase + dotFade * 5 + edgeness * 6 + Math.random() * 4);
+    allDotPositions.push({ pos: pos.clone(), intensity: 0.05 });
+}
+
+// Extract significant lights for fragment-shader transmission
+const significantLights = allDotPositions.filter(d => d.tier === 'hero' || d.tier === 'medium');
+const MAX_LIGHTS = 10;
+const lightPosArray = [];
+const lightIntensityArray = [];
+for (let i = 0; i < MAX_LIGHTS; i++) {
+    if (i < significantLights.length) {
+        lightPosArray.push(significantLights[i].pos.clone());
+        lightIntensityArray.push(significantLights[i].intensity);
+    } else {
+        lightPosArray.push(new THREE.Vector3());
+        lightIntensityArray.push(0);
+    }
+}
+sharedLightUniforms = {
+    uLightPositions: { value: lightPosArray },
+    uLightIntensities: { value: lightIntensityArray },
+    uLightCount: { value: Math.min(significantLights.length, MAX_LIGHTS) }
+};
+
+// --- Flow Field + Color Field (used for chain orientation and hue) ---
+
+function hashVec(p) {
+    let x = Math.sin(p.x * 127.1 + p.y * 311.7 + p.z * 74.7) * 43758.5453;
+    let y = Math.sin(p.x * 269.5 + p.y * 183.3 + p.z * 246.1) * 43758.5453;
+    let z = Math.sin(p.x * 419.2 + p.y * 371.9 + p.z * 128.9) * 43758.5453;
+    return new THREE.Vector3(x - Math.floor(x), y - Math.floor(y), z - Math.floor(z));
+}
+
+function flowFieldNormal(pos, scale = 1.5) {
+    const sp = pos.clone().multiplyScalar(scale);
+    const i = new THREE.Vector3(Math.floor(sp.x), Math.floor(sp.y), Math.floor(sp.z));
+    const f = new THREE.Vector3(sp.x - i.x, sp.y - i.y, sp.z - i.z);
+    const s = f.clone();
+    s.x = f.x * f.x * (3 - 2 * f.x);
+    s.y = f.y * f.y * (3 - 2 * f.y);
+    s.z = f.z * f.z * (3 - 2 * f.z);
+
+    const h000 = hashVec(i);
+    const h100 = hashVec(i.clone().add(new THREE.Vector3(1,0,0)));
+    const h010 = hashVec(i.clone().add(new THREE.Vector3(0,1,0)));
+    const h110 = hashVec(i.clone().add(new THREE.Vector3(1,1,0)));
+    const h001 = hashVec(i.clone().add(new THREE.Vector3(0,0,1)));
+    const h101 = hashVec(i.clone().add(new THREE.Vector3(1,0,1)));
+    const h011 = hashVec(i.clone().add(new THREE.Vector3(0,1,1)));
+    const h111 = hashVec(i.clone().add(new THREE.Vector3(1,1,1)));
+
+    const lerp3 = (a, b, t) => a.clone().lerp(b, t);
+    const c00 = lerp3(h000, h100, s.x);
+    const c10 = lerp3(h010, h110, s.x);
+    const c01 = lerp3(h001, h101, s.x);
+    const c11 = lerp3(h011, h111, s.x);
+    const c0 = lerp3(c00, c10, s.y);
+    const c1 = lerp3(c01, c11, s.y);
+    const result = lerp3(c0, c1, s.z);
+
+    return result.subScalar(0.5).normalize();
+}
+
+function colorFieldHue(pos, scale = 1.2) {
+    const sp = pos.clone().multiplyScalar(scale);
+    sp.x += 73.1; sp.y += 159.4; sp.z += 213.7;
+
+    const i = new THREE.Vector3(Math.floor(sp.x), Math.floor(sp.y), Math.floor(sp.z));
+    const f = new THREE.Vector3(sp.x - i.x, sp.y - i.y, sp.z - i.z);
+    f.x = f.x * f.x * (3 - 2 * f.x);
+    f.y = f.y * f.y * (3 - 2 * f.y);
+    f.z = f.z * f.z * (3 - 2 * f.z);
+
+    const h = (p) => hashVec(p).x;
+    const h000 = h(i);
+    const h100 = h(new THREE.Vector3(i.x+1, i.y, i.z));
+    const h010 = h(new THREE.Vector3(i.x, i.y+1, i.z));
+    const h110 = h(new THREE.Vector3(i.x+1, i.y+1, i.z));
+    const h001 = h(new THREE.Vector3(i.x, i.y, i.z+1));
+    const h101 = h(new THREE.Vector3(i.x+1, i.y, i.z+1));
+    const h011 = h(new THREE.Vector3(i.x, i.y+1, i.z+1));
+    const h111 = h(new THREE.Vector3(i.x+1, i.y+1, i.z+1));
+
+    const c00 = h000 + (h100 - h000) * f.x;
+    const c10 = h010 + (h110 - h010) * f.x;
+    const c01 = h001 + (h101 - h001) * f.x;
+    const c11 = h011 + (h111 - h011) * f.x;
+    const c0 = c00 + (c10 - c00) * f.y;
+    const c1 = c01 + (c11 - c01) * f.y;
+    const val = c0 + (c1 - c0) * f.z;
+
+    const contrasty = val < 0.5
+        ? 0.5 * Math.pow(2 * val, 1.6)
+        : 1 - 0.5 * Math.pow(2 * (1 - val), 1.6);
+    return 210 + contrasty * 140;
+}
+
+// --- Drape chains along guide curves ---
+const CHAIN_CONFIG = {};
+for (const [tier, c] of Object.entries(CONFIG.chains)) {
+    CHAIN_CONFIG[tier] = {
+        chainLen: () => c.chainLenBase + Math.floor(Math.random() * c.chainLenRange),
+        scale: () => c.scaleBase + Math.random() * c.scaleRange,
+        spread: c.spread, dualProb: c.dualProb, spacing: c.spacing
+    };
+}
+
+for (const curve of guideCurves) {
+    const config = CHAIN_CONFIG[curve.tier];
+    const samples = sampleAlongCurve(curve, config.spacing);
+
+    for (const sample of samples) {
+        const dir1 = drapingDirection(sample, config.spread);
+        const familyHue = colorFieldHue(sample.pos) + (Math.random() - 0.5) * 30;
+        const chainLen = config.chainLen();
+        const planeScale = config.scale();
+
+        createFoldingChain(sample.pos, chainLen, planeScale, sample.pos.length(),
+            allDotPositions, familyHue, dir1);
+
+        // Dual-side: drape on opposite side of curve
+        if (Math.random() < config.dualProb) {
+            const flippedBinormal = sample.binormal.clone().negate();
+            const flippedSample = { ...sample, binormal: flippedBinormal };
+            const dir2 = drapingDirection(flippedSample, config.spread);
+            createFoldingChain(sample.pos, chainLen, planeScale, sample.pos.length(),
+                allDotPositions, familyHue + (Math.random() - 0.5) * 15, dir2);
+        }
+    }
+}
+
+// Atmospheric scatter: a few random interior chains for depth
+for (let i = 0; i < CONFIG.atmosphericCount; i++) {
+    let pos;
+    do {
+        pos = new THREE.Vector3(gaussianRandom(0, 0.6), gaussianRandom(0, 0.4), gaussianRandom(0, 0.5));
+    } while (envelopeSDF(pos) > -0.1);
+    const flowNormal = flowFieldNormal(pos, 1.5);
+    const familyHue = colorFieldHue(pos) + (Math.random() - 0.5) * 40;
+    const planeScale = 0.5 + Math.random() * 0.3;
+    const chainLen = 3 + Math.floor(Math.random() * 2);
+    createFoldingChain(pos, chainLen, planeScale, pos.length(),
+        allDotPositions, familyHue, flowNormal);
+}
+
+// --- Build Batched Face Mesh ---
+{
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(faceAccum.pos), 3));
+    geom.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(faceAccum.norm), 3));
+    geom.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(faceAccum.uv), 2));
+    geom.setAttribute('vAlpha', new THREE.BufferAttribute(new Float32Array(faceAccum.alpha), 1));
+    geom.setAttribute('aColor', new THREE.BufferAttribute(new Float32Array(faceAccum.color), 3));
+    geom.setAttribute('aBaseOpacity', new THREE.BufferAttribute(new Float32Array(faceAccum.opacity), 1));
+    geom.setAttribute('aNoiseScale', new THREE.BufferAttribute(new Float32Array(faceAccum.noiseScale), 1));
+    geom.setAttribute('aNoiseStrength', new THREE.BufferAttribute(new Float32Array(faceAccum.noiseStrength), 1));
+    geom.setAttribute('aCrackExtend', new THREE.BufferAttribute(new Float32Array(faceAccum.crackExtend), 1));
+
+    const mat = new THREE.ShaderMaterial({
+        uniforms: {
+            uLightPositions: sharedLightUniforms.uLightPositions,
+            uLightIntensities: sharedLightUniforms.uLightIntensities,
+            uLightCount: sharedLightUniforms.uLightCount,
+            uCameraPos: { value: camera.position },
+            uFrontLightFactor: { value: CONFIG.frontLightFactor },
+            uBackLightFactor: { value: CONFIG.backLightFactor },
+            uIlluminationCap: { value: CONFIG.illuminationCap },
+            uAmbientLight: { value: CONFIG.ambientLight },
+            uEdgeFadeThreshold: { value: CONFIG.edgeFadeThreshold }
+        },
+        vertexShader: `
+            attribute float vAlpha;
+            attribute vec3 aColor;
+            attribute float aBaseOpacity;
+            attribute float aNoiseScale;
+            attribute float aNoiseStrength;
+            attribute float aCrackExtend;
+
+            varying float fAlpha;
+            varying vec3 vWorldPos;
+            varying vec3 vWorldNormal;
+            varying vec2 vUv;
+            varying vec3 vColor;
+            varying float vBaseOpacity;
+            varying float vNoiseScale;
+            varying float vNoiseStrength;
+            varying float vCrackExtend;
+
+            void main() {
+                fAlpha = vAlpha;
+                vUv = uv;
+                vColor = aColor;
+                vBaseOpacity = aBaseOpacity;
+                vNoiseScale = aNoiseScale;
+                vNoiseStrength = aNoiseStrength;
+                vCrackExtend = aCrackExtend;
+                vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+                vWorldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            #define MAX_LIGHTS 10
+
+            uniform vec3 uLightPositions[MAX_LIGHTS];
+            uniform float uLightIntensities[MAX_LIGHTS];
+            uniform int uLightCount;
+            uniform vec3 uCameraPos;
+            uniform float uFrontLightFactor;
+            uniform float uBackLightFactor;
+            uniform float uIlluminationCap;
+            uniform float uAmbientLight;
+            uniform float uEdgeFadeThreshold;
+
+            varying float fAlpha;
+            varying vec3 vWorldPos;
+            varying vec3 vWorldNormal;
+            varying vec2 vUv;
+            varying vec3 vColor;
+            varying float vBaseOpacity;
+            varying float vNoiseScale;
+            varying float vNoiseStrength;
+            varying float vCrackExtend;
+
+            float hash(vec3 p) {
+                p = fract(p * vec3(443.8975, 397.2973, 491.1871));
+                p += dot(p, p.yxz + 19.19);
+                return fract((p.x + p.y) * p.z);
+            }
+
+            float noise3D(vec3 p) {
+                vec3 i = floor(p);
+                vec3 f = fract(p);
+                f = f * f * (3.0 - 2.0 * f);
+                float n000 = hash(i);
+                float n100 = hash(i + vec3(1,0,0));
+                float n010 = hash(i + vec3(0,1,0));
+                float n110 = hash(i + vec3(1,1,0));
+                float n001 = hash(i + vec3(0,0,1));
+                float n101 = hash(i + vec3(1,0,1));
+                float n011 = hash(i + vec3(0,1,1));
+                float n111 = hash(i + vec3(1,1,1));
+                return mix(
+                    mix(mix(n000, n100, f.x), mix(n010, n110, f.x), f.y),
+                    mix(mix(n001, n101, f.x), mix(n011, n111, f.x), f.y),
+                    f.z
+                );
+            }
+
+            float voronoiEdge(vec2 p) {
+                vec2 n = floor(p);
+                vec2 f = fract(p);
+                float md1 = 8.0;
+                float md2 = 8.0;
+                for (int j = -1; j <= 1; j++) {
+                    for (int i = -1; i <= 1; i++) {
+                        vec2 g = vec2(float(i), float(j));
+                        vec2 o = vec2(
+                            hash(vec3(n + g, 0.0)),
+                            hash(vec3(n + g, 1.0))
+                        );
+                        vec2 r = g + o - f;
+                        float d = length(r);
+                        if (d < md1) {
+                            md2 = md1;
+                            md1 = d;
+                        } else if (d < md2) {
+                            md2 = d;
+                        }
+                    }
+                }
+                return md2 - md1;
+            }
+
+            float nebulaCracks(vec2 uv) {
+                float e1 = voronoiEdge(uv * 2.5 + 3.7);
+                float line1 = 1.0 - smoothstep(0.0, 0.04, e1);
+                float e2 = voronoiEdge(uv * 5.5 + 11.3);
+                float line2 = 1.0 - smoothstep(0.0, 0.03, e2);
+                float e3 = voronoiEdge(uv * 11.0 + 27.1);
+                float line3 = 1.0 - smoothstep(0.0, 0.025, e3);
+                return line1 * 0.4 + line2 * 0.25 + line3 * 0.1;
+            }
+
+            float nebulaDust(vec2 uv) {
+                float d = 0.0;
+                d += noise3D(vec3(uv * 3.0, 0.0)) * 0.5;
+                d += noise3D(vec3(uv * 6.5, 3.0)) * 0.3;
+                d += noise3D(vec3(uv * 14.0, 7.0)) * 0.2;
+                return d;
+            }
+
+            float starSparkle(vec2 p, float scale) {
+                p *= scale;
+                vec2 cell = floor(p);
+                vec2 f = fract(p);
+                float sparkle = 0.0;
+                for (int j = -1; j <= 1; j++) {
+                    for (int i = -1; i <= 1; i++) {
+                        vec2 g = vec2(float(i), float(j));
+                        vec2 cellId = cell + g;
+                        float brightness = hash(vec3(cellId, 30.0));
+                        if (brightness > 0.75) {
+                            vec2 starPos = vec2(
+                                hash(vec3(cellId, 10.0)),
+                                hash(vec3(cellId, 20.0))
+                            );
+                            float d = length(f - g - starPos);
+                            sparkle += smoothstep(0.07, 0.0, d) * (brightness - 0.75) * 4.0;
+                        }
+                    }
+                }
+                return sparkle;
+            }
+
+            void main() {
+                float n  = noise3D(vWorldPos * vNoiseScale);
+                float n2 = noise3D(vWorldPos * vNoiseScale * 2.7 + 31.7);
+                float noiseMix = n * 0.7 + n2 * 0.3;
+
+                vec3 modColor = vColor * (1.0 + (noiseMix - 0.5) * vNoiseStrength);
+
+                float illumination = 0.0;
+                for (int i = 0; i < MAX_LIGHTS; i++) {
+                    if (i >= uLightCount) break;
+                    vec3 toLight = uLightPositions[i] - vWorldPos;
+                    float d2 = dot(toLight, toLight);
+                    vec3 lightDir = normalize(toLight);
+                    float attenuation = uLightIntensities[i] / (1.0 + d2 * 3.0);
+                    float NdotL = dot(vWorldNormal, lightDir);
+                    float frontLight = max(NdotL, 0.0) * uFrontLightFactor;
+                    float backLight = max(-NdotL, 0.0) * uBackLightFactor;
+                    illumination += (frontLight + backLight) * attenuation;
+                }
+                illumination = min(illumination, uIlluminationCap);
+
+                float ambient = uAmbientLight;
+
+                // Crack extension fade: 1.0 inside plane, fades to 0.0 in skirt
+                float baseFade = vCrackExtend;           // base visuals follow boundary
+                float crackFade = pow(vCrackExtend, 0.3); // cracks fade more slowly
+
+                vec3 finalColor = modColor * (ambient + illumination) * baseFade;
+                float finalAlpha = vBaseOpacity * fAlpha * (ambient + illumination)
+                                   * (1.0 + (noiseMix - 0.5) * vNoiseStrength * 0.5) * baseFade;
+
+                vec2 patternCoord = vUv * 2.0 - 1.0;
+
+                float cracks = nebulaCracks(patternCoord) * 0.6;
+                float crackGlow = cracks * (ambient + illumination) * 0.7 * crackFade;
+                finalColor += (modColor * crackGlow * 0.8 + vec3(crackGlow) * 0.2);
+
+                float dust = nebulaDust(patternCoord) * 0.6 * baseFade;
+                float dustGlow = dust * (ambient + illumination) * 0.1;
+                finalColor += modColor * dustGlow;
+
+                float sparkles = (starSparkle(patternCoord, 7.0)
+                               + starSparkle(patternCoord, 13.0) * 0.5) * 0.6 * baseFade;
+                float sparkleGlow = sparkles * (ambient + illumination) * 0.25;
+                finalColor += vec3(sparkleGlow) * 0.5 + modColor * sparkleGlow * 0.5;
+
+                finalAlpha += (cracks * 0.06 * crackFade + dust * 0.015 + sparkles * 0.045);
+
+                // Fade planes that are edge-on to the viewer
+                vec3 viewDir = normalize(uCameraPos - vWorldPos);
+                float facing = abs(dot(normalize(vWorldNormal), viewDir));
+                float edgeFade = smoothstep(0.0, uEdgeFadeThreshold, facing);
+                finalAlpha *= edgeFade;
+                finalColor *= edgeFade;
+
+                gl_FragColor = vec4(finalColor, max(finalAlpha, 0.0));
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+    const mesh = new THREE.Mesh(geom, mat);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = 1;
+    scene.add(mesh);
+}
+
+// --- Build Batched Edge Mesh ---
+{
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(edgeAccum.pos), 3));
+    geom.setAttribute('vAlpha', new THREE.BufferAttribute(new Float32Array(edgeAccum.alpha), 1));
+    geom.setAttribute('aColor', new THREE.BufferAttribute(new Float32Array(edgeAccum.color), 3));
+    geom.setAttribute('aOpacity', new THREE.BufferAttribute(new Float32Array(edgeAccum.opacity), 1));
+
+    const mat = new THREE.ShaderMaterial({
+        vertexShader: `
+            attribute float vAlpha;
+            attribute vec3 aColor;
+            attribute float aOpacity;
+            varying float fAlpha;
+            varying vec3 vEdgeColor;
+            varying float vEdgeOpacity;
+            void main() {
+                fAlpha = vAlpha;
+                vEdgeColor = aColor;
+                vEdgeOpacity = aOpacity;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            varying float fAlpha;
+            varying vec3 vEdgeColor;
+            varying float vEdgeOpacity;
+            void main() {
+                gl_FragColor = vec4(vEdgeColor, vEdgeOpacity * fAlpha);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    const lines = new THREE.LineSegments(geom, mat);
+    lines.frustumCulled = false;
+    lines.renderOrder = 1;
+    scene.add(lines);
+}
+
+// --- Curve tendrils (batched into single LineSegments) ---
+{
+    const tendrilPos = [];
+    const tendrilCol = [];
+    for (const curve of guideCurves) {
+        if (curve.length < 4) continue;
+        const spline = new THREE.CatmullRomCurve3(curve);
+        const pts = spline.getPoints(Math.max(16, curve.length * 2));
+
+        const hue = (CONFIG.tendrilHueBase + Math.random() * CONFIG.tendrilHueRange) / 360;
+        const sat = CONFIG.tendrilSatBase + Math.random() * CONFIG.tendrilSatRange;
+        const opacity = curve.tier === 'primary' ? CONFIG.tendrilOpacity.primary : CONFIG.tendrilOpacity.other;
+
+        // Pre-compute per-point colors (pre-multiplied by opacity)
+        const ptColors = [];
+        for (const pt of pts) {
+            const d = pt.length();
+            const f = Math.exp(-1.5 * d * d);
+            const c = new THREE.Color().setHSL(hue, sat, 0.04 + f * 0.20);
+            ptColors.push(c.r * opacity, c.g * opacity, c.b * opacity);
+        }
+
+        // Convert line strip to line segments (pairs)
+        for (let i = 0; i < pts.length - 1; i++) {
+            const a = pts[i], b = pts[i + 1];
+            tendrilPos.push(a.x, a.y, a.z, b.x, b.y, b.z);
+            const j = i * 3, k = (i + 1) * 3;
+            tendrilCol.push(ptColors[j], ptColors[j+1], ptColors[j+2],
+                            ptColors[k], ptColors[k+1], ptColors[k+2]);
+        }
+    }
+    if (tendrilPos.length > 0) {
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute('position', new THREE.Float32BufferAttribute(tendrilPos, 3));
+        geom.setAttribute('color', new THREE.Float32BufferAttribute(tendrilCol, 3));
+        const mat = new THREE.LineBasicMaterial({
+            vertexColors: true,
+            transparent: true,
+            opacity: 1.0,
+            blending: THREE.CustomBlending,
+            blendSrc: THREE.OneFactor,
+            blendDst: THREE.OneFactor,
+            depthWrite: false
+        });
+        const lines = new THREE.LineSegments(geom, mat);
+        lines.renderOrder = 1;
+        scene.add(lines);
+    }
+}
+
+// --- Build Light Sphere InstancedMesh ---
+if (sphereInstData.length > 0) {
+    const sphereMat = new THREE.MeshBasicMaterial({ depthWrite: false });
+    const sphereInst = new THREE.InstancedMesh(sphereGeo, sphereMat, sphereInstData.length);
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < sphereInstData.length; i++) {
+        dummy.position.copy(sphereInstData[i].position);
+        dummy.scale.setScalar(sphereInstData[i].radius);
+        dummy.updateMatrix();
+        sphereInst.setMatrixAt(i, dummy.matrix);
+        sphereInst.setColorAt(i, sphereInstData[i].color);
+    }
+    sphereInst.instanceMatrix.needsUpdate = true;
+    sphereInst.instanceColor.needsUpdate = true;
+    sphereInst.renderOrder = 0;
+    scene.add(sphereInst);
+}
+
+// --- Build Glow Points ---
+if (glowPointData.length > 0) {
+    const positions = new Float32Array(glowPointData.length * 3);
+    const sizes = new Float32Array(glowPointData.length);
+    for (let i = 0; i < glowPointData.length; i++) {
+        positions[i * 3]     = glowPointData[i].position.x;
+        positions[i * 3 + 1] = glowPointData[i].position.y;
+        positions[i * 3 + 2] = glowPointData[i].position.z;
+        sizes[i] = glowPointData[i].size;
+    }
+    const glowGeom = new THREE.BufferGeometry();
+    glowGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    glowGeom.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+
+    const glowMat = new THREE.ShaderMaterial({
+        uniforms: { uGlowMap: { value: glowTexture } },
+        vertexShader: `
+            attribute float aSize;
+            void main() {
+                vec4 mvPos = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = aSize * (350.0 / -mvPos.z);
+                gl_Position = projectionMatrix * mvPos;
+            }
+        `,
+        fragmentShader: `
+            uniform sampler2D uGlowMap;
+            void main() {
+                gl_FragColor = texture2D(uGlowMap, gl_PointCoord);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+    });
+    const glowPoints = new THREE.Points(glowGeom, glowMat);
+    glowPoints.frustumCulled = false;
+    glowPoints.renderOrder = 0;
+    scene.add(glowPoints);
+}
+
+// --- Post-Processing ---
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+
+const bloomPass = new UnrealBloomPass(
+    new THREE.Vector2(window.innerWidth, window.innerHeight),
+    CONFIG.bloomStrength,
+    CONFIG.bloomRadius,
+    CONFIG.bloomThreshold
+);
+composer.addPass(bloomPass);
+
+composer.addPass(new OutputPass());
+
+// --- Controls ---
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = CONFIG.dampingFactor;
+controls.autoRotate = true;
+controls.autoRotateSpeed = CONFIG.autoRotateSpeed;
+controls.enableZoom = true;
+controls.minDistance = CONFIG.minDistance;
+controls.maxDistance = CONFIG.maxDistance;
+controls.target.set(0, 0, 0);
+
+// --- Resize ---
+
+window.addEventListener('resize', () => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+    composer.setSize(w, h);
+    bloomPass.resolution.set(w, h);
+});
+
+// --- Animation Loop ---
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    composer.render();
+}
+animate();
+</script>
+</body>
+</html>

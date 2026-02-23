@@ -128,11 +128,11 @@ export function deriveCustomColors(baseHue) {
 
 export const customPalette = {
     label: 'Custom',
-    baseHue: 180,
-    hueRange: 60,
-    saturation: 0.6,
-    lightness: 0.6,
-    ...deriveCustomColors(180),
+    baseHue: 325,
+    hueRange: 100,
+    saturation: 0.75,
+    lightness: 0.55,
+    ...deriveCustomColors(325),
 };
 
 /** Update any palette in-place (built-in or custom). Derives fog/bg/edge from baseHue. */
@@ -164,7 +164,7 @@ export function resetPalette(key) {
 
 /** Get the original default values for a palette (read-only). */
 export function getPaletteDefaults(key) {
-    if (key === 'custom') return { baseHue: 180, hueRange: 60, saturation: 0.6, lightness: 0.6 };
+    if (key === 'custom') return { baseHue: 325, hueRange: 100, saturation: 0.75, lightness: 0.55 };
     return PALETTE_DEFAULTS[key] || PALETTE_DEFAULTS['violet-depth'];
 }
 

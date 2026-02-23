@@ -4,12 +4,14 @@
  */
 
 import { createRenderer } from './engine/create-renderer.js';
-import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults } from './core/palettes.js';
+import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults, getPalette } from './core/palettes.js';
 import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles } from './ui/profiles.js';
 import { packageStillZip } from './export/export.js';
 import { initTheme } from './ui/theme.js';
 import { createLoadingAnimation } from './ui/loading-animation.js';
 import { createFaviconAnimation } from './ui/animated-favicon.js';
+import { generateTitle } from './core/text.js';
+import { xmur3, mulberry32 } from './core/prng.js';
 
 /* ---------------------------
  * DOM references
@@ -39,10 +41,11 @@ const el = {
     depthLabel: document.getElementById('depthLabel'),
     coherenceLabel: document.getElementById('coherenceLabel'),
 
-    profileName: document.getElementById('profileName'),
+    profileNameField: document.getElementById('profileNameField'),
     saveProfile: document.getElementById('saveProfile'),
     randomize: document.getElementById('randomize'),
     profileGallery: document.getElementById('profileGallery'),
+    activeProfileDisplay: document.getElementById('activeProfileDisplay'),
 
     titleText: document.getElementById('titleText'),
     altText: document.getElementById('altText'),
@@ -61,7 +64,6 @@ const el = {
     canvasOverlay: document.getElementById('canvasOverlay'),
     canvasOverlayText: document.getElementById('canvasOverlayText'),
     exportBtn: document.getElementById('exportBtn'),
-    imageProfileSelect: document.getElementById('imageProfileSelect'),
 
     infoModal: document.getElementById('infoModal'),
     infoModalTitle: document.getElementById('infoModalTitle'),
@@ -164,147 +166,6 @@ function drainThumbQueue() {
         drainThumbQueue();
     }, 100);
 }
-
-/* ---------------------------
- * Custom select wrapper (for profile dropdowns)
- * ---------------------------
- */
-function wrapSelect(selectEl, { getProfile }) {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'custom-select';
-
-    const trigger = document.createElement('button');
-    trigger.type = 'button';
-    trigger.className = 'custom-select-trigger';
-
-    const dropdown = document.createElement('div');
-    dropdown.className = 'custom-select-dropdown';
-
-    selectEl.parentNode.insertBefore(wrapper, selectEl);
-    wrapper.appendChild(selectEl);
-    wrapper.appendChild(trigger);
-    wrapper.appendChild(dropdown);
-
-    let focusedIdx = -1;
-
-    function isOpen() { return wrapper.classList.contains('open'); }
-    function open() {
-        wrapper.classList.add('open');
-        focusedIdx = -1;
-        const sel = dropdown.querySelector('.selected');
-        if (sel) sel.scrollIntoView({ block: 'nearest' });
-    }
-    function close() { wrapper.classList.remove('open'); clearFocus(); }
-    function toggle() { isOpen() ? close() : open(); }
-
-    function clearFocus() {
-        focusedIdx = -1;
-        dropdown.querySelectorAll('.focused').forEach(el => el.classList.remove('focused'));
-    }
-    function focusOption(idx) {
-        const opts = dropdown.querySelectorAll('.custom-select-option');
-        if (opts.length === 0) return;
-        clearFocus();
-        focusedIdx = Math.max(0, Math.min(idx, opts.length - 1));
-        opts[focusedIdx].classList.add('focused');
-        opts[focusedIdx].scrollIntoView({ block: 'nearest' });
-    }
-    function selectValue(value) {
-        if (selectEl.value !== value) {
-            selectEl.value = value;
-            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        updateTrigger();
-        close();
-    }
-
-    function updateTrigger() {
-        const value = selectEl.value;
-        const opt = selectEl.options[selectEl.selectedIndex];
-        const text = opt ? opt.textContent : '';
-        const isPlaceholder = !value;
-        const profile = value ? getProfile(value) : null;
-
-        trigger.innerHTML = '';
-
-        if (profile?.seed && profile?.controls) {
-            const img = document.createElement('img');
-            img.className = 'cs-thumb';
-            queueThumbnail(profile.seed, profile.controls, img, profile.paletteTweaks);
-            trigger.appendChild(img);
-        }
-
-        const label = document.createElement('span');
-        label.className = isPlaceholder ? 'cs-label cs-placeholder' : 'cs-label';
-        label.textContent = text || 'Select\u2026';
-        trigger.appendChild(label);
-
-        const arrow = document.createElement('span');
-        arrow.className = 'cs-arrow';
-        arrow.textContent = '\u25be';
-        trigger.appendChild(arrow);
-    }
-
-    function refresh() {
-        dropdown.innerHTML = '';
-        const currentValue = selectEl.value;
-
-        for (const opt of selectEl.options) {
-            const div = document.createElement('div');
-            div.className = 'custom-select-option';
-            if (opt.value === currentValue) div.classList.add('selected');
-
-            if (!opt.value) {
-                div.classList.add('cs-placeholder');
-            } else {
-                const profile = getProfile(opt.value);
-                if (profile?.seed && profile?.controls) {
-                    const img = document.createElement('img');
-                    img.className = 'cs-thumb';
-                    queueThumbnail(profile.seed, profile.controls, img, profile.paletteTweaks);
-                    div.appendChild(img);
-                }
-            }
-
-            const label = document.createElement('span');
-            label.className = 'cs-opt-label';
-            label.textContent = opt.textContent;
-            div.appendChild(label);
-
-            div.addEventListener('click', () => selectValue(opt.value));
-            dropdown.appendChild(div);
-        }
-        updateTrigger();
-    }
-
-    trigger.addEventListener('click', (e) => { e.stopPropagation(); toggle(); });
-    trigger.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') { close(); return; }
-        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault();
-            if (!isOpen()) open();
-            const opts = dropdown.querySelectorAll('.custom-select-option');
-            if (opts.length === 0) return;
-            if (e.key === 'ArrowDown') focusOption(focusedIdx + 1);
-            else focusOption(focusedIdx - 1);
-        }
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            if (!isOpen()) { open(); return; }
-            const opts = dropdown.querySelectorAll('.custom-select-option');
-            if (focusedIdx >= 0 && focusedIdx < opts.length) opts[focusedIdx].click();
-        }
-    });
-    document.addEventListener('click', (e) => { if (isOpen() && !wrapper.contains(e.target)) close(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && isOpen()) close(); });
-
-    refresh();
-    return { refresh };
-}
-
-const imageSelectUI = wrapSelect(el.imageProfileSelect, {
-    getProfile: name => loadProfiles()[name],
-});
 
 /* ---------------------------
  * Topology tile selector
@@ -432,6 +293,13 @@ function syncPaletteEditor() {
 }
 
 function initPaletteSelector() {
+    // Generate all chip gradients from palette data so they match the active state
+    for (const chip of el.paletteSelector.querySelectorAll('.pal-chip')) {
+        const key = chip.dataset.value;
+        if (key === 'custom') continue;
+        const pal = getPalette(key);
+        if (pal) updateActiveChipGradient(key, pal);
+    }
     cacheChipGradients();
 
     const chips = el.paletteSelector.querySelectorAll('.pal-chip');
@@ -611,29 +479,14 @@ function toast(msg) {
     setTimeout(() => { if (el.toast.textContent === msg) el.toast.textContent = ''; }, 2400);
 }
 
-function refreshImageProfileSelect() {
-    const profiles = loadProfiles();
-    const names = Object.keys(profiles).sort((a, b) => a.localeCompare(b));
-    const prev = el.imageProfileSelect.value;
-    el.imageProfileSelect.innerHTML = '';
-    for (const name of names) {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        el.imageProfileSelect.appendChild(opt);
-    }
-    if (names.includes(prev)) el.imageProfileSelect.value = prev;
-    imageSelectUI.refresh();
-}
-
 function loadProfileIntoUI(name) {
     if (!name) return;
     const profiles = loadProfiles();
     const p = profiles[name];
     if (!p) return;
-    // Intent field serves as both name and seed
-    el.profileName.value = p.seed || name;
-    autoGrow(el.profileName);
+    el.profileNameField.value = name;
+    el.seed.value = p.seed || name;
+    autoGrow(el.seed);
     if (p.controls) {
         const tweaks = p.paletteTweaks || (p.controls.palette === 'custom' ? p.customPalette : null);
         if (tweaks) {
@@ -649,11 +502,18 @@ function loadProfileIntoUI(name) {
     }
     el.customPaletteEditor.classList.add('collapsed');
     loadedProfileName = name;
+    setDirty(false);
 }
 
 function setStillRendered(value) {
     stillRendered = value;
     el.exportBtn.disabled = !value;
+}
+
+let dirty = false;
+function setDirty(value) {
+    dirty = value;
+    el.saveProfile.disabled = !value;
 }
 
 function clearStillText() {
@@ -759,6 +619,7 @@ function onControlChange() {
     renderStillCanvas();
     clearStillText();
     setStillRendered(false);
+    setDirty(true);
 }
 
 /* ---------------------------
@@ -769,24 +630,17 @@ for (const id of SLIDER_KEYS) {
     el[id].addEventListener('input', onControlChange);
 }
 el.seed.addEventListener('change', onControlChange);
-
-el.imageProfileSelect.addEventListener('change', () => {
-    const name = el.imageProfileSelect.value;
-    if (!name) return;
-    loadProfileIntoUI(name);
-    const seed = el.seed.value.trim() || 'seed';
-    const controls = readControlsFromUI();
-    renderAndUpdate(seed, controls, { animate: true });
-    setStillRendered(true);
-    updateActiveProfileIndicator();
-});
+el.profileNameField.addEventListener('input', () => setDirty(true));
 
 el.saveProfile.addEventListener('click', () => {
-    const defaultName = el.titleText.textContent.trim() || el.profileName.value.trim() || 'Untitled';
-    const name = prompt('Profile name:', defaultName);
-    if (!name || !name.trim()) return;
+    const name = el.profileNameField.value.trim();
+    if (!name) { toast('Enter a name first.'); return; }
 
     const profiles = loadProfiles();
+    if (profiles[name] && name !== loadedProfileName) {
+        if (!confirm(`Profile "${name}" already exists. Overwrite?`)) return;
+    }
+
     const controls = readControlsFromUI();
     const profileData = {
         seed: el.seed.value.trim() || 'seed',
@@ -796,14 +650,13 @@ el.saveProfile.addEventListener('click', () => {
     if (controls.palette === 'custom') {
         profileData.customPalette = profileData.paletteTweaks;
     }
-    profiles[name.trim()] = profileData;
+    profiles[name] = profileData;
     saveProfiles(profiles);
 
-    refreshImageProfileSelect();
+    loadedProfileName = name;
     refreshProfileGallery();
-    loadedProfileName = name.trim();
-    updateActiveProfileIndicator();
-    toast(`Saved profile: ${name.trim()}`);
+    setDirty(false);
+    toast(`Saved profile: ${name}`);
 });
 
 /* ---------------------------
@@ -852,8 +705,8 @@ function generateIntent() {
 }
 
 el.randomize.addEventListener('click', () => {
-    el.profileName.value = generateIntent();
-    autoGrow(el.profileName);
+    el.seed.value = generateIntent();
+    autoGrow(el.seed);
 
     setTopologyUI(TOPOLOGY_VALUES[Math.floor(Math.random() * TOPOLOGY_VALUES.length)]);
     const chosenPalette = PALETTE_KEYS[Math.floor(Math.random() * PALETTE_KEYS.length)];
@@ -870,8 +723,14 @@ el.randomize.addEventListener('click', () => {
     const seed = el.seed.value.trim() || 'seed';
     const controls = readControlsFromUI();
     updateSliderLabels(controls);
+
+    // Generate a descriptive name from the randomized controls
+    const nameRng = mulberry32(xmur3(seed + ':name')());
+    el.profileNameField.value = generateTitle(controls, nameRng);
+
     renderAndUpdate(seed, controls, { animate: true });
     setStillRendered(true);
+    setDirty(true);
     toast('Randomized.');
 });
 
@@ -881,12 +740,88 @@ el.randomize.addEventListener('click', () => {
  */
 const TRASH_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0v-6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>';
 
+function buildProfileCard(name, p, { isActive = false } = {}) {
+    const card = document.createElement('div');
+    card.className = 'profile-card';
+    card.dataset.profileName = name;
+    if (isActive) {
+        card.classList.add('active-profile');
+        card.style.cursor = 'pointer';
+        const chevron = document.createElement('span');
+        chevron.className = 'profile-card-chevron';
+        chevron.innerHTML = '&#9662;';
+        card.appendChild(chevron);
+        card.addEventListener('click', () => {
+            const gallery = document.getElementById('profilesContent');
+            if (gallery) gallery.classList.toggle('collapsed');
+            card.classList.toggle('expanded');
+        });
+    } else {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.profile-card-delete')) return;
+            loadProfileIntoUI(name);
+            const seed = el.seed.value.trim() || 'seed';
+            const controls = readControlsFromUI();
+            renderAndUpdate(seed, controls, { animate: true });
+            setStillRendered(true);
+            refreshProfileGallery();
+            const gallery = document.getElementById('profilesContent');
+            if (gallery) gallery.classList.add('collapsed');
+            toast(`Loaded: ${name}`);
+        });
+    }
+
+    const thumbImg = document.createElement('img');
+    thumbImg.className = 'profile-thumb';
+    card.appendChild(thumbImg);
+    if (p.seed && p.controls) {
+        queueThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
+    }
+
+    const body = document.createElement('div');
+    body.className = 'profile-card-body';
+
+    const nm = document.createElement('div');
+    nm.className = 'profile-card-name';
+    nm.textContent = name;
+    body.appendChild(nm);
+
+    card.appendChild(body);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'profile-card-delete';
+    deleteBtn.title = 'Delete';
+    deleteBtn.innerHTML = TRASH_SVG;
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteProfile(name);
+        if (name === loadedProfileName) loadedProfileName = null;
+        refreshProfileGallery();
+        toast(`Deleted: ${name}`);
+    });
+    card.appendChild(deleteBtn);
+
+    return card;
+}
+
 function refreshProfileGallery() {
     const profiles = loadProfiles();
     const names = Object.keys(profiles).sort((a, b) => a.localeCompare(b));
-    el.profileGallery.innerHTML = '';
 
-    if (names.length === 0) {
+    // Active profile display (above dropdown)
+    el.activeProfileDisplay.innerHTML = '';
+    if (loadedProfileName && profiles[loadedProfileName]) {
+        el.activeProfileDisplay.appendChild(
+            buildProfileCard(loadedProfileName, profiles[loadedProfileName], { isActive: true })
+        );
+    }
+
+    // Dropdown gallery (all other profiles)
+    el.profileGallery.innerHTML = '';
+    const others = names.filter(n => n !== loadedProfileName);
+
+    if (others.length === 0 && !loadedProfileName) {
         const d = document.createElement('div');
         d.className = 'small';
         d.textContent = 'No saved profiles yet.';
@@ -894,117 +829,9 @@ function refreshProfileGallery() {
         return;
     }
 
-    for (const name of names) {
-        const p = profiles[name];
-        const card = document.createElement('div');
-        card.className = 'profile-card';
-        card.dataset.profileName = name;
-
-        if (name === loadedProfileName) {
-            card.classList.add('active-profile');
-        }
-
-        card.addEventListener('click', () => card.classList.toggle('expanded'));
-
-        const thumbImg = document.createElement('img');
-        thumbImg.className = 'profile-thumb';
-        card.appendChild(thumbImg);
-        if (p.seed && p.controls) {
-            queueThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
-        }
-
-        const body = document.createElement('div');
-        body.className = 'profile-card-body';
-
-        const nm = document.createElement('div');
-        nm.className = 'profile-card-name';
-        nm.textContent = name;
-        body.appendChild(nm);
-
-        const actions = document.createElement('div');
-        actions.className = 'profile-card-actions';
-
-        const actionBtn = document.createElement('button');
-        actionBtn.textContent = 'Load';
-        actionBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            loadProfileIntoUI(name);
-            el.imageProfileSelect.value = name;
-            imageSelectUI.refresh();
-            const seed = el.seed.value.trim() || 'seed';
-            const controls = readControlsFromUI();
-            renderAndUpdate(seed, controls, { animate: true });
-            setStillRendered(true);
-            updateActiveProfileIndicator();
-            toast(`Loaded: ${name}`);
-        });
-
-        actions.appendChild(actionBtn);
-        body.appendChild(actions);
-        card.appendChild(body);
-
-        const details = document.createElement('div');
-        details.className = 'profile-card-details';
-
-        const dl = document.createElement('dl');
-        const addRow = (label, value) => {
-            const dt = document.createElement('dt');
-            dt.textContent = label;
-            const dd = document.createElement('dd');
-            dd.textContent = value;
-            dl.appendChild(dt);
-            dl.appendChild(dd);
-        };
-
-        addRow('Intent', p.seed || '\u2014');
-        if (p.controls) {
-            const c = p.controls;
-            addRow('Topology', c.topology || '\u2014');
-            addRow('Palette', c.palette || '\u2014');
-            const pt = p.paletteTweaks || (c.palette === 'custom' ? p.customPalette : null);
-            if (pt) {
-                addRow('  Hue', String(pt.baseHue));
-                addRow('  Range', String(pt.hueRange));
-                addRow('  Saturation', pt.saturation.toFixed(2));
-                addRow('  Lightness', pt.lightness.toFixed(2));
-            }
-            addRow('Density', c.density.toFixed(2));
-            addRow('Luminosity', c.luminosity.toFixed(2));
-            addRow('Fracture', c.fracture.toFixed(2));
-            addRow('Depth', c.depth.toFixed(2));
-            addRow('Coherence', c.coherence.toFixed(2));
-        }
-        details.appendChild(dl);
-        card.appendChild(details);
-
-        const chevron = document.createElement('span');
-        chevron.className = 'profile-card-chevron';
-        chevron.textContent = '\u25be';
-        card.appendChild(chevron);
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'profile-card-delete';
-        deleteBtn.title = 'Delete';
-        deleteBtn.innerHTML = TRASH_SVG;
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteProfile(name);
-            refreshImageProfileSelect();
-            refreshProfileGallery();
-            toast(`Deleted: ${name}`);
-        });
-        card.appendChild(deleteBtn);
-
-        el.profileGallery.appendChild(card);
+    for (const name of others) {
+        el.profileGallery.appendChild(buildProfileCard(name, profiles[name]));
     }
-}
-
-function updateActiveProfileIndicator() {
-    const cards = el.profileGallery.querySelectorAll('.profile-card');
-    cards.forEach(card => {
-        const isActive = card.dataset.profileName === loadedProfileName;
-        card.classList.toggle('active-profile', isActive);
-    });
 }
 
 /* ---------------------------
@@ -1244,7 +1071,7 @@ document.querySelectorAll('.sub-collapsible-toggle').forEach(btn => {
 });
 
 if (window.innerWidth > 767) {
-    document.querySelectorAll('.collapsible-toggle').forEach(btn => {
+    document.querySelectorAll('.collapsible-toggle[data-desktop-expand]').forEach(btn => {
         const content = document.getElementById(btn.dataset.target);
         content.classList.add('no-transition');
         btn.setAttribute('aria-expanded', 'true');
@@ -1255,9 +1082,66 @@ if (window.innerWidth > 767) {
 }
 
 /* ---------------------------
+ * Panel toggle
+ * ---------------------------
+ */
+const panelEl = document.querySelector('.panel');
+const panelToggleBtn = document.getElementById('panelToggle');
+
+function initPanelToggle() {
+    if (!panelToggleBtn || !panelEl) return;
+
+    // Restore saved state (default: expanded on desktop, collapsed on mobile)
+    const stored = localStorage.getItem('geo-self-portrait-panel-collapsed');
+    const defaultCollapsed = window.innerWidth < 768;
+    const collapsed = stored !== null ? stored === 'true' : defaultCollapsed;
+
+    if (collapsed) {
+        panelEl.classList.add('no-transition');
+        panelEl.classList.add('panel-collapsed');
+        panelEl.offsetHeight; // force reflow
+        panelEl.classList.remove('no-transition');
+    }
+
+    panelToggleBtn.addEventListener('click', () => {
+        panelEl.classList.toggle('panel-collapsed');
+        const isCollapsed = panelEl.classList.contains('panel-collapsed');
+        localStorage.setItem('geo-self-portrait-panel-collapsed', String(isCollapsed));
+    });
+}
+
+/* ── Fullscreen ── */
+
+const renderCard = document.getElementById('renderCard');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+const fullscreenCloseBtn = document.getElementById('fullscreenClose');
+
+function initFullscreen() {
+    if (!renderCard || !fullscreenBtn) return;
+
+    fullscreenBtn.addEventListener('click', () => {
+        if (renderCard.requestFullscreen) {
+            renderCard.requestFullscreen();
+        } else if (renderCard.webkitRequestFullscreen) {
+            renderCard.webkitRequestFullscreen();
+        }
+    });
+
+    if (fullscreenCloseBtn) {
+        fullscreenCloseBtn.addEventListener('click', () => {
+            if (document.fullscreenElement || document.webkitFullscreenElement) {
+                (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+            }
+        });
+    }
+}
+
+/* ---------------------------
  * Init
  * ---------------------------
  */
+initPanelToggle();
+initFullscreen();
 initTopologySelector();
 initPaletteSelector();
 restorePaletteTweaksFromStorage();
@@ -1265,10 +1149,13 @@ initTheme(document.getElementById('themeSwitcher'));
 createFaviconAnimation().start();
 statementContentReady = loadStatementContent();
 ensureStarterProfiles();
-refreshImageProfileSelect();
 
-loadProfileIntoUI(el.imageProfileSelect.value);
+// Load the first available profile
+const startProfiles = loadProfiles();
+const startNames = Object.keys(startProfiles).sort((a, b) => a.localeCompare(b));
+if (startNames.length > 0) loadProfileIntoUI(startNames[0]);
 updateSliderLabels(readControlsFromUI());
+refreshProfileGallery();
 
 showCanvasOverlay('', true);
 

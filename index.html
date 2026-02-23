@@ -109,6 +109,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 0.625rem;
             padding: 0.75rem 1.25rem;
             border-bottom: 1px solid var(--border);
             background: var(--surface);
@@ -161,16 +162,36 @@
             font-size: 0.6875rem;
         }
 
+        /* ── Panel toggle ── */
+        .panel-toggle-btn {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem 0.375rem;
+            display: flex;
+            align-items: center;
+            transition: color 0.2s, border-color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .panel-toggle-btn:hover {
+            color: var(--text);
+            border-color: var(--border-strong);
+        }
+
         /* ── App body ── */
         .app-body {
             display: grid;
-            grid-template-columns: 22.5rem 1fr;
+            grid-template-columns: auto 1fr;
             flex: 1;
             min-height: 0;
         }
 
         /* ── Panel ── */
         .panel {
+            width: 22.5rem;
             padding: 0.5rem;
             border-right: 1px solid var(--border);
             background: var(--bg-panel);
@@ -178,6 +199,15 @@
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
+            transition: width 0.3s ease, padding 0.3s ease, opacity 0.2s ease, border-color 0.3s ease;
+        }
+
+        .panel.panel-collapsed {
+            width: 0;
+            padding: 0;
+            opacity: 0;
+            overflow: hidden;
+            border-right-color: transparent;
         }
 
         .sub {
@@ -191,13 +221,13 @@
             margin: 0.625rem 0;
         }
 
-        #imageModeSection > .row {
+        #imageModeSection .row {
             padding: 0.375rem 0.5rem;
             border-radius: 10px;
             transition: background-color 0.2s ease;
         }
 
-        #imageModeSection > .row:hover {
+        #imageModeSection .row:hover {
             background: var(--surface-hover);
         }
 
@@ -523,156 +553,6 @@
             font-size: 0.75rem;
         }
 
-        /* ── Custom select dropdowns ── */
-        .custom-select {
-            position: relative;
-            width: 100%;
-        }
-
-        .custom-select > select {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-            width: 0;
-            height: 0;
-        }
-
-        .custom-select-trigger {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            width: 100%;
-            padding: 0.375rem 0.5rem;
-            border-radius: 10px;
-            border: 1px solid var(--border-strong);
-            background: var(--surface);
-            color: var(--text);
-            font-size: 0.75rem;
-            cursor: pointer;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .custom-select-trigger:hover {
-            border-color: var(--accent);
-        }
-
-        .custom-select-trigger:focus-visible {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px var(--accent-bg);
-        }
-
-        .custom-select-trigger .cs-thumb {
-            width: 40px;
-            height: 26px;
-            border-radius: 4px;
-            object-fit: cover;
-            display: block;
-            flex-shrink: 0;
-        }
-
-        .custom-select-trigger .cs-label {
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .custom-select-trigger .cs-arrow {
-            flex-shrink: 0;
-            font-size: 0.75rem;
-            opacity: 0.5;
-            transition: transform 0.2s;
-        }
-
-        .custom-select.open .cs-arrow {
-            transform: rotate(180deg);
-        }
-
-        .custom-select-trigger .cs-placeholder {
-            color: var(--text-muted);
-        }
-
-        .custom-select-dropdown {
-            position: absolute;
-            top: calc(100% + 4px);
-            left: 0;
-            right: 0;
-            max-height: 260px;
-            overflow-y: auto;
-            border-radius: 10px;
-            border: 1px solid var(--border-strong);
-            background: var(--modal-bg);
-            box-shadow: 0 8px 24px var(--shadow);
-            z-index: 50;
-            opacity: 0;
-            transform: translateY(-4px);
-            pointer-events: none;
-            transition: opacity 0.18s ease, transform 0.18s ease;
-            scrollbar-width: thin;
-            scrollbar-color: var(--border-strong) transparent;
-        }
-
-        .custom-select.open .custom-select-dropdown {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-
-        .custom-select-option {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.4375rem 0.5rem;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: background-color 0.12s;
-        }
-
-        .custom-select-option:first-child {
-            border-radius: 9px 9px 0 0;
-        }
-
-        .custom-select-option:last-child {
-            border-radius: 0 0 9px 9px;
-        }
-
-        .custom-select-option:hover,
-        .custom-select-option.focused {
-            background: var(--surface-hover);
-        }
-
-        .custom-select-option.selected {
-            background: var(--accent-bg);
-        }
-
-        .custom-select-option.selected:hover,
-        .custom-select-option.selected.focused {
-            background: var(--accent-bg);
-        }
-
-        .custom-select-option .cs-thumb {
-            width: 40px;
-            height: 26px;
-            border-radius: 4px;
-            object-fit: cover;
-            display: block;
-            flex-shrink: 0;
-        }
-
-        .custom-select-option .cs-opt-label {
-            flex: 1;
-            min-width: 0;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .custom-select-option.cs-placeholder {
-            color: var(--text-muted);
-        }
-
         textarea {
             resize: vertical;
             min-height: 4.5rem;
@@ -697,6 +577,10 @@
             display: flex;
             gap: 0.5rem;
             align-items: center;
+        }
+
+        .row-inline-even > button {
+            flex: 1;
         }
 
         .row-inline select,
@@ -962,6 +846,19 @@
             transform: rotate(0deg);
         }
 
+        /* ── Profile gallery pane (toggled by active card click) ── */
+        .profile-gallery-pane {
+            overflow: hidden;
+            max-height: 2000px;
+            opacity: 1;
+            transition: max-height 0.35s ease, opacity 0.25s ease;
+        }
+
+        .profile-gallery-pane.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+
         .profile-card-details dl {
             display: grid;
             grid-template-columns: auto 1fr;
@@ -998,6 +895,11 @@
             flex-direction: column;
             gap: 0.625rem;
             padding: 1.25rem 1rem;
+            transition: max-width 0.3s ease;
+        }
+
+        .panel.panel-collapsed + .stage .stage-content {
+            max-width: 100vw;
         }
 
         /* ── Render card ── */
@@ -1096,11 +998,75 @@
             z-index: 1;
         }
 
+        /* ── Fullscreen ── */
+        .render-card:fullscreen,
+        .render-card:-webkit-full-screen {
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0;
+            border: none;
+            box-shadow: none;
+        }
+
+        .render-card:fullscreen .canvas-wrapper,
+        .render-card:-webkit-full-screen .canvas-wrapper {
+            padding: 0;
+            max-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .render-card:fullscreen .canvas-wrapper canvas,
+        .render-card:-webkit-full-screen .canvas-wrapper canvas {
+            width: auto;
+            height: auto;
+            max-width: 100vw;
+            max-height: 100vh;
+            object-fit: contain;
+        }
+
+        .render-card:fullscreen .generated-title,
+        .render-card:fullscreen .generated-alt,
+        .render-card:-webkit-full-screen .generated-title,
+        .render-card:-webkit-full-screen .generated-alt {
+            display: none;
+        }
+
+        .fullscreen-close {
+            display: none;
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            padding: 0.375rem;
+            line-height: 0;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .fullscreen-close:hover {
+            color: #fff;
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .render-card:fullscreen .fullscreen-close,
+        .render-card:-webkit-full-screen .fullscreen-close {
+            display: block;
+        }
+
         /* ── Stage header buttons ── */
         .stage-header-btns {
             display: flex;
             gap: 0.5rem;
-            align-self: flex-start;
+            align-self: flex-end;
         }
 
 
@@ -1651,9 +1617,22 @@
             }
 
             .panel {
+                width: auto;
                 border-right: none;
                 border-bottom: 1px solid var(--border);
                 overflow: visible;
+                transition: max-height 0.35s ease, padding 0.3s ease, opacity 0.25s ease, border-color 0.3s ease;
+                max-height: 2000px;
+            }
+
+            .panel.panel-collapsed {
+                width: auto;
+                max-height: 0;
+                padding-top: 0;
+                padding-bottom: 0;
+                opacity: 0;
+                overflow: hidden;
+                border-bottom-color: transparent;
             }
 
             .app-container {
@@ -1743,6 +1722,13 @@
 <body>
     <div class="app-container">
     <header class="app-header">
+        <button id="panelToggle" class="panel-toggle-btn" aria-label="Toggle controls panel">
+            <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="18" height="18">
+                <line x1="3" y1="5" x2="17" y2="5" stroke-linecap="round"/>
+                <line x1="3" y1="10" x2="17" y2="10" stroke-linecap="round"/>
+                <line x1="3" y1="15" x2="17" y2="15" stroke-linecap="round"/>
+            </svg>
+        </button>
         <div class="header-brand">
             <h1>Geometric Interior: Self-Portraits of a Predictive Model</h1>
             <div class="header-links">
@@ -1757,24 +1743,33 @@
 
     <div class="app-body">
         <aside class="panel">
-            <div class="collapsible">
-                <button class="collapsible-toggle" aria-expanded="false" data-target="configContent">
-                    <span class="collapsible-label">Configure Visual</span>
-                    <span class="collapsible-chevron">&#9662;</span>
-                </button>
-                <div class="collapsible-content collapsed" id="configContent">
-
             <section id="imageModeSection">
+                <div id="activeProfileDisplay" class="active-profile-display"></div>
+                <div class="profile-gallery-pane collapsed" id="profilesContent">
+                    <div id="profileGallery" class="profile-gallery"></div>
+                </div>
+
+                <div class="collapsible">
+                    <button class="collapsible-toggle" aria-expanded="false" data-target="configContent" data-desktop-expand>
+                        <span class="collapsible-label">Configuration</span>
+                        <span class="collapsible-chevron">&#9662;</span>
+                    </button>
+                    <div class="collapsible-content collapsed" id="configContent">
+
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Saved configuration preset. Load a profile to restore all settings, or save the current state as a new profile." data-label="Profile">Profile<span class="info-icon">i</span></span></label>
-                    <div class="row-inline">
-                        <select id="imageProfileSelect"></select>
+                    <div class="row-inline row-inline-even">
+                        <button id="saveProfile" disabled>Save Profile</button>
                         <button id="randomize">Randomize</button>
                     </div>
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Naming intent and deterministic seed. The same intent with the same controls always produces the same output." data-label="Intent (seed)">Intent (seed)<span class="info-icon">i</span></span></label>
+                    <label><span class="label-info" data-tooltip="Display name for this configuration. Used when saving a profile." data-label="Name">Name<span class="info-icon">i</span></span></label>
+                    <input type="text" id="profileNameField" maxlength="80" placeholder="e.g. Violet Crystalline" />
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="Deterministic seed phrase. The same intent with the same controls always produces the same output." data-label="Intent (seed)">Intent (seed)<span class="info-icon">i</span></span></label>
                     <textarea id="profileName" class="auto-grow" rows="1" maxlength="80"
                         placeholder="e.g. light arriving through crystal"></textarea>
                 </div>
@@ -1812,7 +1807,7 @@
                             <span class="pal-name">Amethyst</span>
                         </div>
                         <div class="pal-chip" data-value="custom">
-                            <div class="pal-gradient" id="customPalGradient" style="background: linear-gradient(135deg, #0a2a2a, #33aaaa, #88eeee)"></div>
+                            <div class="pal-gradient" id="customPalGradient" style="background: linear-gradient(135deg, #2a0a35, #dd2288, #ff6655)"></div>
                             <span class="pal-name">Custom</span>
                         </div>
                     </div>
@@ -1936,21 +1931,10 @@
                     </div>
                 </div>
 
+                    </div>
+                </div>
+
             </section>
-
-
-                </div>
-            </div>
-
-            <div class="collapsible">
-                <button class="collapsible-toggle" aria-expanded="false" data-target="profilesContent">
-                    <span class="collapsible-label">Profiles</span>
-                    <span class="collapsible-chevron">&#9662;</span>
-                </button>
-                <div class="collapsible-content collapsed" id="profilesContent">
-                    <div id="profileGallery" class="profile-gallery"></div>
-                </div>
-            </div>
 
             <div class="toast" id="toast"></div>
         </aside>
@@ -1958,11 +1942,21 @@
         <main class="stage">
             <div class="stage-content">
                 <div class="stage-header-btns">
-                    <button id="saveProfile">Save Profile</button>
                     <button id="exportBtn" disabled>Export</button>
+                    <button id="fullscreenBtn" aria-label="View fullscreen">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14" style="vertical-align: -2px; margin-right: 0.25rem;">
+                            <path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>Fullscreen
+                    </button>
                 </div>
-                <div class="render-card">
+                <div class="render-card" id="renderCard">
                     <div class="generated-title" id="titleText"></div>
+                    <button class="fullscreen-close" id="fullscreenClose" aria-label="Exit fullscreen">
+                        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+                            <line x1="5" y1="5" x2="15" y2="15" stroke-linecap="round"/>
+                            <line x1="15" y1="5" x2="5" y2="15" stroke-linecap="round"/>
+                        </svg>
+                    </button>
                     <div class="canvas-wrapper">
                         <canvas id="c" width="1400" height="900"></canvas>
                         <div id="canvasOverlay" class="canvas-overlay">
