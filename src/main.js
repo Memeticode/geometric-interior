@@ -272,12 +272,15 @@ function thumbCacheKey(seed, controls, paletteTweaks) {
 }
 
 function queueThumbnail(seed, controls, destImg, paletteTweaks) {
-    const key = thumbCacheKey(seed, controls, paletteTweaks);
+    // Normalize: if no tweaks provided, use factory defaults for the palette
+    // so cache keys and render results are identical either way
+    const tweaks = paletteTweaks || getPaletteDefaults(controls.palette || 'violet-depth');
+    const key = thumbCacheKey(seed, controls, tweaks);
     if (thumbCache.has(key)) {
         destImg.src = thumbCache.get(key);
         return;
     }
-    thumbQueue.push({ seed, controls, destImg, key, paletteTweaks });
+    thumbQueue.push({ seed, controls, destImg, key, paletteTweaks: tweaks });
     drainThumbQueue();
 }
 
@@ -714,14 +717,25 @@ function loadProfileDataIntoUI(name, p) {
         // Apply profile's stored palette tweaks AFTER setControlsInUI
         // (setControlsInUI calls loadPaletteIntoEditor which reads from
         // localStorage and would overwrite profile-specific tweaks)
-        const tweaks = p.paletteTweaks || (p.controls.palette === 'custom' ? p.customPalette : null);
+        const palKey = p.controls.palette || 'violet-depth';
+        const tweaks = p.paletteTweaks || (palKey === 'custom' ? p.customPalette : null);
         if (tweaks) {
             el.customHue.value = tweaks.baseHue;
             el.customHueRange.value = tweaks.hueRange;
             el.customSat.value = tweaks.saturation;
             el.customLit.value = tweaks.lightness;
-            updatePalette(p.controls.palette, tweaks);
-            updateActiveChipGradient(p.controls.palette, tweaks);
+            updatePalette(palKey, tweaks);
+            updateActiveChipGradient(palKey, tweaks);
+        } else {
+            // No stored tweaks — reset to factory defaults so thumbnail
+            // and main canvas match (thumbnails use defaults when no tweaks)
+            const defaults = getPaletteDefaults(palKey);
+            el.customHue.value = defaults.baseHue;
+            el.customHueRange.value = defaults.hueRange;
+            el.customSat.value = defaults.saturation;
+            el.customLit.value = defaults.lightness;
+            resetPalette(palKey);
+            updateActiveChipGradient(palKey, defaults);
         }
     }
     el.customPaletteEditor.classList.add('collapsed');
@@ -1081,7 +1095,7 @@ function restoreSnapshot(snap) {
     syncDisplayFields();
     loadedProfileName = '';
     loadedFromPortrait = false;
-    dirty = true;
+    setDirty(true);
     userEdited = false;
     refreshProfileGallery();
     renderAndUpdate(snap.seed, snap.controls, { animate: true });
@@ -1125,7 +1139,7 @@ function randomizeUI() {
     // Detach from any loaded profile so this becomes a new unsaved draft
     loadedProfileName = '';
     loadedFromPortrait = false;
-    dirty = true;
+    setDirty(true);
     userEdited = false;
 }
 
@@ -1874,11 +1888,16 @@ document.querySelectorAll('.gallery-section-header').forEach(header => {
     });
 });
 
-/* Active card config toggle (chevron) */
-el.activeCardToggle.addEventListener('click', () => {
+/* Active card config toggle — click anywhere on card header row */
+function toggleActiveConfig() {
     const expanded = el.activeCardToggle.getAttribute('aria-expanded') === 'true';
     el.activeCardToggle.setAttribute('aria-expanded', String(!expanded));
     document.getElementById('configControls').classList.toggle('collapsed', expanded);
+}
+
+document.querySelector('.active-card-main').addEventListener('click', (e) => {
+    if (e.target.closest('.active-save-btn')) return;
+    toggleActiveConfig();
 });
 
 /* Config randomize button */
@@ -1908,6 +1927,14 @@ document.getElementById('historyForwardBtn').addEventListener('click', () => {
 const panelEl = document.querySelector('.panel');
 const panelToggleBtn = document.getElementById('panelToggle');
 const panelBackdrop = document.getElementById('panelBackdrop');
+
+/* Keep --header-h in sync so the tablet/mobile panel sits below the header */
+function syncHeaderHeight() {
+    const h = document.querySelector('.app-header');
+    if (h) document.documentElement.style.setProperty('--header-h', h.offsetHeight + 'px');
+}
+syncHeaderHeight();
+window.addEventListener('resize', syncHeaderHeight);
 
 function isPanelOpen() {
     return panelEl && !panelEl.classList.contains('panel-collapsed');
@@ -1959,9 +1986,9 @@ createFaviconAnimation().start();
 statementContentReady = loadStatementContent();
 ensureStarterProfiles();
 
-// Move configControls into the Active section (starts collapsed)
+// Move configControls into the Active card (starts collapsed)
 const configControls = document.getElementById('configControls');
-el.activeSection.appendChild(configControls);
+el.activeCard.appendChild(configControls);
 configControls.style.display = '';
 configControls.classList.add('collapsed');
 

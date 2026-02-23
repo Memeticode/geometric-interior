@@ -668,6 +668,7 @@
             cursor: pointer;
             font-size: 0.75rem;
             font-family: inherit;
+            transition: opacity 0.3s ease;
         }
 
         button:hover {
@@ -901,15 +902,11 @@
 
         /* ── Active card (always visible above gallery) ── */
         #activeSection {
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 0.125rem;
             margin-bottom: 0.5rem;
-            transition: border-color 0.2s;
         }
 
-        #activeSection:has(.active-configure-header:hover) {
-            border-color: var(--border-strong);
+        .active-section-title {
+            padding: 0.375rem 0.25rem 0.25rem;
         }
 
         .active-card {
@@ -925,6 +922,7 @@
             grid-template-columns: auto 1fr auto;
             gap: 0.625rem;
             align-items: center;
+            cursor: pointer;
         }
 
         .active-card-main img.active-preview-thumb {
@@ -965,41 +963,46 @@
             overflow: hidden;
         }
 
-        .active-configure-header {
+        .active-card-actions {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-            padding: 0.5rem 0.25rem;
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            cursor: pointer;
-            border-radius: 8px;
-            user-select: none;
-            transition: background-color 0.2s;
+            gap: 0.25rem;
+            align-self: stretch;
+            justify-content: space-between;
         }
 
-        .active-configure-header:hover {
-            background: var(--surface-hover);
-        }
-
-        .active-configure-header .collapsible-chevron {
+        .active-card-chevron {
             font-size: 1rem;
-            transition: transform 0.3s ease;
+            color: var(--text-muted);
+            background-color: transparent;
+            transition: transform 0.3s ease, color 0.2s ease, background-color 0.2s ease;
+            width: 1.5rem;
+            height: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
         }
 
-        .active-configure-header[aria-expanded="false"] .collapsible-chevron {
+        .active-card-main:hover .active-card-chevron {
+            color: var(--text);
+            background-color: var(--surface-hover);
+        }
+
+        .active-card-chevron[aria-expanded="false"] {
             transform: rotate(-90deg);
         }
 
         /* ── Config controls smooth expand/collapse ── */
-        #activeSection #configControls {
+        .active-card > #configControls {
             overflow: hidden;
             max-height: 2000px;
             transition: max-height 0.35s ease, opacity 0.25s ease;
             opacity: 1;
         }
 
-        #activeSection #configControls.collapsed {
+        .active-card > #configControls.collapsed {
             max-height: 0;
             opacity: 0;
         }
@@ -1008,24 +1011,36 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0.3125rem;
-            border-radius: 6px;
-            border: 1px solid var(--accent);
-            background: var(--accent);
-            color: #fff;
-            cursor: pointer;
-            transition: filter 0.2s;
+            color: var(--text-muted);
+            transition: background-color 0.2s, border-color 0.2s, color 0.2s, opacity 0.3s;
             align-self: start;
             flex-shrink: 0;
         }
 
-        .active-save-btn:hover {
-            filter: brightness(1.15);
+        .active-save-btn:hover:not([disabled]) {
+            background: var(--surface-active);
+            color: var(--text);
+            border-color: rgba(255, 255, 255, 0.22);
         }
 
-        .active-save-btn:disabled {
-            opacity: 0.4;
+        .active-save-btn:active:not([disabled]) {
+            background: rgba(255, 255, 255, 0.13);
+            transform: scale(0.94);
+        }
+
+        .active-save-btn[disabled] {
+            opacity: 0.28;
             cursor: not-allowed;
+            border-color: transparent;
+            background: transparent;
+        }
+
+        [data-theme="light"] .active-save-btn:hover:not([disabled]) {
+            border-color: rgba(0, 0, 0, 0.25);
+        }
+
+        [data-theme="light"] .active-save-btn:active:not([disabled]) {
+            background: rgba(0, 0, 0, 0.14);
         }
 
         .active-save-btn svg {
@@ -2061,7 +2076,7 @@
 
             .panel {
                 position: fixed;
-                top: 0;
+                top: var(--header-h, 0px);
                 left: 0;
                 bottom: 0;
                 width: min(25rem, 90vw);
@@ -2094,7 +2109,10 @@
             .panel-backdrop {
                 display: block;
                 position: fixed;
-                inset: 0;
+                top: var(--header-h, 0px);
+                left: 0;
+                right: 0;
+                bottom: 0;
                 background: rgba(0, 0, 0, 0.5);
                 z-index: 499;
                 opacity: 1;
@@ -2225,6 +2243,9 @@
         </script>
             <section id="imageModeSection">
                 <div id="activeSection">
+                    <div class="active-section-title">
+                        <span class="collapsible-label">Active</span>
+                    </div>
                     <div class="active-card" id="activeCard">
                         <div class="active-card-main">
                             <img class="active-preview-thumb" id="activePreviewThumb" />
@@ -2234,14 +2255,14 @@
                                     <div class="active-preview-seed" id="activePreviewSeed"></div>
                                 </div>
                             </div>
-                            <button id="saveProfile" class="active-save-btn primary" disabled data-tooltip="Save profile">
-                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/><path d="M5 1v4h6V1"/><rect x="4" y="9" width="8" height="4"/></svg>
-                            </button>
+                            <div class="active-card-actions">
+                                <button id="saveProfile" class="active-save-btn" disabled data-tooltip="Save profile">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/><path d="M5 1v4h6V1"/><rect x="4" y="9" width="8" height="4"/></svg>
+                                </button>
+                                <span class="collapsible-chevron active-card-chevron" id="activeCardToggle" aria-expanded="false">&#9662;</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="active-configure-header" id="activeCardToggle" aria-expanded="false">
-                        <span class="collapsible-label">Configure</span>
-                        <span class="collapsible-chevron">&#9662;</span>
+                        <!-- configControls inserted here by JS -->
                     </div>
                 </div>
 
@@ -2273,19 +2294,19 @@
                 <div id="configControls" style="display:none">
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Display name for this configuration. Used when saving a profile." data-label="Name">Name<span class="info-icon">i</span></span></label>
+                    <label><span class="label-info" data-tooltip="A name for this arrangement of light and form." data-label="Name">Name<span class="info-icon">i</span></span></label>
                     <textarea id="profileNameField" class="auto-grow" rows="1" maxlength="40"
                         placeholder="e.g. Violet Crystalline"></textarea>
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Deterministic seed phrase. The same intent with the same controls always produces the same output." data-label="Intent (seed)">Intent (seed)<span class="info-icon">i</span></span></label>
+                    <label><span class="label-info" data-tooltip="A word that conjures this exact arrangement. Same whisper, same world. (Deterministic seed phrase.)" data-label="Intent (seed)">Intent (seed)<span class="info-icon">i</span></span></label>
                     <textarea id="profileName" class="auto-grow" rows="1" maxlength="60"
                         placeholder="e.g. light arriving through crystal"></textarea>
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Chromatic family. Each palette defines base hue, range, fog color, and edge color. Double-click a preset to open color customization." data-label="Palette">Palette<span class="info-icon">i</span></span></label>
+                    <label><span class="label-info" data-tooltip="The chromatic atmosphere. Double-click a preset to customize." data-label="Palette">Palette<span class="info-icon">i</span></span></label>
                     <input type="hidden" id="palette" value="violet-depth" />
                     <div class="palette-selector" id="paletteSelector">
                         <div class="pal-chip active" data-value="violet-depth">
@@ -2323,28 +2344,28 @@
                     </div>
                     <div class="custom-palette-editor collapsed" id="customPaletteEditor">
                         <div class="custom-pal-row">
-                            <label><span class="label-info" data-tooltip="Primary color position on the color wheel. 0 = red, 120 = green, 240 = blue." data-label="Hue">Hue<span class="info-icon">i</span></span> <span id="customHueLabel" class="slider-value">180</span></label>
+                            <label><span class="label-info" data-tooltip="Where on the spectrum the light begins." data-label="Hue">Hue<span class="info-icon">i</span></span> <span id="customHueLabel" class="slider-value">180</span></label>
                             <div class="engine-slider">
                                 <div class="slider-track-bg" id="customHueTrack" style="background: linear-gradient(to right, hsl(0,70%,50%), hsl(60,70%,50%), hsl(120,70%,50%), hsl(180,70%,50%), hsl(240,70%,50%), hsl(300,70%,50%), hsl(360,70%,50%))"></div>
                                 <input id="customHue" type="range" min="0" max="360" step="1" value="180" />
                             </div>
                         </div>
                         <div class="custom-pal-row">
-                            <label><span class="label-info" data-tooltip="How much hue variation each plane can have. Low = monochromatic, high = wide color spread." data-label="Hue Range">Range<span class="info-icon">i</span></span> <span id="customHueRangeLabel" class="slider-value">60</span></label>
+                            <label><span class="label-info" data-tooltip="How far color is allowed to wander from its origin." data-label="Hue Range">Range<span class="info-icon">i</span></span> <span id="customHueRangeLabel" class="slider-value">60</span></label>
                             <div class="engine-slider">
                                 <div class="slider-track-bg" id="customRangeTrack" style="background: linear-gradient(to right, rgba(130,200,255,0.15), rgba(130,200,255,0.6))"></div>
                                 <input id="customHueRange" type="range" min="5" max="360" step="1" value="60" />
                             </div>
                         </div>
                         <div class="custom-pal-row">
-                            <label><span class="label-info" data-tooltip="Color intensity. Low = muted, washed out; high = vivid, pure color." data-label="Saturation">Saturation<span class="info-icon">i</span></span> <span id="customSatLabel" class="slider-value">0.60</span></label>
+                            <label><span class="label-info" data-tooltip="The purity of pigment — dusty whisper to liquid jewel." data-label="Saturation">Saturation<span class="info-icon">i</span></span> <span id="customSatLabel" class="slider-value">0.60</span></label>
                             <div class="engine-slider">
                                 <div class="slider-track-bg" id="customSatTrack" style="background: linear-gradient(to right, rgba(180,180,180,0.3), rgba(130,200,255,0.7))"></div>
                                 <input id="customSat" type="range" min="0.1" max="1" step="0.01" value="0.60" />
                             </div>
                         </div>
                         <div class="custom-pal-row">
-                            <label><span class="label-info" data-tooltip="Base brightness of the palette. Low = dark, moody tones; high = bright, airy tones." data-label="Lightness">Lightness<span class="info-icon">i</span></span> <span id="customLitLabel" class="slider-value">0.60</span></label>
+                            <label><span class="label-info" data-tooltip="Tonal warmth of the palette — velvet shadow to open air." data-label="Lightness">Lightness<span class="info-icon">i</span></span> <span id="customLitLabel" class="slider-value">0.60</span></label>
                             <div class="engine-slider">
                                 <div class="slider-track-bg" id="customLitTrack" style="background: linear-gradient(to right, rgba(20,20,30,0.8), rgba(255,240,200,0.7))"></div>
                                 <input id="customLit" type="range" min="0.1" max="1" step="0.01" value="0.60" />
@@ -2358,7 +2379,7 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Geometry count and structural mass. Low = sparse, minimal forms; high = densely layered field." data-label="Density">Density<span class="info-icon">i</span></span> <span id="densityLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="How thickly forms crowd the void." data-label="Density">Density<span class="info-icon">i</span></span> <span id="densityLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="densityTrack"></div>
                         <input id="density" type="range" min="0" max="1" step="0.01" value="0.65" />
@@ -2366,7 +2387,7 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Light intensity and glow. Low = dark, subdued; high = radiant, blazing from within." data-label="Luminosity">Luminosity<span class="info-icon">i</span></span> <span id="luminosityLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="The inner radiance of the scene." data-label="Luminosity">Luminosity<span class="info-icon">i</span></span> <span id="luminosityLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="luminosityTrack"></div>
                         <input id="luminosity" type="range" min="0" max="1" step="0.01" value="0.70" />
@@ -2374,7 +2395,7 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Spatial complexity and fragmentation. Low = compact, smooth veils; high = expansive, shattered forms." data-label="Fracture">Fracture<span class="info-icon">i</span></span> <span id="fractureLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="How forms break and splinter through space." data-label="Fracture">Fracture<span class="info-icon">i</span></span> <span id="fractureLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="fractureTrack"></div>
                         <input id="fracture" type="range" min="0" max="1" step="0.01" value="0.35" />
@@ -2382,7 +2403,7 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Camera zoom level. Low = close, intimate view; high = wide, expansive perspective." data-label="Depth">Depth<span class="info-icon">i</span></span> <span id="depthLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="How the eye travels into the scene." data-label="Depth">Depth<span class="info-icon">i</span></span> <span id="depthLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="depthTrack"></div>
                         <input id="depth" type="range" min="0" max="1" step="0.01" value="0.40" />
@@ -2390,7 +2411,7 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="Structural order. Low = loose, organic flow; high = tight, cohesive geometry." data-label="Coherence">Coherence<span class="info-icon">i</span></span> <span id="coherenceLabel" class="slider-value"></span></label>
+                    <label><span class="label-info" data-tooltip="The discipline binding form to structure." data-label="Coherence">Coherence<span class="info-icon">i</span></span> <span id="coherenceLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="coherenceTrack"></div>
                         <input id="coherence" type="range" min="0" max="1" step="0.01" value="0.50" />
@@ -2398,7 +2419,7 @@
                 </div>
 
                 <div class="row" style="display:none">
-                    <label><span class="label-info" data-tooltip="Governing spatial structure. Controls how planes are positioned and oriented in 3D space." data-label="Topology">Topology<span class="info-icon">i</span></span></label>
+                    <label><span class="label-info" data-tooltip="The spatial architecture — how planes are arranged through the void." data-label="Topology">Topology<span class="info-icon">i</span></span></label>
                     <input type="hidden" id="topology" value="flow-field" />
                     <div class="topology-selector" id="topologySelector">
                         <div class="topo-tile active" data-value="flow-field">

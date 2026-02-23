@@ -41,8 +41,8 @@ export function deriveParams(controls, rng) {
     ];
 
     // --- Camera (depth — zoom only) ---
-    const cameraZ = cl(dep, 3.5, 3.5, 4.5);
-    const cameraFov = cl(dep, 42, 50, 60);
+    const cameraZ = cl(dep, 2.25, 3.5, 4.4);
+    const cameraFov = cl(dep, 34, 50, 58);
     const cameraOffsetX = 0;
     const cameraOffsetY = 0;
 
@@ -193,7 +193,7 @@ export function deriveParams(controls, rng) {
     const bloomStrength = cl(c.luminosity, 0.10, 0.20, 0.35) / bloomDensityAtten;
     const bloomThreshold = cl(c.coherence, 0.55, 0.70, 0.85);
     const chromaticAberration = cl(frac, 0.001, 0.002, 0.004);
-    const vignetteStrength = cl(dep, 0.35, 0.50, 0.68);
+    const vignetteStrength = cl(dep, 0.20, 0.50, 0.86);
 
     return {
         // Raw controls (for downstream use)
