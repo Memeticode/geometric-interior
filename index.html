@@ -724,29 +724,55 @@
             display: grid;
             gap: 0.5rem;
             margin-top: 0.375rem;
-            overflow: hidden;
+            overflow: visible;
         }
 
         .profile-card {
             position: relative;
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: 0.625rem;
-            align-items: center;
             padding: 0.5rem;
             border-radius: 12px;
             border: 1px solid var(--border);
             background: var(--surface);
-            cursor: pointer;
             transition: background-color 0.35s ease, border-color 0.35s ease;
         }
 
+        .profile-card-header {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.625rem;
+            align-items: center;
+            cursor: pointer;
+        }
+
         .profile-card img.profile-thumb {
-            width: 100px;
-            height: 65px;
-            border-radius: 6px;
+            width: 140px;
+            height: 90px;
+            border-radius: 8px;
             display: block;
             object-fit: cover;
+        }
+
+        .profile-card-expansion {
+            grid-column: 1 / -1;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            pointer-events: none;
+            transition: max-height 0.35s ease, opacity 0.25s ease,
+                        padding 0.35s ease, margin-top 0.35s ease;
+            padding: 0;
+            margin-top: 0;
+            border-top: 1px solid transparent;
+        }
+
+        .profile-card.expanded .profile-card-expansion {
+            max-height: 900px;
+            opacity: 1;
+            padding: 0.625rem 0 0;
+            margin-top: 0.625rem;
+            border-top-color: var(--border);
+            pointer-events: auto;
+            overflow: visible;
         }
 
         .profile-card-name {
@@ -813,7 +839,7 @@
         }
 
         /* ── Unsaved profile card state ── */
-        .active-profile-display.dirty .profile-thumb {
+        .profile-card.dirty .profile-thumb {
             filter: grayscale(1) opacity(0.5);
         }
 
@@ -824,7 +850,7 @@
             display: none;
         }
 
-        .active-profile-display.dirty .profile-card-unsaved-label {
+        .profile-card.dirty .profile-card-unsaved-label {
             display: block;
         }
 
@@ -843,7 +869,7 @@
             display: none;
         }
 
-        .active-profile-display.dirty .profile-card-save {
+        .profile-card.dirty .profile-card-save {
             display: block;
         }
 
@@ -851,7 +877,7 @@
             background: var(--accent);
         }
 
-        .active-profile-display.dirty .profile-card-delete {
+        .profile-card.dirty .profile-card-delete {
             display: none;
         }
 
@@ -882,18 +908,7 @@
             pointer-events: auto;
         }
 
-        /* ── Profile gallery pane (toggled by active card click) ── */
-        .profile-gallery-pane {
-            overflow: hidden;
-            max-height: 2000px;
-            opacity: 1;
-            transition: max-height 0.35s ease, opacity 0.25s ease;
-        }
-
-        .profile-gallery-pane.collapsed {
-            max-height: 0;
-            opacity: 0;
-        }
+        /* ── Profile gallery ── */
 
         /* ── Profiles wrapper (mirrors .collapsible hover indicator) ── */
         .profiles-wrapper {
@@ -1889,6 +1904,11 @@
             .app-footer {
                 padding: 0.625rem 0.75rem;
             }
+
+            .profile-card img.profile-thumb {
+                width: 100px;
+                height: 65px;
+            }
         }
 
         /* ── Responsive: High-DPI screens ── */
@@ -1940,24 +1960,17 @@
         </script>
             <section id="imageModeSection">
                 <div class="profiles-wrapper">
-                    <div class="profiles-header" id="profilesToggle" aria-expanded="false">
+                    <div class="profiles-header" id="profilesToggle" aria-expanded="true">
                         <span class="collapsible-label">Profiles</span>
                         <span class="profiles-header-right">
                             <span class="collapsible-chevron">&#9662;</span>
                         </span>
                     </div>
-                    <div id="activeProfileDisplay" class="active-profile-display"></div>
-                    <div class="profile-gallery-pane collapsed" id="profilesContent">
-                        <div id="profileGallery" class="profile-gallery"></div>
-                    </div>
+                    <div id="profileGallery" class="profile-gallery"></div>
                 </div>
 
-                <div class="collapsible">
-                    <button class="collapsible-toggle" aria-expanded="false" data-target="configContent">
-                        <span class="collapsible-label">Configuration</span>
-                        <span class="collapsible-chevron">&#9662;</span>
-                    </button>
-                    <div class="collapsible-content collapsed" id="configContent">
+                <div id="configControlsHome" style="display:none">
+                    <div id="configControls">
 
                 <div class="row">
                     <label><span class="label-info" data-tooltip="Display name for this configuration. Used when saving a profile." data-label="Name">Name<span class="info-icon">i</span></span></label>

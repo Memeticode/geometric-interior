@@ -54,7 +54,8 @@ const el = {
     profileNameField: document.getElementById('profileNameField'),
     saveProfile: document.getElementById('saveProfile'),
     profileGallery: document.getElementById('profileGallery'),
-    activeProfileDisplay: document.getElementById('activeProfileDisplay'),
+    configControls: document.getElementById('configControls'),
+    configControlsHome: document.getElementById('configControlsHome'),
     profilesToggle: document.getElementById('profilesToggle'),
 
     titleText: document.getElementById('titleText'),
@@ -728,10 +729,13 @@ function setDirty(value) {
     el.saveProfile.disabled = !value;
     const stageSave = document.getElementById('stageSaveBtn');
     if (stageSave) stageSave.disabled = !value;
-    el.activeProfileDisplay.classList.toggle('dirty', value);
-    if (value) {
-        const nameEl = el.activeProfileDisplay.querySelector('.profile-card-name');
-        if (nameEl) nameEl.textContent = el.profileNameField.value || 'Untitled';
+    const expandedCard = el.profileGallery.querySelector('.profile-card.expanded');
+    if (expandedCard) {
+        expandedCard.classList.toggle('dirty', value);
+        if (value) {
+            const nameEl = expandedCard.querySelector('.profile-card-name');
+            if (nameEl) nameEl.textContent = el.profileNameField.value || 'Untitled';
+        }
     }
 }
 
@@ -928,8 +932,11 @@ el.profileNameField.addEventListener('input', () => {
     userEdited = true;
     setDirty(true);
     syncDisplayFields();
-    const nameEl = el.activeProfileDisplay.querySelector('.profile-card-name');
-    if (nameEl) nameEl.textContent = el.profileNameField.value || 'Untitled';
+    const expandedCard = el.profileGallery.querySelector('.profile-card.expanded');
+    if (expandedCard) {
+        const nameEl = expandedCard.querySelector('.profile-card-name');
+        if (nameEl) nameEl.textContent = el.profileNameField.value || 'Untitled';
+    }
 });
 
 function saveCurrentProfile() {
@@ -1036,11 +1043,11 @@ function restoreSnapshot(snap) {
     updateSliderLabels(snap.controls);
     syncDisplayFields();
     loadedProfileName = '';
+    dirty = true;
+    userEdited = false;
     refreshProfileGallery();
     renderAndUpdate(snap.seed, snap.controls, { animate: true });
     setStillRendered(true);
-    setDirty(true);
-    userEdited = false;
 }
 
 function updateHistoryButtons() {
@@ -1116,6 +1123,8 @@ async function randomize() {
 
     // Detach from any loaded profile so this becomes a new unsaved draft
     loadedProfileName = '';
+    dirty = true;
+    userEdited = false;
     refreshProfileGallery();
 
     // Push to history (truncate any forward entries)
@@ -1129,8 +1138,6 @@ async function randomize() {
 
     renderAndUpdate(seed, controls, { animate: true });
     setStillRendered(true);
-    setDirty(true);
-    userEdited = false;
 }
 
 /* ---------------------------
@@ -1139,53 +1146,57 @@ async function randomize() {
  */
 const TRASH_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0v-6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>';
 
-function buildProfileCard(name, p, { isActive = false } = {}) {
+function collapseCurrentCard() {
+    const expanded = el.profileGallery.querySelector('.profile-card.expanded');
+    if (!expanded) return;
+    el.configControlsHome.appendChild(el.configControls);
+    expanded.classList.remove('expanded');
+}
+
+function expandCard(cardEl) {
+    const profileName = cardEl.dataset.profileName;
+
+    collapseCurrentCard();
+
+    // Load profile data into controls (skip for draft cards which already have UI state)
+    if (profileName && profileName !== '__draft__') {
+        loadProfileIntoUI(profileName);
+    }
+
+    // Reparent config controls into this card
+    const slot = cardEl.querySelector('.profile-card-expansion');
+    slot.appendChild(el.configControls);
+
+    cardEl.classList.add('expanded');
+
+    // Mark as active
+    el.profileGallery.querySelectorAll('.profile-card').forEach(c =>
+        c.classList.remove('active-profile')
+    );
+    cardEl.classList.add('active-profile');
+
+    // Trigger render
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    renderAndUpdate(seed, controls, { animate: true });
+    setStillRendered(true);
+
+    // Scroll into view
+    setTimeout(() => cardEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+function buildProfileCard(name, p) {
     const card = document.createElement('div');
     card.className = 'profile-card';
     card.dataset.profileName = name;
-    if (isActive) {
-        card.classList.add('active-profile');
-        card.style.cursor = 'pointer';
-        card.addEventListener('click', () => {
-            const gallery = document.getElementById('profilesContent');
-            const toggle = document.getElementById('profilesToggle');
-            if (!gallery) return;
-            const isOpen = !gallery.classList.contains('collapsed');
-            gallery.classList.toggle('collapsed', isOpen);
-            if (toggle) toggle.setAttribute('aria-expanded', String(!isOpen));
-            if (isOpen) refreshProfileGallery();
-        });
-    } else {
-        card.style.cursor = 'pointer';
-        card.addEventListener('click', (e) => {
-            if (e.target.closest('.profile-card-delete')) return;
-            // If already loaded, collapse the menu
-            if (name === loadedProfileName) {
-                const gallery = document.getElementById('profilesContent');
-                const toggle = document.getElementById('profilesToggle');
-                if (gallery) gallery.classList.add('collapsed');
-                if (toggle) toggle.setAttribute('aria-expanded', 'false');
-                refreshProfileGallery();
-                return;
-            }
-            loadProfileIntoUI(name);
-            expandConfigSection();
-            const seed = el.seed.value.trim() || 'seed';
-            const controls = readControlsFromUI();
-            renderAndUpdate(seed, controls, { animate: true });
-            setStillRendered(true);
-            // Highlight this card in the dropdown; unhighlight the top active card
-            el.profileGallery.querySelectorAll('.profile-card').forEach(c =>
-                c.classList.toggle('active-profile', c.dataset.profileName === name)
-            );
-            const topCard = el.activeProfileDisplay.querySelector('.profile-card');
-            if (topCard) topCard.classList.remove('active-profile');
-        });
-    }
+
+    // Header (clickable area)
+    const header = document.createElement('div');
+    header.className = 'profile-card-header';
 
     const thumbImg = document.createElement('img');
     thumbImg.className = 'profile-thumb';
-    card.appendChild(thumbImg);
+    header.appendChild(thumbImg);
     if (p.seed && p.controls) {
         queueThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
     }
@@ -1198,37 +1209,58 @@ function buildProfileCard(name, p, { isActive = false } = {}) {
     nm.textContent = name;
     body.appendChild(nm);
 
-    if (isActive) {
-        const unsavedLabel = document.createElement('div');
-        unsavedLabel.className = 'profile-card-unsaved-label';
-        unsavedLabel.textContent = '(unsaved)';
-        body.appendChild(unsavedLabel);
-    }
+    const unsavedLabel = document.createElement('div');
+    unsavedLabel.className = 'profile-card-unsaved-label';
+    unsavedLabel.textContent = '(unsaved)';
+    body.appendChild(unsavedLabel);
 
-    card.appendChild(body);
+    header.appendChild(body);
 
-    if (isActive) {
-        const saveBtn = document.createElement('button');
-        saveBtn.className = 'profile-card-save';
-        saveBtn.textContent = 'Save';
-        saveBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            saveCurrentProfile();
-        });
-        card.appendChild(saveBtn);
-    }
+    // Save button (visible when dirty via CSS)
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'profile-card-save';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        saveCurrentProfile();
+    });
+    card.appendChild(saveBtn);
 
+    // Delete button
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'profile-card-delete';
     deleteBtn.title = 'Delete';
     deleteBtn.innerHTML = TRASH_SVG;
     deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        deleteProfile(name);
-        if (name === loadedProfileName) loadedProfileName = null;
+        const realName = card.dataset.profileName;
+        if (realName && realName !== '__draft__') {
+            deleteProfile(realName);
+            if (realName === loadedProfileName) loadedProfileName = null;
+        }
         refreshProfileGallery();
     });
     card.appendChild(deleteBtn);
+
+    card.appendChild(header);
+
+    // Expansion slot
+    const expansion = document.createElement('div');
+    expansion.className = 'profile-card-expansion';
+    card.appendChild(expansion);
+
+    // Click handler: accordion toggle
+    header.addEventListener('click', (e) => {
+        if (e.target.closest('.profile-card-delete') ||
+            e.target.closest('.profile-card-save')) return;
+
+        const isCurrentlyExpanded = card.classList.contains('expanded');
+        if (isCurrentlyExpanded) {
+            collapseCurrentCard();
+        } else {
+            expandCard(card);
+        }
+    });
 
     return card;
 }
@@ -1237,32 +1269,31 @@ function refreshProfileGallery() {
     const profiles = loadProfiles();
     const names = Object.keys(profiles).sort((a, b) => a.localeCompare(b));
 
-    // Active profile display (above dropdown)
-    el.activeProfileDisplay.innerHTML = '';
-    if (loadedProfileName && profiles[loadedProfileName]) {
-        el.activeProfileDisplay.appendChild(
-            buildProfileCard(loadedProfileName, profiles[loadedProfileName], { isActive: true })
-        );
-    } else if (!loadedProfileName && dirty) {
-        // Show an unsaved draft card
+    // Park config controls before rebuilding
+    collapseCurrentCard();
+
+    el.profileGallery.innerHTML = '';
+
+    // Draft card at top if unsaved without a loaded profile
+    if (!loadedProfileName && dirty) {
         const draftName = el.profileNameField.value.trim() || 'Untitled';
         const draftData = {
             seed: el.seed.value.trim() || 'seed',
             controls: readControlsFromUI(),
             paletteTweaks: readPaletteFromUI(),
         };
-        el.activeProfileDisplay.appendChild(
-            buildProfileCard(draftName, draftData, { isActive: true })
-        );
+        const draftCard = buildProfileCard(draftName, draftData);
+        draftCard.dataset.profileName = '__draft__';
+        draftCard.classList.add('dirty');
+        el.profileGallery.appendChild(draftCard);
+
+        // Auto-expand draft card
+        const slot = draftCard.querySelector('.profile-card-expansion');
+        slot.appendChild(el.configControls);
+        draftCard.classList.add('expanded', 'active-profile');
     }
-    // Re-apply dirty class after rebuild
-    el.activeProfileDisplay.classList.toggle('dirty', dirty);
 
-    // Dropdown gallery (all other profiles)
-    el.profileGallery.innerHTML = '';
-    const others = names.filter(n => n !== loadedProfileName);
-
-    if (others.length === 0 && !loadedProfileName) {
+    if (names.length === 0 && !loadedProfileName && !dirty) {
         const d = document.createElement('div');
         d.className = 'small';
         d.textContent = 'No saved profiles yet.';
@@ -1270,8 +1301,17 @@ function refreshProfileGallery() {
         return;
     }
 
-    for (const name of others) {
-        el.profileGallery.appendChild(buildProfileCard(name, profiles[name]));
+    for (const name of names) {
+        const card = buildProfileCard(name, profiles[name]);
+        el.profileGallery.appendChild(card);
+
+        // Auto-expand the loaded profile
+        if (name === loadedProfileName) {
+            const slot = card.querySelector('.profile-card-expansion');
+            slot.appendChild(el.configControls);
+            card.classList.add('expanded', 'active-profile');
+            card.classList.toggle('dirty', dirty);
+        }
     }
 }
 
@@ -1710,22 +1750,11 @@ document.querySelectorAll('.sub-collapsible-toggle').forEach(btn => {
     });
 });
 
-function expandConfigSection() {
-    const configToggle = document.querySelector('.collapsible-toggle[data-target="configContent"]');
-    const configContent = document.getElementById('configContent');
-    if (configToggle && configContent) {
-        configToggle.setAttribute('aria-expanded', 'true');
-        configContent.classList.remove('collapsed');
-    }
-}
-
 /* Profiles header toggle */
 el.profilesToggle.addEventListener('click', () => {
-    const gallery = document.getElementById('profilesContent');
     const expanded = el.profilesToggle.getAttribute('aria-expanded') === 'true';
     el.profilesToggle.setAttribute('aria-expanded', String(!expanded));
-    gallery.classList.toggle('collapsed', expanded);
-    if (expanded) refreshProfileGallery(); // sync active display on collapse
+    el.profileGallery.style.display = expanded ? 'none' : '';
 });
 
 
