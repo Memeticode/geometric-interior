@@ -28,3 +28,5 @@ node_modules/
 dist/
 package-lock.json
 exploration/
+explore-*.mjs
+thumbnail.png

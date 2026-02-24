@@ -5,12 +5,13 @@
 
 import { createRenderer } from './engine/create-renderer.js';
 import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults, getPalette } from './core/palettes.js';
-import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles, loadPortraits, getPortraitNames } from './ui/profiles.js';
+import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder, syncProfileOrder } from './ui/profiles.js';
 import { packageStillZip, packageStillZipFromBlob } from './export/export.js';
 import { initTheme } from './ui/theme.js';
 import { createFaviconAnimation } from './ui/animated-favicon.js';
 import { generateTitle, generateAltText } from './core/text.js';
 import { xmur3, mulberry32 } from './core/prng.js';
+import { validateStillConfig, configToProfile } from './core/config-schema.js';
 
 /* ---------------------------
  * DOM references
@@ -61,6 +62,7 @@ const el = {
     activeCard: document.getElementById('activeCard'),
     activeCardToggle: document.getElementById('activeCardToggle'),
     activePreviewThumb: document.getElementById('activePreviewThumb'),
+    activeStatusLabel: document.getElementById('activeStatusLabel'),
     activePreviewName: document.getElementById('activePreviewName'),
     activePreviewSeed: document.getElementById('activePreviewSeed'),
 
@@ -276,10 +278,13 @@ function queueThumbnail(seed, controls, destImg, paletteTweaks) {
     // so cache keys and render results are identical either way
     const tweaks = paletteTweaks || getPaletteDefaults(controls.palette || 'violet-depth');
     const key = thumbCacheKey(seed, controls, tweaks);
+    const wrap = destImg.closest('.thumb-wrap');
     if (thumbCache.has(key)) {
         destImg.src = thumbCache.get(key);
+        if (wrap) wrap.classList.remove('thumb-loading');
         return;
     }
+    if (wrap) wrap.classList.add('thumb-loading');
     thumbQueue.push({ seed, controls, destImg, key, paletteTweaks: tweaks });
     drainThumbQueue();
 }
@@ -293,8 +298,10 @@ function drainThumbQueue() {
             // Re-check cache — another queued item with the same key may
             // have already rendered (e.g. the custom-select and gallery
             // share profiles, so both queue the same keys at startup).
+            const wrap = item ? item.destImg.closest('.thumb-wrap') : null;
             if (item && thumbCache.has(item.key)) {
                 if (item.destImg.isConnected) item.destImg.src = thumbCache.get(item.key);
+                if (wrap) wrap.classList.remove('thumb-loading');
             } else if (item && item.destImg.isConnected) {
                 const palKey = item.controls.palette;
                 resetPalette(palKey);
@@ -303,6 +310,7 @@ function drainThumbQueue() {
                 const url = thumbOffscreen.toDataURL('image/png');
                 thumbCache.set(item.key, url);
                 item.destImg.src = url;
+                if (wrap) wrap.classList.remove('thumb-loading');
             }
         } catch (err) {
             console.error('[thumb] render error:', err);
@@ -986,20 +994,31 @@ function saveCurrentProfile() {
 
     const profiles = loadProfiles();
     const portraitNames = getPortraitNames();
+    const portraits = loadPortraits();
+    const controls = readControlsFromUI();
+    const currentSeed = el.seed.value.trim() || 'seed';
+
+    // Check if identical to an existing portrait
+    const matchingPortrait = portraits[name];
+    if (matchingPortrait &&
+        matchingPortrait.seed === currentSeed &&
+        JSON.stringify(matchingPortrait.controls) === JSON.stringify(controls)) {
+        toast('Already saved as a portrait.');
+        return;
+    }
 
     // If loaded from a portrait, always create a new User entry
     // Also prevent overwriting a portrait name in user storage
     if (loadedFromPortrait || portraitNames.includes(name)) {
-        if (profiles[name]) {
+        if (profiles[name] && name !== loadedProfileName) {
             if (!confirm(`User profile "${name}" already exists. Overwrite?`)) return;
         }
     } else if (profiles[name] && name !== loadedProfileName) {
         if (!confirm(`Profile "${name}" already exists. Overwrite?`)) return;
     }
 
-    const controls = readControlsFromUI();
     const profileData = {
-        seed: el.seed.value.trim() || 'seed',
+        seed: currentSeed,
         controls,
     };
     profileData.paletteTweaks = readPaletteFromUI();
@@ -1008,6 +1027,13 @@ function saveCurrentProfile() {
     }
     profiles[name] = profileData;
     saveProfiles(profiles);
+
+    // Append to order if new
+    const order = loadProfileOrder() || [];
+    if (!order.includes(name)) {
+        order.push(name);
+        saveProfileOrder(order);
+    }
 
     loadedProfileName = name;
     loadedFromPortrait = false;
@@ -1067,8 +1093,8 @@ function generateIntent() {
  * Randomization history
  * ---------------------------
  */
-const HISTORY_MAX = 5;
-let randHistory = [];
+const HISTORY_MAX = 25;
+let navHistory = [];
 let historyIndex = -1;
 
 function captureSnapshot() {
@@ -1077,6 +1103,9 @@ function captureSnapshot() {
         name: el.profileNameField.value.trim(),
         controls: readControlsFromUI(),
         paletteTweaks: readPaletteFromUI(),
+        profileName: loadedProfileName || '',
+        isPortrait: loadedFromPortrait,
+        wasDirty: dirty,
     };
 }
 
@@ -1093,10 +1122,30 @@ function restoreSnapshot(snap) {
     syncPaletteEditor();
     updateSliderLabels(snap.controls);
     syncDisplayFields();
-    loadedProfileName = '';
-    loadedFromPortrait = false;
-    setDirty(true);
-    userEdited = false;
+
+    // Restore profile context from snapshot
+    if (snap.profileName) {
+        // Verify the profile still exists
+        const store = snap.isPortrait ? loadPortraits() : loadProfiles();
+        if (store[snap.profileName]) {
+            loadedProfileName = snap.profileName;
+            loadedFromPortrait = snap.isPortrait;
+            setDirty(snap.wasDirty);
+            userEdited = snap.wasDirty;
+        } else {
+            // Profile was deleted — treat as unsaved
+            loadedProfileName = '';
+            loadedFromPortrait = false;
+            setDirty(true);
+            userEdited = false;
+        }
+    } else {
+        loadedProfileName = '';
+        loadedFromPortrait = false;
+        setDirty(true);
+        userEdited = false;
+    }
+
     refreshProfileGallery();
     renderAndUpdate(snap.seed, snap.controls, { animate: true });
     setStillRendered(true);
@@ -1106,7 +1155,56 @@ function updateHistoryButtons() {
     const back = document.getElementById('historyBackBtn');
     const fwd = document.getElementById('historyForwardBtn');
     if (back) back.disabled = historyIndex <= 0;
-    if (fwd) fwd.disabled = historyIndex >= randHistory.length - 1;
+    if (fwd) fwd.disabled = historyIndex >= navHistory.length - 1;
+}
+
+/**
+ * Update the current history entry in-place if the user's state has diverged,
+ * preserving unsaved edits before navigating away.
+ */
+function captureCurrentBeforeNavigating() {
+    if (historyIndex < 0 || navHistory.length === 0) {
+        pushToHistory();
+        return;
+    }
+    const current = captureSnapshot();
+    const stored = navHistory[historyIndex];
+    const changed = current.seed !== stored.seed
+        || current.name !== stored.name
+        || current.profileName !== stored.profileName
+        || current.wasDirty !== stored.wasDirty
+        || JSON.stringify(current.controls) !== JSON.stringify(stored.controls)
+        || JSON.stringify(current.paletteTweaks) !== JSON.stringify(stored.paletteTweaks);
+    if (changed) {
+        navHistory[historyIndex] = current;
+    }
+}
+
+/** Push current state to history. Tracks all visited images (profiles, randomized, unsaved). */
+function pushToHistory() {
+    const snap = captureSnapshot();
+
+    // Deduplicate: skip if identical to current history entry
+    if (historyIndex >= 0 && historyIndex < navHistory.length) {
+        const cur = navHistory[historyIndex];
+        if (cur.seed === snap.seed
+            && cur.profileName === snap.profileName
+            && cur.isPortrait === snap.isPortrait
+            && JSON.stringify(cur.controls) === JSON.stringify(snap.controls)
+            && JSON.stringify(cur.paletteTweaks) === JSON.stringify(snap.paletteTweaks)) {
+            return;
+        }
+    }
+
+    // Truncate forward entries
+    if (historyIndex < navHistory.length - 1) {
+        navHistory.splice(historyIndex + 1);
+    }
+
+    navHistory.push(snap);
+    if (navHistory.length > HISTORY_MAX) navHistory.shift();
+    historyIndex = navHistory.length - 1;
+    updateHistoryButtons();
 }
 
 /** Populate UI with random configuration (no confirmation dialog, no render). */
@@ -1183,17 +1281,11 @@ async function randomize() {
         if (result === 'save') saveCurrentProfile();
     }
 
+    captureCurrentBeforeNavigating();
+
     randomizeUI();
     refreshProfileGallery();
-
-    // Push to history (truncate any forward entries)
-    if (historyIndex < randHistory.length - 1) {
-        randHistory.splice(historyIndex + 1);
-    }
-    randHistory.push(captureSnapshot());
-    if (randHistory.length > HISTORY_MAX) randHistory.shift();
-    historyIndex = randHistory.length - 1;
-    updateHistoryButtons();
+    pushToHistory();
 
     renderAndUpdate(el.seed.value.trim() || 'seed', readControlsFromUI(), { animate: true });
     setStillRendered(true);
@@ -1204,6 +1296,19 @@ async function randomize() {
  * ---------------------------
  */
 const TRASH_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5.5 5.5a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0v-6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0v-6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>';
+const ARROW_UP_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l5-5 5 5"/></svg>';
+const ARROW_DOWN_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5 5 5-5"/></svg>';
+
+function moveProfile(name, dir) {
+    const order = syncProfileOrder(loadProfiles());
+    const idx = order.indexOf(name);
+    if (idx < 0) return;
+    const target = idx + dir;
+    if (target < 0 || target >= order.length) return;
+    [order[idx], order[target]] = [order[target], order[idx]];
+    saveProfileOrder(order);
+    refreshProfileGallery();
+}
 
 function clearActiveCards() {
     el.portraitGallery.querySelectorAll('.profile-card').forEach(c =>
@@ -1223,6 +1328,17 @@ function updateActivePreview() {
     const seed = el.seed.value.trim() || '';
     el.activePreviewName.textContent = name;
     el.activePreviewSeed.textContent = seed;
+
+    // Status label
+    let status;
+    if (!loadedProfileName) {
+        status = 'Unsaved';
+    } else if (loadedFromPortrait) {
+        status = dirty ? 'Portrait \u00b7 unsaved' : 'Portrait';
+    } else {
+        status = dirty ? 'User \u00b7 unsaved' : 'User';
+    }
+    el.activeStatusLabel.textContent = status;
 
     // Queue a thumbnail for the current config
     const controls = readControlsFromUI();
@@ -1247,22 +1363,16 @@ async function selectCard(cardEl) {
         );
         if (result === 'cancel') return;
         if (result === 'save') saveCurrentProfile();
-    } else if (!loadedProfileName) {
-        // Unsaved image with no user edits — push to history
-        const snap = captureSnapshot();
-        if (historyIndex >= 0 && historyIndex < randHistory.length) {
-            randHistory[historyIndex] = snap;
-            historyIndex++;
-        } else {
-            randHistory.push(snap);
-            if (randHistory.length > HISTORY_MAX) randHistory.shift();
-            historyIndex = randHistory.length;
-        }
-        updateHistoryButtons();
     }
+
+    // Preserve current state in history before switching
+    captureCurrentBeforeNavigating();
 
     // Load profile data into Active section controls
     loadProfileFromData(profileName, isPortrait);
+
+    // Push the newly loaded profile to history
+    pushToHistory();
 
     // Mark as active across both galleries
     clearActiveCards();
@@ -1278,7 +1388,7 @@ async function selectCard(cardEl) {
     setStillRendered(true);
 }
 
-function buildProfileCard(name, p, { isPortrait = false } = {}) {
+function buildProfileCard(name, p, { isPortrait = false, index = 0, total = 1 } = {}) {
     const card = document.createElement('div');
     card.className = 'profile-card';
     if (isPortrait) card.classList.add('portrait-card');
@@ -1288,9 +1398,12 @@ function buildProfileCard(name, p, { isPortrait = false } = {}) {
     const header = document.createElement('div');
     header.className = 'profile-card-header';
 
+    const thumbWrap = document.createElement('div');
+    thumbWrap.className = 'thumb-wrap thumb-loading';
     const thumbImg = document.createElement('img');
     thumbImg.className = 'profile-thumb';
-    header.appendChild(thumbImg);
+    thumbWrap.appendChild(thumbImg);
+    header.appendChild(thumbWrap);
     if (p.seed && p.controls) {
         queueThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
     }
@@ -1313,8 +1426,31 @@ function buildProfileCard(name, p, { isPortrait = false } = {}) {
     header.appendChild(body);
     card.appendChild(header);
 
-    // Delete button (user profiles only)
+    // Action buttons (user profiles only)
     if (!isPortrait) {
+        const actions = document.createElement('div');
+        actions.className = 'profile-card-actions';
+
+        const upBtn = document.createElement('button');
+        upBtn.className = 'profile-card-move';
+        upBtn.title = 'Move up';
+        upBtn.innerHTML = ARROW_UP_SVG;
+        upBtn.disabled = index === 0 || total <= 1;
+        upBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moveProfile(card.dataset.profileName, -1);
+        });
+
+        const downBtn = document.createElement('button');
+        downBtn.className = 'profile-card-move';
+        downBtn.title = 'Move down';
+        downBtn.innerHTML = ARROW_DOWN_SVG;
+        downBtn.disabled = index === total - 1 || total <= 1;
+        downBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moveProfile(card.dataset.profileName, 1);
+        });
+
         const deleteBtn = document.createElement('button');
         deleteBtn.className = 'profile-card-delete';
         deleteBtn.title = 'Delete';
@@ -1324,6 +1460,11 @@ function buildProfileCard(name, p, { isPortrait = false } = {}) {
             const realName = card.dataset.profileName;
             if (realName) {
                 deleteProfile(realName);
+                const order = loadProfileOrder();
+                if (order) {
+                    const filtered = order.filter(n => n !== realName);
+                    saveProfileOrder(filtered);
+                }
                 if (realName === loadedProfileName) {
                     loadedProfileName = '';
                     loadedFromPortrait = false;
@@ -1332,12 +1473,16 @@ function buildProfileCard(name, p, { isPortrait = false } = {}) {
             }
             refreshProfileGallery();
         });
-        card.appendChild(deleteBtn);
+
+        actions.appendChild(upBtn);
+        actions.appendChild(downBtn);
+        actions.appendChild(deleteBtn);
+        card.appendChild(actions);
     }
 
     // Single click: select card
     header.addEventListener('click', (e) => {
-        if (e.target.closest('.profile-card-delete')) return;
+        if (e.target.closest('.profile-card-actions')) return;
         selectCard(card);
     });
 
@@ -1359,9 +1504,9 @@ function refreshProfileGallery() {
         }
     }
 
-    // --- Users section ---
+    // --- Users section (ordered by user preference) ---
     const profiles = loadProfiles();
-    const userNames = Object.keys(profiles).sort((a, b) => a.localeCompare(b));
+    const userNames = syncProfileOrder(profiles);
     el.userGallery.innerHTML = '';
 
     if (userNames.length === 0) {
@@ -1371,8 +1516,9 @@ function refreshProfileGallery() {
         el.userGallery.appendChild(d);
     }
 
-    for (const name of userNames) {
-        const card = buildProfileCard(name, profiles[name]);
+    for (let i = 0; i < userNames.length; i++) {
+        const name = userNames[i];
+        const card = buildProfileCard(name, profiles[name], { index: i, total: userNames.length });
         el.userGallery.appendChild(card);
 
         if (name === loadedProfileName && !loadedFromPortrait) {
@@ -1393,6 +1539,8 @@ el.exportBtn.addEventListener('click', async () => {
 
     const seed = el.seed.value.trim() || 'seed';
     const controls = readControlsFromUI();
+    const paletteTweaks = readPaletteFromUI();
+    const name = el.profileNameField.value.trim() || 'Untitled';
 
     // Generate metadata on main thread (cheap text generation)
     const titleRng = mulberry32(xmur3(seed + ':title')());
@@ -1410,7 +1558,7 @@ el.exportBtn.addEventListener('click', async () => {
             });
             const rect = canvas.getBoundingClientRect();
             await packageStillZipFromBlob(blob, {
-                seed, controls, meta,
+                seed, controls, paletteTweaks, name, meta,
                 canvasWidth: Math.round(rect.width * window.devicePixelRatio),
                 canvasHeight: Math.round(rect.height * window.devicePixelRatio),
             });
@@ -1421,7 +1569,7 @@ el.exportBtn.addEventListener('click', async () => {
         }
     } else {
         try {
-            await packageStillZip(canvas, { seed, controls, meta });
+            await packageStillZip(canvas, { seed, controls, paletteTweaks, name, meta });
             toast('Exported still ZIP.');
         } catch (err) {
             console.error(err);
@@ -1477,66 +1625,43 @@ function validateAndImportProfile(raw) {
         return;
     }
 
-    if (!data || typeof data !== 'object' || Array.isArray(data)) {
-        showImportError('Expected a JSON object.');
+    // Accept a single config object or an array of configs
+    const items = Array.isArray(data) ? data : [data];
+    if (items.length === 0) {
+        showImportError('No profiles found.');
         return;
     }
 
-    // Detect shape: single profile { seed, controls } or collection { "Name": { seed, controls } }
-    let entries;
-    if (data.controls && typeof data.controls === 'object') {
-        // Single profile — need a name
-        const name = data.name || el.profileNameField.value.trim() || 'Imported';
-        delete data.name;
-        entries = [[name, data]];
-    } else {
-        // Collection — each value should be a profile
-        entries = Object.entries(data);
-        if (entries.length === 0) {
-            showImportError('No profiles found in JSON.');
+    // Validate every entry
+    for (let i = 0; i < items.length; i++) {
+        const label = items.length > 1 ? `Item ${i + 1}` : 'Profile';
+        const { ok, errors } = validateStillConfig(items[i]);
+        if (!ok) {
+            showImportError(`${label}:\n${errors.join('\n')}`);
             return;
         }
     }
 
-    // Validate each profile
-    const required = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
-    for (const [name, profile] of entries) {
-        if (!profile || typeof profile !== 'object') {
-            showImportError(`"${name}" is not a valid profile object.`);
-            return;
-        }
-        if (!profile.controls || typeof profile.controls !== 'object') {
-            showImportError(`"${name}" is missing a controls object.`);
-            return;
-        }
-        for (const key of required) {
-            if (typeof profile.controls[key] !== 'number') {
-                showImportError(`"${name}" controls missing numeric "${key}".`);
-                return;
-            }
-        }
-    }
-
-    // Save all profiles
+    // Convert and save
     const profiles = loadProfiles();
     let lastName = '';
-    for (const [name, profile] of entries) {
-        if (!profile.seed) profile.seed = name;
-        if (!profile.controls.topology) profile.controls.topology = 'flow-field';
-        if (!profile.controls.palette) profile.controls.palette = 'violet-depth';
+    for (const item of items) {
+        const { name, profile } = configToProfile(item);
         profiles[name] = profile;
         lastName = name;
     }
     saveProfiles(profiles);
 
     // Load the last imported profile into the UI
+    captureCurrentBeforeNavigating();
     loadProfileIntoUI(lastName);
+    pushToHistory();
     refreshProfileGallery();
     renderAndUpdate(el.seed.value.trim() || 'seed', readControlsFromUI(), { animate: true });
     setStillRendered(true);
 
     closeImportModal();
-    toast(`Imported ${entries.length} profile${entries.length > 1 ? 's' : ''}.`);
+    toast(`Imported ${items.length} profile${items.length > 1 ? 's' : ''}.`);
 }
 
 document.getElementById('importBtn').addEventListener('click', openImportModal);
@@ -1801,17 +1926,32 @@ document.addEventListener('keydown', (e) => {
  */
 const paramTooltip = document.getElementById('paramTooltip');
 
-function showTooltip(el) {
-    const rect = el.getBoundingClientRect();
+function showTooltip(el, mouseX, mouseY) {
     paramTooltip.textContent = el.getAttribute('data-tooltip');
-    if (el.closest('.panel')) {
+    const pos = el.getAttribute('data-tooltip-pos');
+    const above = pos === 'above';
+    if (!pos && el.closest('.panel')) {
+        const rect = el.getBoundingClientRect();
+        paramTooltip.style.transform = 'translateY(-50%)';
         paramTooltip.style.left = (rect.right + 8) + 'px';
         paramTooltip.style.top = (rect.top + rect.height / 2) + 'px';
-        paramTooltip.style.transform = 'translateY(-50%)';
     } else {
-        paramTooltip.style.left = (rect.left + rect.width / 2) + 'px';
-        paramTooltip.style.top = (rect.bottom + 6) + 'px';
-        paramTooltip.style.transform = 'translateX(-50%)';
+        // Position at cursor, clamped to viewport
+        paramTooltip.style.transform = '';
+        paramTooltip.style.left = '0px';
+        // Measure height first for above positioning
+        paramTooltip.style.top = '0px';
+        paramTooltip.classList.add('visible');
+        const tw = paramTooltip.offsetWidth;
+        const th = paramTooltip.offsetHeight;
+        const margin = 8;
+        let left = (mouseX || 0) - tw / 2;
+        left = Math.max(margin, Math.min(left, window.innerWidth - tw - margin));
+        paramTooltip.style.left = left + 'px';
+        paramTooltip.style.top = (above
+            ? (mouseY || 0) - th - 14
+            : (mouseY || 0) + 14) + 'px';
+        return;
     }
     paramTooltip.classList.add('visible');
 }
@@ -1821,7 +1961,7 @@ function hideTooltip() {
 }
 
 document.querySelectorAll('[data-tooltip]').forEach(el => {
-    el.addEventListener('mouseenter', () => showTooltip(el));
+    el.addEventListener('mouseenter', (e) => showTooltip(el, e.clientX, e.clientY));
     el.addEventListener('mouseleave', hideTooltip);
 
     // Long-press on buttons: show tooltip instead of activating
@@ -1909,14 +2049,18 @@ document.getElementById('configRandomizeBtn').addEventListener('click', async (e
 /* History back/forward buttons */
 document.getElementById('historyBackBtn').addEventListener('click', () => {
     if (historyIndex > 0) {
+        captureCurrentBeforeNavigating();
         historyIndex--;
-        restoreSnapshot(randHistory[historyIndex]);
+        restoreSnapshot(navHistory[historyIndex]);
+        updateHistoryButtons();
     }
 });
 document.getElementById('historyForwardBtn').addEventListener('click', () => {
-    if (historyIndex < randHistory.length - 1) {
+    if (historyIndex < navHistory.length - 1) {
+        captureCurrentBeforeNavigating();
         historyIndex++;
-        restoreSnapshot(randHistory[historyIndex]);
+        restoreSnapshot(navHistory[historyIndex]);
+        updateHistoryButtons();
     }
 });
 
@@ -1995,6 +2139,11 @@ configControls.classList.add('collapsed');
 // Random configuration on every page load
 randomizeUI();
 refreshProfileGallery();
+
+// Seed history with initial state
+navHistory.push(captureSnapshot());
+historyIndex = 0;
+updateHistoryButtons();
 
 showCanvasOverlay('');
 

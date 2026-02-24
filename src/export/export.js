@@ -7,6 +7,7 @@ import { deriveParams } from '../core/params.js';
 import { generateTitle, generateAltText, generateAnimAltText } from '../core/text.js';
 import { evalControlsAt } from '../core/interpolation.js';
 import { ANIM_FPS, MOTION_BLUR_ENABLED, MB_DECAY, MB_ADD } from './animation.js';
+import { profileToConfig } from '../core/config-schema.js';
 
 export function downloadBlob(filename, blob) {
     const url = URL.createObjectURL(blob);
@@ -135,7 +136,7 @@ export function computeLoopSummaryTitleAlt(seed, landmarks, durationSecs) {
 /**
  * Package and download a still image ZIP.
  */
-export async function packageStillZip(canvas, { seed, controls, meta }) {
+export async function packageStillZip(canvas, { seed, controls, paletteTweaks, name, meta }) {
     const JSZip = window.JSZip;
     if (!JSZip) throw new Error('JSZip not loaded');
 
@@ -152,14 +153,7 @@ export async function packageStillZip(canvas, { seed, controls, meta }) {
     zip.file(`${base}/title.txt`, meta.title + '\n');
     zip.file(`${base}/alt-text.txt`, meta.altText + '\n');
 
-    const metadata = {
-        kind: 'still',
-        seed,
-        controls,
-        title: meta.title,
-        generated_at: new Date().toISOString(),
-        canvas: { width: canvas.width, height: canvas.height }
-    };
+    const metadata = profileToConfig(name, { seed, controls, paletteTweaks });
     zip.file(`${base}/metadata.json`, JSON.stringify(metadata, null, 2) + '\n');
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -170,7 +164,7 @@ export async function packageStillZip(canvas, { seed, controls, meta }) {
  * Package and download a still image ZIP from a pre-rendered PNG blob
  * (used when canvas is owned by a Web Worker via OffscreenCanvas).
  */
-export async function packageStillZipFromBlob(pngBlob, { seed, controls, meta, canvasWidth, canvasHeight }) {
+export async function packageStillZipFromBlob(pngBlob, { seed, controls, paletteTweaks, name, meta, canvasWidth, canvasHeight }) {
     const JSZip = window.JSZip;
     if (!JSZip) throw new Error('JSZip not loaded');
 
@@ -186,14 +180,7 @@ export async function packageStillZipFromBlob(pngBlob, { seed, controls, meta, c
     zip.file(`${base}/title.txt`, meta.title + '\n');
     zip.file(`${base}/alt-text.txt`, meta.altText + '\n');
 
-    const metadata = {
-        kind: 'still',
-        seed,
-        controls,
-        title: meta.title,
-        generated_at: new Date().toISOString(),
-        canvas: { width: canvasWidth, height: canvasHeight },
-    };
+    const metadata = profileToConfig(name, { seed, controls, paletteTweaks });
     zip.file(`${base}/metadata.json`, JSON.stringify(metadata, null, 2) + '\n');
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });

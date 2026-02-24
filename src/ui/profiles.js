@@ -5,6 +5,7 @@
 import starterProfiles from '../core/starter-profiles.json';
 
 const LS_KEY = 'geo_self_portrait_profiles_v3';
+const ORDER_KEY = 'geo_self_portrait_profile_order_v1';
 const ANIM_LS_KEY = 'geo_self_portrait_anim_profiles_v1';
 
 /* ---------------------------
@@ -45,6 +46,39 @@ export function deleteProfile(name) {
     const profiles = loadProfiles();
     delete profiles[name];
     saveProfiles(profiles);
+}
+
+/* ---------------------------
+ * Profile ordering
+ * ---------------------------
+ */
+
+export function loadProfileOrder() {
+    try {
+        const raw = localStorage.getItem(ORDER_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch { return null; }
+}
+
+export function saveProfileOrder(order) {
+    localStorage.setItem(ORDER_KEY, JSON.stringify(order));
+}
+
+/** Reconcile order array with actual profile keys. */
+export function syncProfileOrder(profiles) {
+    const keys = Object.keys(profiles);
+    let order = loadProfileOrder();
+    if (!order) {
+        order = keys.sort((a, b) => a.localeCompare(b));
+    } else {
+        order = order.filter(n => keys.includes(n));
+        for (const k of keys) {
+            if (!order.includes(k)) order.push(k);
+        }
+    }
+    saveProfileOrder(order);
+    return order;
 }
 
 export function refreshProfileSelect(selectEl) {
@@ -140,14 +174,21 @@ export function getPortraitNames() {
 }
 
 export function ensureStarterProfiles() {
-    // Migration: remove starter profiles from user storage (they now live in Portraits section)
+    // Migration: remove starter profiles from user storage only if identical to portrait
+    // (preserves user-customized profiles that share a portrait name)
     const profiles = loadProfiles();
     const portraitNames = getPortraitNames();
     let changed = false;
     for (const name of portraitNames) {
         if (profiles[name]) {
-            delete profiles[name];
-            changed = true;
+            const p = profiles[name];
+            const s = starterProfiles[name];
+            const identical = p.seed === s.seed &&
+                JSON.stringify(p.controls) === JSON.stringify(s.controls);
+            if (identical) {
+                delete profiles[name];
+                changed = true;
+            }
         }
     }
     if (changed) saveProfiles(profiles);
@@ -156,7 +197,7 @@ export function ensureStarterProfiles() {
     if (Object.keys(animProfiles).length === 0) {
         saveAnimProfiles({
             'Chromatic Cycle': {
-                landmarks: ['Violet Crystalline', 'Warm Drift', 'Teal Convergence', 'Prismatic Energy', 'Crystal Lattice'],
+                landmarks: ['Verdant Stream', 'Prismatic Abyss', 'Rose Quartz', 'Sapphire Lattice', 'Spectral Drift', 'Violet Sanctum'],
                 durationMs: 7000,
                 seed: 'The space where radiant emptiness begins to sing.',
             }
