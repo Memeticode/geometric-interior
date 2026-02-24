@@ -15,10 +15,9 @@
 export const PALETTES = {
     'violet-depth': {
         label: 'Violet Depth',
-        baseHue: 270,
+        baseHue: 282,
         hueRange: 30,
         saturation: 0.55,
-        lightness: 0.55,
         fogColor: [0.003, 0.001, 0.006],
         bgColor: [0.001, 0.001, 0.003],
         edgeColor: [0.7, 0.5, 1.0],
@@ -26,10 +25,9 @@ export const PALETTES = {
     },
     'warm-spectrum': {
         label: 'Warm Spectrum',
-        baseHue: 30,
-        hueRange: 120,
-        saturation: 0.65,
-        lightness: 0.6,
+        baseHue: 22,
+        hueRange: 27,
+        saturation: 0.97,
         fogColor: [0.006, 0.003, 0.001],
         bgColor: [0.003, 0.001, 0.001],
         edgeColor: [1.0, 0.8, 0.5],
@@ -40,7 +38,6 @@ export const PALETTES = {
         baseHue: 185,
         hueRange: 25,
         saturation: 0.6,
-        lightness: 0.6,
         fogColor: [0.001, 0.004, 0.005],
         bgColor: [0.001, 0.002, 0.003],
         edgeColor: [0.4, 0.9, 1.0],
@@ -50,8 +47,7 @@ export const PALETTES = {
         label: 'Prismatic',
         baseHue: 0,
         hueRange: 360,
-        saturation: 0.7,
-        lightness: 0.65,
+        saturation: 1.0,
         fogColor: [0.003, 0.002, 0.004],
         bgColor: [0.001, 0.001, 0.002],
         edgeColor: [0.9, 0.8, 1.0],
@@ -59,10 +55,9 @@ export const PALETTES = {
     },
     'crystal-lattice': {
         label: 'Crystal Lattice',
-        baseHue: 220,
-        hueRange: 40,
-        saturation: 0.45,
-        lightness: 0.7,
+        baseHue: 211,
+        hueRange: 10,
+        saturation: 0.05,
         fogColor: [0.002, 0.003, 0.005],
         bgColor: [0.001, 0.002, 0.003],
         edgeColor: [0.7, 0.8, 1.0],
@@ -72,8 +67,7 @@ export const PALETTES = {
         label: 'Sapphire',
         baseHue: 225,
         hueRange: 30,
-        saturation: 0.6,
-        lightness: 0.5,
+        saturation: 0.9,
         fogColor: [0.001, 0.002, 0.006],
         bgColor: [0.001, 0.001, 0.003],
         edgeColor: [0.4, 0.6, 1.0],
@@ -81,10 +75,9 @@ export const PALETTES = {
     },
     'amethyst': {
         label: 'Amethyst',
-        baseHue: 290,
+        baseHue: 312,
         hueRange: 35,
         saturation: 0.55,
-        lightness: 0.55,
         fogColor: [0.004, 0.001, 0.005],
         bgColor: [0.002, 0.001, 0.003],
         edgeColor: [0.8, 0.4, 1.0],
@@ -131,19 +124,17 @@ export const customPalette = {
     baseHue: 325,
     hueRange: 100,
     saturation: 0.75,
-    lightness: 0.55,
     ...deriveCustomColors(325),
 };
 
 /** Update any palette in-place (built-in or custom). Derives fog/bg/edge from baseHue. */
-export function updatePalette(key, { baseHue, hueRange, saturation, lightness }) {
+export function updatePalette(key, { baseHue, hueRange, saturation }) {
     const target = key === 'custom' ? customPalette : PALETTES[key];
     if (!target) return;
     const derived = deriveCustomColors(baseHue);
     target.baseHue = baseHue;
     target.hueRange = hueRange;
     target.saturation = saturation;
-    target.lightness = lightness;
     target.fogColor = derived.fogColor;
     target.bgColor = derived.bgColor;
     target.edgeColor = derived.edgeColor;
@@ -164,7 +155,7 @@ export function resetPalette(key) {
 
 /** Get the original default values for a palette (read-only). */
 export function getPaletteDefaults(key) {
-    if (key === 'custom') return { baseHue: 325, hueRange: 100, saturation: 0.75, lightness: 0.55 };
+    if (key === 'custom') return { baseHue: 325, hueRange: 100, saturation: 0.75 };
     return PALETTE_DEFAULTS[key] || PALETTE_DEFAULTS['violet-depth'];
 }
 

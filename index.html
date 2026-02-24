@@ -162,13 +162,15 @@
             color: var(--text-muted);
             font-size: 0.8125rem;
             cursor: pointer;
-            padding: 0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
             opacity: 0.6;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s ease, background-color 0.2s ease;
         }
 
         .header-link:hover {
             opacity: 1;
+            background: var(--surface-hover);
         }
 
         .header-sep {
@@ -238,7 +240,6 @@
         .panel-toggle-btn.panel-open {
             border-color: var(--accent);
             color: var(--accent-text);
-            box-shadow: 0 0 8px var(--accent);
         }
 
         .panel-toggle-btn.panel-open:hover {
@@ -296,9 +297,6 @@
             transition: background-color 0.2s ease;
         }
 
-        #imageModeSection .row:hover {
-            background: var(--surface-hover);
-        }
 
         label {
             display: flex;
@@ -464,8 +462,8 @@
 
         .pal-chip.active {
             border-color: var(--accent-text);
-            box-shadow: 0 0 12px var(--accent), 0 2px 8px rgba(0, 0, 0, 0.3);
             transform: translateY(-1px);
+            box-shadow: 0 0 8px var(--accent), 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
         /* ── Custom palette editor ── */
@@ -516,13 +514,32 @@
         .pal-editor-btns {
             display: flex;
             gap: 0.375rem;
-            justify-content: flex-end;
+            justify-content: center;
             margin-top: 0.25rem;
         }
 
-        .pal-editor-btns .small-btn {
-            font-size: 0.6875rem;
-            padding: 0.25rem 0.625rem;
+        .pal-editor-btns button {
+            flex: 1;
+            padding: 0.375rem 0.5rem;
+        }
+
+        .pal-editor-btns .wtc-slide {
+            max-width: 12rem;
+            opacity: 1;
+            overflow: hidden;
+            white-space: nowrap;
+            transition: max-width 0.25s ease, opacity 0.2s ease, margin-left 0.25s ease,
+                        padding 0.25s ease, border-width 0.25s ease;
+        }
+
+        .pal-editor-btns .wtc-slide.wtc-collapsed {
+            max-width: 0;
+            opacity: 0;
+            padding-left: 0;
+            padding-right: 0;
+            border-width: 0;
+            margin-left: -0.375rem;
+            pointer-events: none;
         }
 
         /* ── Engine slider with gradient track ── */
@@ -1010,7 +1027,7 @@
             border: 1px solid var(--accent);
             background: var(--accent-bg);
             border-radius: 12px;
-            padding: 0.5rem;
+            padding: 0.375rem 0.5rem;
             transition: background-color 0.2s;
         }
 
@@ -1100,13 +1117,20 @@
         .active-card > #configControls {
             overflow: hidden;
             max-height: 2000px;
-            transition: max-height 0.35s ease, opacity 0.25s ease;
+            transition: max-height 0.35s ease, opacity 0.25s ease, background-color 0.2s ease;
             opacity: 1;
+            border-top: 1px solid var(--border);
+            margin-top: 0.375rem;
         }
 
         .active-card > #configControls.collapsed {
             max-height: 0;
             opacity: 0;
+            border-top-color: transparent;
+        }
+
+        .active-card-main:hover:not(:has(.active-save-btn:hover)) ~ #configControls:not(.collapsed) {
+            background-color: var(--surface-hover);
         }
 
         .active-save-btn {
@@ -1224,10 +1248,6 @@
             transition: border-color 0.2s;
         }
 
-        .gallery-wrapper:has(.gallery-header:hover) {
-            border-color: var(--border-strong);
-        }
-
         /* ── Gallery header ── */
         .gallery-header {
             display: flex;
@@ -1241,6 +1261,10 @@
             font-size: 0.75rem;
             cursor: pointer;
             border-radius: 8px;
+        }
+
+        .gallery-header:hover {
+            background: none;
         }
 
         .gallery-header-right {
@@ -1373,7 +1397,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 0.5rem;
-            padding: 0 1rem;
+            padding: 0;
         }
 
         .stage-header-info {
@@ -1384,15 +1408,14 @@
 
         /* ── Render card ── */
         .render-card {
-            border-radius: 18px;
+            border-radius: 0;
             overflow: hidden;
         }
 
         .generated-text-wrap {
             border: 1px solid var(--border);
             border-top: none;
-            border-radius: 0 0 12px 12px;
-            margin: 0 1rem;
+            border-radius: 0 0 6px 6px;
             overflow: hidden;
             max-height: 0;
             transition: max-height 0.35s ease;
@@ -1410,7 +1433,7 @@
             position: relative;
             width: 100%;
             overflow: hidden;
-            border-radius: 18px;
+            border-radius: 0;
         }
 
         .canvas-wrapper canvas {
@@ -1423,14 +1446,9 @@
 
         .render-card .canvas-wrapper {
             border-radius: 0;
-            padding: 0 1rem;
         }
 
         .render-card .canvas-overlay {
-            border-radius: 0;
-        }
-
-        .render-card .canvas-wrapper .reveal-wipe {
             border-radius: 0;
         }
 
@@ -1441,7 +1459,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(8, 10, 15, 0.85);
+            background: var(--modal-backdrop);
             z-index: 10;
             opacity: 1;
             transition: opacity 0.2s ease-out;
@@ -1470,6 +1488,17 @@
             width: 100%;
             height: 100%;
             display: block;
+        }
+
+        .canvas-overlay-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent-text);
+            border-radius: 50%;
+            animation: thumb-spin 0.7s linear infinite;
+            position: relative;
+            z-index: 1;
         }
 
         .canvas-overlay-text {
@@ -1602,10 +1631,6 @@
             transition: border-color 0.2s;
         }
 
-        .collapsible:has(.collapsible-toggle:hover) {
-            border-color: var(--border-strong);
-        }
-
         .collapsible-toggle {
             display: flex;
             justify-content: space-between;
@@ -1618,6 +1643,10 @@
             font-size: 0.75rem;
             cursor: pointer;
             border-radius: 8px;
+        }
+
+        .collapsible-toggle:hover {
+            background: none;
         }
 
         .collapsible-label {
@@ -1682,6 +1711,7 @@
         }
 
         .sub-collapsible-toggle:hover {
+            background: none;
             opacity: 1;
         }
 
@@ -1715,33 +1745,6 @@
 
         .mode-enter {
             animation: modeFadeIn 0.25s ease forwards;
-        }
-
-        /* ── Render reveal animation ── */
-        .canvas-wrapper .reveal-wipe {
-            position: absolute;
-            inset: 0;
-            border-radius: 18px;
-            background: linear-gradient(90deg,
-                transparent 0%, rgba(130, 200, 255, 0.12) 40%,
-                rgba(130, 200, 255, 0.25) 50%, rgba(130, 200, 255, 0.12) 60%,
-                transparent 100%);
-            z-index: 5;
-            pointer-events: none;
-            animation: revealWipe 0.7s ease-out forwards;
-        }
-
-        [data-theme="light"] .canvas-wrapper .reveal-wipe {
-            background: linear-gradient(90deg,
-                transparent 0%, rgba(40, 120, 200, 0.10) 40%,
-                rgba(40, 120, 200, 0.20) 50%, rgba(40, 120, 200, 0.10) 60%,
-                transparent 100%);
-        }
-
-        @keyframes revealWipe {
-            0% { transform: translateX(-100%); opacity: 1; }
-            80% { opacity: 1; }
-            100% { transform: translateX(100%); opacity: 0; }
         }
 
         .tw-cursor {
@@ -1894,6 +1897,13 @@
             border: 1px solid var(--border);
             color: var(--text-muted);
             cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
+
+        .modal-tab:hover:not(.active) {
+            background: var(--surface-hover);
+            border-color: var(--border-strong);
+            color: var(--text);
         }
 
         .modal-tab.active {
@@ -1922,13 +1932,41 @@
             padding-top: 1.5rem;
         }
 
+        .modal-tab-select {
+            display: none;
+            position: relative;
+        }
+
         .modal-close {
             position: absolute;
             right: 1rem;
-            padding: 0.25rem 0.5rem;
-            font-size: 1rem;
-            border-radius: 8px;
-            line-height: 1;
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem 0.375rem;
+            display: flex;
+            align-items: center;
+            transition: color 0.3s ease, border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+            border-color: var(--border-strong);
+        }
+
+        .modal-close .bar-top {
+            transform: translateY(0px) rotate(45deg) scaleX(1);
+        }
+
+        .modal-close .bar-mid {
+            opacity: 0;
+        }
+
+        .modal-close .bar-bot {
+            transform: translateY(0px) rotate(-45deg) scaleX(1);
         }
 
         .modal-body {
@@ -2278,11 +2316,11 @@
             }
 
             .stage-header {
-                padding: 0 0.5rem;
+                padding: 0;
             }
 
             .render-card {
-                border-radius: 12px;
+                border-radius: 0;
             }
 
             .modal-overlay {
@@ -2292,6 +2330,104 @@
             .modal-box {
                 max-height: 96vh;
                 border-radius: 14px;
+            }
+
+            .modal-tabs {
+                display: none;
+            }
+
+            .modal-tab-select {
+                display: block;
+            }
+
+            .modal-tab-select-trigger {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                background: var(--accent-bg);
+                border: 1px solid var(--accent);
+                border-radius: 999px;
+                color: var(--text);
+                font-size: 0.75rem;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                font-family: inherit;
+                text-align: center;
+                padding: 0.5rem 1rem;
+                cursor: pointer;
+                white-space: nowrap;
+            }
+
+            .modal-tab-select-trigger:hover {
+                background: var(--accent-bg);
+                border-color: var(--accent-text);
+            }
+
+            .modal-tab-select-chevron {
+                font-size: 1rem;
+                flex-shrink: 0;
+                opacity: 0.6;
+                transform: rotate(-90deg);
+                transition: transform 0.3s ease;
+            }
+
+            .modal-tab-select.open .modal-tab-select-chevron {
+                transform: rotate(0deg);
+            }
+
+            .modal-tab-select-menu {
+                position: absolute;
+                top: calc(100% + 0.375rem);
+                left: 50%;
+                transform: translateX(-50%);
+                min-width: 100%;
+                background: var(--modal-bg);
+                border: 1px solid var(--border-strong);
+                border-radius: 12px;
+                padding: 0.25rem;
+                z-index: 10;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+                opacity: 1;
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+
+            .modal-tab-select-menu.closing {
+                opacity: 0;
+                transform: translateX(-50%) scale(0.97);
+                pointer-events: none;
+            }
+
+            .modal-tab-select-item {
+                display: block;
+                width: 100%;
+                padding: 0.5rem 1rem;
+                background: none;
+                border: none;
+                border-radius: 8px;
+                color: var(--text-muted);
+                font-size: 0.75rem;
+                font-weight: 500;
+                font-family: inherit;
+                text-align: center;
+                cursor: pointer;
+                white-space: nowrap;
+                transition: background-color 0.2s ease, color 0.2s ease;
+            }
+
+            .modal-tab-select-item:hover {
+                background: var(--surface-hover);
+                color: var(--text);
+            }
+
+            .modal-tab-select-item.active {
+                background: var(--accent-bg);
+                color: var(--text);
+                font-weight: 600;
+            }
+
+            .modal-header {
+                padding-right: 3.25rem;
             }
 
             .info-modal-box {
@@ -2357,7 +2493,7 @@
                         <span class="collapsible-label">Active</span>
                     </div>
                     <div class="active-card" id="activeCard">
-                        <div class="active-card-main" data-tooltip="Show/hide configuration">
+                        <div class="active-card-main">
                             <div class="thumb-wrap thumb-loading">
                                 <img class="active-preview-thumb" id="activePreviewThumb" />
                             </div>
@@ -2372,7 +2508,10 @@
                                 <button id="saveProfile" class="active-save-btn" disabled data-tooltip="Save local profile">
                                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/><path d="M5 1v4h6V1"/><rect x="4" y="9" width="8" height="4"/></svg>
                                 </button>
-                                <span class="collapsible-chevron active-card-chevron" id="activeCardToggle" aria-expanded="false">&#9662;</span>
+                                <button id="resetProfile" class="active-save-btn active-reset-btn" disabled data-tooltip="Reset changes">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 3v4h4"/><path d="M2.5 10.5a6 6 0 1 0 1.5-6.5L1 7"/></svg>
+                                </button>
+                                <span class="collapsible-chevron active-card-chevron" id="activeCardToggle" aria-expanded="false" data-tooltip="Open Configuration">&#9662;</span>
                             </div>
                         </div>
                         <!-- configControls inserted here by JS -->
@@ -2414,7 +2553,7 @@
 
                 <div class="row">
                     <label><span class="label-info" data-tooltip="A word that conjures this exact arrangement. Same whisper, same world. (Deterministic seed phrase.)" data-label="Intent (seed)">Intent (seed)<span class="info-icon">i</span></span></label>
-                    <textarea id="profileName" class="auto-grow" rows="1" maxlength="60"
+                    <textarea id="profileName" class="auto-grow" rows="1" maxlength="120"
                         placeholder="e.g. light arriving through crystal"></textarea>
                 </div>
 
@@ -2477,16 +2616,11 @@
                                 <input id="customSat" type="range" min="0.1" max="1" step="0.01" value="0.60" />
                             </div>
                         </div>
-                        <div class="custom-pal-row">
-                            <label><span class="label-info" data-tooltip="Tonal warmth of the palette — velvet shadow to open air." data-label="Lightness">Lightness<span class="info-icon">i</span></span> <span id="customLitLabel" class="slider-value">0.60</span></label>
-                            <div class="engine-slider">
-                                <div class="slider-track-bg" id="customLitTrack" style="background: linear-gradient(to right, rgba(20,20,30,0.8), rgba(255,240,200,0.7))"></div>
-                                <input id="customLit" type="range" min="0.1" max="1" step="0.01" value="0.60" />
-                            </div>
-                        </div>
                         <div class="pal-editor-btns">
-                            <button id="resetPalette" class="small-btn">Reset</button>
-                            <button id="writeToCustom" class="small-btn hidden">Write to Custom</button>
+                            <button id="resetPalette" data-tooltip="Reset color palette">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 3v4h4"/><path d="M2.5 10.5a6 6 0 1 0 1.5-6.5L1 7"/></svg>
+                            </button>
+                            <button id="writeToCustom" class="wtc-slide wtc-collapsed" data-tooltip="Apply the current palette configuration to custom palette">Write to Custom</button>
                         </div>
                     </div>
                 </div>
@@ -2601,7 +2735,7 @@
                         <div class="display-intent" id="displayIntent"></div>
                     </div>
                     <div class="stage-header-btns">
-                        <button id="historyBackBtn" data-tooltip="Previous image" disabled>
+                        <button id="historyBackBtn" data-tooltip="Previous image (view history)" disabled>
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
                                 <path d="M10 3L5 8l5 5"/>
                             </svg>
@@ -2615,7 +2749,7 @@
                                 <path d="M13.5 8a5.5 5.5 0 0 1-9.37 3.9L2.5 10"/>
                             </svg>
                         </button>
-                        <button id="historyForwardBtn" data-tooltip="Next image" disabled>
+                        <button id="historyForwardBtn" data-tooltip="Next image (view history)" disabled>
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
                                 <path d="M6 3l5 5-5 5"/>
                             </svg>
@@ -2627,6 +2761,7 @@
                         <canvas id="c" width="1400" height="900"></canvas>
                         <div id="canvasOverlay" class="canvas-overlay">
                             <div class="canvas-overlay-inner">
+                                <div class="canvas-overlay-spinner"></div>
                                 <span id="canvasOverlayText" class="canvas-overlay-text"></span>
                             </div>
                         </div>
@@ -2669,7 +2804,24 @@
                     <button class="modal-tab" data-tab="developer">Developer Statement</button>
                     <button class="modal-tab" data-tab="governance">Governance Framework</button>
                 </div>
-                <button id="statementModalClose" class="modal-close">&times;</button>
+                <div id="statementTabSelect" class="modal-tab-select" aria-label="Select section">
+                    <button class="modal-tab-select-trigger" type="button">
+                        <span class="modal-tab-select-label">Artist Statement</span>
+                        <span class="modal-tab-select-chevron">&#9662;</span>
+                    </button>
+                    <div class="modal-tab-select-menu hidden">
+                        <button class="modal-tab-select-item active" data-tab="artist">Artist Statement</button>
+                        <button class="modal-tab-select-item" data-tab="developer">Developer Statement</button>
+                        <button class="modal-tab-select-item" data-tab="governance">Governance Framework</button>
+                    </div>
+                </div>
+                <button id="statementModalClose" class="modal-close" aria-label="Close">
+                    <div class="panel-toggle-icon">
+                        <span class="bar bar-top"></span>
+                        <span class="bar bar-mid"></span>
+                        <span class="bar bar-bot"></span>
+                    </div>
+                </button>
             </div>
             <div class="modal-body">
                 <div class="modal-tab-title" id="statementTitle"></div>

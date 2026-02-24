@@ -54,6 +54,7 @@ const el = {
 
     profileNameField: document.getElementById('profileNameField'),
     saveProfile: document.getElementById('saveProfile'),
+    resetProfile: document.getElementById('resetProfile'),
     portraitGallery: document.getElementById('portraitGallery'),
     userGallery: document.getElementById('userGallery'),
     galleryToggle: document.getElementById('galleryToggle'),
@@ -78,6 +79,7 @@ const el = {
     artistStatement: document.getElementById('artistStatement'),
     statementModal: document.getElementById('statementModal'),
     statementModalClose: document.getElementById('statementModalClose'),
+    statementTabSelect: document.getElementById('statementTabSelect'),
     statementTitle: document.getElementById('statementTitle'),
     developerBody: document.getElementById('developerBody'),
     artistBody: document.getElementById('artistBody'),
@@ -98,11 +100,9 @@ const el = {
     customHue: document.getElementById('customHue'),
     customHueRange: document.getElementById('customHueRange'),
     customSat: document.getElementById('customSat'),
-    customLit: document.getElementById('customLit'),
     customHueLabel: document.getElementById('customHueLabel'),
     customHueRangeLabel: document.getElementById('customHueRangeLabel'),
     customSatLabel: document.getElementById('customSatLabel'),
-    customLitLabel: document.getElementById('customLitLabel'),
     customPalGradient: document.getElementById('customPalGradient'),
 };
 
@@ -400,29 +400,34 @@ function readPaletteFromUI() {
         baseHue: parseInt(el.customHue.value, 10),
         hueRange: parseInt(el.customHueRange.value, 10),
         saturation: parseFloat(el.customSat.value),
-        lightness: parseFloat(el.customLit.value),
     };
 }
 
 function loadPaletteIntoEditor(key) {
     const defaults = getPaletteDefaults(key);
     let vals = defaults;
-    try {
-        const raw = localStorage.getItem(paletteLSKey(key));
-        if (raw) {
-            const s = JSON.parse(raw);
-            vals = {
-                baseHue: s.baseHue ?? defaults.baseHue,
-                hueRange: s.hueRange ?? defaults.hueRange,
-                saturation: s.saturation ?? defaults.saturation,
-                lightness: s.lightness ?? defaults.lightness,
-            };
-        }
-    } catch { /* ignore */ }
+    // Only restore localStorage tweaks for the custom palette;
+    // built-in palettes always reset to their defaults when selected
+    if (key === 'custom') {
+        try {
+            const raw = localStorage.getItem(paletteLSKey(key));
+            if (raw) {
+                const s = JSON.parse(raw);
+                vals = {
+                    baseHue: s.baseHue ?? defaults.baseHue,
+                    hueRange: s.hueRange ?? defaults.hueRange,
+                    saturation: s.saturation ?? defaults.saturation,
+                };
+            }
+        } catch { /* ignore */ }
+    } else {
+        // Reset the built-in palette to factory defaults
+        resetPalette(key);
+        localStorage.removeItem(paletteLSKey(key));
+    }
     el.customHue.value = vals.baseHue;
     el.customHueRange.value = vals.hueRange;
     el.customSat.value = vals.saturation;
-    el.customLit.value = vals.lightness;
     syncPaletteEditor();
 }
 
@@ -436,13 +441,13 @@ function syncPaletteEditor() {
     el.customHueLabel.textContent = settings.baseHue;
     el.customHueRangeLabel.textContent = settings.hueRange;
     el.customSatLabel.textContent = settings.saturation.toFixed(2);
-    el.customLitLabel.textContent = settings.lightness.toFixed(2);
 
-    updateActiveChipGradient(key, settings);
+    // Only update the custom chip dynamically; built-in chips keep cached originals
+    if (key === 'custom') updateActiveChipGradient(key, settings);
 
     // Show/hide "Write to Custom" button
     const wtc = document.getElementById('writeToCustom');
-    if (wtc) wtc.classList.toggle('hidden', key === 'custom');
+    if (wtc) wtc.classList.toggle('wtc-collapsed', key === 'custom');
 }
 
 function initPaletteSelector() {
@@ -489,7 +494,7 @@ function initPaletteSelector() {
     });
 
     // Wire palette sliders (work for any active palette)
-    for (const id of ['customHue', 'customHueRange', 'customSat', 'customLit']) {
+    for (const id of ['customHue', 'customHueRange', 'customSat']) {
         el[id].addEventListener('input', () => {
             syncPaletteEditor();
             onControlChange();
@@ -508,7 +513,6 @@ function initPaletteSelector() {
             el.customHue.value = defaults.baseHue;
             el.customHueRange.value = defaults.hueRange;
             el.customSat.value = defaults.saturation;
-            el.customLit.value = defaults.lightness;
             syncPaletteEditor();
             onControlChange();
         });
@@ -731,7 +735,6 @@ function loadProfileDataIntoUI(name, p) {
             el.customHue.value = tweaks.baseHue;
             el.customHueRange.value = tweaks.hueRange;
             el.customSat.value = tweaks.saturation;
-            el.customLit.value = tweaks.lightness;
             updatePalette(palKey, tweaks);
             updateActiveChipGradient(palKey, tweaks);
         } else {
@@ -741,7 +744,6 @@ function loadProfileDataIntoUI(name, p) {
             el.customHue.value = defaults.baseHue;
             el.customHueRange.value = defaults.hueRange;
             el.customSat.value = defaults.saturation;
-            el.customLit.value = defaults.lightness;
             resetPalette(palKey);
             updateActiveChipGradient(palKey, defaults);
         }
@@ -749,7 +751,8 @@ function loadProfileDataIntoUI(name, p) {
     el.customPaletteEditor.classList.add('collapsed');
     syncDisplayFields();
     setDirty(false);
-    userEdited = false;
+    setUserEdited(false);
+    captureBaseline();
 }
 
 function loadProfileIntoUI(name) {
@@ -785,11 +788,17 @@ function setStillRendered(value) {
 
 let dirty = false;
 let userEdited = false;
+let baselineSnapshot = null;
 
 function setDirty(value) {
     dirty = value;
     el.saveProfile.disabled = !value;
     updateActiveSection();
+}
+
+function setUserEdited(value) {
+    userEdited = value;
+    el.resetProfile.disabled = !value;
 }
 
 function clearStillText() {
@@ -904,13 +913,6 @@ function playRevealAnimation(titleText, altText) {
     // Canvas fades in immediately via 200ms CSS transition
     hideCanvasOverlay();
 
-    // Reveal wipe as visual polish over the fading-in canvas
-    const wrapper = document.querySelector('.canvas-wrapper');
-    const wipe = document.createElement('div');
-    wipe.className = 'reveal-wipe';
-    wrapper.appendChild(wipe);
-    wipe.addEventListener('animationend', () => wipe.remove());
-
     // Smoothly grow text area as typewriter adds characters
     startTextHeightSync();
 
@@ -965,7 +967,7 @@ function onControlChange() {
     updateSliderLabels(readControlsFromUI());
     scheduleTextRefresh();
     setStillRendered(false);
-    userEdited = true;
+    setUserEdited(true);
     setDirty(true);
     scheduleRender();
 }
@@ -983,66 +985,98 @@ el.seed.addEventListener('input', () => {
     scheduleTextRefresh();
 });
 el.profileNameField.addEventListener('input', () => {
-    userEdited = true;
+    setUserEdited(true);
     setDirty(true);
     syncDisplayFields();
 });
 
-function saveCurrentProfile() {
-    const name = el.profileNameField.value.trim();
-    if (!name) { toast('Enter a name first.'); return; }
+let saveInProgress = false;
 
-    const profiles = loadProfiles();
-    const portraitNames = getPortraitNames();
-    const portraits = loadPortraits();
-    const controls = readControlsFromUI();
-    const currentSeed = el.seed.value.trim() || 'seed';
+async function saveCurrentProfile() {
+    if (saveInProgress) return;
+    saveInProgress = true;
 
-    // Check if identical to an existing portrait
-    const matchingPortrait = portraits[name];
-    if (matchingPortrait &&
-        matchingPortrait.seed === currentSeed &&
-        JSON.stringify(matchingPortrait.controls) === JSON.stringify(controls)) {
-        toast('Already saved as a portrait.');
-        return;
-    }
+    try {
+        const name = el.profileNameField.value.trim();
+        if (!name) { toast('Enter a name first.'); return; }
 
-    // If loaded from a portrait, always create a new User entry
-    // Also prevent overwriting a portrait name in user storage
-    if (loadedFromPortrait || portraitNames.includes(name)) {
-        if (profiles[name] && name !== loadedProfileName) {
-            if (!confirm(`User profile "${name}" already exists. Overwrite?`)) return;
+        const profiles = loadProfiles();
+        const portraitNames = getPortraitNames();
+        const portraits = loadPortraits();
+        const controls = readControlsFromUI();
+        const currentSeed = el.seed.value.trim() || 'seed';
+
+        // Check if identical to an existing portrait
+        const matchingPortrait = portraits[name];
+        if (matchingPortrait &&
+            matchingPortrait.seed === currentSeed &&
+            JSON.stringify(matchingPortrait.controls) === JSON.stringify(controls)) {
+            toast('Already saved as a portrait.');
+            return;
         }
-    } else if (profiles[name] && name !== loadedProfileName) {
-        if (!confirm(`Profile "${name}" already exists. Overwrite?`)) return;
-    }
 
-    const profileData = {
-        seed: currentSeed,
-        controls,
-    };
-    profileData.paletteTweaks = readPaletteFromUI();
-    if (controls.palette === 'custom') {
-        profileData.customPalette = profileData.paletteTweaks;
-    }
-    profiles[name] = profileData;
-    saveProfiles(profiles);
+        // Overwrite confirmation (async modal instead of native confirm)
+        if (profiles[name] && name !== loadedProfileName) {
+            const label = (loadedFromPortrait || portraitNames.includes(name))
+                ? `User profile "${name}" already exists. The existing image will be overwritten.`
+                : `Profile "${name}" already exists. The existing image will be overwritten.`;
+            const result = await showConfirm('Overwrite Profile', label, [
+                { label: 'Cancel', value: 'cancel' },
+                { label: 'Overwrite', value: 'overwrite', primary: true },
+            ]);
+            if (result !== 'overwrite') return;
+        }
 
-    // Append to order if new
-    const order = loadProfileOrder() || [];
-    if (!order.includes(name)) {
-        order.push(name);
-        saveProfileOrder(order);
-    }
+        const profileData = {
+            seed: currentSeed,
+            controls,
+        };
+        profileData.paletteTweaks = readPaletteFromUI();
+        if (controls.palette === 'custom') {
+            profileData.customPalette = profileData.paletteTweaks;
+        }
+        profiles[name] = profileData;
+        saveProfiles(profiles);
 
-    loadedProfileName = name;
-    loadedFromPortrait = false;
-    refreshProfileGallery();
-    setDirty(false);
-    userEdited = false;
+        // Append to order if new
+        const order = loadProfileOrder() || [];
+        if (!order.includes(name)) {
+            order.push(name);
+            saveProfileOrder(order);
+        }
+
+        loadedProfileName = name;
+        loadedFromPortrait = false;
+        refreshProfileGallery();
+        setDirty(false);
+        setUserEdited(false);
+        captureBaseline();
+    } finally {
+        saveInProgress = false;
+    }
 }
 
-el.saveProfile.addEventListener('click', saveCurrentProfile);
+el.saveProfile.addEventListener('click', async () => { await saveCurrentProfile(); });
+
+async function resetCurrentProfile() {
+    if (!baselineSnapshot || !userEdited) return;
+
+    const currentName = el.profileNameField.value.trim() || 'Untitled';
+    const result = await showConfirm(
+        'Reset Changes',
+        `Discard all changes to "${currentName}"? Unsaved changes will be lost.`,
+        [
+            { label: 'Cancel', value: 'cancel' },
+            { label: 'Reset', value: 'reset', primary: true },
+        ]
+    );
+    if (result !== 'reset') return;
+
+    restoreSnapshot(baselineSnapshot);
+    setUserEdited(false);
+}
+
+el.resetProfile.addEventListener('click', async () => { await resetCurrentProfile(); });
 
 /* ---------------------------
  * Randomize
@@ -1109,6 +1143,10 @@ function captureSnapshot() {
     };
 }
 
+function captureBaseline() {
+    baselineSnapshot = captureSnapshot();
+}
+
 function restoreSnapshot(snap) {
     el.seed.value = snap.seed;
     autoGrow(el.seed);
@@ -1118,7 +1156,6 @@ function restoreSnapshot(snap) {
     el.customHue.value = snap.paletteTweaks.baseHue;
     el.customHueRange.value = snap.paletteTweaks.hueRange;
     el.customSat.value = snap.paletteTweaks.saturation;
-    el.customLit.value = snap.paletteTweaks.lightness;
     syncPaletteEditor();
     updateSliderLabels(snap.controls);
     syncDisplayFields();
@@ -1131,19 +1168,19 @@ function restoreSnapshot(snap) {
             loadedProfileName = snap.profileName;
             loadedFromPortrait = snap.isPortrait;
             setDirty(snap.wasDirty);
-            userEdited = snap.wasDirty;
+            setUserEdited(snap.wasDirty);
         } else {
             // Profile was deleted — treat as unsaved
             loadedProfileName = '';
             loadedFromPortrait = false;
             setDirty(true);
-            userEdited = false;
+            setUserEdited(false);
         }
     } else {
         loadedProfileName = '';
         loadedFromPortrait = false;
         setDirty(true);
-        userEdited = false;
+        setUserEdited(false);
     }
 
     refreshProfileGallery();
@@ -1219,8 +1256,8 @@ function randomizeUI() {
     el.customHue.value = Math.floor(Math.random() * 360);
     el.customHueRange.value = Math.floor(20 + Math.random() * 140);
     el.customSat.value = (0.3 + Math.random() * 0.5).toFixed(2);
-    el.customLit.value = (0.4 + Math.random() * 0.35).toFixed(2);
     syncPaletteEditor();
+    el.customPaletteEditor.classList.remove('collapsed');
     for (const id of SLIDER_KEYS) {
         el[id].value = Math.random().toFixed(2);
     }
@@ -1238,7 +1275,8 @@ function randomizeUI() {
     loadedProfileName = '';
     loadedFromPortrait = false;
     setDirty(true);
-    userEdited = false;
+    setUserEdited(false);
+    captureBaseline();
 }
 
 async function randomize() {
@@ -1278,7 +1316,7 @@ async function randomize() {
             }
         }
         if (result === 'cancel') return;
-        if (result === 'save') saveCurrentProfile();
+        if (result === 'save') await saveCurrentProfile();
     }
 
     captureCurrentBeforeNavigating();
@@ -1362,7 +1400,7 @@ async function selectCard(cardEl) {
             ]
         );
         if (result === 'cancel') return;
-        if (result === 'save') saveCurrentProfile();
+        if (result === 'save') await saveCurrentProfile();
     }
 
     // Preserve current state in history before switching
@@ -1534,47 +1572,53 @@ function refreshProfileGallery() {
  * ---------------------------
  */
 el.exportBtn.addEventListener('click', async () => {
-    if (!stillRendered) { toast('Render first.'); return; }
-    if (!window.JSZip) { toast('JSZip missing (offline?).'); return; }
+    if (el.exportBtn.disabled) return;
+    el.exportBtn.disabled = true;
+    try {
+        if (!stillRendered) { toast('Render first.'); return; }
+        if (!window.JSZip) { toast('JSZip missing (offline?).'); return; }
 
-    const seed = el.seed.value.trim() || 'seed';
-    const controls = readControlsFromUI();
-    const paletteTweaks = readPaletteFromUI();
-    const name = el.profileNameField.value.trim() || 'Untitled';
+        const seed = el.seed.value.trim() || 'seed';
+        const controls = readControlsFromUI();
+        const paletteTweaks = readPaletteFromUI();
+        const name = el.profileNameField.value.trim() || 'Untitled';
 
-    // Generate metadata on main thread (cheap text generation)
-    const titleRng = mulberry32(xmur3(seed + ':title')());
-    const title = generateTitle(controls, titleRng);
-    const altText = generateAltText(controls, lastNodeCount, title);
-    const meta = { title, altText, nodeCount: lastNodeCount };
+        // Generate metadata on main thread (cheap text generation)
+        const titleRng = mulberry32(xmur3(seed + ':title')());
+        const title = generateTitle(controls, titleRng);
+        const altText = generateAltText(controls, lastNodeCount, title);
+        const meta = { title, altText, nodeCount: lastNodeCount };
 
-    if (renderWorker && workerReady) {
-        // Request blob from worker
-        const exportId = ++requestIdCounter;
-        try {
-            const blob = await new Promise((resolve, reject) => {
-                pendingCallbacks.set(exportId, (b) => b ? resolve(b) : reject(new Error('Export failed')));
-                renderWorker.postMessage({ type: 'export', requestId: exportId });
-            });
-            const rect = canvas.getBoundingClientRect();
-            await packageStillZipFromBlob(blob, {
-                seed, controls, paletteTweaks, name, meta,
-                canvasWidth: Math.round(rect.width * window.devicePixelRatio),
-                canvasHeight: Math.round(rect.height * window.devicePixelRatio),
-            });
-            toast('Exported still ZIP.');
-        } catch (err) {
-            console.error(err);
-            toast('Still export failed.');
+        if (renderWorker && workerReady) {
+            // Request blob from worker
+            const exportId = ++requestIdCounter;
+            try {
+                const blob = await new Promise((resolve, reject) => {
+                    pendingCallbacks.set(exportId, (b) => b ? resolve(b) : reject(new Error('Export failed')));
+                    renderWorker.postMessage({ type: 'export', requestId: exportId });
+                });
+                const rect = canvas.getBoundingClientRect();
+                await packageStillZipFromBlob(blob, {
+                    seed, controls, paletteTweaks, name, meta,
+                    canvasWidth: Math.round(rect.width * window.devicePixelRatio),
+                    canvasHeight: Math.round(rect.height * window.devicePixelRatio),
+                });
+                toast('Exported still ZIP.');
+            } catch (err) {
+                console.error(err);
+                toast('Still export failed.');
+            }
+        } else {
+            try {
+                await packageStillZip(canvas, { seed, controls, paletteTweaks, name, meta });
+                toast('Exported still ZIP.');
+            } catch (err) {
+                console.error(err);
+                toast('Still export failed.');
+            }
         }
-    } else {
-        try {
-            await packageStillZip(canvas, { seed, controls, paletteTweaks, name, meta });
-            toast('Exported still ZIP.');
-        } catch (err) {
-            console.error(err);
-            toast('Still export failed.');
-        }
+    } finally {
+        el.exportBtn.disabled = !stillRendered;
     }
 });
 
@@ -1824,6 +1868,15 @@ function switchStatementTab(tab, animate = true) {
     el.statementModal.querySelectorAll('.modal-tab').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tab);
     });
+    /* Sync custom dropdown */
+    const selectLabel = el.statementTabSelect.querySelector('.modal-tab-select-label');
+    if (selectLabel) {
+        const labels = { artist: 'Artist Statement', developer: 'Developer Statement', governance: 'Governance Framework' };
+        selectLabel.textContent = labels[tab] || tab;
+    }
+    el.statementTabSelect.querySelectorAll('.modal-tab-select-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
 
     if (!animate || currentTab === tab || statementFlipping) {
         el.statementTitle.textContent = STATEMENT_TITLES[tab] || '';
@@ -1881,6 +1934,37 @@ el.developerStatement.addEventListener('click', () => openStatementModal('develo
 el.artistStatement.addEventListener('click', () => openStatementModal('artist'));
 el.governanceStatement.addEventListener('click', () => openStatementModal('governance'));
 el.statementModalClose.addEventListener('click', closeStatementModal);
+
+/* Custom dropdown for mobile tab select */
+const tabSelectTrigger = el.statementTabSelect.querySelector('.modal-tab-select-trigger');
+const tabSelectMenu = el.statementTabSelect.querySelector('.modal-tab-select-menu');
+if (tabSelectTrigger && tabSelectMenu) {
+    tabSelectTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = !tabSelectMenu.classList.contains('hidden');
+        tabSelectMenu.classList.toggle('hidden', isOpen);
+        el.statementTabSelect.classList.toggle('open', !isOpen);
+    });
+    tabSelectMenu.addEventListener('click', (e) => {
+        const item = e.target.closest('.modal-tab-select-item');
+        if (!item) return;
+        switchStatementTab(item.dataset.tab);
+        el.statementTabSelect.classList.remove('open');
+        tabSelectMenu.classList.add('closing');
+        tabSelectMenu.addEventListener('transitionend', () => {
+            tabSelectMenu.classList.remove('closing');
+            tabSelectMenu.classList.add('hidden');
+        }, { once: true });
+    });
+    /* Close dropdown when clicking anywhere else in the modal */
+    el.statementModal.addEventListener('click', (e) => {
+        if (!el.statementTabSelect.contains(e.target)) {
+            tabSelectMenu.classList.add('hidden');
+            el.statementTabSelect.classList.remove('open');
+        }
+    });
+}
+
 el.statementModal.addEventListener('click', (e) => {
     if (e.target === el.statementModal) closeStatementModal();
     const tab = e.target.closest('.modal-tab');
@@ -1925,70 +2009,123 @@ document.addEventListener('keydown', (e) => {
  * ---------------------------
  */
 const paramTooltip = document.getElementById('paramTooltip');
+let tooltipSource = null;
 
 function showTooltip(el, mouseX, mouseY) {
+    tooltipSource = el;
     paramTooltip.textContent = el.getAttribute('data-tooltip');
     const pos = el.getAttribute('data-tooltip-pos');
-    const above = pos === 'above';
-    if (pos === 'right' || (!pos && el.closest('.panel'))) {
-        const rect = el.getBoundingClientRect();
-        paramTooltip.style.transform = 'translateY(-50%)';
-        paramTooltip.style.left = (rect.right + 8) + 'px';
-        paramTooltip.style.top = (rect.top + rect.height / 2) + 'px';
-    } else {
-        // Position at cursor, clamped to viewport
-        paramTooltip.style.transform = '';
-        paramTooltip.style.left = '0px';
-        // Measure height first for above positioning
-        paramTooltip.style.top = '0px';
-        paramTooltip.classList.add('visible');
-        const tw = paramTooltip.offsetWidth;
-        const th = paramTooltip.offsetHeight;
-        const margin = 8;
-        let left = (mouseX || 0) - tw / 2;
-        left = Math.max(margin, Math.min(left, window.innerWidth - tw - margin));
-        paramTooltip.style.left = left + 'px';
-        paramTooltip.style.top = (above
-            ? (mouseY || 0) - th - 14
-            : (mouseY || 0) + 14) + 'px';
-        return;
-    }
+    const gap = 8;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    /* Measure tooltip dimensions (must be visible + positioned to get real size) */
+    paramTooltip.style.transform = '';
+    paramTooltip.style.left = '0px';
+    paramTooltip.style.top = '0px';
     paramTooltip.classList.add('visible');
+    const tw = paramTooltip.offsetWidth;
+    const th = paramTooltip.offsetHeight;
+
+    if (pos === 'right' || (!pos && el.closest('.panel'))) {
+        /* Element-anchored positioning (panel items) */
+        const rect = el.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+
+        const fitsRight = rect.right + gap + tw <= vw - gap;
+        const fitsLeft  = rect.left - gap - tw >= gap;
+        const fitsBelow = rect.bottom + gap + th <= vh - gap;
+
+        let left, top;
+        if (fitsRight) {
+            left = rect.right + gap;
+            top = cy - th / 2;
+        } else if (fitsLeft) {
+            left = rect.left - gap - tw;
+            top = cy - th / 2;
+        } else if (fitsBelow) {
+            left = cx - tw / 2;
+            top = rect.bottom + gap;
+        } else {
+            left = cx - tw / 2;
+            top = rect.top - gap - th;
+        }
+
+        /* Clamp to viewport */
+        left = Math.max(gap, Math.min(left, vw - tw - gap));
+        top  = Math.max(gap, Math.min(top, vh - th - gap));
+
+        paramTooltip.style.left = left + 'px';
+        paramTooltip.style.top = top + 'px';
+    } else {
+        /* Cursor-relative positioning (stage area items) */
+        const preferAbove = pos === 'above';
+        const cursorGap = 14;
+        const mx = mouseX || 0;
+        const my = mouseY || 0;
+
+        let left = mx - tw / 2;
+        left = Math.max(gap, Math.min(left, vw - tw - gap));
+
+        let top;
+        if (preferAbove) {
+            top = my - th - cursorGap;
+            if (top < gap) top = my + cursorGap; /* flip to below */
+        } else {
+            top = my + cursorGap;
+            if (top + th > vh - gap) top = my - th - cursorGap; /* flip to above */
+        }
+
+        paramTooltip.style.left = left + 'px';
+        paramTooltip.style.top = top + 'px';
+    }
 }
 
 function hideTooltip() {
+    tooltipSource = null;
     paramTooltip.classList.remove('visible');
 }
 
+function refreshTooltip(el) {
+    if (tooltipSource === el && paramTooltip.classList.contains('visible')) {
+        paramTooltip.textContent = el.getAttribute('data-tooltip');
+    }
+}
+
+let recentTouch = false;
 document.querySelectorAll('[data-tooltip]').forEach(el => {
-    el.addEventListener('mouseenter', (e) => showTooltip(el, e.clientX, e.clientY));
+    el.addEventListener('mouseenter', (e) => {
+        if (recentTouch) return;
+        showTooltip(el, e.clientX, e.clientY);
+    });
     el.addEventListener('mouseleave', hideTooltip);
 
-    // Long-press on buttons: show tooltip instead of activating
-    if (el.tagName === 'BUTTON') {
-        let pressTimer = null;
-        let didLongPress = false;
+    // Touch handling: long-press shows tooltip, regular tap suppresses it
+    let pressTimer = null;
+    let didLongPress = false;
 
-        el.addEventListener('touchstart', (e) => {
-            didLongPress = false;
-            pressTimer = setTimeout(() => {
-                didLongPress = true;
-                showTooltip(el);
-            }, 400);
-        }, { passive: true });
+    el.addEventListener('touchstart', () => {
+        didLongPress = false;
+        pressTimer = setTimeout(() => {
+            didLongPress = true;
+            showTooltip(el);
+        }, 400);
+    }, { passive: true });
 
-        el.addEventListener('touchend', (e) => {
-            clearTimeout(pressTimer);
-            if (didLongPress) {
-                e.preventDefault();
-                setTimeout(hideTooltip, 1500);
-            }
-        });
+    el.addEventListener('touchend', (e) => {
+        clearTimeout(pressTimer);
+        recentTouch = true;
+        setTimeout(() => { recentTouch = false; }, 500);
+        if (didLongPress) {
+            e.preventDefault();
+            setTimeout(hideTooltip, 1500);
+        }
+    });
 
-        el.addEventListener('touchmove', () => {
-            clearTimeout(pressTimer);
-        }, { passive: true });
-    }
+    el.addEventListener('touchmove', () => {
+        clearTimeout(pressTimer);
+    }, { passive: true });
 });
 
 /* ---------------------------
@@ -2032,6 +2169,8 @@ document.querySelectorAll('.gallery-section-header').forEach(header => {
 function toggleActiveConfig() {
     const expanded = el.activeCardToggle.getAttribute('aria-expanded') === 'true';
     el.activeCardToggle.setAttribute('aria-expanded', String(!expanded));
+    el.activeCardToggle.setAttribute('data-tooltip', expanded ? 'Open Configuration' : 'Close Configuration');
+    refreshTooltip(el.activeCardToggle);
     document.getElementById('configControls').classList.toggle('collapsed', expanded);
 }
 
@@ -2093,6 +2232,7 @@ function openPanel() {
         panelToggleBtn.classList.add('panel-open');
         panelToggleBtn.setAttribute('data-tooltip', 'Close menu');
         panelToggleBtn.setAttribute('aria-label', 'Close menu');
+        refreshTooltip(panelToggleBtn);
     }
     localStorage.setItem('geo-self-portrait-panel-collapsed', 'false');
 }
@@ -2106,6 +2246,7 @@ function closePanel() {
         panelToggleBtn.classList.remove('panel-open');
         panelToggleBtn.setAttribute('data-tooltip', 'Open menu');
         panelToggleBtn.setAttribute('aria-label', 'Open menu');
+        refreshTooltip(panelToggleBtn);
     }
     localStorage.setItem('geo-self-portrait-panel-collapsed', 'true');
 }

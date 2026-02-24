@@ -7,6 +7,15 @@ const STRUCTURE_KEYS = ['density', 'luminosity', 'fracture', 'depth', 'coherence
 
 function isObj(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
 
+function checkStr(errors, key, obj, maxLen) {
+    const v = obj[key];
+    if (typeof v !== 'string' || !v.trim()) {
+        errors.push(`${key}: required, must be a non-empty string`);
+    } else if (v.length > maxLen) {
+        errors.push(`${key}: must be at most ${maxLen} characters`);
+    }
+}
+
 function checkNum(errors, path, obj, key, min, max) {
     const v = obj[key];
     if (typeof v !== 'number' || Number.isNaN(v)) {
@@ -31,13 +40,8 @@ export function validateStillConfig(data) {
         errors.push(`kind: must be "still"${data.kind != null ? `, got "${data.kind}"` : ' (missing)'}`);
     }
 
-    if (typeof data.name !== 'string' || !data.name.trim()) {
-        errors.push('name: required, must be a non-empty string');
-    }
-
-    if (typeof data.intent !== 'string' || !data.intent.trim()) {
-        errors.push('intent: required, must be a non-empty string');
-    }
+    checkStr(errors, 'name', data, 40);
+    checkStr(errors, 'intent', data, 120);
 
     // palette
     if (!isObj(data.palette)) {
@@ -46,7 +50,6 @@ export function validateStillConfig(data) {
         checkNum(errors, 'palette', data.palette, 'hue', 0, 359);
         checkNum(errors, 'palette', data.palette, 'range', 0, 360);
         checkNum(errors, 'palette', data.palette, 'saturation', 0, 1);
-        checkNum(errors, 'palette', data.palette, 'lightness', 0, 1);
     }
 
     // structure
@@ -83,7 +86,6 @@ export function configToProfile(config) {
                 baseHue: config.palette.hue,
                 hueRange: config.palette.range,
                 saturation: config.palette.saturation,
-                lightness: config.palette.lightness,
             },
         },
     };
@@ -101,7 +103,6 @@ export function profileToConfig(name, profile) {
             hue: profile.paletteTweaks.baseHue,
             range: profile.paletteTweaks.hueRange,
             saturation: profile.paletteTweaks.saturation,
-            lightness: profile.paletteTweaks.lightness,
         },
         structure: {
             density: profile.controls.density,
