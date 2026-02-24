@@ -12,6 +12,7 @@ import { createFaviconAnimation } from './ui/animated-favicon.js';
 import { generateTitle, generateAltText } from './core/text.js';
 import { xmur3, mulberry32 } from './core/prng.js';
 import { validateStillConfig, configToProfile } from './core/config-schema.js';
+import { createMorphController, MORPH_DURATION_MS } from './core/morph.js';
 
 /* ---------------------------
  * DOM references
@@ -662,6 +663,62 @@ function cancelPendingRender() {
 }
 
 /* ---------------------------
+ * Morph controller
+ * ---------------------------
+ */
+let morphLastPalette = null;
+
+const morphCtrl = createMorphController({
+    onTick(interpolated) {
+        const palKey = interpolated.controls.palette;
+
+        // Snap palette preset (only fires once at midpoint when it changes)
+        if (palKey !== morphLastPalette) {
+            setPaletteUI(palKey);
+            morphLastPalette = palKey;
+        }
+
+        // Set palette tweaks (overwrite whatever setPaletteUI loaded)
+        el.customHue.value = Math.round(interpolated.paletteTweaks.baseHue);
+        el.customHueRange.value = Math.round(interpolated.paletteTweaks.hueRange);
+        el.customSat.value = interpolated.paletteTweaks.saturation.toFixed(2);
+        el.customHueLabel.textContent = Math.round(interpolated.paletteTweaks.baseHue);
+        el.customHueRangeLabel.textContent = Math.round(interpolated.paletteTweaks.hueRange);
+        el.customSatLabel.textContent = interpolated.paletteTweaks.saturation.toFixed(2);
+        updatePalette(palKey, interpolated.paletteTweaks);
+
+        // Update slider values
+        for (const key of SLIDER_KEYS) {
+            el[key].value = interpolated.controls[key];
+        }
+        updateSliderLabels(interpolated.controls);
+
+        // Render the interpolated state
+        sendRenderRequest(interpolated.seed, interpolated.controls);
+    },
+    onComplete() {
+        morphLastPalette = null;
+        setStillRendered(true);
+        refreshGeneratedText(true);
+    },
+});
+
+function startMorph(fromState, toState) {
+    cancelPendingRender();
+    cancelTextRefresh();
+    if (typewriterAbort) { typewriterAbort(); typewriterAbort = null; }
+
+    // If morph is already active, chain from current interpolated position
+    if (morphCtrl.isActive()) {
+        const current = morphCtrl.cancel();
+        if (current) fromState = current;
+    }
+
+    morphLastPalette = fromState.controls.palette;
+    morphCtrl.start(fromState, toState);
+}
+
+/* ---------------------------
  * Controls reading/writing
  * ---------------------------
  */
@@ -964,6 +1021,7 @@ function renderStillCanvas() {
 
 function onControlChange() {
     if (!initComplete) return;
+    if (morphCtrl.isActive()) morphCtrl.cancel();
     updateSliderLabels(readControlsFromUI());
     scheduleTextRefresh();
     setStillRendered(false);
@@ -1148,6 +1206,13 @@ function captureBaseline() {
 }
 
 function restoreSnapshot(snap) {
+    // Capture current visual state before restoring
+    const fromState = {
+        seed: el.seed.value.trim() || 'seed',
+        controls: readControlsFromUI(),
+        paletteTweaks: readPaletteFromUI(),
+    };
+
     el.seed.value = snap.seed;
     autoGrow(el.seed);
     el.profileNameField.value = snap.name;
@@ -1184,8 +1249,14 @@ function restoreSnapshot(snap) {
     }
 
     refreshProfileGallery();
-    renderAndUpdate(snap.seed, snap.controls, { animate: true });
-    setStillRendered(true);
+
+    // Capture target state and morph
+    const toState = {
+        seed: el.seed.value.trim() || 'seed',
+        controls: readControlsFromUI(),
+        paletteTweaks: readPaletteFromUI(),
+    };
+    startMorph(fromState, toState);
 }
 
 function updateHistoryButtons() {
@@ -1319,14 +1390,26 @@ async function randomize() {
         if (result === 'save') await saveCurrentProfile();
     }
 
+    // Capture current visual state before randomizing
+    const fromState = {
+        seed: el.seed.value.trim() || 'seed',
+        controls: readControlsFromUI(),
+        paletteTweaks: readPaletteFromUI(),
+    };
+
     captureCurrentBeforeNavigating();
 
     randomizeUI();
     refreshProfileGallery();
     pushToHistory();
 
-    renderAndUpdate(el.seed.value.trim() || 'seed', readControlsFromUI(), { animate: true });
-    setStillRendered(true);
+    // Capture target state and morph
+    const toState = {
+        seed: el.seed.value.trim() || 'seed',
+        controls: readControlsFromUI(),
+        paletteTweaks: readPaletteFromUI(),
+    };
+    startMorph(fromState, toState);
 }
 
 /* ---------------------------
@@ -1403,6 +1486,13 @@ async function selectCard(cardEl) {
         if (result === 'save') await saveCurrentProfile();
     }
 
+    // Capture current visual state BEFORE loading target
+    const fromState = {
+        seed: el.seed.value.trim() || 'seed',
+        controls: readControlsFromUI(),
+        paletteTweaks: readPaletteFromUI(),
+    };
+
     // Preserve current state in history before switching
     captureCurrentBeforeNavigating();
 
@@ -1419,11 +1509,15 @@ async function selectCard(cardEl) {
     // Update active section header
     updateActiveSection();
 
-    // Trigger render
-    const seed = el.seed.value.trim() || 'seed';
-    const controls = readControlsFromUI();
-    renderAndUpdate(seed, controls, { animate: true });
-    setStillRendered(true);
+    // Capture target state (after loadProfileFromData set the UI)
+    const toState = {
+        seed: el.seed.value.trim() || 'seed',
+        controls: readControlsFromUI(),
+        paletteTweaks: readPaletteFromUI(),
+    };
+
+    // Morph from current to target
+    startMorph(fromState, toState);
 }
 
 function buildProfileCard(name, p, { isPortrait = false, index = 0, total = 1 } = {}) {
