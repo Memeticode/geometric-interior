@@ -12,8 +12,6 @@ import {
     RenderPass,
     EffectPass,
     BloomEffect,
-    ToneMappingEffect,
-    ToneMappingMode,
     ChromaticAberrationEffect,
     VignetteEffect,
     BlendFunction,
@@ -21,47 +19,46 @@ import {
 import { xmur3, mulberry32 } from '../core/prng.js';
 import { deriveParams } from '../core/params.js';
 import { generateTitle, generateAltText } from '../core/text.js';
-import { buildScene } from './scene-builder.js';
-import { createBackgroundMaterial } from './materials.js';
+import { buildDemoScene } from './demo/build-scene.js';
 
-export function createRenderer(canvas) {
+export function createRenderer(canvas, opts = {}) {
     const renderer = new THREE.WebGLRenderer({
         canvas,
         antialias: false, // EffectComposer MSAA replaces this
         alpha: false,
         preserveDrawingBuffer: true,
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.autoClear = false;
+    const dpr = opts.dpr ?? (typeof window !== 'undefined' ? window.devicePixelRatio : 1);
+    renderer.setPixelRatio(Math.min(dpr, 2));
+    // Tone mapping on the renderer level (matches demo pipeline):
+    // per-fragment compression happens during render, so bloom sees
+    // already-compressed values and doesn't amplify HDR blowout.
+    renderer.toneMapping = THREE.ReinhardToneMapping;
+    renderer.toneMappingExposure = 1.1;
     renderer.sortObjects = true;
 
     const scene = new THREE.Scene();
-    const bgScene = new THREE.Scene();
+    scene.background = null; // background handled by gradient quad (matches demo)
 
-    const camera = new THREE.PerspectiveCamera(55, getAspect(), 0.1, 100);
-    const bgCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, -1, 1);
+    const camera = new THREE.PerspectiveCamera(60, getAspect(), 0.1, 100);
 
     // --- Postprocessing ---
+    // Single render pass (matching demo), default UnsignedByteType framebuffer.
     const composer = new EffectComposer(renderer, {
         multisampling: Math.min(4, renderer.capabilities.maxSamples || 4),
-        frameBufferType: THREE.HalfFloatType,
     });
 
-    // Pass 1: background (opaque, clears buffer)
-    const bgRenderPass = new RenderPass(bgScene, bgCamera);
-
-    // Pass 2: shard scene (additive over background, no clear)
-    const shardRenderPass = new RenderPass(scene, camera);
-    shardRenderPass.clear = false;
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
 
     // Effects
     const bloomEffect = new BloomEffect({
         blendFunction: BlendFunction.SCREEN,
-        luminanceThreshold: 0.15,
-        luminanceSmoothing: 0.15,
+        luminanceThreshold: 0.70,
+        luminanceSmoothing: 0.20,
         mipmapBlur: true,
-        intensity: 1.5,
-        radius: 0.85,
+        intensity: 0.25,
+        radius: 0.50,
     });
 
     const chromaticAberrationEffect = new ChromaticAberrationEffect({
@@ -75,22 +72,13 @@ export function createRenderer(canvas) {
         darkness: 0.5,
     });
 
-    // Tonemapping: Reinhard2 controls blowout while preserving color.
-    // Bloom on bright dot sprites creates the luminous center glow.
-    const toneMappingEffect = new ToneMappingEffect({
-        mode: ToneMappingMode.REINHARD2,
-    });
-
     const effectPass = new EffectPass(
         camera,
         bloomEffect,
-        toneMappingEffect,
         chromaticAberrationEffect,
         vignetteEffect,
     );
 
-    composer.addPass(bgRenderPass);
-    composer.addPass(shardRenderPass);
     composer.addPass(effectPass);
 
     /**
@@ -141,34 +129,54 @@ export function createRenderer(canvas) {
         const params = deriveParams(controls, rng);
 
         // --- Setup camera ---
-        camera.fov = params.fov;
+        camera.fov = params.cameraFov;
         camera.aspect = getAspect();
         camera.updateProjectionMatrix();
         camera.position.set(
             params.cameraOffsetX,
             params.cameraOffsetY,
-            params.cameraDistance,
+            params.cameraZ,
         );
         camera.lookAt(0, 0, 0);
 
         // --- Clear previous scene contents ---
         clearScene(scene);
-        clearScene(bgScene);
 
-        // --- Background ---
+        // --- Background gradient quad (same scene, like demo) ---
+        // Uses clip-space position so it renders at far plane, behind everything.
         const bgGeometry = new THREE.PlaneGeometry(2, 2);
-        const bgMaterial = createBackgroundMaterial({
-            bgColor: params.bgColor,
-            fogColor: params.fogColor,
-            lightness: params.backgroundLightness,
-            centerX: 0.5 + params.cameraOffsetX * 0.02,
-            centerY: 0.5 + params.cameraOffsetY * 0.02,
+        const bgMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+                uInnerColor: { value: new THREE.Color(...params.bgInnerColor) },
+                uOuterColor: { value: new THREE.Color(...params.bgOuterColor) },
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = vec4(position.xy, 0.9999, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform vec3 uInnerColor;
+                uniform vec3 uOuterColor;
+                varying vec2 vUv;
+                void main() {
+                    float d = length(vUv - 0.5) * 2.0;
+                    gl_FragColor = vec4(mix(uInnerColor, uOuterColor, d * d), 1.0);
+                }
+            `,
+            depthWrite: false,
+            depthTest: false,
         });
-        bgScene.add(new THREE.Mesh(bgGeometry, bgMaterial));
+        const bgQuad = new THREE.Mesh(bgGeometry, bgMaterial);
+        bgQuad.frustumCulled = false;
+        bgQuad.renderOrder = -1;
+        scene.add(bgQuad);
 
         // --- Build scene geometry ---
         const buildRng = mulberry32(xmur3(seed + ':build')());
-        const result = buildScene(params, buildRng, scene, seed);
+        const result = buildDemoScene(params, buildRng, scene);
 
         // --- Update postprocessing from params ---
         bloomEffect.intensity = params.bloomStrength;
@@ -192,7 +200,6 @@ export function createRenderer(canvas) {
 
     function dispose() {
         clearScene(scene);
-        clearScene(bgScene);
         composer.dispose();
         renderer.dispose();
     }
@@ -204,5 +211,9 @@ export function createRenderer(canvas) {
         camera.updateProjectionMatrix();
     }
 
-    return { renderWith, dispose, resize, syncSize, getCanvas: () => canvas };
+    function setDPR(newDpr) {
+        renderer.setPixelRatio(Math.min(newDpr, 2));
+    }
+
+    return { renderWith, dispose, resize, syncSize, setDPR, getCanvas: () => canvas };
 }

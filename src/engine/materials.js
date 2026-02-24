@@ -1,5 +1,5 @@
 /**
- * Custom ShaderMaterial for crystalline translucent planes.
+ * Custom ShaderMaterial factories.
  */
 
 import * as THREE from 'three';
@@ -7,6 +7,10 @@ import shardVertSrc from './shaders/shard.vert.glsl?raw';
 import shardFragSrc from './shaders/shard.frag.glsl?raw';
 import bgVertSrc from './shaders/background.vert.glsl?raw';
 import bgFragSrc from './shaders/background.frag.glsl?raw';
+import demoFaceVertSrc from './shaders/demo-face.vert.glsl?raw';
+import demoFaceFragSrc from './shaders/demo-face.frag.glsl?raw';
+import demoGlowVertSrc from './shaders/demo-glow.vert.glsl?raw';
+import demoGlowFragSrc from './shaders/demo-glow.frag.glsl?raw';
 
 /**
  * Create a shard material for a translucent crystalline plane.
@@ -75,5 +79,80 @@ export function createBackgroundMaterial(opts) {
         },
         depthWrite: false,
         depthTest: false,
+    });
+}
+
+// --- Demo material factories ---
+
+/**
+ * Batched face material for demo folding-chain planes.
+ * Uses per-vertex color, opacity, noise params, and shared light uniforms.
+ */
+export function createDemoFaceMaterial(lightUniforms, config) {
+    return new THREE.ShaderMaterial({
+        uniforms: {
+            uLightPositions: lightUniforms.uLightPositions,
+            uLightIntensities: lightUniforms.uLightIntensities,
+            uLightCount: lightUniforms.uLightCount,
+            uCameraPos: { value: new THREE.Vector3(0, 0, 5) },
+            uFrontLightFactor: { value: config.frontLightFactor },
+            uBackLightFactor: { value: config.backLightFactor },
+            uIlluminationCap: { value: config.illuminationCap },
+            uAmbientLight: { value: config.ambientLight },
+            uEdgeFadeThreshold: { value: config.edgeFadeThreshold },
+        },
+        vertexShader: demoFaceVertSrc,
+        fragmentShader: demoFaceFragSrc,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    });
+}
+
+/**
+ * Batched edge material for demo chain edge lines.
+ */
+export function createDemoEdgeMaterial() {
+    return new THREE.ShaderMaterial({
+        vertexShader: `
+            attribute float vAlpha;
+            attribute vec3 aColor;
+            attribute float aOpacity;
+            varying float fAlpha;
+            varying vec3 vEdgeColor;
+            varying float vEdgeOpacity;
+            void main() {
+                fAlpha = vAlpha;
+                vEdgeColor = aColor;
+                vEdgeOpacity = aOpacity;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            varying float fAlpha;
+            varying vec3 vEdgeColor;
+            varying float vEdgeOpacity;
+            void main() {
+                gl_FragColor = vec4(vEdgeColor, vEdgeOpacity * fAlpha);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+    });
+}
+
+/**
+ * Glow point material for dot halos (uses Points with gl_PointSize).
+ */
+export function createDemoGlowMaterial(glowTexture) {
+    return new THREE.ShaderMaterial({
+        uniforms: { uGlowMap: { value: glowTexture } },
+        vertexShader: demoGlowVertSrc,
+        fragmentShader: demoGlowFragSrc,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
     });
 }
