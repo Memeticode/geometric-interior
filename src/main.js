@@ -1930,7 +1930,7 @@ function showTooltip(el, mouseX, mouseY) {
     paramTooltip.textContent = el.getAttribute('data-tooltip');
     const pos = el.getAttribute('data-tooltip-pos');
     const above = pos === 'above';
-    if (!pos && el.closest('.panel')) {
+    if (pos === 'right' || (!pos && el.closest('.panel'))) {
         const rect = el.getBoundingClientRect();
         paramTooltip.style.transform = 'translateY(-50%)';
         paramTooltip.style.left = (rect.right + 8) + 'px';
@@ -2089,7 +2089,11 @@ function openPanel() {
     panelEl.classList.remove('panel-collapsed');
     panelEl.setAttribute('aria-hidden', 'false');
     if (panelBackdrop) panelBackdrop.classList.remove('hidden');
-    if (panelToggleBtn) panelToggleBtn.classList.add('panel-open');
+    if (panelToggleBtn) {
+        panelToggleBtn.classList.add('panel-open');
+        panelToggleBtn.setAttribute('data-tooltip', 'Close menu');
+        panelToggleBtn.setAttribute('aria-label', 'Close menu');
+    }
     localStorage.setItem('geo-self-portrait-panel-collapsed', 'false');
 }
 
@@ -2098,7 +2102,11 @@ function closePanel() {
     panelEl.classList.add('panel-collapsed');
     panelEl.setAttribute('aria-hidden', 'true');
     if (panelBackdrop) panelBackdrop.classList.add('hidden');
-    if (panelToggleBtn) panelToggleBtn.classList.remove('panel-open');
+    if (panelToggleBtn) {
+        panelToggleBtn.classList.remove('panel-open');
+        panelToggleBtn.setAttribute('data-tooltip', 'Open menu');
+        panelToggleBtn.setAttribute('aria-label', 'Open menu');
+    }
     localStorage.setItem('geo-self-portrait-panel-collapsed', 'true');
 }
 
@@ -2106,7 +2114,11 @@ function initPanelToggle() {
     if (!panelToggleBtn || !panelEl) return;
 
     // Set initial button state to match panel
-    if (isPanelOpen()) panelToggleBtn.classList.add('panel-open');
+    if (isPanelOpen()) {
+        panelToggleBtn.classList.add('panel-open');
+        panelToggleBtn.setAttribute('data-tooltip', 'Close menu');
+        panelToggleBtn.setAttribute('aria-label', 'Close menu');
+    }
 
     // Remove no-transition class set by inline script after first frame
     requestAnimationFrame(() => panelEl.classList.remove('no-transition'));
