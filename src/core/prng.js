@@ -28,3 +28,14 @@ export function mulberry32(a) {
 export function clamp01(x) { return Math.max(0, Math.min(1, x)); }
 
 export function lerp(a, b, t) { return a + (b - a) * t; }
+
+/**
+ * Asymmetric lerp: t=0 → lo, t=0.5 → mid (exact), t=1 → hi.
+ * Used for slider parameterization where mid is the demo default.
+ */
+export function controlLerp(t, lo, mid, hi) {
+    t = clamp01(t);
+    return t < 0.5
+        ? lo + (mid - lo) * (t * 2)
+        : mid + (hi - mid) * ((t - 0.5) * 2);
+}

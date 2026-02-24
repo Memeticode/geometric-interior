@@ -2,7 +2,10 @@
  * Profile storage (localStorage) and loop list UI rendering.
  */
 
+import starterProfiles from '../core/starter-profiles.json';
+
 const LS_KEY = 'geo_self_portrait_profiles_v3';
+const ORDER_KEY = 'geo_self_portrait_profile_order_v1';
 const ANIM_LS_KEY = 'geo_self_portrait_anim_profiles_v1';
 
 /* ---------------------------
@@ -43,6 +46,39 @@ export function deleteProfile(name) {
     const profiles = loadProfiles();
     delete profiles[name];
     saveProfiles(profiles);
+}
+
+/* ---------------------------
+ * Profile ordering
+ * ---------------------------
+ */
+
+export function loadProfileOrder() {
+    try {
+        const raw = localStorage.getItem(ORDER_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch { return null; }
+}
+
+export function saveProfileOrder(order) {
+    localStorage.setItem(ORDER_KEY, JSON.stringify(order));
+}
+
+/** Reconcile order array with actual profile keys. */
+export function syncProfileOrder(profiles) {
+    const keys = Object.keys(profiles);
+    let order = loadProfileOrder();
+    if (!order) {
+        order = keys.sort((a, b) => a.localeCompare(b));
+    } else {
+        order = order.filter(n => keys.includes(n));
+        for (const k of keys) {
+            if (!order.includes(k)) order.push(k);
+        }
+    }
+    saveProfileOrder(order);
+    return order;
 }
 
 export function refreshProfileSelect(selectEl) {
@@ -129,38 +165,39 @@ export function removeImageFromAnimProfiles(imageName) {
  * ---------------------------
  */
 
+export function loadPortraits() {
+    return structuredClone(starterProfiles);
+}
+
+export function getPortraitNames() {
+    return Object.keys(starterProfiles);
+}
+
 export function ensureStarterProfiles() {
+    // Migration: remove starter profiles from user storage only if identical to portrait
+    // (preserves user-customized profiles that share a portrait name)
     const profiles = loadProfiles();
-    if (Object.keys(profiles).length === 0) {
-        saveProfiles({
-            'Violet Crystalline (Starter)': {
-                seed: 'The weight of crystallized doubt finds its shape.',
-                controls: { topology: 'flow-field', palette: 'violet-depth', density: 0.65, luminosity: 0.70, fracture: 0.35, depth: 0.40, coherence: 0.50 }
-            },
-            'Warm Drift (Starter)': {
-                seed: 'The last breath of slow fire drifts apart.',
-                controls: { topology: 'flow-field', palette: 'warm-spectrum', density: 0.70, luminosity: 0.75, fracture: 0.40, depth: 0.35, coherence: 0.45 }
-            },
-            'Teal Convergence (Starter)': {
-                seed: 'An architecture of liquid geometry holds the room.',
-                controls: { topology: 'flow-field', palette: 'teal-volumetric', density: 0.55, luminosity: 0.80, fracture: 0.50, depth: 0.45, coherence: 0.55 }
-            },
-            'Prismatic Energy (Starter)': {
-                seed: 'Refracting through every thought left unsaid.',
-                controls: { topology: 'multi-attractor', palette: 'prismatic', density: 0.60, luminosity: 0.65, fracture: 0.55, depth: 0.35, coherence: 0.45 }
-            },
-            'Crystal Lattice (Starter)': {
-                seed: 'A cathedral of frozen lightning and quiet geometry.',
-                controls: { topology: 'icosahedral', palette: 'crystal-lattice', density: 0.65, luminosity: 0.65, fracture: 0.70, depth: 0.30, coherence: 0.60 }
+    const portraitNames = getPortraitNames();
+    let changed = false;
+    for (const name of portraitNames) {
+        if (profiles[name]) {
+            const p = profiles[name];
+            const s = starterProfiles[name];
+            const identical = p.seed === s.seed &&
+                JSON.stringify(p.controls) === JSON.stringify(s.controls);
+            if (identical) {
+                delete profiles[name];
+                changed = true;
             }
-        });
+        }
     }
+    if (changed) saveProfiles(profiles);
 
     const animProfiles = loadAnimProfiles();
     if (Object.keys(animProfiles).length === 0) {
         saveAnimProfiles({
-            'Chromatic Cycle (Starter)': {
-                landmarks: ['Violet Crystalline (Starter)', 'Warm Drift (Starter)', 'Teal Convergence (Starter)', 'Prismatic Energy (Starter)', 'Crystal Lattice (Starter)'],
+            'Chromatic Cycle': {
+                landmarks: ['Verdant Stream', 'Prismatic Abyss', 'Rose Quartz', 'Sapphire Lattice', 'Spectral Drift', 'Violet Sanctum'],
                 durationMs: 7000,
                 seed: 'The space where radiant emptiness begins to sing.',
             }
