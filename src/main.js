@@ -2089,6 +2089,7 @@ function openPanel() {
     panelEl.classList.remove('panel-collapsed');
     panelEl.setAttribute('aria-hidden', 'false');
     if (panelBackdrop) panelBackdrop.classList.remove('hidden');
+    if (panelToggleBtn) panelToggleBtn.classList.add('panel-open');
     localStorage.setItem('geo-self-portrait-panel-collapsed', 'false');
 }
 
@@ -2097,11 +2098,15 @@ function closePanel() {
     panelEl.classList.add('panel-collapsed');
     panelEl.setAttribute('aria-hidden', 'true');
     if (panelBackdrop) panelBackdrop.classList.add('hidden');
+    if (panelToggleBtn) panelToggleBtn.classList.remove('panel-open');
     localStorage.setItem('geo-self-portrait-panel-collapsed', 'true');
 }
 
 function initPanelToggle() {
     if (!panelToggleBtn || !panelEl) return;
+
+    // Set initial button state to match panel
+    if (isPanelOpen()) panelToggleBtn.classList.add('panel-open');
 
     // Remove no-transition class set by inline script after first frame
     requestAnimationFrame(() => panelEl.classList.remove('no-transition'));
