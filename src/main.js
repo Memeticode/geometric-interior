@@ -6,12 +6,13 @@
 import { createRenderer } from './engine/create-renderer.js';
 import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults, getPalette } from './core/palettes.js';
 import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder, syncProfileOrder } from './ui/profiles.js';
-import { packageStillZip, packageStillZipFromBlob } from './export/export.js';
+import { packageStillZip, packageStillZipFromBlob, downloadBlob, canvasToPngBlob, injectPngTextChunks, toIsoLocalish, safeName } from './export/export.js';
+import { encodeStateToURL, decodeStateFromURL } from './core/url-state.js';
 import { initTheme } from './ui/theme.js';
 import { createFaviconAnimation } from './ui/animated-favicon.js';
 import { generateTitle, generateAltText } from './core/text.js';
 import { xmur3, mulberry32 } from './core/prng.js';
-import { validateStillConfig, configToProfile } from './core/config-schema.js';
+import { validateStillConfig, configToProfile, profileToConfig } from './core/config-schema.js';
 import { createMorphController, MORPH_DURATION_MS } from './core/morph.js';
 
 /* ---------------------------
@@ -90,6 +91,11 @@ const el = {
     canvasOverlay: document.getElementById('canvasOverlay'),
     canvasOverlayText: document.getElementById('canvasOverlayText'),
     exportBtn: document.getElementById('exportBtn'),
+    shareBtn: document.getElementById('shareBtn'),
+    sharePopover: document.getElementById('sharePopover'),
+    settingsBtn: document.getElementById('settingsBtn'),
+    settingsPopover: document.getElementById('settingsPopover'),
+    animToggle: document.getElementById('animToggle'),
 
     infoModal: document.getElementById('infoModal'),
     infoModalTitle: document.getElementById('infoModalTitle'),
@@ -214,6 +220,22 @@ function onWorkerMessage(e) {
             if (cb) { pendingCallbacks.delete(msg.requestId); cb(null); }
             break;
         }
+        case 'morph-prepared':
+            if (morphPrepareCallback) {
+                const cb = morphPrepareCallback;
+                morphPrepareCallback = null;
+                cb();
+            }
+            break;
+        case 'morph-frame':
+            // Worker is rendering frames autonomously; nothing to do here
+            break;
+        case 'morph-complete':
+            // Worker finished all 72 frames; UI morph controller handles completion
+            break;
+        case 'morph-ended':
+            // Worker acknowledged morph cancel
+            break;
         case 'error':
             console.error('[render] Worker reported error:', msg.error);
             if (workerInitTimer) { clearTimeout(workerInitTimer); workerInitTimer = null; }
@@ -459,6 +481,24 @@ function initPaletteSelector() {
         const pal = getPalette(key);
         if (pal) updateActiveChipGradient(key, pal);
     }
+    // Sync custom chip gradient from localStorage (or defaults) so it always
+    // reflects the user's configured colors, not the hardcoded HTML fallback
+    {
+        const defaults = getPaletteDefaults('custom');
+        let customSettings = defaults;
+        try {
+            const raw = localStorage.getItem(paletteLSKey('custom'));
+            if (raw) {
+                const s = JSON.parse(raw);
+                customSettings = {
+                    baseHue: s.baseHue ?? defaults.baseHue,
+                    hueRange: s.hueRange ?? defaults.hueRange,
+                    saturation: s.saturation ?? defaults.saturation,
+                };
+            }
+        } catch { /* ignore */ }
+        updateActiveChipGradient('custom', customSettings);
+    }
     cacheChipGradients();
 
     const chips = el.paletteSelector.querySelectorAll('.pal-chip');
@@ -668,8 +708,82 @@ function cancelPendingRender() {
  */
 let morphLastPalette = null;
 
+let morphPrepareCallback = null;
+
+/**
+ * Send morph-prepare to the worker (or fallback renderer).
+ * Calls onReady once both scenes are built.
+ */
+function sendMorphPrepare(fromState, toState, onReady) {
+    const paletteTweaksA = {};
+    paletteTweaksA[fromState.controls.palette] = fromState.paletteTweaks;
+    const paletteTweaksB = {};
+    paletteTweaksB[toState.controls.palette] = toState.paletteTweaks;
+
+    if (renderWorker && workerReady) {
+        morphPrepareCallback = onReady;
+        renderWorker.postMessage({
+            type: 'morph-prepare',
+            seedA: fromState.seed,
+            controlsA: fromState.controls,
+            seedB: toState.seed,
+            controlsB: toState.controls,
+            paletteTweaksA,
+            paletteTweaksB,
+            width: canvas.clientWidth || canvas.getBoundingClientRect().width,
+            height: canvas.clientHeight || canvas.getBoundingClientRect().height,
+        });
+    } else if (fallbackRenderer) {
+        for (const [key, tweaks] of Object.entries(paletteTweaksA)) {
+            updatePalette(key, tweaks);
+        }
+        for (const [key, tweaks] of Object.entries(paletteTweaksB)) {
+            updatePalette(key, tweaks);
+        }
+        fallbackRenderer.morphPrepare(fromState.seed, fromState.controls, toState.seed, toState.controls);
+        onReady();
+    }
+}
+
+function sendMorphStart() {
+    if (renderWorker && workerReady) {
+        renderWorker.postMessage({ type: 'morph-start' });
+    } else if (fallbackRenderer) {
+        // Fallback: drive morph from main thread timer at fixed 24fps
+        let frame = 0;
+        const FRAMES = 72;
+        const FRAME_MS = 1000 / 24;
+        function fallbackTick() {
+            if (frame >= FRAMES) {
+                fallbackRenderer.morphEnd();
+                return;
+            }
+            const tRaw = frame / (FRAMES - 1);
+            const t = 0.5 * (1 - Math.cos(Math.PI * tRaw));
+            fallbackRenderer.morphUpdate(t);
+            frame++;
+            fallbackMorphTimer = setTimeout(fallbackTick, FRAME_MS);
+        }
+        fallbackTick();
+    }
+}
+
+function sendMorphCancel() {
+    if (renderWorker && workerReady) {
+        renderWorker.postMessage({ type: 'morph-cancel' });
+    } else if (fallbackRenderer) {
+        if (fallbackMorphTimer !== null) {
+            clearTimeout(fallbackMorphTimer);
+            fallbackMorphTimer = null;
+        }
+        fallbackRenderer.morphEnd();
+    }
+}
+
+let fallbackMorphTimer = null;
+
 const morphCtrl = createMorphController({
-    onTick(interpolated) {
+    onTick(interpolated, tEased) {
         const palKey = interpolated.controls.palette;
 
         // Snap palette preset (only fires once at midpoint when it changes)
@@ -693,17 +807,27 @@ const morphCtrl = createMorphController({
         }
         updateSliderLabels(interpolated.controls);
 
-        // Render the interpolated state
-        sendRenderRequest(interpolated.seed, interpolated.controls);
+        // Worker drives its own rendering at fixed 24fps — no sendMorphUpdate needed
     },
     onComplete() {
+        // Worker completes on its own; this just handles UI animation completion
         morphLastPalette = null;
+        setMorphLocked(false);
         setStillRendered(true);
         refreshGeneratedText(true);
     },
 });
 
 function startMorph(fromState, toState) {
+    if (!animationEnabled) {
+        // Instant render, no animation
+        const seed = el.seed.value.trim() || 'seed';
+        const controls = readControlsFromUI();
+        renderAndUpdate(seed, controls, { animate: true });
+        setStillRendered(true);
+        return;
+    }
+
     cancelPendingRender();
     cancelTextRefresh();
     if (typewriterAbort) { typewriterAbort(); typewriterAbort = null; }
@@ -711,11 +835,21 @@ function startMorph(fromState, toState) {
     // If morph is already active, chain from current interpolated position
     if (morphCtrl.isActive()) {
         const current = morphCtrl.cancel();
+        sendMorphCancel();
         if (current) fromState = current;
     }
 
+    // Cancel any pending morph-prepare callback
+    morphPrepareCallback = null;
     morphLastPalette = fromState.controls.palette;
-    morphCtrl.start(fromState, toState);
+    setStillRendered(false);
+    setMorphLocked(true);
+
+    // Build both scenes in worker, then start the animation
+    sendMorphPrepare(fromState, toState, () => {
+        sendMorphStart();
+        morphCtrl.start(fromState, toState);
+    });
 }
 
 /* ---------------------------
@@ -758,16 +892,21 @@ function setControlsInUI(controls) {
  * Helpers
  * ---------------------------
  */
+let toastTimer = 0;
 function toast(msg) {
     if (!msg) return;
-    el.toast.textContent = msg;
+    clearTimeout(toastTimer);
+    document.getElementById('toastMsg').textContent = msg;
     el.toast.classList.add('visible');
-    setTimeout(() => {
-        if (el.toast.textContent === msg) {
-            el.toast.classList.remove('visible');
-        }
-    }, 2400);
+    toastTimer = setTimeout(() => {
+        el.toast.classList.remove('visible');
+    }, 1000);
 }
+
+document.getElementById('toastClose').addEventListener('click', () => {
+    clearTimeout(toastTimer);
+    el.toast.classList.remove('visible');
+});
 
 function syncDisplayFields() {
     el.displayName.textContent = el.profileNameField.value.trim();
@@ -838,9 +977,32 @@ function loadProfileFromData(name, isPortrait) {
     loadedFromPortrait = isPortrait;
 }
 
+let morphLocked = false;
+
+function setMorphLocked(locked) {
+    morphLocked = locked;
+    el.exportBtn.disabled = locked;
+    el.shareBtn.disabled = locked;
+    el.settingsBtn.disabled = locked;
+    document.getElementById('historyBackBtn').disabled = locked || historyIndex <= 0;
+    document.getElementById('historyForwardBtn').disabled = locked || historyIndex >= navHistory.length - 1;
+    document.getElementById('configRandomizeBtn').disabled = locked;
+    // Close popovers when locking
+    if (locked) {
+        el.sharePopover.classList.add('hidden');
+        el.settingsPopover.classList.add('hidden');
+    }
+    // Lock/unlock panel interactions
+    const panelEl = document.querySelector('.panel');
+    if (panelEl) panelEl.classList.toggle('morph-locked', locked);
+}
+
 function setStillRendered(value) {
     stillRendered = value;
-    el.exportBtn.disabled = !value;
+    if (!morphLocked) {
+        el.exportBtn.disabled = !value;
+        el.shareBtn.disabled = !value;
+    }
 }
 
 let dirty = false;
@@ -1021,7 +1183,15 @@ function renderStillCanvas() {
 
 function onControlChange() {
     if (!initComplete) return;
-    if (morphCtrl.isActive()) morphCtrl.cancel();
+    if (morphCtrl.isActive()) {
+        morphCtrl.cancel();
+        sendMorphCancel();
+    } else if (morphPrepareCallback) {
+        // Cancel pending morph-prepare before it started
+        sendMorphCancel();
+    }
+    if (morphLocked) setMorphLocked(false);
+    morphPrepareCallback = null;
     updateSliderLabels(readControlsFromUI());
     scheduleTextRefresh();
     setStillRendered(false);
@@ -1262,8 +1432,8 @@ function restoreSnapshot(snap) {
 function updateHistoryButtons() {
     const back = document.getElementById('historyBackBtn');
     const fwd = document.getElementById('historyForwardBtn');
-    if (back) back.disabled = historyIndex <= 0;
-    if (fwd) fwd.disabled = historyIndex >= navHistory.length - 1;
+    if (back) back.disabled = morphLocked || historyIndex <= 0;
+    if (fwd) fwd.disabled = morphLocked || historyIndex >= navHistory.length - 1;
 }
 
 /**
@@ -1468,6 +1638,7 @@ function updateActivePreview() {
 }
 
 async function selectCard(cardEl) {
+    if (morphLocked) return; // prevent interactions during morph
     const profileName = cardEl.dataset.profileName;
     const isPortrait = cardEl.classList.contains('portrait-card');
     if (dirty && userEdited) {
@@ -1665,55 +1836,228 @@ function refreshProfileGallery() {
  * Export
  * ---------------------------
  */
-el.exportBtn.addEventListener('click', async () => {
+el.exportBtn.addEventListener('click', () => {
     if (el.exportBtn.disabled) return;
-    el.exportBtn.disabled = true;
-    try {
-        if (!stillRendered) { toast('Render first.'); return; }
-        if (!window.JSZip) { toast('JSZip missing (offline?).'); return; }
+    if (!stillRendered) { toast('Render first.'); return; }
 
+    try {
         const seed = el.seed.value.trim() || 'seed';
         const controls = readControlsFromUI();
         const paletteTweaks = readPaletteFromUI();
         const name = el.profileNameField.value.trim() || 'Untitled';
 
-        // Generate metadata on main thread (cheap text generation)
-        const titleRng = mulberry32(xmur3(seed + ':title')());
-        const title = generateTitle(controls, titleRng);
-        const altText = generateAltText(controls, lastNodeCount, title);
-        const meta = { title, altText, nodeCount: lastNodeCount };
-
-        if (renderWorker && workerReady) {
-            // Request blob from worker
-            const exportId = ++requestIdCounter;
-            try {
-                const blob = await new Promise((resolve, reject) => {
-                    pendingCallbacks.set(exportId, (b) => b ? resolve(b) : reject(new Error('Export failed')));
-                    renderWorker.postMessage({ type: 'export', requestId: exportId });
-                });
-                const rect = canvas.getBoundingClientRect();
-                await packageStillZipFromBlob(blob, {
-                    seed, controls, paletteTweaks, name, meta,
-                    canvasWidth: Math.round(rect.width * window.devicePixelRatio),
-                    canvasHeight: Math.round(rect.height * window.devicePixelRatio),
-                });
-                toast('Exported still ZIP.');
-            } catch (err) {
-                console.error(err);
-                toast('Still export failed.');
-            }
-        } else {
-            try {
-                await packageStillZip(canvas, { seed, controls, paletteTweaks, name, meta });
-                toast('Exported still ZIP.');
-            } catch (err) {
-                console.error(err);
-                toast('Still export failed.');
-            }
-        }
-    } finally {
-        el.exportBtn.disabled = !stillRendered;
+        const config = profileToConfig(name, { seed, controls, paletteTweaks });
+        const json = JSON.stringify(config, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const ts = toIsoLocalish();
+        downloadBlob(`geometric-interior_${safeName(seed)}_${ts}.json`, blob);
+        toast('Configuration exported.');
+    } catch (err) {
+        console.error(err);
+        toast('Export failed.');
     }
+});
+
+/* ---------------------------
+ * Share
+ * ---------------------------
+ */
+
+// Build share URL from current state
+function buildShareURL() {
+    return encodeStateToURL(window.location.origin, {
+        seed: el.seed.value.trim() || 'seed',
+        controls: readControlsFromUI(),
+        paletteTweaks: readPaletteFromUI(),
+        name: el.profileNameField.value.trim(),
+    });
+}
+
+// Toggle share popover (hide tooltip so it doesn't overlap the menu)
+el.shareBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideTooltip();
+    el.sharePopover.classList.toggle('hidden');
+    el.settingsPopover.classList.add('hidden');
+});
+
+// Toggle settings popover
+el.settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideTooltip();
+    el.settingsPopover.classList.toggle('hidden');
+    el.sharePopover.classList.add('hidden');
+});
+
+// Close popovers on outside click
+document.addEventListener('click', (e) => {
+    if (!el.sharePopover.contains(e.target) && e.target !== el.shareBtn) {
+        el.sharePopover.classList.add('hidden');
+    }
+    if (!el.settingsPopover.contains(e.target) && e.target !== el.settingsBtn) {
+        el.settingsPopover.classList.add('hidden');
+    }
+});
+
+// Close popovers on Escape
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (!el.sharePopover.classList.contains('hidden')) {
+            el.sharePopover.classList.add('hidden');
+            el.shareBtn.focus();
+        }
+        if (!el.settingsPopover.classList.contains('hidden')) {
+            el.settingsPopover.classList.add('hidden');
+            el.settingsBtn.focus();
+        }
+    }
+});
+
+/* ── Animation toggle ── */
+let animationEnabled = localStorage.getItem('geo-anim-enabled') !== 'false'; // default true
+el.animToggle.setAttribute('aria-checked', String(animationEnabled));
+
+el.animToggle.addEventListener('click', () => {
+    animationEnabled = !animationEnabled;
+    el.animToggle.setAttribute('aria-checked', String(animationEnabled));
+    localStorage.setItem('geo-anim-enabled', String(animationEnabled));
+});
+el.animToggle.addEventListener('keydown', (e) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+        e.preventDefault();
+        el.animToggle.click();
+    }
+});
+
+// Copy Link
+document.getElementById('shareCopyLink').addEventListener('click', async () => {
+    const shareURL = buildShareURL();
+    try {
+        await navigator.clipboard.writeText(shareURL);
+        toast('Link copied to clipboard.');
+    } catch {
+        // Fallback for older browsers / insecure contexts
+        const ta = document.createElement('textarea');
+        ta.value = shareURL;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        toast('Link copied.');
+    }
+    el.sharePopover.classList.add('hidden');
+});
+
+// Download Visual (full ZIP with image, metadata, title, alt-text)
+document.getElementById('shareDownloadPng').addEventListener('click', async () => {
+    if (!stillRendered) { toast('Render first.'); return; }
+    if (!window.JSZip) { toast('JSZip missing (offline?).'); return; }
+    el.sharePopover.classList.add('hidden');
+
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    const paletteTweaks = readPaletteFromUI();
+    const name = el.profileNameField.value.trim() || 'Untitled';
+
+    const titleRng = mulberry32(xmur3(seed + ':title')());
+    const title = generateTitle(controls, titleRng);
+    const altText = generateAltText(controls, lastNodeCount, title);
+    const meta = { title, altText, nodeCount: lastNodeCount };
+
+    try {
+        if (renderWorker && workerReady) {
+            const exportId = ++requestIdCounter;
+            const blob = await new Promise((resolve, reject) => {
+                pendingCallbacks.set(exportId, (b) => b ? resolve(b) : reject(new Error('Export failed')));
+                renderWorker.postMessage({ type: 'export', requestId: exportId });
+            });
+            const rect = canvas.getBoundingClientRect();
+            await packageStillZipFromBlob(blob, {
+                seed, controls, paletteTweaks, name, meta,
+                canvasWidth: Math.round(rect.width * window.devicePixelRatio),
+                canvasHeight: Math.round(rect.height * window.devicePixelRatio),
+            });
+        } else {
+            await packageStillZip(canvas, { seed, controls, paletteTweaks, name, meta });
+        }
+        toast('Visual exported.');
+    } catch (err) {
+        console.error(err);
+        toast('Visual export failed.');
+    }
+});
+
+// Share on X/Twitter
+document.getElementById('shareTwitter').addEventListener('click', () => {
+    const shareURL = buildShareURL();
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    const titleRng = mulberry32(xmur3(seed + ':title')());
+    const title = generateTitle(controls, titleRng);
+
+    const text = `${title} — Geometric Interior`;
+    const intentURL = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareURL)}&text=${encodeURIComponent(text)}`;
+    window.open(intentURL, '_blank', 'noopener,width=550,height=420');
+    el.sharePopover.classList.add('hidden');
+});
+
+// Share on Facebook
+document.getElementById('shareFacebook').addEventListener('click', () => {
+    const shareURL = buildShareURL();
+    const fbURL = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareURL)}`;
+    window.open(fbURL, '_blank', 'noopener,width=555,height=525');
+    el.sharePopover.classList.add('hidden');
+});
+
+// Share on Bluesky
+document.getElementById('shareBluesky').addEventListener('click', () => {
+    const shareURL = buildShareURL();
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    const titleRng = mulberry32(xmur3(seed + ':title')());
+    const title = generateTitle(controls, titleRng);
+
+    const text = `${title} — Geometric Interior\n${shareURL}`;
+    const bskyURL = `https://bsky.app/intent/compose?text=${encodeURIComponent(text)}`;
+    window.open(bskyURL, '_blank', 'noopener,width=600,height=500');
+    el.sharePopover.classList.add('hidden');
+});
+
+// Share on Reddit
+document.getElementById('shareReddit').addEventListener('click', () => {
+    const shareURL = buildShareURL();
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    const titleRng = mulberry32(xmur3(seed + ':title')());
+    const title = generateTitle(controls, titleRng);
+
+    const redditURL = `https://www.reddit.com/submit?url=${encodeURIComponent(shareURL)}&title=${encodeURIComponent(`${title} — Geometric Interior`)}`;
+    window.open(redditURL, '_blank', 'noopener,width=700,height=600');
+    el.sharePopover.classList.add('hidden');
+});
+
+// Share on LinkedIn
+document.getElementById('shareLinkedIn').addEventListener('click', () => {
+    const shareURL = buildShareURL();
+    const linkedInURL = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareURL)}`;
+    window.open(linkedInURL, '_blank', 'noopener,width=600,height=550');
+    el.sharePopover.classList.add('hidden');
+});
+
+// Share via Email
+document.getElementById('shareEmail').addEventListener('click', () => {
+    const shareURL = buildShareURL();
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    const titleRng = mulberry32(xmur3(seed + ':title')());
+    const title = generateTitle(controls, titleRng);
+
+    const subject = `${title} — Geometric Interior`;
+    const body = `Check out this generative artwork:\n\n${shareURL}`;
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+    el.sharePopover.classList.add('hidden');
 });
 
 /* ---------------------------
@@ -1871,11 +2215,12 @@ async function loadStatementContent() {
         artistTitle: 'txt/artist-statement-title.txt',
         developerContent: 'txt/developer-statement-content.txt',
         artistContent: 'txt/artist-statement-content.txt',
+        developerFooter: 'txt/developer-statement-footer.txt',
         governanceTitle: 'txt/governance-framework-title.txt',
         governanceContent: 'md/governance-framework-content.md',
     };
     try {
-        const [devTitle, artTitle, devContent, artContent, govTitle, govContent] = await Promise.all(
+        const [devTitle, artTitle, devContent, artContent, devFooter, govTitle, govContent] = await Promise.all(
             Object.values(files).map(f => fetch(f).then(r => r.text()))
         );
         STATEMENT_TITLES.developer = devTitle.trim();
@@ -1884,6 +2229,8 @@ async function loadStatementContent() {
         el.developerBody.querySelector('.manifesto').textContent = devContent.trim();
         el.artistBody.querySelector('.manifesto').textContent = artContent.trim();
         el.governanceBody.querySelector('.manifesto').innerHTML = simpleMarkdownToHtml(govContent.trim());
+        const noteEl = el.artistBody.querySelector('.manifesto-note');
+        if (noteEl) noteEl.textContent = devFooter.trim();
     } catch (err) {
         console.error('Failed to load statement content:', err);
     }
@@ -2388,8 +2735,36 @@ el.activeCard.appendChild(configControls);
 configControls.style.display = '';
 configControls.classList.add('collapsed');
 
-// Random configuration on every page load
-randomizeUI();
+// Check for shared state in URL, otherwise randomize
+const sharedState = decodeStateFromURL(window.location.href);
+if (sharedState) {
+    el.seed.value = sharedState.seed;
+    autoGrow(el.seed);
+    if (sharedState.name) {
+        el.profileNameField.value = sharedState.name;
+        autoGrow(el.profileNameField);
+    }
+    setControlsInUI(sharedState.controls);
+    if (sharedState.paletteTweaks) {
+        el.customHue.value = sharedState.paletteTweaks.baseHue;
+        el.customHueRange.value = sharedState.paletteTweaks.hueRange;
+        el.customSat.value = sharedState.paletteTweaks.saturation;
+    }
+    syncPaletteEditor();
+    syncDisplayFields();
+    // Generate display name if none provided
+    if (!sharedState.name) {
+        const nameRng = mulberry32(xmur3(sharedState.seed + ':name')());
+        el.profileNameField.value = generateTitle(sharedState.controls, nameRng);
+        autoGrow(el.profileNameField);
+    }
+    loadedProfileName = '';
+    loadedFromPortrait = false;
+    setDirty(true);
+    setUserEdited(false);
+} else {
+    randomizeUI();
+}
 refreshProfileGallery();
 
 // Seed history with initial state

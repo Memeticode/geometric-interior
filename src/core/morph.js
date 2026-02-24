@@ -8,7 +8,7 @@
 import { cosineEase } from './interpolation.js';
 import { clamp01, lerp } from './prng.js';
 
-export const MORPH_DURATION_MS = 1500;
+export const MORPH_DURATION_MS = 3000;
 
 const NUMERIC_KEYS = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
 
@@ -88,8 +88,9 @@ export function createMorphController({ onTick, onComplete }) {
         const elapsed = nowMs - startMs;
         const tRaw = clamp01(elapsed / durationMs);
 
+        const tEased = cosineEase(clamp01(tRaw));
         lastInterpolated = interpolateState(fromState, toState, tRaw);
-        onTick(lastInterpolated);
+        onTick(lastInterpolated, tEased);
 
         if (tRaw >= 1) {
             active = false;

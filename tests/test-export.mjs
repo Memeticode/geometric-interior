@@ -1,33 +1,33 @@
 /**
- * Export tests: button state, ZIP structure, metadata validation, PNG integrity.
- * Uses Playwright's download event to capture the actual exported ZIP.
+ * Export tests: JSON config export, button state, Download Visual ZIP.
+ * Uses Playwright's download event to capture exported files.
  */
-import { createTestContext, ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { ensurePanelOpen, ensureConfigExpanded, scrollToElement, reloadPage } from './helpers/browser.mjs';
+import { readControlsFromPage, readPaletteTweaksFromPage, readSeed } from './helpers/controls.mjs';
 import { setSlider } from './helpers/controls.mjs';
-import { waitForStillRendered } from './helpers/waits.mjs';
+import { waitForStillRendered, sleep } from './helpers/waits.mjs';
 import { assertDisabled, assertEnabled, assertNoPageErrors } from './helpers/assertions.mjs';
 import fs from 'fs';
 
-let passed = 0, failed = 0;
+export async function runTests(page, errors) {
+    let passed = 0, failed = 0;
 
-async function test(name, fn) {
-    try {
-        await fn();
-        passed++;
-        console.log(`  PASS: ${name}`);
-    } catch (err) {
-        failed++;
-        console.error(`  FAIL: ${name}`);
-        console.error(`    ${err.message}`);
+    async function test(name, fn) {
+        try {
+            await fn();
+            passed++;
+            console.log(`  PASS: ${name}`);
+        } catch (err) {
+            failed++;
+            console.error(`  FAIL: ${name}`);
+            console.error(`    ${err.message}`);
+        }
     }
-}
 
-console.log('\n=== Export Tests ===\n');
+    console.log('\n=== Export Tests ===\n');
 
-const { page, errors, cleanup } = await createTestContext();
-
-try {
-    // Open panel and expand config so export button is accessible
     await ensurePanelOpen(page);
     await ensureConfigExpanded(page);
 
@@ -38,24 +38,130 @@ try {
         await assertEnabled(page, '#exportBtn');
     });
 
-    // ── Test: Export produces ZIP with correct structure ──
-    let zipContents = null;
+    // ── Test: Config export produces JSON file ──
+    let exportedConfig = null;
 
-    await test('Export produces ZIP with correct file structure', async () => {
+    await test('Config export produces valid JSON file', async () => {
         await waitForStillRendered(page);
         await scrollToElement(page, '#exportBtn');
 
-        // Use Playwright download event to capture the ZIP
         const [download] = await Promise.all([
             page.waitForEvent('download', { timeout: 15000 }),
             page.click('#exportBtn'),
         ]);
 
-        // Save to temp and parse in-browser using JSZip
-        const path = await download.path();
-        const buf = fs.readFileSync(path);
+        const filename = download.suggestedFilename();
+        if (!filename.endsWith('.json')) {
+            throw new Error(`Expected .json filename, got "${filename}"`);
+        }
 
-        // Send the buffer to the page for JSZip parsing
+        const dlPath = await download.path();
+        const raw = fs.readFileSync(dlPath, 'utf-8');
+
+        try {
+            exportedConfig = JSON.parse(raw);
+        } catch {
+            throw new Error('Downloaded file is not valid JSON');
+        }
+    });
+
+    // ── Test: JSON config has valid still schema ──
+    await test('JSON config has valid still config schema', async () => {
+        if (!exportedConfig) throw new Error('No config from previous export');
+
+        const m = exportedConfig;
+        if (m.kind !== 'still') throw new Error(`Expected kind "still", got "${m.kind}"`);
+        if (typeof m.name !== 'string' || !m.name.trim()) throw new Error('name is empty or not a string');
+        if (typeof m.intent !== 'string' || !m.intent.trim()) throw new Error('intent is empty or not a string');
+
+        if (!m.palette || typeof m.palette !== 'object') throw new Error('palette missing or not an object');
+        if (typeof m.palette.hue !== 'number') throw new Error('palette.hue not a number');
+        if (typeof m.palette.range !== 'number') throw new Error('palette.range not a number');
+        if (typeof m.palette.saturation !== 'number') throw new Error('palette.saturation not a number');
+
+        if (!m.structure || typeof m.structure !== 'object') throw new Error('structure missing or not an object');
+        for (const key of ['density', 'luminosity', 'fracture', 'depth', 'coherence']) {
+            if (typeof m.structure[key] !== 'number') throw new Error(`structure.${key} not a number`);
+            if (m.structure[key] < 0 || m.structure[key] > 1) throw new Error(`structure.${key} out of range`);
+        }
+    });
+
+    // ── Test: JSON config values match current UI state ──
+    await test('JSON config values match current UI state', async () => {
+        if (!exportedConfig) throw new Error('No config from previous export');
+
+        const seed = await readSeed(page);
+        const controls = await readControlsFromPage(page);
+        const tweaks = await readPaletteTweaksFromPage(page);
+
+        if (exportedConfig.intent !== seed) {
+            throw new Error(`intent: expected "${seed}", got "${exportedConfig.intent}"`);
+        }
+
+        const tol = 0.02;
+        for (const key of ['density', 'luminosity', 'fracture', 'depth', 'coherence']) {
+            if (Math.abs(exportedConfig.structure[key] - controls[key]) > tol) {
+                throw new Error(`structure.${key}: expected ~${controls[key]}, got ${exportedConfig.structure[key]}`);
+            }
+        }
+
+        if (Math.abs(exportedConfig.palette.hue - tweaks.baseHue) > 1) {
+            throw new Error(`palette.hue: expected ~${tweaks.baseHue}, got ${exportedConfig.palette.hue}`);
+        }
+        if (Math.abs(exportedConfig.palette.range - tweaks.hueRange) > 1) {
+            throw new Error(`palette.range: expected ~${tweaks.hueRange}, got ${exportedConfig.palette.range}`);
+        }
+        if (Math.abs(exportedConfig.palette.saturation - tweaks.saturation) > 0.02) {
+            throw new Error(`palette.saturation: expected ~${tweaks.saturation}, got ${exportedConfig.palette.saturation}`);
+        }
+    });
+
+    // ── Test: Export button disables after slider change ──
+    await test('Export button disables after slider change (stillRendered = false)', async () => {
+        await ensurePanelOpen(page);
+        await ensureConfigExpanded(page);
+        await scrollToElement(page, '#density');
+        await setSlider(page, 'density', 0.92);
+        await page.waitForTimeout(500);
+        await scrollToElement(page, '#exportBtn');
+        await assertDisabled(page, '#exportBtn');
+    });
+
+    // ── Test: Export re-enabled after page reload (deliberate render) ──
+    await test('Export re-enabled after page reload (deliberate render)', async () => {
+        await reloadPage(page);
+        await waitForStillRendered(page);
+
+        await ensurePanelOpen(page);
+        await ensureConfigExpanded(page);
+        await waitForStillRendered(page);
+        await scrollToElement(page, '#exportBtn');
+        await assertEnabled(page, '#exportBtn');
+    });
+
+    // ── Test: Download Visual produces ZIP with correct structure ──
+    let zipContents = null;
+
+    await test('Download Visual produces ZIP with correct file structure', async () => {
+        await waitForStillRendered(page);
+
+        // Open share popover and click Download Visual
+        await page.click('#shareBtn');
+        await sleep(200);
+
+        const [download] = await Promise.all([
+            page.waitForEvent('download', { timeout: 30000 }),
+            page.click('#shareDownloadPng'),
+        ]);
+
+        const filename = download.suggestedFilename();
+        if (!filename.endsWith('.zip')) {
+            throw new Error(`Expected .zip filename, got "${filename}"`);
+        }
+
+        const dlPath = await download.path();
+        const buf = fs.readFileSync(dlPath);
+
         zipContents = await page.evaluate(async (base64) => {
             const JSZip = window.JSZip;
             if (!JSZip) return { error: 'JSZip not loaded' };
@@ -73,16 +179,6 @@ try {
                 const altFile = filenames.find(f => f.endsWith('alt-text.txt'));
                 const pngFile = filenames.find(f => f.endsWith('image.png'));
 
-                const metadata = metaFile
-                    ? JSON.parse(await zip.file(metaFile).async('string'))
-                    : null;
-                const titleTxt = titleFile
-                    ? await zip.file(titleFile).async('string')
-                    : null;
-                const altTxt = altFile
-                    ? await zip.file(altFile).async('string')
-                    : null;
-
                 let pngSignatureValid = false;
                 if (pngFile) {
                     const pngBuf = await zip.file(pngFile).async('uint8array');
@@ -92,7 +188,7 @@ try {
                         && pngBuf[3] === 0x47;
                 }
 
-                return { filenames, metadata, titleTxt, altTxt, pngSignatureValid };
+                return { filenames, pngSignatureValid };
             } catch (err) {
                 return { error: err.message };
             }
@@ -108,73 +204,12 @@ try {
         if (!fns.some(f => f.endsWith('metadata.json'))) throw new Error('ZIP missing metadata.json');
     });
 
-    // ── Test: metadata.json has valid schema ──
-    await test('metadata.json has valid still config schema', async () => {
-        if (!zipContents || !zipContents.metadata) throw new Error('No metadata from previous export');
-
-        const m = zipContents.metadata;
-        if (m.kind !== 'still') throw new Error(`Expected kind "still", got "${m.kind}"`);
-        if (typeof m.name !== 'string' || !m.name.trim()) throw new Error('name is empty or not a string');
-        if (typeof m.intent !== 'string' || !m.intent.trim()) throw new Error('intent is empty or not a string');
-
-        if (!m.palette || typeof m.palette !== 'object') throw new Error('palette missing or not an object');
-        if (typeof m.palette.hue !== 'number') throw new Error('palette.hue not a number');
-        if (typeof m.palette.range !== 'number') throw new Error('palette.range not a number');
-        if (typeof m.palette.saturation !== 'number') throw new Error('palette.saturation not a number');
-
-        if (!m.structure || typeof m.structure !== 'object') throw new Error('structure missing or not an object');
-        for (const key of ['density', 'luminosity', 'fracture', 'depth', 'coherence']) {
-            if (typeof m.structure[key] !== 'number') throw new Error(`structure.${key} not a number`);
-            if (m.structure[key] < 0 || m.structure[key] > 1) throw new Error(`structure.${key} out of range`);
-        }
-    });
-
-    // ── Test: title.txt is non-empty ──
-    await test('title.txt is non-empty', async () => {
-        if (!zipContents) throw new Error('No zip contents');
-        if (!zipContents.titleTxt || !zipContents.titleTxt.trim()) {
-            throw new Error('title.txt is empty');
-        }
-    });
-
-    // ── Test: alt-text.txt is non-empty ──
-    await test('alt-text.txt is non-empty', async () => {
-        if (!zipContents) throw new Error('No zip contents');
-        if (!zipContents.altTxt || !zipContents.altTxt.trim()) {
-            throw new Error('alt-text.txt is empty');
-        }
-    });
-
-    // ── Test: PNG has valid signature ──
-    await test('PNG blob has valid PNG signature', async () => {
+    // ── Test: Download Visual ZIP PNG has valid signature ──
+    await test('Download Visual ZIP PNG has valid PNG signature', async () => {
         if (!zipContents) throw new Error('No zip contents');
         if (!zipContents.pngSignatureValid) {
             throw new Error('PNG signature bytes do not match 0x89504E47');
         }
-    });
-
-    // ── Test: Export button disables after slider change ──
-    await test('Export button disables after slider change (stillRendered = false)', async () => {
-        // Re-open panel/config in case state changed
-        await ensurePanelOpen(page);
-        await ensureConfigExpanded(page);
-        await scrollToElement(page, '#density');
-        await setSlider(page, 'density', 0.92);
-        await page.waitForTimeout(500);
-        await scrollToElement(page, '#exportBtn');
-        await assertDisabled(page, '#exportBtn');
-    });
-
-    // ── Test: Export re-enabled after page reload (deliberate render) ──
-    await test('Export re-enabled after page reload (deliberate render)', async () => {
-        await page.goto('http://localhost:5204', { waitUntil: 'domcontentloaded', timeout: 30000 });
-        await page.waitForTimeout(3000);
-
-        await ensurePanelOpen(page);
-        await ensureConfigExpanded(page);
-        await waitForStillRendered(page);
-        await scrollToElement(page, '#exportBtn');
-        await assertEnabled(page, '#exportBtn');
     });
 
     // ── Final: no page errors ──
@@ -182,9 +217,19 @@ try {
         assertNoPageErrors(errors);
     });
 
-} finally {
-    await cleanup();
+    return { passed, failed };
 }
 
-console.log(`\nExport: ${passed} passed, ${failed} failed\n`);
-process.exit(failed > 0 ? 1 : 0);
+// ── Standalone entry ──
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith(path.basename(__filename))) {
+    const { createTestContext } = await import('./helpers/browser.mjs');
+    const { page, errors, cleanup } = await createTestContext();
+    try {
+        const r = await runTests(page, errors);
+        console.log(`\nExport: ${r.passed} passed, ${r.failed} failed\n`);
+        process.exit(r.failed > 0 ? 1 : 0);
+    } finally {
+        await cleanup();
+    }
+}

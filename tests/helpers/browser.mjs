@@ -3,9 +3,36 @@
  */
 import { chromium } from 'playwright';
 
-const BASE_URL = 'http://localhost:5204';
+export const BASE_URL = 'http://localhost:5204';
 const VIEWPORT = { width: 1400, height: 900 };
-const INIT_WAIT_MS = 3000;
+const GOTO_RETRIES = 3;
+const APP_READY_TIMEOUT = 30000;
+
+/** Navigate to a URL with retry logic (handles transient ERR_ABORTED under parallel load). */
+async function gotoWithRetry(page, url, opts = {}, retries = GOTO_RETRIES) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000, ...opts });
+            return;
+        } catch (err) {
+            if (attempt === retries) throw err;
+            console.log(`  (page.goto attempt ${attempt} failed, retrying in 2s...)`);
+            await page.waitForTimeout(2000);
+        }
+    }
+}
+
+/**
+ * Wait for the app to be fully initialized.
+ * The export button is created at the end of main.js, so its existence
+ * means all modules loaded and the app ran to completion.
+ */
+async function waitForAppReady(page, timeout = APP_READY_TIMEOUT) {
+    await page.waitForFunction(
+        () => document.getElementById('exportBtn') !== null,
+        { timeout }
+    );
+}
 
 /**
  * Create a test context with browser, page, error collector, and cleanup.
@@ -13,24 +40,34 @@ const INIT_WAIT_MS = 3000;
  * @param {boolean} [opts.clearStorage=true] Clear localStorage before tests
  * @returns {Promise<{ browser, page, errors: string[], cleanup: () => Promise<void> }>}
  */
-export async function createTestContext({ clearStorage = true } = {}) {
+export async function createTestContext({ clearStorage = true, animation = true } = {}) {
     const headed = process.env.HEADED === '1';
     const browser = await chromium.launch({
         headless: !headed,
-        args: ['--use-gl=angle'],
+        args: ['--use-gl=angle', '--disable-dev-shm-usage'],
     });
     const page = await browser.newPage({ viewport: VIEWPORT });
+
+    // Block Vite HMR WebSocket to prevent mid-test page reloads.
+    // Under parallel load, HMR reconnection attempts can destroy execution contexts.
+    await page.routeWebSocket('**', ws => {
+        // Intercept but don't connect — HMR stays in CONNECTING state harmlessly.
+        // Vite's client handles this gracefully (just logs a warning).
+    });
 
     const errors = [];
     page.on('pageerror', err => errors.push(err.message));
 
-    await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-    await page.waitForTimeout(INIT_WAIT_MS);
+    await gotoWithRetry(page, BASE_URL);
+    await waitForAppReady(page);
 
     if (clearStorage) {
-        await page.evaluate(() => localStorage.clear());
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-        await page.waitForTimeout(INIT_WAIT_MS);
+        await page.evaluate((anim) => {
+            localStorage.clear();
+            if (!anim) localStorage.setItem('geo-anim-enabled', 'false');
+        }, animation);
+        await gotoWithRetry(page, BASE_URL);
+        await waitForAppReady(page);
     }
 
     async function cleanup() {
@@ -38,6 +75,40 @@ export async function createTestContext({ clearStorage = true } = {}) {
     }
 
     return { browser, page, errors, cleanup };
+}
+
+/**
+ * Reset page state between sub-suites in group runners.
+ * Clears errors, localStorage, and reloads the page.
+ * @param {object} [opts]
+ * @param {boolean} [opts.animation=true] - Set false to disable morph animation.
+ */
+export async function resetPage(page, errors, { animation = true } = {}) {
+    errors.length = 0;
+    await page.evaluate((anim) => {
+        localStorage.clear();
+        if (!anim) localStorage.setItem('geo-anim-enabled', 'false');
+    }, animation);
+    await gotoWithRetry(page, BASE_URL);
+    await waitForAppReady(page);
+}
+
+/**
+ * Reload the page with retry logic and wait for app readiness.
+ * Use this in tests instead of raw page.goto() for resilience under parallel load.
+ */
+export async function reloadPage(page) {
+    await gotoWithRetry(page, BASE_URL);
+    await waitForAppReady(page);
+}
+
+/**
+ * Navigate to an arbitrary URL with retry logic and wait for app readiness.
+ * Use this for URL-state tests that need parameterized URLs.
+ */
+export async function navigateToURL(page, url) {
+    await gotoWithRetry(page, url);
+    await waitForAppReady(page);
 }
 
 /**

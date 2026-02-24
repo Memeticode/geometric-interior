@@ -1,7 +1,9 @@
 /**
  * Profile management tests: CRUD, gallery, ordering, active indicator.
  */
-import { createTestContext, ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
 import { setSeed, setSlider, setProfileName, readControlsFromPage } from './helpers/controls.mjs';
 import { waitForStillRendered, waitForMorphComplete, sleep } from './helpers/waits.mjs';
 import { assertNoPageErrors } from './helpers/assertions.mjs';
@@ -11,73 +13,57 @@ import {
     getProfileCardNames,
 } from './helpers/profiles.mjs';
 
-let passed = 0, failed = 0;
+export async function runTests(page, errors) {
+    let passed = 0, failed = 0;
 
-async function test(name, fn) {
-    try {
-        await fn();
-        passed++;
-        console.log(`  PASS: ${name}`);
-    } catch (err) {
-        failed++;
-        console.error(`  FAIL: ${name}`);
-        console.error(`    ${err.message}`);
-    }
-}
-
-/**
- * Dismiss confirm modal if visible. Clicks the button matching the given value,
- * or the first button if no value specified.
- */
-async function dismissConfirm(page, buttonValue = 'discard') {
-    const dismissed = await page.evaluate((val) => {
-        const modal = document.getElementById('confirmModal');
-        if (!modal || modal.classList.contains('hidden')) return false;
-        const buttons = modal.querySelectorAll('#confirmActions button');
-        for (const btn of buttons) {
-            if (btn.textContent.toLowerCase().includes(val)) {
-                btn.click();
-                return true;
-            }
+    async function test(name, fn) {
+        try {
+            await fn();
+            passed++;
+            console.log(`  PASS: ${name}`);
+        } catch (err) {
+            failed++;
+            console.error(`  FAIL: ${name}`);
+            console.error(`    ${err.message}`);
         }
-        // Fallback: click first button
-        if (buttons.length > 0) { buttons[0].click(); return true; }
-        return false;
-    }, buttonValue);
-    if (dismissed) await sleep(400);
-    return dismissed;
-}
+    }
 
-/**
- * Click a profile card and dismiss any "unsaved changes" confirm that appears.
- */
-async function clickProfileAndDismiss(page, profileName) {
-    await clickAnyProfileCard(page, profileName);
-    await sleep(300);
-    await dismissConfirm(page, 'discard');
-}
+    async function dismissConfirm(buttonValue = 'discard') {
+        const dismissed = await page.evaluate((val) => {
+            const modal = document.getElementById('confirmModal');
+            if (!modal || modal.classList.contains('hidden')) return false;
+            const buttons = modal.querySelectorAll('#confirmActions button');
+            for (const btn of buttons) {
+                if (btn.textContent.toLowerCase().includes(val)) {
+                    btn.click();
+                    return true;
+                }
+            }
+            if (buttons.length > 0) { buttons[0].click(); return true; }
+            return false;
+        }, buttonValue);
+        if (dismissed) await sleep(400);
+        return dismissed;
+    }
 
-/**
- * Save profile via evaluate (bypasses pointer interception from modals).
- */
-async function saveProfileViaEval(page) {
-    await page.evaluate(() => {
-        document.getElementById('saveProfile').click();
-    });
-    await sleep(500);
-    // Dismiss overwrite confirm if it appears
-    await dismissConfirm(page, 'overwrite');
-    await sleep(300);
-}
+    async function clickProfileAndDismiss(profileName) {
+        await clickAnyProfileCard(page, profileName);
+        await sleep(300);
+        await dismissConfirm('discard');
+    }
 
-console.log('\n=== Profile Tests ===\n');
+    async function saveProfileViaEval() {
+        await page.evaluate(() => {
+            document.getElementById('saveProfile').click();
+        });
+        await sleep(500);
+        await dismissConfirm('overwrite');
+        await sleep(300);
+    }
 
-const { page, errors, cleanup } = await createTestContext();
+    console.log('\n=== Profile Tests ===\n');
 
-try {
     await waitForStillRendered(page);
-
-    // Open panel and expand config for access to seed/name fields
     await ensurePanelOpen(page);
     await ensureConfigExpanded(page);
 
@@ -96,7 +82,7 @@ try {
         await setSlider(page, 'density', 0.73);
         await sleep(300);
 
-        await saveProfileViaEval(page);
+        await saveProfileViaEval();
 
         const profiles = await getLocalStorageProfiles(page);
         if (!profiles['Save Test Profile']) {
@@ -110,16 +96,13 @@ try {
 
     // ── Test: Load saved profile restores controls ──
     await test('Load saved profile restores all controls after morph', async () => {
-        // Change to different state via sliders
         await setSlider(page, 'density', 0.1);
         await setSlider(page, 'luminosity', 0.1);
         await sleep(500);
 
-        // Click the saved profile card — dismiss unsaved changes confirm
-        await clickProfileAndDismiss(page, 'Save Test Profile');
-        await waitForMorphComplete(page, 8000);
+        await clickProfileAndDismiss('Save Test Profile');
+        await waitForMorphComplete(page);
 
-        // Verify controls match saved values
         const controls = await readControlsFromPage(page);
         if (Math.abs(controls.density - 0.73) > 0.05) {
             throw new Error(`Expected density ~0.73, got ${controls.density}`);
@@ -128,20 +111,18 @@ try {
 
     // ── Test: Profile card sets active indicator ──
     await test('Profile card click sets active-profile indicator', async () => {
-        // Click a portrait
         const portraitName = await page.$eval(
             '#portraitGallery .profile-card .profile-card-name',
             el => el.textContent
         );
-        await clickProfileAndDismiss(page, portraitName);
-        await waitForMorphComplete(page, 8000);
+        await clickProfileAndDismiss(portraitName);
+        await waitForMorphComplete(page);
 
         const activeName = await getActiveProfileCardName(page);
         if (activeName !== portraitName) {
             throw new Error(`Expected active card "${portraitName}", got "${activeName}"`);
         }
 
-        // Verify only one active card
         const activeCount = await page.$$eval('.profile-card.active-profile', els => els.length);
         if (activeCount !== 1) {
             throw new Error(`Expected 1 active card, found ${activeCount}`);
@@ -150,18 +131,16 @@ try {
 
     // ── Test: Save more profiles for ordering tests ──
     await test('Save additional profiles for ordering test', async () => {
-        // Save profile A — unique name
         await setSeed(page, 'order-a');
         await setProfileName(page, 'Order A');
         await sleep(200);
-        await saveProfileViaEval(page);
+        await saveProfileViaEval();
 
-        // Save profile B — unique name
         await setSeed(page, 'order-b');
         await setProfileName(page, 'Order B');
         await setSlider(page, 'density', 0.55);
         await sleep(200);
-        await saveProfileViaEval(page);
+        await saveProfileViaEval();
 
         const profiles = await getLocalStorageProfiles(page);
         if (!profiles['Order A'] || !profiles['Order B']) {
@@ -179,7 +158,6 @@ try {
             throw new Error(`Order A or Order B not found in profile order: ${orderBefore.join(', ')}`);
         }
 
-        // Move Order B up
         await moveProfileCard(page, 'Order B', 'up');
         await sleep(300);
 
@@ -209,22 +187,18 @@ try {
 
     // ── Test: Delete profile ──
     await test('Delete profile removes from localStorage and gallery', async () => {
-        // First save a profile to delete — unique name
         await setSeed(page, 'delete-me-seed');
         await setProfileName(page, 'Delete Me');
         await setSlider(page, 'fracture', 0.33);
         await sleep(200);
-        await saveProfileViaEval(page);
+        await saveProfileViaEval();
 
-        // Verify it exists
         let profiles = await getLocalStorageProfiles(page);
         if (!profiles['Delete Me']) throw new Error('Profile "Delete Me" not saved');
 
-        // Delete it
         await deleteProfileCard(page, 'Delete Me');
         await sleep(500);
 
-        // Verify it's gone
         profiles = await getLocalStorageProfiles(page);
         if (profiles['Delete Me']) {
             throw new Error('Profile "Delete Me" still exists after deletion');
@@ -241,9 +215,19 @@ try {
         assertNoPageErrors(errors);
     });
 
-} finally {
-    await cleanup();
+    return { passed, failed };
 }
 
-console.log(`\nProfiles: ${passed} passed, ${failed} failed\n`);
-process.exit(failed > 0 ? 1 : 0);
+// ── Standalone entry ──
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith(path.basename(__filename))) {
+    const { createTestContext } = await import('./helpers/browser.mjs');
+    const { page, errors, cleanup } = await createTestContext();
+    try {
+        const r = await runTests(page, errors);
+        console.log(`\nProfiles: ${r.passed} passed, ${r.failed} failed\n`);
+        process.exit(r.failed > 0 ? 1 : 0);
+    } finally {
+        await cleanup();
+    }
+}

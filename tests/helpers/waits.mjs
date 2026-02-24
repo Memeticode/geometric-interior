@@ -10,32 +10,57 @@ export function sleep(ms) {
 }
 
 /**
+ * Generic polling utility. Calls conditionFn repeatedly until it returns true.
+ * @param {() => Promise<boolean>} conditionFn
+ * @param {object} [opts]
+ * @param {number} [opts.timeout=10000]
+ * @param {number} [opts.interval=200]
+ * @param {string} [opts.label='']
+ */
+export async function waitFor(conditionFn, { timeout = 10000, interval = 200, label = '' } = {}) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+        if (await conditionFn()) return;
+        await sleep(interval);
+    }
+    throw new Error(`waitFor timed out after ${timeout}ms${label ? ': ' + label : ''}`);
+}
+
+/**
  * Wait until stillRendered is true (export button enabled).
  * This is the canonical signal that a render cycle has completed.
  */
-export async function waitForStillRendered(page, timeout = 8000) {
+export async function waitForStillRendered(page, timeout = 30000) {
     await page.waitForFunction(
         () => {
             const btn = document.getElementById('exportBtn');
             return btn && !btn.disabled;
         },
+        null,
         { timeout }
     );
 }
 
 /**
- * Wait for a morph to complete: MORPH_DURATION_MS (1500) + buffer,
- * then verify render is done via export button.
+ * Wait for a morph to complete. Polls exportBtn.disabled === false
+ * which maps to stillRendered=true set by morph onComplete handler.
+ * Uses generous timeout since scene building is slow in headless Chrome.
  */
-export async function waitForMorphComplete(page, timeout = 5000) {
-    await sleep(2000); // 1500ms morph + 500ms buffer
-    await waitForStillRendered(page, timeout);
+export async function waitForMorphComplete(page, timeout = 90000) {
+    await page.waitForFunction(
+        () => {
+            const btn = document.getElementById('exportBtn');
+            return btn && !btn.disabled;
+        },
+        null,
+        { timeout }
+    );
 }
 
 /**
  * Wait for a toast message to appear with the given text.
  */
-export async function waitForToast(page, text, timeout = 5000) {
+export async function waitForToast(page, text, timeout = 10000) {
     await page.waitForFunction(
         (t) => {
             const toasts = document.querySelectorAll('.toast');
@@ -51,7 +76,7 @@ export async function waitForToast(page, text, timeout = 5000) {
 /**
  * Wait until a modal is visible (not hidden).
  */
-export async function waitForModalOpen(page, selector, timeout = 3000) {
+export async function waitForModalOpen(page, selector, timeout = 5000) {
     await page.waitForFunction(
         (sel) => {
             const el = document.querySelector(sel);
@@ -65,7 +90,7 @@ export async function waitForModalOpen(page, selector, timeout = 3000) {
 /**
  * Wait until a modal is hidden.
  */
-export async function waitForModalClosed(page, selector, timeout = 3000) {
+export async function waitForModalClosed(page, selector, timeout = 5000) {
     await page.waitForFunction(
         (sel) => {
             const el = document.querySelector(sel);

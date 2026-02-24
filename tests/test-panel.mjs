@@ -1,33 +1,32 @@
 /**
  * Panel tests: open/close, persistence, control visibility, mobile backdrop.
  */
-import { createTestContext, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
 import { waitForStillRendered } from './helpers/waits.mjs';
 import { assertVisible, assertHasClass, assertNotHasClass } from './helpers/assertions.mjs';
 import { getPanelCollapsedState } from './helpers/profiles.mjs';
 
-let passed = 0, failed = 0;
+export async function runTests(page, errors) {
+    let passed = 0, failed = 0;
 
-async function test(name, fn) {
-    try {
-        await fn();
-        passed++;
-        console.log(`  PASS: ${name}`);
-    } catch (err) {
-        failed++;
-        console.error(`  FAIL: ${name}`);
-        console.error(`    ${err.message}`);
+    async function test(name, fn) {
+        try {
+            await fn();
+            passed++;
+            console.log(`  PASS: ${name}`);
+        } catch (err) {
+            failed++;
+            console.error(`  FAIL: ${name}`);
+            console.error(`    ${err.message}`);
+        }
     }
-}
 
-console.log('\n=== Panel Tests ===\n');
+    console.log('\n=== Panel Tests ===\n');
 
-const { page, cleanup } = await createTestContext();
-
-try {
     await waitForStillRendered(page);
 
-    // Helper: check panel state
     async function isPanelOpen() {
         return page.evaluate(() => {
             const panel = document.querySelector('.panel');
@@ -37,13 +36,11 @@ try {
 
     // ── Test: Panel opens on toggle click ──
     await test('Panel opens when toggle is clicked', async () => {
-        // Ensure panel is closed first
         const open = await isPanelOpen();
         if (open) {
             await page.click('#panelToggle');
             await page.waitForTimeout(400);
         }
-        // Now open it
         await page.click('#panelToggle');
         await page.waitForTimeout(400);
         const nowOpen = await isPanelOpen();
@@ -52,12 +49,10 @@ try {
 
     // ── Test: Panel closes on second toggle click ──
     await test('Panel closes when toggle is clicked again', async () => {
-        // Ensure panel is open
         if (!(await isPanelOpen())) {
             await page.click('#panelToggle');
             await page.waitForTimeout(400);
         }
-        // Close it
         await page.click('#panelToggle');
         await page.waitForTimeout(400);
         const nowOpen = await isPanelOpen();
@@ -66,7 +61,6 @@ try {
 
     // ── Test: Panel state persists to localStorage ──
     await test('Panel state persists to localStorage', async () => {
-        // Open panel
         if (!(await isPanelOpen())) {
             await page.click('#panelToggle');
             await page.waitForTimeout(400);
@@ -74,7 +68,6 @@ try {
         const openState = await getPanelCollapsedState(page);
         if (openState === 'true') throw new Error('localStorage says collapsed when panel is open');
 
-        // Close panel
         await page.click('#panelToggle');
         await page.waitForTimeout(400);
         const closedState = await getPanelCollapsedState(page);
@@ -83,15 +76,12 @@ try {
 
     // ── Test: Sliders visible when panel is open and config expanded ──
     await test('Sliders are visible when panel is open and config expanded', async () => {
-        // Open panel
         if (!(await isPanelOpen())) {
             await page.click('#panelToggle');
             await page.waitForTimeout(400);
         }
-        // Expand config section
         await ensureConfigExpanded(page);
 
-        // Check sliders are visible (scroll to each one)
         for (const id of ['density', 'luminosity', 'fracture', 'depth', 'coherence']) {
             await scrollToElement(page, `#${id}`);
             const visible = await page.$eval(`#${id}`, el => {
@@ -104,18 +94,15 @@ try {
 
     // ── Test: Panel toggle works on mobile viewport ──
     await test('Panel toggle works on mobile viewport', async () => {
-        // Resize to mobile
         await page.setViewportSize({ width: 768, height: 900 });
         await page.waitForTimeout(300);
 
-        // Open panel
         if (!(await isPanelOpen())) {
             await page.click('#panelToggle');
             await page.waitForTimeout(400);
         }
         if (!(await isPanelOpen())) throw new Error('Panel did not open on mobile');
 
-        // Close panel via toggle
         await page.click('#panelToggle');
         await page.waitForTimeout(400);
         if (await isPanelOpen()) throw new Error('Panel did not close on mobile');
@@ -125,9 +112,19 @@ try {
         await page.waitForTimeout(300);
     });
 
-} finally {
-    await cleanup();
+    return { passed, failed };
 }
 
-console.log(`\nPanel: ${passed} passed, ${failed} failed\n`);
-process.exit(failed > 0 ? 1 : 0);
+// ── Standalone entry ──
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith(path.basename(__filename))) {
+    const { createTestContext } = await import('./helpers/browser.mjs');
+    const { page, errors, cleanup } = await createTestContext();
+    try {
+        const r = await runTests(page, errors);
+        console.log(`\nPanel: ${r.passed} passed, ${r.failed} failed\n`);
+        process.exit(r.failed > 0 ? 1 : 0);
+    } finally {
+        await cleanup();
+    }
+}

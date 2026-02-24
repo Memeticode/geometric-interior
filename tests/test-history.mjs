@@ -1,36 +1,29 @@
 /**
  * History navigation tests: back/forward, boundary disabling, state preservation.
  */
-import { createTestContext, ensurePanelOpen, ensureConfigExpanded } from './helpers/browser.mjs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { ensurePanelOpen, ensureConfigExpanded } from './helpers/browser.mjs';
 import { readControlsFromPage, readPaletteTweaksFromPage, readSeed } from './helpers/controls.mjs';
 import { waitForStillRendered, waitForMorphComplete, sleep } from './helpers/waits.mjs';
 import { assertDisabled, assertEnabled, assertNoPageErrors } from './helpers/assertions.mjs';
 import { clickAnyProfileCard } from './helpers/profiles.mjs';
 
-let passed = 0, failed = 0;
+export async function runTests(page, errors) {
+    let passed = 0, failed = 0;
 
-async function test(name, fn) {
-    try {
-        await fn();
-        passed++;
-        console.log(`  PASS: ${name}`);
-    } catch (err) {
-        failed++;
-        console.error(`  FAIL: ${name}`);
-        console.error(`    ${err.message}`);
+    async function test(name, fn) {
+        try {
+            await fn();
+            passed++;
+            console.log(`  PASS: ${name}`);
+        } catch (err) {
+            failed++;
+            console.error(`  FAIL: ${name}`);
+            console.error(`    ${err.message}`);
+        }
     }
-}
 
-console.log('\n=== History Tests ===\n');
-
-const { page, errors, cleanup } = await createTestContext();
-
-try {
-    await waitForStillRendered(page);
-    await ensurePanelOpen(page);
-    await ensureConfigExpanded(page);
-
-    /** Dismiss confirm modal if visible, clicking the specified button value */
     async function dismissConfirm(buttonValue = 'discard') {
         const dismissed = await page.evaluate((val) => {
             const modal = document.getElementById('confirmModal');
@@ -45,12 +38,17 @@ try {
         if (dismissed) await sleep(400);
     }
 
-    /** Click a profile card and dismiss any unsaved changes confirm */
     async function clickProfileAndDismiss(profileName) {
         await clickAnyProfileCard(page, profileName);
         await sleep(300);
         await dismissConfirm('discard');
     }
+
+    console.log('\n=== History Tests ===\n');
+
+    await waitForStillRendered(page);
+    await ensurePanelOpen(page);
+    await ensureConfigExpanded(page);
 
     // ── Test: Back button disabled initially ──
     await test('Back button is disabled initially', async () => {
@@ -62,12 +60,10 @@ try {
         await assertDisabled(page, '#historyForwardBtn');
     });
 
-    // Get initial seed for comparison
     const initialSeed = await readSeed(page);
 
     // ── Test: Profile click creates history entry ──
     await test('Profile click creates history entry (back becomes enabled)', async () => {
-        // Click a starter portrait
         const portraitName = await page.$eval(
             '#portraitGallery .profile-card .profile-card-name',
             el => el.textContent
@@ -78,7 +74,6 @@ try {
         await assertEnabled(page, '#historyBackBtn');
     });
 
-    // Get portrait seed for comparison
     const portraitSeed = await readSeed(page);
 
     // ── Test: Back restores previous state ──
@@ -105,26 +100,21 @@ try {
 
     // ── Test: Buttons disable at boundaries ──
     await test('Buttons disable at boundaries', async () => {
-        // Go back to start
         await page.evaluate(() => document.getElementById('historyBackBtn').click());
         await waitForMorphComplete(page);
 
-        // At start: back should be disabled, forward enabled
         await assertDisabled(page, '#historyBackBtn');
         await assertEnabled(page, '#historyForwardBtn');
 
-        // Go forward to end
         await page.evaluate(() => document.getElementById('historyForwardBtn').click());
         await waitForMorphComplete(page);
 
-        // At end: forward should be disabled, back enabled
         await assertDisabled(page, '#historyForwardBtn');
         await assertEnabled(page, '#historyBackBtn');
     });
 
     // ── Test: History preserves controls and palette through round-trip ──
     await test('History preserves seed, controls, and palette tweaks', async () => {
-        // Navigate to a second portrait to create more history
         const portraits = await page.$$eval(
             '#portraitGallery .profile-card .profile-card-name',
             els => els.map(el => el.textContent)
@@ -134,12 +124,10 @@ try {
             await waitForMorphComplete(page);
         }
 
-        // Record current state
         const seedBefore = await readSeed(page);
         const controlsBefore = await readControlsFromPage(page);
         const tweaksBefore = await readPaletteTweaksFromPage(page);
 
-        // Navigate away (click another portrait)
         if (portraits.length > 2) {
             await clickProfileAndDismiss(portraits[2]);
         } else if (portraits.length > 0) {
@@ -147,11 +135,9 @@ try {
         }
         await waitForMorphComplete(page);
 
-        // Navigate back
         await page.evaluate(() => document.getElementById('historyBackBtn').click());
         await waitForMorphComplete(page);
 
-        // Verify state matches
         const seedAfter = await readSeed(page);
         const controlsAfter = await readControlsFromPage(page);
 
@@ -168,15 +154,13 @@ try {
 
     // ── Test: Multiple history entries via randomize ──
     await test('Randomize creates history entries', async () => {
-        // Click randomize a few times
         for (let i = 0; i < 3; i++) {
             await page.evaluate(() => document.getElementById('configRandomizeBtn').click());
             await sleep(300);
             await dismissConfirm('discard');
-            await waitForMorphComplete(page, 8000);
+            await waitForMorphComplete(page);
         }
 
-        // Back button should be enabled (multiple entries)
         await assertEnabled(page, '#historyBackBtn');
     });
 
@@ -185,9 +169,19 @@ try {
         assertNoPageErrors(errors);
     });
 
-} finally {
-    await cleanup();
+    return { passed, failed };
 }
 
-console.log(`\nHistory: ${passed} passed, ${failed} failed\n`);
-process.exit(failed > 0 ? 1 : 0);
+// ── Standalone entry ──
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith(path.basename(__filename))) {
+    const { createTestContext } = await import('./helpers/browser.mjs');
+    const { page, errors, cleanup } = await createTestContext();
+    try {
+        const r = await runTests(page, errors);
+        console.log(`\nHistory: ${r.passed} passed, ${r.failed} failed\n`);
+        process.exit(r.failed > 0 ? 1 : 0);
+    } finally {
+        await cleanup();
+    }
+}

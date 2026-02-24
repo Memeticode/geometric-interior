@@ -2,34 +2,34 @@
  * Rendering tests: canvas integrity, combos, palettes, determinism.
  * Replaces the original test-render.mjs with extended coverage.
  */
-import { createTestContext, screenshotCanvas, ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { screenshotCanvas, ensurePanelOpen, ensureConfigExpanded, scrollToElement, reloadPage } from './helpers/browser.mjs';
 import { setAllControls, triggerRender, selectPalette } from './helpers/controls.mjs';
 import { waitForRender, waitForStillRendered } from './helpers/waits.mjs';
 import { assertCanvasNonEmpty, assertScreenshotsDiffer, assertNoPageErrors } from './helpers/assertions.mjs';
 import { RENDER_COMBOS, ALL_PALETTE_KEYS } from './helpers/constants.mjs';
 
-let passed = 0, failed = 0;
-const results = [];
+export async function runTests(page, errors) {
+    let passed = 0, failed = 0;
+    const results = [];
 
-async function test(name, fn) {
-    try {
-        await fn();
-        passed++;
-        results.push({ name, status: 'PASS' });
-        console.log(`  PASS: ${name}`);
-    } catch (err) {
-        failed++;
-        results.push({ name, status: 'FAIL', error: err.message });
-        console.error(`  FAIL: ${name}`);
-        console.error(`    ${err.message}`);
+    async function test(name, fn) {
+        try {
+            await fn();
+            passed++;
+            results.push({ name, status: 'PASS' });
+            console.log(`  PASS: ${name}`);
+        } catch (err) {
+            failed++;
+            results.push({ name, status: 'FAIL', error: err.message });
+            console.error(`  FAIL: ${name}`);
+            console.error(`    ${err.message}`);
+        }
     }
-}
 
-console.log('\n=== Rendering Tests ===\n');
+    console.log('\n=== Rendering Tests ===\n');
 
-const { browser, page, errors, cleanup } = await createTestContext();
-
-try {
     // ── Test: All 14 combos render without page errors ──
     await test('All 14 combos render without page errors', async () => {
         for (const combo of RENDER_COMBOS) {
@@ -89,7 +89,6 @@ try {
 
     // ── Test: Canvas has non-uniform pixels ──
     await test('Canvas has non-uniform pixels (not solid black)', async () => {
-        // Just take a screenshot after the last render (no need to wait for stillRendered)
         const shot = await screenshotCanvas(page);
         assertCanvasNonEmpty(shot);
     });
@@ -116,7 +115,6 @@ try {
 
     // ── Test: Deterministic rendering ──
     await test('Deterministic rendering (same seed+controls = same screenshot)', async () => {
-        // Set FULL state including palette tweaks for reproducibility
         const fullSetup = async () => {
             await ensurePanelOpen(page);
             await ensureConfigExpanded(page);
@@ -128,7 +126,6 @@ try {
                 density: 0.5, luminosity: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5,
             });
             await selectPalette(page, 'violet-depth');
-            // Also set palette tweaks explicitly
             await page.evaluate(() => {
                 document.getElementById('customHue').value = 135;
                 document.getElementById('customHueRange').value = 53;
@@ -142,13 +139,12 @@ try {
         const shotA = await screenshotCanvas(page);
 
         // Reload and render same config
-        await page.goto('http://localhost:5204', { waitUntil: 'domcontentloaded', timeout: 30000 });
-        await page.waitForTimeout(3000);
+        await reloadPage(page);
+        await waitForStillRendered(page);
 
         await fullSetup();
         const shotB = await screenshotCanvas(page);
 
-        // Compare with generous tolerance (WebGL rendering can have minor antialiasing/timing diffs)
         const a = new Uint8Array(shotA);
         const b = new Uint8Array(shotB);
         let diffCount = 0;
@@ -157,7 +153,6 @@ try {
             if (a[i] !== b[i]) diffCount++;
         }
         const diffPct = diffCount / len;
-        // Allow up to 5% difference for WebGL rendering variability
         if (diffPct > 0.05) {
             throw new Error(`Screenshots differ by ${(diffPct * 100).toFixed(2)}% of bytes (expected <5%)`);
         }
@@ -168,9 +163,19 @@ try {
         assertNoPageErrors(errors);
     });
 
-} finally {
-    await cleanup();
+    return { passed, failed };
 }
 
-console.log(`\nRendering: ${passed} passed, ${failed} failed\n`);
-process.exit(failed > 0 ? 1 : 0);
+// ── Standalone entry ──
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith(path.basename(__filename))) {
+    const { createTestContext } = await import('./helpers/browser.mjs');
+    const { page, errors, cleanup } = await createTestContext();
+    try {
+        const r = await runTests(page, errors);
+        console.log(`\nRendering: ${r.passed} passed, ${r.failed} failed\n`);
+        process.exit(r.failed > 0 ? 1 : 0);
+    } finally {
+        await cleanup();
+    }
+}

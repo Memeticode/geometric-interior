@@ -9,6 +9,7 @@ uniform float uBackLightFactor;
 uniform float uIlluminationCap;
 uniform float uAmbientLight;
 uniform float uEdgeFadeThreshold;
+uniform float uMorphFade;
 
 varying float fAlpha;
 varying vec3 vWorldPos;
@@ -166,5 +167,5 @@ void main() {
     finalAlpha *= edgeFade;
     finalColor *= edgeFade;
 
-    gl_FragColor = vec4(finalColor, max(finalAlpha, 0.0));
+    gl_FragColor = vec4(finalColor * uMorphFade, max(finalAlpha, 0.0) * uMorphFade);
 }

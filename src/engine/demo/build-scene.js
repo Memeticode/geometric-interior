@@ -33,10 +33,12 @@ export function buildDemoScene(params, rng, scene) {
     const { sphereInstData, glowPointData, allDotPositions, lightUniforms } = dotResult;
 
     // --- 3. Build light sphere InstancedMesh ---
+    let sphereInst = null;
+    let sphereMat = null;
     if (sphereInstData.length > 0) {
         const sphereGeo = new THREE.SphereGeometry(1, 16, 12);
-        const sphereMat = new THREE.MeshBasicMaterial({ depthWrite: false });
-        const sphereInst = new THREE.InstancedMesh(sphereGeo, sphereMat, sphereInstData.length);
+        sphereMat = new THREE.MeshBasicMaterial({ depthWrite: false });
+        sphereInst = new THREE.InstancedMesh(sphereGeo, sphereMat, sphereInstData.length);
         const dummy = new THREE.Object3D();
         for (let i = 0; i < sphereInstData.length; i++) {
             dummy.position.copy(sphereInstData[i].position);
@@ -53,6 +55,8 @@ export function buildDemoScene(params, rng, scene) {
 
     // --- 4. Build glow points ---
     const glowTexture = createGlowTexture();
+    let glowPoints = null;
+    let glowMat = null;
     if (glowPointData.length > 0) {
         const positions = new Float32Array(glowPointData.length * 3);
         const sizes = new Float32Array(glowPointData.length);
@@ -65,8 +69,8 @@ export function buildDemoScene(params, rng, scene) {
         const glowGeom = new THREE.BufferGeometry();
         glowGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         glowGeom.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
-        const glowMat = createDemoGlowMaterial(glowTexture);
-        const glowPoints = new THREE.Points(glowGeom, glowMat);
+        glowMat = createDemoGlowMaterial(glowTexture);
+        glowPoints = new THREE.Points(glowGeom, glowMat);
         glowPoints.frustumCulled = false;
         glowPoints.renderOrder = 0;
         scene.add(glowPoints);
@@ -163,6 +167,8 @@ export function buildDemoScene(params, rng, scene) {
     // --- 6. Build batched face mesh ---
     const { faceAccum, edgeAccum } = accum;
     let faceCount = 0;
+    let faceMesh = null;
+    let faceMat = null;
 
     if (faceAccum.pos.length > 0) {
         const geom = new THREE.BufferGeometry();
@@ -176,18 +182,19 @@ export function buildDemoScene(params, rng, scene) {
         geom.setAttribute('aNoiseStrength', new THREE.BufferAttribute(new Float32Array(faceAccum.noiseStrength), 1));
         geom.setAttribute('aCrackExtend', new THREE.BufferAttribute(new Float32Array(faceAccum.crackExtend), 1));
 
-        const mat = createDemoFaceMaterial(lightUniforms, params);
-        // Update camera position uniform to match actual camera
-        mat.uniforms.uCameraPos.value.set(0, 0, params.cameraZ);
+        faceMat = createDemoFaceMaterial(lightUniforms, params);
+        faceMat.uniforms.uCameraPos.value.set(0, 0, params.cameraZ);
 
-        const mesh = new THREE.Mesh(geom, mat);
-        mesh.frustumCulled = false;
-        mesh.renderOrder = 1;
-        scene.add(mesh);
-        faceCount = faceAccum.pos.length / 9; // 3 verts * 3 components per tri
+        faceMesh = new THREE.Mesh(geom, faceMat);
+        faceMesh.frustumCulled = false;
+        faceMesh.renderOrder = 1;
+        scene.add(faceMesh);
+        faceCount = faceAccum.pos.length / 9;
     }
 
     // --- 7. Build batched edge mesh ---
+    let edgeLines = null;
+    let edgeMat = null;
     if (edgeAccum.pos.length > 0) {
         const geom = new THREE.BufferGeometry();
         geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(edgeAccum.pos), 3));
@@ -195,11 +202,11 @@ export function buildDemoScene(params, rng, scene) {
         geom.setAttribute('aColor', new THREE.BufferAttribute(new Float32Array(edgeAccum.color), 3));
         geom.setAttribute('aOpacity', new THREE.BufferAttribute(new Float32Array(edgeAccum.opacity), 1));
 
-        const mat = createDemoEdgeMaterial();
-        const lines = new THREE.LineSegments(geom, mat);
-        lines.frustumCulled = false;
-        lines.renderOrder = 1;
-        scene.add(lines);
+        edgeMat = createDemoEdgeMaterial();
+        edgeLines = new THREE.LineSegments(geom, edgeMat);
+        edgeLines.frustumCulled = false;
+        edgeLines.renderOrder = 1;
+        scene.add(edgeLines);
     }
 
     // --- 8. Build tendril curves ---
@@ -232,11 +239,13 @@ export function buildDemoScene(params, rng, scene) {
                 ptColors[k], ptColors[k + 1], ptColors[k + 2]);
         }
     }
+    let tendrilLines = null;
+    let tendrilMat = null;
     if (tendrilPos.length > 0) {
         const geom = new THREE.BufferGeometry();
         geom.setAttribute('position', new THREE.Float32BufferAttribute(tendrilPos, 3));
         geom.setAttribute('color', new THREE.Float32BufferAttribute(tendrilCol, 3));
-        const mat = new THREE.LineBasicMaterial({
+        tendrilMat = new THREE.LineBasicMaterial({
             vertexColors: true,
             transparent: true,
             opacity: 1.0,
@@ -245,14 +254,28 @@ export function buildDemoScene(params, rng, scene) {
             blendDst: THREE.OneFactor,
             depthWrite: false,
         });
-        const lines = new THREE.LineSegments(geom, mat);
-        lines.renderOrder = 1;
-        scene.add(lines);
+        tendrilLines = new THREE.LineSegments(geom, tendrilMat);
+        tendrilLines.renderOrder = 1;
+        scene.add(tendrilLines);
     }
 
     return {
         nodeCount: allDotPositions.length,
         faceCount,
+        refs: {
+            glowPoints,
+            glowMat,
+            sphereInst,
+            sphereMat,
+            faceMesh,
+            faceMat,
+            edgeLines,
+            edgeMat,
+            tendrilLines,
+            tendrilMat,
+            glowPointData,
+            lightUniforms,
+        },
     };
 }
 

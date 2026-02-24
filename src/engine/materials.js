@@ -100,6 +100,7 @@ export function createDemoFaceMaterial(lightUniforms, config) {
             uIlluminationCap: { value: config.illuminationCap },
             uAmbientLight: { value: config.ambientLight },
             uEdgeFadeThreshold: { value: config.edgeFadeThreshold },
+            uMorphFade: { value: 1.0 },
         },
         vertexShader: demoFaceVertSrc,
         fragmentShader: demoFaceFragSrc,
@@ -115,6 +116,9 @@ export function createDemoFaceMaterial(lightUniforms, config) {
  */
 export function createDemoEdgeMaterial() {
     return new THREE.ShaderMaterial({
+        uniforms: {
+            uMorphFade: { value: 1.0 },
+        },
         vertexShader: `
             attribute float vAlpha;
             attribute vec3 aColor;
@@ -130,11 +134,12 @@ export function createDemoEdgeMaterial() {
             }
         `,
         fragmentShader: `
+            uniform float uMorphFade;
             varying float fAlpha;
             varying vec3 vEdgeColor;
             varying float vEdgeOpacity;
             void main() {
-                gl_FragColor = vec4(vEdgeColor, vEdgeOpacity * fAlpha);
+                gl_FragColor = vec4(vEdgeColor * uMorphFade, vEdgeOpacity * fAlpha * uMorphFade);
             }
         `,
         transparent: true,
@@ -148,7 +153,11 @@ export function createDemoEdgeMaterial() {
  */
 export function createDemoGlowMaterial(glowTexture) {
     return new THREE.ShaderMaterial({
-        uniforms: { uGlowMap: { value: glowTexture } },
+        uniforms: {
+            uGlowMap: { value: glowTexture },
+            uMorphFade: { value: 1.0 },
+            uMorphT: { value: 0.0 },
+        },
         vertexShader: demoGlowVertSrc,
         fragmentShader: demoGlowFragSrc,
         transparent: true,

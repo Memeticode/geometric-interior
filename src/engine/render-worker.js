@@ -15,6 +15,29 @@ let pendingRender = null;
 let renderScheduled = false;
 let lastRenderReq = null;
 
+/* ── Morph state ── */
+let morphActive = false;
+let morphTimer = null;
+let morphFrame = 0;
+const MORPH_FRAMES = 72;
+const MORPH_FRAME_MS = 1000 / 24; // 41.67ms → 24fps
+
+function renderMorphFrame() {
+    if (!morphActive || morphFrame >= MORPH_FRAMES) {
+        if (renderer && morphActive) renderer.morphEnd();
+        morphActive = false;
+        morphTimer = null;
+        self.postMessage({ type: 'morph-complete' });
+        return;
+    }
+    const tRaw = morphFrame / (MORPH_FRAMES - 1);
+    const t = 0.5 * (1 - Math.cos(Math.PI * tRaw)); // cosine ease
+    renderer.morphUpdate(t);
+    self.postMessage({ type: 'morph-frame', frameIndex: morphFrame, totalFrames: MORPH_FRAMES });
+    morphFrame++;
+    morphTimer = setTimeout(renderMorphFrame, MORPH_FRAME_MS);
+}
+
 function scheduleFrame(fn) {
     if (typeof requestAnimationFrame === 'function') {
         requestAnimationFrame(fn);
@@ -105,8 +128,49 @@ self.onmessage = function (e) {
             break;
 
         case 'render':
+            if (morphActive) break; // ignore regular renders during morph
             pendingRender = msg;
             scheduleRender();
+            break;
+
+        case 'morph-prepare':
+            if (renderer) {
+                try {
+                    // Sync palette state for both from and to
+                    if (msg.paletteTweaksA) {
+                        for (const [key, tweaks] of Object.entries(msg.paletteTweaksA)) {
+                            updatePalette(key, tweaks);
+                        }
+                    }
+                    if (msg.paletteTweaksB) {
+                        for (const [key, tweaks] of Object.entries(msg.paletteTweaksB)) {
+                            updatePalette(key, tweaks);
+                        }
+                    }
+                    if (msg.width && msg.height) {
+                        renderer.resize(msg.width, msg.height);
+                    }
+                    renderer.morphPrepare(msg.seedA, msg.controlsA, msg.seedB, msg.controlsB);
+                    morphActive = true;
+                    self.postMessage({ type: 'morph-prepared' });
+                } catch (err) {
+                    console.error('[render-worker] morph-prepare error:', err);
+                    self.postMessage({ type: 'morph-prepared', error: err.message });
+                }
+            }
+            break;
+
+        case 'morph-start':
+            if (!morphActive || !renderer) break;
+            morphFrame = 0;
+            renderMorphFrame();
+            break;
+
+        case 'morph-cancel':
+            if (morphTimer !== null) { clearTimeout(morphTimer); morphTimer = null; }
+            if (renderer && morphActive) renderer.morphEnd();
+            morphActive = false;
+            self.postMessage({ type: 'morph-ended' });
             break;
 
         case 'export':

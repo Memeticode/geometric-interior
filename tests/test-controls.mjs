@@ -1,54 +1,49 @@
 /**
  * Controls tests: sliders, palette selection, seed, custom palette, morph cancellation.
  */
-import { createTestContext, screenshotCanvas, ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { screenshotCanvas, ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
 import { setSlider, setSeed, setProfileName, selectPalette, setCustomPalette, readControlsFromPage } from './helpers/controls.mjs';
 import { waitForRender, waitForStillRendered, sleep } from './helpers/waits.mjs';
 import { assertScreenshotsDiffer, assertNoPageErrors } from './helpers/assertions.mjs';
 import { clickAnyProfileCard } from './helpers/profiles.mjs';
 import { SLIDER_KEYS } from './helpers/constants.mjs';
 
-let passed = 0, failed = 0;
+export async function runTests(page, errors) {
+    let passed = 0, failed = 0;
 
-async function test(name, fn) {
-    try {
-        await fn();
-        passed++;
-        console.log(`  PASS: ${name}`);
-    } catch (err) {
-        failed++;
-        console.error(`  FAIL: ${name}`);
-        console.error(`    ${err.message}`);
+    async function test(name, fn) {
+        try {
+            await fn();
+            passed++;
+            console.log(`  PASS: ${name}`);
+        } catch (err) {
+            failed++;
+            console.error(`  FAIL: ${name}`);
+            console.error(`    ${err.message}`);
+        }
     }
-}
 
-console.log('\n=== Controls Tests ===\n');
+    console.log('\n=== Controls Tests ===\n');
 
-const { page, errors, cleanup } = await createTestContext();
-
-try {
     await waitForStillRendered(page);
-
-    // Ensure panel is open and config expanded for slider/palette interaction
     await ensurePanelOpen(page);
     await ensureConfigExpanded(page);
 
     // ── Test: Each slider change affects render output ──
     await test('Each slider change produces different render output', async () => {
         for (const key of SLIDER_KEYS) {
-            // Set to baseline
             await setSlider(page, key, 0.5);
             await waitForRender(page);
             const baseline = await screenshotCanvas(page);
 
-            // Move slider to extreme
             await setSlider(page, key, 0.95);
             await waitForRender(page);
             const changed = await screenshotCanvas(page);
 
             assertScreenshotsDiffer(baseline, changed);
 
-            // Reset
             await setSlider(page, key, 0.5);
             await waitForRender(page);
         }
@@ -119,19 +114,16 @@ try {
 
     // ── Test: Slider change cancels active morph ──
     await test('Slider change cancels active morph', async () => {
-        // Click a portrait to start morph
         const portraitName = await page.$eval(
             '#portraitGallery .profile-card .profile-card-name',
             el => el.textContent
         );
         await clickAnyProfileCard(page, portraitName);
 
-        // Wait a bit then change a slider mid-morph
         await sleep(300);
         await setSlider(page, 'density', 0.15);
         await sleep(200);
 
-        // Density should be near our manual value, not the morph target
         const controls = await readControlsFromPage(page);
         if (Math.abs(controls.density - 0.15) > 0.02) {
             throw new Error(`Expected density ~0.15 after cancel, got ${controls.density}`);
@@ -143,9 +135,19 @@ try {
         assertNoPageErrors(errors);
     });
 
-} finally {
-    await cleanup();
+    return { passed, failed };
 }
 
-console.log(`\nControls: ${passed} passed, ${failed} failed\n`);
-process.exit(failed > 0 ? 1 : 0);
+// ── Standalone entry ──
+const __filename = fileURLToPath(import.meta.url);
+if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith(path.basename(__filename))) {
+    const { createTestContext } = await import('./helpers/browser.mjs');
+    const { page, errors, cleanup } = await createTestContext();
+    try {
+        const r = await runTests(page, errors);
+        console.log(`\nControls: ${r.passed} passed, ${r.failed} failed\n`);
+        process.exit(r.failed > 0 ? 1 : 0);
+    } finally {
+        await cleanup();
+    }
+}
