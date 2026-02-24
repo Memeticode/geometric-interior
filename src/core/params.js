@@ -26,8 +26,6 @@ export function deriveParams(controls, rng) {
     const baseHue = pal.baseHue;
     const hueRange = pal.hueRange;
     const saturation = pal.saturation;
-    const lightness = pal.lightness;
-
     // Background colors — demo near-black, scaled by luminosity
     const lumScale = cl(c.luminosity, 0.5, 1.0, 2.0);
     const bgInnerColor = [0.003 * lumScale, 0.001 * lumScale, 0.006 * lumScale];
@@ -41,7 +39,7 @@ export function deriveParams(controls, rng) {
     ];
 
     // --- Camera (depth — zoom only) ---
-    const cameraZ = cl(dep, 2.25, 3.5, 4.4);
+    const cameraZ = cl(dep, 2.25, 3.5, 3.67);
     const cameraFov = cl(dep, 34, 50, 58);
     const cameraOffsetX = 0;
     const cameraOffsetY = 0;
@@ -205,7 +203,6 @@ export function deriveParams(controls, rng) {
         baseHue,
         hueRange,
         saturation,
-        lightness,
         bgInnerColor,
         bgOuterColor,
         bgColor: pal.bgColor,

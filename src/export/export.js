@@ -47,6 +47,36 @@ function crc32(buf) {
     return (crc ^ 0xFFFFFFFF) >>> 0;
 }
 
+function escapeXml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+function buildXmpString(title, description) {
+    const t = escapeXml(title);
+    const d = escapeXml(description);
+    const a = escapeXml(title + '\n' + description);
+    return [
+        `<?xpacket begin='\xEF\xBB\xBF' id='W5M0MpCehiHzreSzNTczkc9d'?>`,
+        `<x:xmpmeta xmlns:x='adobe:ns:meta/'>`,
+        `  <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>`,
+        `    <rdf:Description rdf:about=''`,
+        `      xmlns:dc='http://purl.org/dc/elements/1.1/'`,
+        `      xmlns:Iptc4xmpExt='http://iptc.org/std/Iptc4xmpExt/2008-02-29/'>`,
+        `      <dc:title><rdf:Alt><rdf:li xml:lang='x-default'>${t}</rdf:li></rdf:Alt></dc:title>`,
+        `      <dc:description><rdf:Alt><rdf:li xml:lang='x-default'>${d}</rdf:li></rdf:Alt></dc:description>`,
+        `      <Iptc4xmpExt:AltTextAccessibility><rdf:Alt><rdf:li xml:lang='en'>${a}</rdf:li></rdf:Alt></Iptc4xmpExt:AltTextAccessibility>`,
+        `    </rdf:Description>`,
+        `  </rdf:RDF>`,
+        `</x:xmpmeta>`,
+        `<?xpacket end='w'?>`,
+    ].join('\n');
+}
+
 function makePngTextChunk(keyword, text) {
     const enc = new TextEncoder();
     const kwBytes = enc.encode(keyword);
@@ -64,13 +94,37 @@ function makePngTextChunk(keyword, text) {
     return chunk;
 }
 
+function makePngItxtChunk(keyword, text) {
+    const enc = new TextEncoder();
+    const kwBytes = enc.encode(keyword);
+    const txtBytes = enc.encode(text);
+    // iTXt: keyword + null + compressionFlag + compressionMethod + lang + null + transKeyword + null + text
+    const dataLen = kwBytes.length + 1 + 1 + 1 + 0 + 1 + 0 + 1 + txtBytes.length;
+    const chunk = new Uint8Array(4 + 4 + dataLen + 4);
+    const view = new DataView(chunk.buffer);
+    view.setUint32(0, dataLen);
+    chunk.set([0x69, 0x54, 0x58, 0x74], 4); // "iTXt"
+    let off = 8;
+    chunk.set(kwBytes, off); off += kwBytes.length;
+    chunk[off++] = 0; // null after keyword
+    chunk[off++] = 0; // compression flag (uncompressed)
+    chunk[off++] = 0; // compression method
+    chunk[off++] = 0; // null after empty language tag
+    chunk[off++] = 0; // null after empty translated keyword
+    chunk.set(txtBytes, off);
+    const crcData = chunk.subarray(4, 4 + 4 + dataLen);
+    view.setUint32(4 + 4 + dataLen, crc32(crcData));
+    return chunk;
+}
+
 /**
- * Inject PNG tEXt metadata chunks into a PNG blob.
+ * Inject PNG tEXt metadata chunks (and optional XMP iTXt) into a PNG blob.
  * @param {Blob} pngBlob
  * @param {{ keyword: string, text: string }[]} entries
+ * @param {{ title: string, description: string }} [xmp] - optional XMP metadata
  * @returns {Promise<Blob>}
  */
-export async function injectPngTextChunks(pngBlob, entries) {
+export async function injectPngTextChunks(pngBlob, entries, xmp) {
     const buf = await pngBlob.arrayBuffer();
     const src = new Uint8Array(buf);
     // Find IEND chunk: scan for "IEND" (0x49454E44) from the end
@@ -84,6 +138,9 @@ export async function injectPngTextChunks(pngBlob, entries) {
     if (iendPos < 0) return pngBlob; // couldn't find IEND, return unchanged
 
     const chunks = entries.map(e => makePngTextChunk(e.keyword, e.text));
+    if (xmp) {
+        chunks.push(makePngItxtChunk('XML:com.adobe.xmp', buildXmpString(xmp.title, xmp.description)));
+    }
     const totalExtra = chunks.reduce((s, c) => s + c.length, 0);
     const out = new Uint8Array(src.length + totalExtra);
     out.set(src.subarray(0, iendPos), 0);
@@ -144,7 +201,7 @@ export async function packageStillZip(canvas, { seed, controls, paletteTweaks, n
     const pngBlob = await injectPngTextChunks(rawPng, [
         { keyword: 'Title', text: meta.title },
         { keyword: 'Description', text: meta.altText },
-    ]);
+    ], { title: meta.title, description: meta.altText });
     const ts = toIsoLocalish(new Date());
     const base = `still_${safeName(seed)}_${ts}`;
 
@@ -171,7 +228,7 @@ export async function packageStillZipFromBlob(pngBlob, { seed, controls, palette
     const enrichedPng = await injectPngTextChunks(pngBlob, [
         { keyword: 'Title', text: meta.title },
         { keyword: 'Description', text: meta.altText },
-    ]);
+    ], { title: meta.title, description: meta.altText });
     const ts = toIsoLocalish(new Date());
     const base = `still_${safeName(seed)}_${ts}`;
 
