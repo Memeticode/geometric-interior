@@ -201,13 +201,14 @@
             stroke-width: 1.5;
             stroke-linecap: round;
             fill: none;
+            transform-box: fill-box;
             transform-origin: center;
             transition: transform 0.3s ease, opacity 0.3s ease;
         }
 
         /* Open state — morph to X */
         .panel-toggle-btn.panel-open .bar-top {
-            transform: translate(0px, 6px) rotate(45deg);
+            transform: translateY(6px) rotate(45deg) scaleX(0.75);
         }
 
         .panel-toggle-btn.panel-open .bar-mid {
@@ -216,7 +217,7 @@
         }
 
         .panel-toggle-btn.panel-open .bar-bot {
-            transform: translate(0px, -6px) rotate(-45deg);
+            transform: translateY(-6px) rotate(-45deg) scaleX(1.5);
         }
 
         /* Accent highlight when open */
@@ -2309,7 +2310,7 @@
 <body>
     <div class="app-container">
     <header class="app-header">
-        <button id="panelToggle" class="panel-toggle-btn" aria-label="Toggle controls panel">
+        <button id="panelToggle" class="panel-toggle-btn" aria-label="Open menu" data-tooltip="Open menu" data-tooltip-pos="right">
             <svg class="panel-toggle-icon" viewBox="0 0 20 20" width="18" height="18">
                 <line class="bar bar-top" x1="2" y1="4" x2="18" y2="4"/>
                 <line class="bar bar-mid" x1="4" y1="10" x2="16" y2="10"/>
