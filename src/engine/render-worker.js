@@ -19,12 +19,17 @@ let lastRenderReq = null;
 let morphActive = false;
 let morphTimer = null;
 let morphFrame = 0;
+let morphTargetReq = null;
 const MORPH_FRAMES = 72;
 const MORPH_FRAME_MS = 1000 / 24; // 41.67ms → 24fps
 
 function renderMorphFrame() {
     if (!morphActive || morphFrame >= MORPH_FRAMES) {
         if (renderer && morphActive) renderer.morphEnd();
+        if (morphTargetReq) {
+            lastRenderReq = morphTargetReq;
+            morphTargetReq = null;
+        }
         morphActive = false;
         morphTimer = null;
         self.postMessage({ type: 'morph-complete' });
@@ -152,6 +157,14 @@ self.onmessage = function (e) {
                     }
                     renderer.morphPrepare(msg.seedA, msg.controlsA, msg.seedB, msg.controlsB);
                     morphActive = true;
+                    morphTargetReq = {
+                        type: 'render',
+                        seed: msg.seedB,
+                        controls: msg.controlsB,
+                        paletteTweaks: msg.paletteTweaksB,
+                        width: msg.width,
+                        height: msg.height,
+                    };
                     self.postMessage({ type: 'morph-prepared' });
                 } catch (err) {
                     console.error('[render-worker] morph-prepare error:', err);
@@ -170,6 +183,7 @@ self.onmessage = function (e) {
             if (morphTimer !== null) { clearTimeout(morphTimer); morphTimer = null; }
             if (renderer && morphActive) renderer.morphEnd();
             morphActive = false;
+            morphTargetReq = null;
             self.postMessage({ type: 'morph-ended' });
             break;
 

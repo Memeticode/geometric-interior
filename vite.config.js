@@ -6,6 +6,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     rollupOptions: {
+      input: {
+        main: 'index.html',
+        demo: 'demo.html',
+      },
       output: {
         manualChunks: {
           'three-vendor': ['three'],

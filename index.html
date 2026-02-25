@@ -1544,6 +1544,26 @@
             z-index: 1;
         }
 
+        /* ── Morph timebar ── */
+        .morph-timebar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            z-index: 11;
+            pointer-events: none;
+            transition: opacity 0.3s ease-out;
+        }
+        .morph-timebar.hidden { opacity: 0; }
+        .morph-timebar-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-text, rgba(180, 140, 255, 0.6));
+            transition: width 0.05s linear;
+        }
+
         /* ── Fullscreen ── */
         .render-card:fullscreen,
         .render-card:-webkit-full-screen {
@@ -3049,6 +3069,9 @@
                                 <div class="canvas-overlay-spinner"></div>
                                 <span id="canvasOverlayText" class="canvas-overlay-text"></span>
                             </div>
+                        </div>
+                        <div id="morphTimebar" class="morph-timebar hidden">
+                            <div id="morphTimebarFill" class="morph-timebar-fill"></div>
                         </div>
                     </div>
                     <div class="generated-text-wrap" id="textWrap">

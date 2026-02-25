@@ -90,6 +90,8 @@ const el = {
 
     canvasOverlay: document.getElementById('canvasOverlay'),
     canvasOverlayText: document.getElementById('canvasOverlayText'),
+    morphTimebar: document.getElementById('morphTimebar'),
+    morphTimebarFill: document.getElementById('morphTimebarFill'),
     exportBtn: document.getElementById('exportBtn'),
     shareBtn: document.getElementById('shareBtn'),
     sharePopover: document.getElementById('sharePopover'),
@@ -784,6 +786,7 @@ let fallbackMorphTimer = null;
 
 const morphCtrl = createMorphController({
     onTick(interpolated, tEased) {
+        el.morphTimebarFill.style.width = (tEased * 100) + '%';
         const palKey = interpolated.controls.palette;
 
         // Snap palette preset (only fires once at midpoint when it changes)
@@ -812,6 +815,7 @@ const morphCtrl = createMorphController({
     onComplete() {
         // Worker completes on its own; this just handles UI animation completion
         morphLastPalette = null;
+        el.morphTimebar.classList.add('hidden');
         setMorphLocked(false);
         setStillRendered(true);
         refreshGeneratedText(true);
@@ -844,9 +848,13 @@ function startMorph(fromState, toState) {
     morphLastPalette = fromState.controls.palette;
     setStillRendered(false);
     setMorphLocked(true);
+    showCanvasOverlay('');
 
     // Build both scenes in worker, then start the animation
     sendMorphPrepare(fromState, toState, () => {
+        hideCanvasOverlay();
+        el.morphTimebar.classList.remove('hidden');
+        el.morphTimebarFill.style.width = '0%';
         sendMorphStart();
         morphCtrl.start(fromState, toState);
     });
@@ -1186,9 +1194,13 @@ function onControlChange() {
     if (morphCtrl.isActive()) {
         morphCtrl.cancel();
         sendMorphCancel();
+        hideCanvasOverlay();
+        el.morphTimebar.classList.add('hidden');
     } else if (morphPrepareCallback) {
         // Cancel pending morph-prepare before it started
         sendMorphCancel();
+        hideCanvasOverlay();
+        el.morphTimebar.classList.add('hidden');
     }
     if (morphLocked) setMorphLocked(false);
     morphPrepareCallback = null;

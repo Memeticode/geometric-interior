@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morph Demo — Geometric Interior</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0a0a0f;
+            color: #ccc;
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 1.5rem;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #aaa;
+            margin-bottom: 1rem;
+            letter-spacing: 0.5px;
+        }
+        .thumb-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .thumb-cell {
+            flex: 1;
+            min-width: 0;
+        }
+        .thumb-cell canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #080a0f;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .thumb-label {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 0.375rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .main-wrap {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+        .main-wrap canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #080a0f;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .timebar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 0 0 8px 8px;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .timebar-fill {
+            height: 100%;
+            width: 0%;
+            background: rgba(180, 140, 255, 0.6);
+            transition: width 0.05s linear;
+        }
+        .controls {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        button {
+            background: rgba(255,255,255,0.06);
+            color: #ccc;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+        }
+        button:hover:not(:disabled) {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+        }
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        #status {
+            font-size: 0.75rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Morph Transition Demo</h1>
+    <div class="thumb-row">
+        <div class="thumb-cell">
+            <canvas id="thumbA" width="600" height="390"></canvas>
+            <div class="thumb-label">Image A (from)</div>
+        </div>
+        <div class="thumb-cell">
+            <canvas id="thumbB" width="600" height="390"></canvas>
+            <div class="thumb-label">Image B (to)</div>
+        </div>
+    </div>
+    <div class="main-wrap">
+        <canvas id="mainCanvas" width="1200" height="780"></canvas>
+        <div class="timebar">
+            <div id="timebarFill" class="timebar-fill"></div>
+        </div>
+    </div>
+    <div class="controls">
+        <button id="playBtn" disabled>Play Morph</button>
+        <button id="randomizeBtn">Randomize</button>
+        <span id="status">Initializing...</span>
+    </div>
+    <script type="module" src="/src/demo.js"></script>
+</body>
+</html>
