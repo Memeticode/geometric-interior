@@ -67,9 +67,10 @@ async function main() {
     console.log(`  Dev URL:  ${URL}`);
     console.log('');
 
-    // Launch browser
+    // Launch browser (use installed Chrome for reliable GPU support)
     const browser = await chromium.launch({
         headless: !headed,
+        channel: 'chrome',
         args: ['--use-gl=angle', '--disable-dev-shm-usage'],
     });
 
