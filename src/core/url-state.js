@@ -5,7 +5,7 @@
  * compact URL search params so shared links reproduce the exact same image.
  */
 
-import { PALETTE_KEYS, getPaletteDefaults } from './palettes.js';
+import { PALETTE_KEYS, getPaletteDefaults } from '../../lib/core/palettes.js';
 
 // Short param keys to keep URLs compact
 const PARAM_SEED       = 's';

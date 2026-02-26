@@ -297,7 +297,7 @@
         }
 
         .row {
-            margin: 0.625rem 0;
+            margin: 0.375rem 0;
         }
 
         #imageModeSection .row {
@@ -330,8 +330,8 @@
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 16px;
-            height: 16px;
+            width: 13px;
+            height: 13px;
             border-radius: 50%;
             background: var(--accent-text);
             border: 2px solid var(--bg);
@@ -346,8 +346,8 @@
         }
 
         input[type="range"]::-moz-range-thumb {
-            width: 16px;
-            height: 16px;
+            width: 13px;
+            height: 13px;
             border-radius: 50%;
             background: var(--accent-text);
             border: 2px solid var(--bg);
@@ -451,9 +451,10 @@
 
         .pal-chip .pal-name {
             position: absolute;
-            bottom: 2px;
+            top: 50%;
             left: 0;
             right: 0;
+            transform: translateY(-50%);
             text-align: center;
             font-size: 0.5rem;
             text-transform: uppercase;
@@ -461,6 +462,7 @@
             color: rgba(255, 255, 255, 0.8);
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
             line-height: 1;
+            transition: all 0.2s ease;
         }
 
         .pal-chip:hover {
@@ -473,6 +475,12 @@
             border-color: var(--accent-text);
             transform: translateY(-1px);
             box-shadow: 0 0 8px var(--accent), 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .pal-chip.active .pal-name {
+            font-size: 0.6rem;
+            color: rgba(255, 255, 255, 1);
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
         }
 
         /* ── Custom palette editor ── */
@@ -563,6 +571,7 @@
             right: 0;
             height: 6px;
             border-radius: 3px;
+            border-bottom: 0.05rem solid var(--accent-text);
             pointer-events: none;
             opacity: 0.5;
             transition: opacity 0.2s;
@@ -2784,35 +2793,35 @@
                     <label><span class="label-info" data-tooltip="The chromatic atmosphere. Double-click a preset to customize." data-label="Palette">Palette<span class="info-icon">i</span></span></label>
                     <input type="hidden" id="palette" value="violet-depth" />
                     <div class="palette-selector" id="paletteSelector">
-                        <div class="pal-chip active" data-value="violet-depth">
+                        <div class="pal-chip active" data-value="violet-depth" data-tooltip="Violet">
                             <div class="pal-gradient" style="background: linear-gradient(135deg, #2a1545, #6b3fa0, #a06cd5)"></div>
                             <span class="pal-name">Violet</span>
                         </div>
-                        <div class="pal-chip" data-value="warm-spectrum">
+                        <div class="pal-chip" data-value="warm-spectrum" data-tooltip="Warm">
                             <div class="pal-gradient" style="background: linear-gradient(135deg, #3d1a0e, #cc8844, #e6a8cc)"></div>
                             <span class="pal-name">Warm</span>
                         </div>
-                        <div class="pal-chip" data-value="teal-volumetric">
+                        <div class="pal-chip" data-value="teal-volumetric" data-tooltip="Teal">
                             <div class="pal-gradient" style="background: linear-gradient(135deg, #0a2a30, #1a8899, #66ddee)"></div>
                             <span class="pal-name">Teal</span>
                         </div>
-                        <div class="pal-chip" data-value="prismatic">
+                        <div class="pal-chip" data-value="prismatic" data-tooltip="Prismatic">
                             <div class="pal-gradient" style="background: linear-gradient(135deg, #cc3355, #eeaa33, #33cc88, #4488ee, #aa44dd)"></div>
                             <span class="pal-name">Prismatic</span>
                         </div>
-                        <div class="pal-chip" data-value="crystal-lattice">
+                        <div class="pal-chip" data-value="crystal-lattice" data-tooltip="Crystal">
                             <div class="pal-gradient" style="background: linear-gradient(135deg, #1a2540, #5577aa, #aabbdd)"></div>
                             <span class="pal-name">Crystal</span>
                         </div>
-                        <div class="pal-chip" data-value="sapphire">
+                        <div class="pal-chip" data-value="sapphire" data-tooltip="Sapphire">
                             <div class="pal-gradient" style="background: linear-gradient(135deg, #0a1535, #2244aa, #4466ee)"></div>
                             <span class="pal-name">Sapphire</span>
                         </div>
-                        <div class="pal-chip" data-value="amethyst">
+                        <div class="pal-chip" data-value="amethyst" data-tooltip="Amethyst">
                             <div class="pal-gradient" style="background: linear-gradient(135deg, #2a0a30, #8833aa, #cc66ee)"></div>
                             <span class="pal-name">Amethyst</span>
                         </div>
-                        <div class="pal-chip" data-value="custom">
+                        <div class="pal-chip" data-value="custom" data-tooltip="Custom">
                             <div class="pal-gradient" id="customPalGradient" style="background: linear-gradient(135deg, #2a0a35, #dd2288, #ff6655)"></div>
                             <span class="pal-name">Custom</span>
                         </div>

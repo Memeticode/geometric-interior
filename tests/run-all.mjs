@@ -19,6 +19,7 @@ const GROUPS = [
     { file: 'group-ui.mjs',        label: 'UI (panel, controls, export)' },
     { file: 'group-data.mjs',      label: 'Data (thumbnails, profiles, import)' },
     { file: 'group-animation.mjs', label: 'Animation (morph, history, smoothness)' },
+    { file: '../lib-tests/run-lib-all.mjs', label: 'Library (pure + browser)' },
 ];
 
 console.log('=== Running All Tests (Parallel Groups) ===\n');

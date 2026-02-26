@@ -3,16 +3,16 @@
  * Phase 1: Three.js WebGL renderer with new control scheme.
  */
 
-import { createRenderer } from './engine/create-renderer.js';
-import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults, getPalette } from './core/palettes.js';
+import { createRenderer } from '../lib/engine/create-renderer.js';
+import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults, getPalette } from '../lib/core/palettes.js';
 import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder, syncProfileOrder } from './ui/profiles.js';
 import { packageStillZip, packageStillZipFromBlob, downloadBlob, canvasToPngBlob, injectPngTextChunks, toIsoLocalish, safeName } from './export/export.js';
 import { encodeStateToURL, decodeStateFromURL } from './core/url-state.js';
 import { initTheme } from './ui/theme.js';
 import { createFaviconAnimation } from './ui/animated-favicon.js';
-import { generateTitle, generateAltText } from './core/text.js';
-import { xmur3, mulberry32 } from './core/prng.js';
-import { validateStillConfig, configToProfile, profileToConfig } from './core/config-schema.js';
+import { generateTitle, generateAltText } from '../lib/core/text.js';
+import { xmur3, mulberry32 } from '../lib/core/prng.js';
+import { validateStillConfig, configToProfile, profileToConfig } from '../lib/core/config-schema.js';
 import { createMorphController, MORPH_DURATION_MS } from './core/morph.js';
 
 /* ---------------------------
@@ -2625,6 +2625,8 @@ function toggleActiveConfig() {
     el.activeCardToggle.setAttribute('data-tooltip', expanded ? 'Open Configuration' : 'Close Configuration');
     refreshTooltip(el.activeCardToggle);
     document.getElementById('configControls').classList.toggle('collapsed', expanded);
+    // Collapse palette editor each time config panel is opened
+    if (expanded === false) el.customPaletteEditor.classList.add('collapsed');
 }
 
 document.querySelector('.active-card-main').addEventListener('click', (e) => {

@@ -5,8 +5,8 @@
  * for hue. Palette preset snaps at the morph midpoint.
  */
 
-import { cosineEase } from './interpolation.js';
-import { clamp01, lerp } from './prng.js';
+import { cosineEase } from '../../lib/core/interpolation.js';
+import { clamp01, lerp } from '../../lib/core/prng.js';
 
 export const MORPH_DURATION_MS = 3000;
 

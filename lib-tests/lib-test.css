@@ -1,0 +1,42 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font: 13px/1.4 monospace; background: #111; color: #ccc; min-height: 100vh; }
+#testCanvas { position: fixed; left: -10000px; top: 0; }
+#app { max-width: 1100px; margin: 0 auto; padding: 16px; }
+h2 { font-size: 15px; color: #aaa; margin-bottom: 16px; text-align: center; }
+#previews { display: flex; gap: 16px; margin-bottom: 16px; }
+.preview-panel { flex: 1; min-width: 0; }
+.preview-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.preview-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; }
+.preview-panel select { flex: 1; background: #1a1a1a; border: 1px solid #333; color: #ccc; padding: 5px 6px; font: inherit; border-radius: 2px; }
+.preview-panel select:focus { border-color: #555; outline: none; }
+.preview-panel img { width: 100%; aspect-ratio: 800/520; background: #000; outline: 1px solid #222; display: block; object-fit: contain; border-radius: 2px; }
+#actions { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+#frameInfo { font-size: 11px; color: #555; }
+button { padding: 6px 18px; background: #282828; border: 1px solid #444; color: #ccc; cursor: pointer; font: inherit; border-radius: 2px; }
+button:hover:not(:disabled) { background: #333; border-color: #555; }
+button:active:not(:disabled) { background: #444; }
+button:disabled { opacity: 0.35; cursor: default; }
+label { font-size: 12px; color: #666; display: flex; align-items: center; gap: 6px; }
+input[type="number"] { width: 48px; background: #1a1a1a; border: 1px solid #333; color: #ccc; padding: 4px 6px; font: inherit; text-align: center; border-radius: 2px; }
+input[type="number"]:focus { border-color: #555; outline: none; }
+.section { margin-bottom: 12px; border: 1px solid #222; border-radius: 3px; }
+.section summary { padding: 8px 12px; cursor: pointer; font-size: 12px; color: #888; background: #1a1a1a; user-select: none; }
+.section summary:hover { color: #aaa; background: #1e1e1e; }
+.section[open] summary { border-bottom: 1px solid #222; }
+.progress-bar { height: 3px; background: #222; margin: 0; }
+.progress-fill { height: 100%; width: 0%; background: #6a6; transition: width 0.1s; }
+#filmstrip { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 3px; padding: 8px; }
+#filmstrip img { width: 100%; height: auto; outline: 1px solid #222; border-radius: 1px; transition: outline-color 0.15s; cursor: pointer; }
+#filmstrip img:hover { outline-color: #555; }
+#filmstrip img.active-frame { outline: 2px solid #6a6; }
+#filmstrip:empty::after { content: "No frames generated yet."; color: #444; font-size: 11px; padding: 12px; }
+#animControls { display: flex; gap: 8px; align-items: center; padding: 8px 12px; flex-wrap: wrap; }
+#animControls label { font-size: 11px; color: #666; display: flex; align-items: center; gap: 4px; cursor: pointer; user-select: none; }
+#animControls input[type="checkbox"] { accent-color: #6a6; cursor: pointer; }
+#animStatus { font-size: 11px; color: #555; }
+#animPlayerRow { display: flex; justify-content: center; padding: 0 12px 12px; }
+#animCanvasHost { width: 100%; aspect-ratio: 800/520; background: #000; outline: 1px solid #222; border-radius: 2px; overflow: hidden; }
+#animCanvasHost canvas { width: 100% !important; height: 100% !important; display: block; }
+#metrics { font-size: 11px; color: #555; margin-top: 12px; }
+#metrics div { margin: 2px 0; }
+#log { font-size: 11px; color: #444; margin-top: 8px; max-height: 120px; overflow-y: auto; white-space: pre-wrap; }

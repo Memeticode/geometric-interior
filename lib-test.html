@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Morph Transition Viewer</title>
+  <link rel="stylesheet" href="./lib-tests/lib-test.css"/>
+</head>
+<body>
+  <canvas id="testCanvas" width="800" height="520"></canvas>
+
+  <div id="app">
+    <h2>Morph Transition Viewer</h2>
+
+    <div id="previews">
+      <div class="preview-panel">
+        <div class="preview-header">
+          <span class="preview-label">Base</span>
+          <select id="baseProfile"></select>
+        </div>
+        <img id="baseImg" alt="Base render"/>
+      </div>
+      <div class="preview-panel">
+        <div class="preview-header">
+          <span class="preview-label">Target</span>
+          <select id="targetProfile"></select>
+        </div>
+        <img id="targetImg" alt="Target render"/>
+      </div>
+    </div>
+
+    <div id="actions">
+      <button id="morphBtn">Generate Transition</button>
+      <label>FPS <input id="paramFps" type="number" value="24" min="1" max="60"/></label>
+      <label>Length <input id="paramDuration" type="number" value="3" min="0.5" max="30" step="0.5"/>s</label>
+      <span id="frameInfo"></span>
+    </div>
+
+    <details id="framesSection" class="section">
+      <summary id="framesSummary">Transition Images</summary>
+      <div id="framesProgress" class="progress-bar" hidden><div class="progress-fill"></div></div>
+      <div id="filmstrip"></div>
+    </details>
+
+    <details id="animSection" class="section">
+      <summary id="animSummary">Transition Animation</summary>
+      <div id="animProgress" class="progress-bar" hidden><div class="progress-fill"></div></div>
+      <div id="animControls">
+        <button id="animPlayBtn" disabled>Play</button>
+        <button id="animStopBtn" disabled>Stop</button>
+        <label><input id="animLoop" type="checkbox" checked/> Loop</label>
+        <label><input id="animPingPong" type="checkbox" checked/> Ping-pong</label>
+        <span id="animStatus"></span>
+      </div>
+      <div id="animPlayerRow" style="display:none">
+        <div id="animCanvasHost"></div>
+      </div>
+    </details>
+
+    <div id="metrics"></div>
+    <pre id="log"></pre>
+  </div>
+  <script type="module" src="./lib-tests/lib-test.ts"></script>
+</body>
+</html>

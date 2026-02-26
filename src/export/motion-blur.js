@@ -7,7 +7,7 @@
  *   3) present: main canvas = acc
  */
 
-import { clamp01 } from '../core/prng.js';
+import { clamp01 } from '../../lib/core/prng.js';
 
 export function createMotionBlur(mainCanvas, mainCtx, { decay = 0.18, add = 0.90 } = {}) {
     const acc = document.createElement('canvas');

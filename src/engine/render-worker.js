@@ -4,8 +4,8 @@
  * handles render/resize/export messages, and coalesces rapid requests.
  */
 
-import { createRenderer } from './create-renderer.js';
-import { updatePalette } from '../core/palettes.js';
+import { createRenderer } from '../../lib/engine/create-renderer.js';
+import { updatePalette } from '../../lib/core/palettes.js';
 
 let renderer = null;
 let offscreenCanvas = null;

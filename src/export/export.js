@@ -2,12 +2,12 @@
  * Export helpers: ZIP packaging, downloads, metadata generation.
  */
 
-import { xmur3, mulberry32 } from '../core/prng.js';
-import { deriveParams } from '../core/params.js';
-import { generateTitle, generateAltText, generateAnimAltText } from '../core/text.js';
-import { evalControlsAt } from '../core/interpolation.js';
+import { xmur3, mulberry32 } from '../../lib/core/prng.js';
+import { deriveParams } from '../../lib/core/params.js';
+import { generateTitle, generateAltText, generateAnimAltText } from '../../lib/core/text.js';
+import { evalControlsAt } from '../../lib/core/interpolation.js';
 import { ANIM_FPS, MOTION_BLUR_ENABLED, MB_DECAY, MB_ADD } from './animation.js';
-import { profileToConfig } from '../core/config-schema.js';
+import { profileToConfig } from '../../lib/core/config-schema.js';
 
 export function downloadBlob(filename, blob) {
     const url = URL.createObjectURL(blob);

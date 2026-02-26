@@ -7,7 +7,7 @@
  *           when available, falls back to PNG frame sequence otherwise.
  */
 
-import { evalControlsAt } from '../core/interpolation.js';
+import { evalControlsAt } from '../../lib/core/interpolation.js';
 import { Muxer, ArrayBufferTarget } from '../vendor/mp4-muxer.mjs';
 
 export const ANIM_FPS = 24;

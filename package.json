@@ -1,14 +1,32 @@
 {
-  "name": "geometric-interior",
-  "private": true,
+  "name": "@memeticode/geometric-interior",
   "version": "2.0.0",
-  "description": "WebGL crystalline plane generative art engine. Deterministic seeded generation, weighted OIT transparency, custom shaders, postprocessing.",
+  "description": "WebGL crystalline plane generative art engine. Deterministic seeded generation, custom shaders, postprocessing.",
   "license": "MIT",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/lib/geometric-interior.d.ts",
+      "import": "./dist/lib/geometric-interior.js"
+    }
+  },
+  "files": [
+    "dist/lib/"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "build:lib": "vite build --config vite.lib.config.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json",
+    "preview": "vite preview",
+    "test:lib:pure": "node lib-tests/pure/run-pure.mjs",
+    "test:lib:browser": "node lib-tests/browser/run-lib-browser.mjs",
+    "test:lib": "node lib-tests/run-lib-all.mjs",
+    "test:all": "node tests/run-all.mjs"
+  },
+  "peerDependencies": {
+    "postprocessing": "^6.36.0",
+    "three": "^0.172.0"
   },
   "dependencies": {
     "postprocessing": "^6.36.4",
@@ -19,8 +37,11 @@
   "devDependencies": {
     "@cloudflare/pages-plugin-vercel-og": "^0.1.2",
     "@cloudflare/puppeteer": "^1.0.6",
+    "@types/three": "^0.183.1",
     "playwright": "^1.58.2",
     "pngjs": "^7.0.0",
-    "vite": "^6.1.0"
+    "typescript": "^5.9.3",
+    "vite": "^6.1.0",
+    "vite-plugin-dts": "^4.5.4"
   }
 }
