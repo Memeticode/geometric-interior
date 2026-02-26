@@ -1,7 +1,8 @@
 /**
  * Web Worker for offscreen Three.js rendering.
  * Receives an OffscreenCanvas via transferControlToOffscreen(),
- * handles render/resize/export messages, and coalesces rapid requests.
+ * runs a persistent render loop with ambient animation,
+ * and handles morph transitions in real-time.
  */
 
 import { createRenderer } from '../../lib/engine/create-renderer.js';
@@ -17,39 +18,90 @@ let lastRenderReq = null;
 
 /* ── Morph state ── */
 let morphActive = false;
-let morphTimer = null;
-let morphFrame = 0;
+let morphAnimating = false;
+let morphStartTime = 0;
+let morphDurationMs = 1000;
 let morphTargetReq = null;
-const MORPH_FRAMES = 72;
-const MORPH_FRAME_MS = 1000 / 24; // 41.67ms → 24fps
 
-function renderMorphFrame() {
-    if (!morphActive || morphFrame >= MORPH_FRAMES) {
-        if (renderer && morphActive) renderer.morphEnd();
-        if (morphTargetReq) {
-            lastRenderReq = morphTargetReq;
-            morphTargetReq = null;
-        }
-        morphActive = false;
-        morphTimer = null;
-        self.postMessage({ type: 'morph-complete' });
-        return;
-    }
-    const tRaw = morphFrame / (MORPH_FRAMES - 1);
-    const t = 0.5 * (1 - Math.cos(Math.PI * tRaw)); // cosine ease
-    renderer.morphUpdate(t);
-    self.postMessage({ type: 'morph-frame', frameIndex: morphFrame, totalFrames: MORPH_FRAMES });
-    morphFrame++;
-    morphTimer = setTimeout(renderMorphFrame, MORPH_FRAME_MS);
-}
+/* ── Render loop state ── */
+let loopRunning = false;
+let loopStartTime = 0;
+let animationEnabled = true;
+let tabVisible = true;
+
+/* ── Fold state ── */
+let foldAnimating = false;
+let foldCallback = null; // 'fold-out-complete' or 'fold-in-complete'
 
 function scheduleFrame(fn) {
     if (typeof requestAnimationFrame === 'function') {
         requestAnimationFrame(fn);
     } else {
-        setTimeout(fn, 0);
+        setTimeout(fn, 16);
     }
 }
+
+/* ── Persistent render loop ── */
+
+function startLoop() {
+    if (loopRunning) return;
+    loopRunning = true;
+    loopStartTime = performance.now();
+    scheduleFrame(tick);
+}
+
+function stopLoop() {
+    loopRunning = false;
+}
+
+function tick() {
+    if (!loopRunning || !renderer) return;
+    const now = performance.now();
+    const elapsed = (now - loopStartTime) / 1000.0;
+
+    if (morphAnimating) {
+        // Real-time morph: advance t each frame
+        const morphElapsed = now - morphStartTime;
+        const tRaw = Math.min(morphElapsed / morphDurationMs, 1.0);
+        const tEased = 0.5 * (1 - Math.cos(Math.PI * tRaw));
+
+        renderer.updateTime(elapsed);
+        renderer.morphUpdate(tEased);
+
+        self.postMessage({ type: 'morph-progress', t: tRaw });
+
+        if (tRaw >= 1.0) {
+            renderer.morphEnd();
+            morphAnimating = false;
+            morphActive = false;
+            self.postMessage({ type: 'morph-complete' });
+            // Re-render final state for clean persistent scene
+            if (morphTargetReq) {
+                lastRenderReq = morphTargetReq;
+                pendingRender = morphTargetReq;
+                morphTargetReq = null;
+                doRender();
+            }
+        }
+    } else {
+        renderer.updateTime(elapsed);
+
+        // Check fold animation completion
+        if (foldAnimating && renderer.isFoldComplete()) {
+            foldAnimating = false;
+            if (foldCallback) {
+                self.postMessage({ type: foldCallback });
+                foldCallback = null;
+            }
+        }
+
+        renderer.renderFrame();
+    }
+
+    scheduleFrame(tick);
+}
+
+/* ── On-demand render (scene rebuild) ── */
 
 function scheduleRender() {
     if (renderScheduled) return;
@@ -79,6 +131,11 @@ function doRender() {
 
         const meta = renderer.renderWith(req.seed, req.controls);
         lastRenderReq = req;
+
+        // Start render loop if animation is enabled
+        if (animationEnabled && tabVisible) {
+            startLoop();
+        }
 
         self.postMessage({
             type: 'rendered',
@@ -119,21 +176,20 @@ self.onmessage = function (e) {
         case 'resize':
             if (renderer) {
                 if (msg.dpr) renderer.setDPR(msg.dpr);
-                // Don't resize eagerly — it clears the framebuffer.
-                // Instead, re-render at the new size so the canvas is never blank.
-                if (lastRenderReq) {
+                renderer.resize(msg.width, msg.height);
+                // If loop is running, it will re-render at new size automatically.
+                // If not, re-render the last request at new size.
+                if (!loopRunning && lastRenderReq) {
                     lastRenderReq.width = msg.width;
                     lastRenderReq.height = msg.height;
                     pendingRender = lastRenderReq;
                     scheduleRender();
-                } else {
-                    renderer.resize(msg.width, msg.height);
                 }
             }
             break;
 
         case 'render':
-            if (morphActive) break; // ignore regular renders during morph
+            if (morphActive || morphAnimating) break; // ignore renders during morph
             pendingRender = msg;
             scheduleRender();
             break;
@@ -175,16 +231,65 @@ self.onmessage = function (e) {
 
         case 'morph-start':
             if (!morphActive || !renderer) break;
-            morphFrame = 0;
-            renderMorphFrame();
+            morphAnimating = true;
+            morphStartTime = performance.now();
+            morphDurationMs = msg.duration || 1000;
+            // Ensure loop is running for real-time morph
+            if (!loopRunning) startLoop();
             break;
 
         case 'morph-cancel':
-            if (morphTimer !== null) { clearTimeout(morphTimer); morphTimer = null; }
-            if (renderer && morphActive) renderer.morphEnd();
+            if (renderer && (morphActive || morphAnimating)) {
+                renderer.morphEnd();
+            }
             morphActive = false;
+            morphAnimating = false;
             morphTargetReq = null;
             self.postMessage({ type: 'morph-ended' });
+            break;
+
+        case 'fold-in':
+            if (renderer) {
+                renderer.foldIn();
+                foldAnimating = true;
+                foldCallback = 'fold-in-complete';
+                if (!loopRunning) startLoop();
+            }
+            break;
+
+        case 'fold-out':
+            if (renderer) {
+                renderer.foldOut();
+                foldAnimating = true;
+                foldCallback = 'fold-out-complete';
+                if (!loopRunning) startLoop();
+            }
+            break;
+
+        case 'fold-immediate':
+            if (renderer) {
+                renderer.setFoldImmediate(msg.value ?? 1.0);
+                foldAnimating = false;
+                foldCallback = null;
+            }
+            break;
+
+        case 'set-animation':
+            animationEnabled = msg.enabled;
+            if (animationEnabled && tabVisible && renderer) {
+                startLoop();
+            } else if (!animationEnabled) {
+                stopLoop();
+            }
+            break;
+
+        case 'visibility':
+            tabVisible = msg.visible;
+            if (tabVisible && animationEnabled && renderer) {
+                startLoop();
+            } else if (!tabVisible) {
+                stopLoop();
+            }
             break;
 
         case 'export':

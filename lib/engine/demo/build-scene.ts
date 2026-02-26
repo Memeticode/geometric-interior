@@ -171,6 +171,8 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
         geom.setAttribute('aNoiseScale', new THREE.BufferAttribute(new Float32Array(faceAccum.noiseScale), 1));
         geom.setAttribute('aNoiseStrength', new THREE.BufferAttribute(new Float32Array(faceAccum.noiseStrength), 1));
         geom.setAttribute('aCrackExtend', new THREE.BufferAttribute(new Float32Array(faceAccum.crackExtend), 1));
+        geom.setAttribute('aFoldDelay', new THREE.BufferAttribute(new Float32Array(faceAccum.foldDelay), 1));
+        geom.setAttribute('aFoldOrigin', new THREE.BufferAttribute(new Float32Array(faceAccum.foldOrigin), 3));
 
         faceMat = createDemoFaceMaterial(lightUniforms, params);
         faceMat.uniforms.uCameraPos.value.set(0, 0, params.cameraZ);
@@ -191,6 +193,8 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
         geom.setAttribute('vAlpha', new THREE.BufferAttribute(new Float32Array(edgeAccum.alpha), 1));
         geom.setAttribute('aColor', new THREE.BufferAttribute(new Float32Array(edgeAccum.color), 3));
         geom.setAttribute('aOpacity', new THREE.BufferAttribute(new Float32Array(edgeAccum.opacity), 1));
+        geom.setAttribute('aFoldDelay', new THREE.BufferAttribute(new Float32Array(edgeAccum.foldDelay), 1));
+        geom.setAttribute('aFoldOrigin', new THREE.BufferAttribute(new Float32Array(edgeAccum.foldOrigin), 3));
 
         edgeMat = createDemoEdgeMaterial();
         edgeLines = new THREE.LineSegments(geom, edgeMat);

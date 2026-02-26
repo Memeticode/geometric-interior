@@ -32,3 +32,4 @@ explore-*.mjs
 thumbnail.png
 *.env
 /nul
+/output

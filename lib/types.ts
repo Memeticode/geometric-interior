@@ -74,6 +74,12 @@ export interface Renderer {
         paletteTweaksA?: Record<string, PaletteTweaks>, paletteTweaksB?: Record<string, PaletteTweaks>): void;
     morphUpdate(t: number): void;
     morphEnd(): void;
+    updateTime(seconds: number): void;
+    renderFrame(): void;
+    foldIn(): void;
+    foldOut(): void;
+    setFoldImmediate(v: number): void;
+    isFoldComplete(): boolean;
     resize(width: number, height: number): void;
     syncSize(): void;
     setDPR(dpr: number): void;
@@ -288,11 +294,15 @@ export interface BatchAccumulators {
         noiseScale: number[];
         noiseStrength: number[];
         crackExtend: number[];
+        foldDelay: number[];
+        foldOrigin: number[];
     };
     edgeAccum: {
         pos: number[];
         alpha: number[];
         color: number[];
         opacity: number[];
+        foldDelay: number[];
+        foldOrigin: number[];
     };
 }

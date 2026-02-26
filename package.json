@@ -22,7 +22,8 @@
     "test:lib:pure": "node lib-tests/pure/run-pure.mjs",
     "test:lib:browser": "node lib-tests/browser/run-lib-browser.mjs",
     "test:lib": "node lib-tests/run-lib-all.mjs",
-    "test:all": "node tests/run-all.mjs"
+    "test:all": "node tests/run-all.mjs",
+    "gen:thumbs": "node scripts/gen-thumbs.mjs"
   },
   "peerDependencies": {
     "postprocessing": "^6.36.0",

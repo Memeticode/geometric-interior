@@ -8,7 +8,7 @@
 import { cosineEase } from '../../lib/core/interpolation.js';
 import { clamp01, lerp } from '../../lib/core/prng.js';
 
-export const MORPH_DURATION_MS = 3000;
+export const MORPH_DURATION_MS = 1000;
 
 const NUMERIC_KEYS = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
 

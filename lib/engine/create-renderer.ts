@@ -20,7 +20,7 @@ import { matchDots, buildMorphGlowGeometry } from './demo/dot-matching.js';
 import { createDemoGlowMaterial } from './materials.js';
 import { createGlowTexture } from './demo/dots.js';
 import { resetPalette, updatePalette } from '../core/palettes.js';
-import type { Controls, PaletteTweaks, Renderer, RendererOptions, RenderMeta, SceneRefs } from '../types.js';
+import type { Controls, PaletteTweaks, Renderer, RendererOptions, RenderMeta, SceneRefs, DerivedParams } from '../types.js';
 
 export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts: RendererOptions = {}): Renderer {
     const renderer = new THREE.WebGLRenderer({
@@ -144,6 +144,18 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         }
     }
 
+    // --- Persistent scene state for render loop ---
+    let currentRefs: SceneRefs | null = null;
+    let currentParams: DerivedParams | null = null;
+    const baseCameraPos = new THREE.Vector3();
+
+    // --- Fold animation state ---
+    let foldProgress = 1.0;
+    let foldTarget = 1.0;
+    const FOLD_IN_SPEED = 1.25;  // 0→1 in ~800ms
+    const FOLD_OUT_SPEED = 1.67; // 1→0 in ~600ms
+    let lastUpdateTime = 0;
+
     function renderWith(seed: string, controls: Controls): RenderMeta {
         syncSize();
 
@@ -160,7 +172,9 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
             params.cameraZ,
         );
         camera.lookAt(0, 0, 0);
+        baseCameraPos.set(params.cameraOffsetX, params.cameraOffsetY, params.cameraZ);
 
+        currentRefs = null;
         clearScene(scene);
 
         bgMaterial.uniforms.uInnerColor.value.setRGB(...params.bgInnerColor);
@@ -169,6 +183,15 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
         const buildRng = mulberry32(xmur3(seed + ':build')());
         const result = buildDemoScene(params, buildRng, scene, cachedGlowTexture);
+
+        // Store refs for persistent render loop
+        currentRefs = result.refs;
+        currentParams = params;
+
+        // Apply current fold state to new scene
+        if (currentRefs.faceMat) currentRefs.faceMat.uniforms.uFoldProgress.value = foldProgress;
+        if (currentRefs.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = foldProgress;
+        if (currentRefs.glowMat) currentRefs.glowMat.uniforms.uFoldProgress.value = foldProgress;
 
         bloomEffect.intensity = params.bloomStrength;
         bloomEffect.luminanceMaterial.threshold = params.bloomThreshold;
@@ -372,7 +395,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
     function morphEnd(): void {
         if (!morphState) return;
 
-        const { refsA, refsB, morphGlow } = morphState;
+        const { refsA, refsB, morphGlow, paramsB } = morphState;
 
         disposeRefs(refsA);
 
@@ -389,14 +412,105 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
             refsB.glowMat.uniforms.uMorphT.value = 0.0;
         }
 
+        // Persist scene B as the current scene for render loop
+        currentRefs = refsB;
+        currentParams = paramsB;
+        baseCameraPos.set(paramsB.cameraOffsetX, paramsB.cameraOffsetY, paramsB.cameraZ);
+
         composer.render();
 
         morphState = null;
     }
 
+    // --- Render loop methods ---
+
+    const TAU = Math.PI * 2;
+    const DRIFT_AMP_X = 0.015;
+    const DRIFT_AMP_Y = 0.010;
+    const DRIFT_FREQ_X = 0.07;
+    const DRIFT_FREQ_Y = 0.11;
+
+    /** Reusable Object3D for InstancedMesh matrix updates */
+    const _dummyObj = new THREE.Object3D();
+
+    function updateTime(seconds: number): void {
+        const dt = seconds - lastUpdateTime;
+        lastUpdateTime = seconds;
+
+        if (!currentRefs) return;
+
+        // Update uTime on all materials
+        if (currentRefs.faceMat) currentRefs.faceMat.uniforms.uTime.value = seconds;
+        if (currentRefs.edgeMat) currentRefs.edgeMat.uniforms.uTime.value = seconds;
+        if (currentRefs.glowMat) currentRefs.glowMat.uniforms.uTime.value = seconds;
+
+        // Camera drift (Lissajous orbit)
+        camera.position.set(
+            baseCameraPos.x + Math.sin(seconds * DRIFT_FREQ_X * TAU) * DRIFT_AMP_X,
+            baseCameraPos.y + Math.sin(seconds * DRIFT_FREQ_Y * TAU) * DRIFT_AMP_Y,
+            baseCameraPos.z,
+        );
+        camera.lookAt(0, 0, 0);
+
+        // Light sphere wobble — update InstancedMesh matrices + light uniforms
+        if (currentRefs.sphereInst && currentRefs.glowPointData) {
+            const lightPositions = currentRefs.lightUniforms.uLightPositions.value;
+            const sphereData = currentRefs.glowPointData;
+            const count = Math.min(sphereData.length, currentRefs.sphereInst.count);
+            for (let i = 0; i < count; i++) {
+                const bp = sphereData[i];
+                const phase = bp.position.x * 12.9898 + bp.position.y * 78.233;
+                const wx = Math.sin(seconds * 0.8 + phase) * 0.008;
+                const wy = Math.cos(seconds * 0.6 + phase + 1.57) * 0.006;
+                const wz = Math.sin(seconds * 0.5 + phase + 3.14) * 0.005;
+                _dummyObj.position.set(bp.position.x + wx, bp.position.y + wy, bp.position.z + wz);
+                _dummyObj.scale.setScalar(bp.size * 0.015); // sphere radius scale
+                _dummyObj.updateMatrix();
+                currentRefs.sphereInst.setMatrixAt(i, _dummyObj.matrix);
+                // Sync light positions (up to 10 lights)
+                if (i < lightPositions.length) {
+                    lightPositions[i].set(bp.position.x + wx, bp.position.y + wy, bp.position.z + wz);
+                }
+            }
+            currentRefs.sphereInst.instanceMatrix.needsUpdate = true;
+        }
+
+        // Fold animation
+        updateFold(dt);
+    }
+
+    function updateFold(dt: number): void {
+        if (foldProgress === foldTarget || dt <= 0) return;
+        const speed = foldTarget > foldProgress ? FOLD_IN_SPEED : FOLD_OUT_SPEED;
+        const dir = foldTarget > foldProgress ? 1 : -1;
+        foldProgress = Math.max(0, Math.min(1, foldProgress + dir * speed * dt));
+        // Snap to target if close enough
+        if (Math.abs(foldProgress - foldTarget) < 0.001) foldProgress = foldTarget;
+        if (currentRefs?.faceMat) currentRefs.faceMat.uniforms.uFoldProgress.value = foldProgress;
+        if (currentRefs?.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = foldProgress;
+        if (currentRefs?.glowMat) currentRefs.glowMat.uniforms.uFoldProgress.value = foldProgress;
+    }
+
+    function renderFrame(): void {
+        composer.render();
+    }
+
+    function foldIn(): void { foldTarget = 1.0; }
+    function foldOut(): void { foldTarget = 0.0; }
+    function setFoldImmediate(v: number): void {
+        foldProgress = v;
+        foldTarget = v;
+        if (currentRefs?.faceMat) currentRefs.faceMat.uniforms.uFoldProgress.value = v;
+        if (currentRefs?.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = v;
+        if (currentRefs?.glowMat) currentRefs.glowMat.uniforms.uFoldProgress.value = v;
+    }
+    function isFoldComplete(): boolean { return foldProgress === foldTarget; }
+
     return {
         renderWith, dispose, resize, syncSize, setDPR,
         morphPrepare, morphUpdate, morphEnd,
+        updateTime, renderFrame,
+        foldIn, foldOut, setFoldImmediate, isFoldComplete,
         getCanvas: () => canvas,
     };
 }

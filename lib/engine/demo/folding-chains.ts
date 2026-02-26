@@ -11,8 +11,8 @@ import type { BatchAccumulators, DotPosition } from '../../types.js';
 
 export function createAccumulators(): BatchAccumulators {
     return {
-        faceAccum: { pos: [], norm: [], uv: [], alpha: [], color: [], opacity: [], noiseScale: [], noiseStrength: [], crackExtend: [] },
-        edgeAccum: { pos: [], alpha: [], color: [], opacity: [] },
+        faceAccum: { pos: [], norm: [], uv: [], alpha: [], color: [], opacity: [], noiseScale: [], noiseStrength: [], crackExtend: [], foldDelay: [], foldOrigin: [] },
+        edgeAccum: { pos: [], alpha: [], color: [], opacity: [], foldDelay: [], foldOrigin: [] },
     };
 }
 
@@ -116,6 +116,8 @@ function accumulatePlane(
     edgeColorOffset: [number, number, number],
     worldQuat: THREE.Quaternion | null,
     worldOrigin: THREE.Vector3 | null,
+    chainProgress: number,
+    chainOriginWorld: THREE.Vector3,
 ): void {
     const { faceAccum, edgeAccum } = accum;
     const eColor = color.clone().offsetHSL(edgeColorOffset[0], edgeColorOffset[1], edgeColorOffset[2]);
@@ -140,6 +142,8 @@ function accumulatePlane(
         faceAccum.noiseScale.push(noiseScale);
         faceAccum.noiseStrength.push(noiseStrength);
         faceAccum.crackExtend.push(1.0);
+        faceAccum.foldDelay.push(chainProgress);
+        faceAccum.foldOrigin.push(chainOriginWorld.x, chainOriginWorld.y, chainOriginWorld.z);
     }
 
     // Push edge line segments — computed directly from known topology
@@ -153,6 +157,8 @@ function accumulatePlane(
         edgeAccum.alpha.push(alphas[a]);
         edgeAccum.color.push(eColor.r, eColor.g, eColor.b);
         edgeAccum.opacity.push(edgeOpacity);
+        edgeAccum.foldDelay.push(chainProgress);
+        edgeAccum.foldOrigin.push(chainOriginWorld.x, chainOriginWorld.y, chainOriginWorld.z);
 
         // Vertex b
         _tmpV.set(positions[b * 3], positions[b * 3 + 1], positions[b * 3 + 2]);
@@ -162,6 +168,8 @@ function accumulatePlane(
         edgeAccum.alpha.push(alphas[b]);
         edgeAccum.color.push(eColor.r, eColor.g, eColor.b);
         edgeAccum.opacity.push(edgeOpacity);
+        edgeAccum.foldDelay.push(chainProgress);
+        edgeAccum.foldOrigin.push(chainOriginWorld.x, chainOriginWorld.y, chainOriginWorld.z);
     }
 }
 
@@ -184,6 +192,9 @@ function accumulateSkirt(
     crackExtendScale: number,
     worldQuat: THREE.Quaternion | null,
     worldOrigin: THREE.Vector3 | null,
+    chainProgress: number,
+    chainOriginWorld: THREE.Vector3,
+    chainLength: number,
 ): void {
     const { faceAccum } = accum;
     const scale = crackExtendScale;
@@ -256,6 +267,10 @@ function accumulateSkirt(
             faceAccum.noiseScale.push(noiseScale);
             faceAccum.noiseStrength.push(noiseStrength);
             faceAccum.crackExtend.push(triCrackExtend[k]);
+            // Skirt outer vertices get slightly higher fold delay
+            const isOuter = triCrackExtend[k] < 0.5;
+            faceAccum.foldDelay.push(isOuter ? chainProgress + 0.3 / Math.max(chainLength, 1) : chainProgress);
+            faceAccum.foldOrigin.push(chainOriginWorld.x, chainOriginWorld.y, chainOriginWorld.z);
         }
     }
 }
@@ -384,10 +399,10 @@ export function createFoldingChain(
 
             accumulatePlane(accum, positions, QUAD_UVS, nx, ny, nz, 6, color,
                 baseOpacity, baseEdgeOpacity * avgAlpha, quadAlphas, ns, nst,
-                config.edgeColorOffset, groupQuat, origin);
+                config.edgeColorOffset, groupQuat, origin, chainProgress, origin);
             accumulateSkirt(accum, positions, QUAD_UVS, nx, ny, nz, 6,
                 QUAD_BOUNDARY, color, baseOpacity, quadAlphas, ns, nst,
-                config.crackExtendScale, groupQuat, origin);
+                config.crackExtendScale, groupQuat, origin, chainProgress, origin, chainLength);
         } else {
             const jA = jitterVec(vA, jitterAmt, rng);
             const jB = jitterVec(vB, jitterAmt, rng);
@@ -402,10 +417,10 @@ export function createFoldingChain(
 
             accumulatePlane(accum, positions, TRI_UVS, nx, ny, nz, 3, color,
                 baseOpacity, baseEdgeOpacity * avgAlpha, triAlphas, ns, nst,
-                config.edgeColorOffset, groupQuat, origin);
+                config.edgeColorOffset, groupQuat, origin, chainProgress, origin);
             accumulateSkirt(accum, positions, TRI_UVS, nx, ny, nz, 3,
                 TRI_BOUNDARY, color, baseOpacity, triAlphas, ns, nst,
-                config.crackExtendScale, groupQuat, origin);
+                config.crackExtendScale, groupQuat, origin, chainProgress, origin, chainLength);
         }
 
         const edgeChoice = rng();

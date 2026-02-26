@@ -13,7 +13,8 @@ import { createFaviconAnimation } from './ui/animated-favicon.js';
 import { generateTitle, generateAltText } from '../lib/core/text.js';
 import { xmur3, mulberry32 } from '../lib/core/prng.js';
 import { validateStillConfig, configToProfile, profileToConfig } from '../lib/core/config-schema.js';
-import { createMorphController, MORPH_DURATION_MS } from './core/morph.js';
+import { createMorphController } from './core/morph.js';
+import { getAllThumbs, putThumb, deleteThumb } from './ui/thumb-cache.js';
 
 /* ---------------------------
  * DOM references
@@ -204,6 +205,8 @@ function onWorkerMessage(e) {
         case 'ready':
             if (workerInitTimer) { clearTimeout(workerInitTimer); workerInitTimer = null; }
             workerReady = true;
+            // Send initial animation state to the worker
+            renderWorker.postMessage({ type: 'set-animation', enabled: animationEnabled });
             doInitialRender();
             break;
         case 'rendered': {
@@ -229,14 +232,26 @@ function onWorkerMessage(e) {
                 cb();
             }
             break;
-        case 'morph-frame':
-            // Worker is rendering frames autonomously; nothing to do here
+        case 'morph-progress':
+            // Worker is rendering morph in real-time — update timebar
+            el.morphTimebarFill.style.width = (msg.t * 100) + '%';
             break;
         case 'morph-complete':
-            // Worker finished all 72 frames; UI morph controller handles completion
+            // Worker finished real-time morph
+            morphLastPalette = null;
+            el.morphTimebar.classList.add('hidden');
+            setMorphLocked(false);
+            setStillRendered(true);
+            refreshGeneratedText(true);
             break;
         case 'morph-ended':
             // Worker acknowledged morph cancel
+            break;
+        case 'fold-out-complete':
+            if (foldOutCallback) { const cb = foldOutCallback; foldOutCallback = null; cb(); }
+            break;
+        case 'fold-in-complete':
+            // Fold-in animation finished
             break;
         case 'error':
             console.error('[render] Worker reported error:', msg.error);
@@ -292,6 +307,11 @@ const thumbCache = new Map();
 const thumbQueue = [];
 let thumbProcessing = false;
 
+// Pre-load persistent thumbnail cache from IndexedDB
+const thumbCacheReady = getAllThumbs().then(persisted => {
+    for (const [key, url] of persisted) thumbCache.set(key, url);
+});
+
 function thumbCacheKey(seed, controls, paletteTweaks) {
     let k = seed + '|' + JSON.stringify(controls);
     if (paletteTweaks) k += '|' + JSON.stringify(paletteTweaks);
@@ -334,6 +354,7 @@ function drainThumbQueue() {
                 getThumbRenderer().renderWith(item.seed, item.controls);
                 const url = thumbOffscreen.toDataURL('image/png');
                 thumbCache.set(item.key, url);
+                putThumb(item.key, url);
                 item.destImg.src = url;
                 if (wrap) wrap.classList.remove('thumb-loading');
             }
@@ -344,6 +365,19 @@ function drainThumbQueue() {
         drainThumbQueue();
     }, 100);
 }
+
+// Expose thumbnail renderer for build-time portrait generation (scripts/gen-thumbs.mjs)
+window.__renderPortraitThumb = function(profileName) {
+    const portraits = loadPortraits();
+    const p = portraits[profileName];
+    if (!p) throw new Error(`Portrait not found: ${profileName}`);
+    const tweaks = p.paletteTweaks || getPaletteDefaults(p.controls.palette || 'violet-depth');
+    const palKey = p.controls.palette;
+    resetPalette(palKey);
+    if (tweaks) updatePalette(palKey, tweaks);
+    getThumbRenderer().renderWith(p.seed, p.controls);
+    return thumbOffscreen.toDataURL('image/png');
+};
 
 /* ---------------------------
  * Topology tile selector
@@ -711,6 +745,7 @@ function cancelPendingRender() {
 let morphLastPalette = null;
 
 let morphPrepareCallback = null;
+let foldOutCallback = null;
 
 /**
  * Send morph-prepare to the worker (or fallback renderer).
@@ -751,22 +786,12 @@ function sendMorphStart() {
     if (renderWorker && workerReady) {
         renderWorker.postMessage({ type: 'morph-start' });
     } else if (fallbackRenderer) {
-        // Fallback: drive morph from main thread timer at fixed 24fps
-        let frame = 0;
-        const FRAMES = 72;
-        const FRAME_MS = 1000 / 24;
-        function fallbackTick() {
-            if (frame >= FRAMES) {
-                fallbackRenderer.morphEnd();
-                return;
-            }
-            const tRaw = frame / (FRAMES - 1);
-            const t = 0.5 * (1 - Math.cos(Math.PI * tRaw));
-            fallbackRenderer.morphUpdate(t);
-            frame++;
-            fallbackMorphTimer = setTimeout(fallbackTick, FRAME_MS);
-        }
-        fallbackTick();
+        // Fallback: direct morph on main thread (no bitmap pre-rendering)
+        fallbackRenderer.morphUpdate(1.0);
+        fallbackRenderer.morphEnd();
+        const seed = el.seed.value.trim() || 'seed';
+        const controls = readControlsFromUI();
+        sendRenderRequest(seed, controls);
     }
 }
 
@@ -774,15 +799,9 @@ function sendMorphCancel() {
     if (renderWorker && workerReady) {
         renderWorker.postMessage({ type: 'morph-cancel' });
     } else if (fallbackRenderer) {
-        if (fallbackMorphTimer !== null) {
-            clearTimeout(fallbackMorphTimer);
-            fallbackMorphTimer = null;
-        }
         fallbackRenderer.morphEnd();
     }
 }
-
-let fallbackMorphTimer = null;
 
 const morphCtrl = createMorphController({
     onTick(interpolated, tEased) {
@@ -810,15 +829,11 @@ const morphCtrl = createMorphController({
         }
         updateSliderLabels(interpolated.controls);
 
-        // Worker drives its own rendering at fixed 24fps — no sendMorphUpdate needed
+        // Worker pre-renders frames; this just animates UI sliders/palette
     },
     onComplete() {
-        // Worker completes on its own; this just handles UI animation completion
-        morphLastPalette = null;
-        el.morphTimebar.classList.add('hidden');
-        setMorphLocked(false);
-        setStillRendered(true);
-        refreshGeneratedText(true);
+        // UI-side animation complete (slider/palette interpolation).
+        // Worker sends 'morph-complete' for the actual render completion.
     },
 });
 
@@ -856,7 +871,7 @@ function startMorph(fromState, toState) {
         el.morphTimebar.classList.remove('hidden');
         el.morphTimebarFill.style.width = '0%';
         sendMorphStart();
-        morphCtrl.start(fromState, toState);
+        morphCtrl.start(fromState, toState, 1000);
     });
 }
 
@@ -1719,7 +1734,15 @@ function buildProfileCard(name, p, { isPortrait = false, index = 0, total = 1 } 
     thumbImg.className = 'profile-thumb';
     thumbWrap.appendChild(thumbImg);
     header.appendChild(thumbWrap);
-    if (p.seed && p.controls) {
+    if (isPortrait) {
+        // Use pre-generated static thumbnail; fall back to live render if missing
+        const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        thumbImg.src = `/thumbs/${slug}.png`;
+        thumbImg.onerror = () => {
+            if (p.seed && p.controls) queueThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
+        };
+        thumbWrap.classList.remove('thumb-loading');
+    } else if (p.seed && p.controls) {
         queueThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
     }
 
@@ -1774,6 +1797,15 @@ function buildProfileCard(name, p, { isPortrait = false, index = 0, total = 1 } 
             e.stopPropagation();
             const realName = card.dataset.profileName;
             if (realName) {
+                // Remove cached thumbnail (read profile data before deleting)
+                const profiles = loadProfiles();
+                const pd = profiles[realName];
+                if (pd && pd.seed && pd.controls) {
+                    const tweaks = pd.paletteTweaks || getPaletteDefaults(pd.controls.palette || 'violet-depth');
+                    const cacheKey = thumbCacheKey(pd.seed, pd.controls, tweaks);
+                    thumbCache.delete(cacheKey);
+                    deleteThumb(cacheKey);
+                }
                 deleteProfile(realName);
                 const order = loadProfileOrder();
                 if (order) {
@@ -1933,11 +1965,21 @@ el.animToggle.addEventListener('click', () => {
     animationEnabled = !animationEnabled;
     el.animToggle.setAttribute('aria-checked', String(animationEnabled));
     localStorage.setItem('geo-anim-enabled', String(animationEnabled));
+    if (renderWorker && workerReady) {
+        renderWorker.postMessage({ type: 'set-animation', enabled: animationEnabled });
+    }
 });
 el.animToggle.addEventListener('keydown', (e) => {
     if (e.key === ' ' || e.key === 'Enter') {
         e.preventDefault();
         el.animToggle.click();
+    }
+});
+
+/* ── Tab visibility → pause/resume render loop ── */
+document.addEventListener('visibilitychange', () => {
+    if (renderWorker && workerReady) {
+        renderWorker.postMessage({ type: 'visibility', visible: !document.hidden });
     }
 });
 
@@ -2779,7 +2821,7 @@ if (sharedState) {
 } else {
     randomizeUI();
 }
-refreshProfileGallery();
+thumbCacheReady.then(() => refreshProfileGallery());
 
 // Seed history with initial state
 navHistory.push(captureSnapshot());
@@ -2793,7 +2835,7 @@ function doInitialRender() {
     const controls = readControlsFromUI();
     renderAndUpdate(seed, controls, { animate: true });
     setStillRendered(true);
-    refreshProfileGallery();
+    thumbCacheReady.then(() => refreshProfileGallery());
     initComplete = true;
 }
 

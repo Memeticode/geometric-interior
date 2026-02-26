@@ -25,6 +25,8 @@ export function createDemoFaceMaterial(lightUniforms: LightUniforms, config: Der
             uAmbientLight: { value: config.ambientLight },
             uEdgeFadeThreshold: { value: config.edgeFadeThreshold },
             uMorphFade: { value: 1.0 },
+            uTime: { value: 0.0 },
+            uFoldProgress: { value: 1.0 },
         },
         vertexShader: demoFaceVertSrc,
         fragmentShader: demoFaceFragSrc,
@@ -42,19 +44,32 @@ export function createDemoEdgeMaterial(): THREE.ShaderMaterial {
     return new THREE.ShaderMaterial({
         uniforms: {
             uMorphFade: { value: 1.0 },
+            uTime: { value: 0.0 },
+            uFoldProgress: { value: 1.0 },
         },
         vertexShader: `
             attribute float vAlpha;
             attribute vec3 aColor;
             attribute float aOpacity;
+            attribute float aFoldDelay;
+            attribute vec3 aFoldOrigin;
+            uniform float uFoldProgress;
             varying float fAlpha;
             varying vec3 vEdgeColor;
             varying float vEdgeOpacity;
+            varying float vFoldAlpha;
             void main() {
+                float delayStart = aFoldDelay * 0.7;
+                float available = 1.0 - delayStart;
+                float localT = clamp((uFoldProgress - delayStart) / max(available, 0.001), 0.0, 1.0);
+                localT = localT * localT * (3.0 - 2.0 * localT);
+                vec3 worldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+                vec3 foldedPos = mix(aFoldOrigin, worldPos, localT);
+                vFoldAlpha = localT;
                 fAlpha = vAlpha;
                 vEdgeColor = aColor;
                 vEdgeOpacity = aOpacity;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                gl_Position = projectionMatrix * viewMatrix * vec4(foldedPos, 1.0);
             }
         `,
         fragmentShader: `
@@ -62,8 +77,9 @@ export function createDemoEdgeMaterial(): THREE.ShaderMaterial {
             varying float fAlpha;
             varying vec3 vEdgeColor;
             varying float vEdgeOpacity;
+            varying float vFoldAlpha;
             void main() {
-                gl_FragColor = vec4(vEdgeColor * uMorphFade, vEdgeOpacity * fAlpha * uMorphFade);
+                gl_FragColor = vec4(vEdgeColor * uMorphFade, vEdgeOpacity * fAlpha * uMorphFade * vFoldAlpha);
             }
         `,
         transparent: true,
@@ -81,6 +97,8 @@ export function createDemoGlowMaterial(glowTexture: THREE.Texture): THREE.Shader
             uGlowMap: { value: glowTexture },
             uMorphFade: { value: 1.0 },
             uMorphT: { value: 0.0 },
+            uTime: { value: 0.0 },
+            uFoldProgress: { value: 1.0 },
         },
         vertexShader: demoGlowVertSrc,
         fragmentShader: demoGlowFragSrc,
