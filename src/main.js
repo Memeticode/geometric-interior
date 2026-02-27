@@ -251,7 +251,7 @@ function onWorkerMessage(e) {
             if (foldOutCallback) { const cb = foldOutCallback; foldOutCallback = null; cb(); }
             break;
         case 'fold-in-complete':
-            // Fold-in animation finished
+            if (foldInCallback) { const cb = foldInCallback; foldInCallback = null; cb(); }
             break;
         case 'error':
             console.error('[render] Worker reported error:', msg.error);
@@ -306,6 +306,7 @@ function getThumbRenderer() {
 const thumbCache = new Map();
 const thumbQueue = [];
 let thumbProcessing = false;
+let thumbDrainDeferred = true;
 
 // Pre-load persistent thumbnail cache from IndexedDB
 const thumbCacheReady = getAllThumbs().then(persisted => {
@@ -335,6 +336,7 @@ function queueThumbnail(seed, controls, destImg, paletteTweaks) {
 }
 
 function drainThumbQueue() {
+    if (thumbDrainDeferred) return;
     if (thumbProcessing || thumbQueue.length === 0) return;
     thumbProcessing = true;
     setTimeout(() => {
@@ -746,6 +748,167 @@ let morphLastPalette = null;
 
 let morphPrepareCallback = null;
 let foldOutCallback = null;
+let foldInCallback = null;
+let foldTransitionState = 'idle'; // 'idle' | 'folding-out' | 'rebuilding' | 'folding-in'
+let foldTransitionTarget = null;
+
+/* ── Fold message helpers ── */
+
+function sendFoldOut() {
+    if (renderWorker && workerReady) {
+        renderWorker.postMessage({ type: 'fold-out' });
+    } else if (fallbackRenderer) {
+        fallbackRenderer.setFoldImmediate(0);
+    }
+}
+
+function sendFoldIn() {
+    if (renderWorker && workerReady) {
+        renderWorker.postMessage({ type: 'fold-in' });
+    } else if (fallbackRenderer) {
+        fallbackRenderer.setFoldImmediate(1);
+    }
+}
+
+function sendFoldImmediate(value) {
+    if (renderWorker && workerReady) {
+        renderWorker.postMessage({ type: 'fold-immediate', value });
+    } else if (fallbackRenderer) {
+        fallbackRenderer.setFoldImmediate(value);
+    }
+}
+
+/**
+ * Snap all UI controls to a target state (seed, sliders, palette, tweaks).
+ * Used during fold transitions when the canvas is invisible.
+ */
+function snapUIToState(state) {
+    el.seed.value = state.seed;
+    autoGrow(el.seed);
+    setControlsInUI(state.controls);
+    if (state.paletteTweaks) {
+        const palKey = state.controls.palette;
+        el.customHue.value = Math.round(state.paletteTweaks.baseHue);
+        el.customHueRange.value = Math.round(state.paletteTweaks.hueRange);
+        el.customSat.value = state.paletteTweaks.saturation.toFixed(2);
+        el.customHueLabel.textContent = Math.round(state.paletteTweaks.baseHue);
+        el.customHueRangeLabel.textContent = Math.round(state.paletteTweaks.hueRange);
+        el.customSatLabel.textContent = state.paletteTweaks.saturation.toFixed(2);
+        updatePalette(palKey, state.paletteTweaks);
+    }
+    syncDisplayFields();
+}
+
+/**
+ * Cancel any active transition (morph or fold).
+ */
+function cancelActiveTransition() {
+    // Cancel morph
+    if (morphCtrl.isActive()) {
+        morphCtrl.cancel();
+        sendMorphCancel();
+    }
+    morphPrepareCallback = null;
+
+    // Cancel fold transition
+    if (foldTransitionState !== 'idle') {
+        foldOutCallback = null;
+        foldInCallback = null;
+        foldTransitionState = 'idle';
+        foldTransitionTarget = null;
+        sendFoldImmediate(0);
+    }
+
+    hideCanvasOverlay();
+    el.morphTimebar.classList.add('hidden');
+    if (morphLocked) setMorphLocked(false);
+}
+
+/**
+ * Profile transition via fold-out → rebuild → fold-in.
+ * Replaces morph cross-fade for profile switching.
+ */
+function startProfileTransition(fromState, toState) {
+    if (!animationEnabled) {
+        // Animation disabled: instant rebuild, no fold
+        snapUIToState(toState);
+        const palKey = toState.controls.palette;
+        resetPalette(palKey);
+        if (toState.paletteTweaks) updatePalette(palKey, toState.paletteTweaks);
+        sendRenderRequest(toState.seed, toState.controls, {
+            deliberate: true,
+            callback(meta) {
+                lastNodeCount = meta.nodeCount || 0;
+                refreshGeneratedText(true);
+            },
+        });
+        setStillRendered(true);
+        return;
+    }
+
+    cancelPendingRender();
+    cancelTextRefresh();
+    if (typewriterAbort) { typewriterAbort(); typewriterAbort = null; }
+
+    // Cancel any active transition
+    cancelActiveTransition();
+
+    foldTransitionTarget = toState;
+    foldTransitionState = 'folding-out';
+    setStillRendered(false);
+    setMorphLocked(true);
+
+    // Set up fold-out completion callback
+    foldOutCallback = () => {
+        if (foldTransitionState !== 'folding-out') return; // stale
+        foldTransitionState = 'rebuilding';
+
+        // Snap UI while scene is invisible
+        snapUIToState(foldTransitionTarget);
+
+        // Apply palette for render
+        const target = foldTransitionTarget;
+        const palKey = target.controls.palette;
+        resetPalette(palKey);
+        if (target.paletteTweaks) updatePalette(palKey, target.paletteTweaks);
+
+        // Rebuild scene (will be built at foldProgress=0, invisible)
+        sendRenderRequest(target.seed, target.controls, {
+            deliberate: true,
+            callback(meta) {
+                lastNodeCount = meta.nodeCount || 0;
+                // Now fold in the new scene
+                foldTransitionState = 'folding-in';
+                foldInCallback = () => {
+                    foldTransitionState = 'idle';
+                    foldTransitionTarget = null;
+                    setMorphLocked(false);
+                    setStillRendered(true);
+                    refreshGeneratedText(true);
+                };
+                sendFoldIn();
+                // Fallback: no worker messages, fire fold-in callback directly
+                if (!renderWorker || !workerReady) {
+                    const ficb = foldInCallback;
+                    foldInCallback = null;
+                    if (ficb) ficb();
+                }
+            },
+        });
+    };
+
+    // For fallback renderer (no worker messages), fire callback directly
+    if (!renderWorker || !workerReady) {
+        sendFoldOut(); // sets fold to 0 immediately
+        const cb = foldOutCallback;
+        foldOutCallback = null;
+        if (cb) cb();
+        return;
+    }
+
+    // Worker path: send fold-out, callback fires on 'fold-out-complete' message
+    sendFoldOut();
+}
 
 /**
  * Send morph-prepare to the worker (or fallback renderer).
@@ -1060,7 +1223,7 @@ function refreshGeneratedText(animate) {
     const titleRng = mulberry32(xmur3(seed + ':title')());
     const title = generateTitle(controls, titleRng);
     const altText = generateAltText(controls, lastNodeCount, title);
-    if (animate) {
+    if (animate && animationEnabled) {
         playRevealAnimation(title, altText);
     } else {
         el.titleText.textContent = title;
@@ -1170,10 +1333,20 @@ function playRevealAnimation(titleText, altText) {
     typewriterAbort = cancelTitle;
 }
 
+function instantReveal(titleText, altText) {
+    if (typewriterAbort) { typewriterAbort(); typewriterAbort = null; }
+    stopTextHeightSync();
+    hideCanvasOverlay();
+    el.titleText.textContent = titleText;
+    el.altText.textContent = altText;
+    syncTextWrapHeight();
+}
+
 function renderAndUpdate(seed, controls, { animate = false } = {}) {
     cancelPendingRender();
     cancelTextRefresh();
-    if (animate) {
+    const doAnimate = animate && animationEnabled;
+    if (doAnimate) {
         el.canvasOverlay.classList.remove('hidden');
         el.canvasOverlayText.textContent = '';
     }
@@ -1181,7 +1354,7 @@ function renderAndUpdate(seed, controls, { animate = false } = {}) {
         deliberate: true,
         callback(meta) {
             lastNodeCount = meta.nodeCount || 0;
-            if (animate) {
+            if (doAnimate) {
                 playRevealAnimation(meta.title, meta.altText);
             } else {
                 el.titleText.textContent = meta.title;
@@ -1206,13 +1379,20 @@ function renderStillCanvas() {
 
 function onControlChange() {
     if (!initComplete) return;
+
+    // Cancel any active fold transition and snap to fully unfolded
+    if (foldTransitionState !== 'idle') {
+        cancelActiveTransition();
+        sendFoldImmediate(1);
+    }
+
+    // Cancel any active morph
     if (morphCtrl.isActive()) {
         morphCtrl.cancel();
         sendMorphCancel();
         hideCanvasOverlay();
         el.morphTimebar.classList.add('hidden');
     } else if (morphPrepareCallback) {
-        // Cancel pending morph-prepare before it started
         sendMorphCancel();
         hideCanvasOverlay();
         el.morphTimebar.classList.add('hidden');
@@ -1453,7 +1633,7 @@ function restoreSnapshot(snap) {
         controls: readControlsFromUI(),
         paletteTweaks: readPaletteFromUI(),
     };
-    startMorph(fromState, toState);
+    startProfileTransition(fromState, toState);
 }
 
 function updateHistoryButtons() {
@@ -1606,7 +1786,7 @@ async function randomize() {
         controls: readControlsFromUI(),
         paletteTweaks: readPaletteFromUI(),
     };
-    startMorph(fromState, toState);
+    startProfileTransition(fromState, toState);
 }
 
 /* ---------------------------
@@ -1715,7 +1895,7 @@ async function selectCard(cardEl) {
     };
 
     // Morph from current to target
-    startMorph(fromState, toState);
+    startProfileTransition(fromState, toState);
 }
 
 function buildProfileCard(name, p, { isPortrait = false, index = 0, total = 1 } = {}) {
@@ -2833,7 +3013,28 @@ showCanvasOverlay('');
 function doInitialRender() {
     const seed = el.seed.value.trim() || 'seed';
     const controls = readControlsFromUI();
-    renderAndUpdate(seed, controls, { animate: true });
+
+    // When animation is on, build scene collapsed and fold in
+    if (animationEnabled) {
+        sendFoldImmediate(0);
+    }
+
+    sendRenderRequest(seed, controls, {
+        deliberate: true,
+        callback(meta) {
+            lastNodeCount = meta.nodeCount || 0;
+            if (animationEnabled) {
+                playRevealAnimation(meta.title, meta.altText);
+                sendFoldIn();
+            } else {
+                instantReveal(meta.title, meta.altText);
+            }
+            syncDisplayFields();
+            // Main image + text are up — start rendering queued thumbnails
+            thumbDrainDeferred = false;
+            drainThumbQueue();
+        },
+    });
     setStillRendered(true);
     thumbCacheReady.then(() => refreshProfileGallery());
     initComplete = true;

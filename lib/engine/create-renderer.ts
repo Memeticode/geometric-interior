@@ -192,6 +192,8 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         if (currentRefs.faceMat) currentRefs.faceMat.uniforms.uFoldProgress.value = foldProgress;
         if (currentRefs.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = foldProgress;
         if (currentRefs.glowMat) currentRefs.glowMat.uniforms.uFoldProgress.value = foldProgress;
+        if (currentRefs.tendrilMat) { currentRefs.tendrilMat.opacity = foldProgress; currentRefs.tendrilMat.transparent = true; }
+        if (currentRefs.sphereMat) { currentRefs.sphereMat.opacity = foldProgress; currentRefs.sphereMat.transparent = true; }
 
         bloomEffect.intensity = params.bloomStrength;
         bloomEffect.luminanceMaterial.threshold = params.bloomThreshold;
@@ -489,6 +491,8 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         if (currentRefs?.faceMat) currentRefs.faceMat.uniforms.uFoldProgress.value = foldProgress;
         if (currentRefs?.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = foldProgress;
         if (currentRefs?.glowMat) currentRefs.glowMat.uniforms.uFoldProgress.value = foldProgress;
+        if (currentRefs?.tendrilMat) { currentRefs.tendrilMat.opacity = foldProgress; currentRefs.tendrilMat.transparent = true; }
+        if (currentRefs?.sphereMat) { currentRefs.sphereMat.opacity = foldProgress; currentRefs.sphereMat.transparent = true; }
     }
 
     function renderFrame(): void {
@@ -503,6 +507,8 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         if (currentRefs?.faceMat) currentRefs.faceMat.uniforms.uFoldProgress.value = v;
         if (currentRefs?.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = v;
         if (currentRefs?.glowMat) currentRefs.glowMat.uniforms.uFoldProgress.value = v;
+        if (currentRefs?.tendrilMat) { currentRefs.tendrilMat.opacity = v; currentRefs.tendrilMat.transparent = true; }
+        if (currentRefs?.sphereMat) { currentRefs.sphereMat.opacity = v; currentRefs.sphereMat.transparent = true; }
     }
     function isFoldComplete(): boolean { return foldProgress === foldTarget; }
 

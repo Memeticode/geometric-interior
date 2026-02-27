@@ -28,6 +28,8 @@ let loopRunning = false;
 let loopStartTime = 0;
 let animationEnabled = true;
 let tabVisible = true;
+const AMBIENT_INTERVAL = 1000 / 24; // ~24fps for ambient animation
+let lastTickTime = 0;
 
 /* ── Fold state ── */
 let foldAnimating = false;
@@ -57,6 +59,16 @@ function stopLoop() {
 function tick() {
     if (!loopRunning || !renderer) return;
     const now = performance.now();
+
+    // Throttle ambient frames to ~24fps; morph/fold run at full framerate
+    if (!morphAnimating && !foldAnimating) {
+        if (now - lastTickTime < AMBIENT_INTERVAL) {
+            scheduleFrame(tick);
+            return;
+        }
+    }
+    lastTickTime = now;
+
     const elapsed = (now - loopStartTime) / 1000.0;
 
     if (morphAnimating) {
@@ -190,6 +202,7 @@ self.onmessage = function (e) {
 
         case 'render':
             if (morphActive || morphAnimating) break; // ignore renders during morph
+            if (foldAnimating && !msg.deliberate) break; // block casual renders during fold
             pendingRender = msg;
             scheduleRender();
             break;
