@@ -34,4 +34,6 @@ thumbnail.png
 *.env
 /nul
 /output
+
 sampler-captures/*.png
+sampler-captures/**/*.png
