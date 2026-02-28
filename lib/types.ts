@@ -76,6 +76,7 @@ export interface Renderer {
     morphEnd(): void;
     updateTime(seconds: number): void;
     renderFrame(): void;
+    setAnimConfig(config: { sparkle?: number; drift?: number; wobble?: number }): void;
     foldIn(): void;
     foldOut(): void;
     setFoldImmediate(v: number): void;
@@ -205,6 +206,8 @@ export interface DerivedParams {
     bloomThreshold: number;
     chromaticAberration: number;
     vignetteStrength: number;
+    flowScale: number;
+    flowInfluence: number;
 }
 
 /** Scene build result refs for morph transitions */

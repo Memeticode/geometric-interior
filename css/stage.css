@@ -1,0 +1,227 @@
+/* ── Canvas stage ── */
+.stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.stage-content {
+    width: 100%;
+    max-width: 68.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: 1.25rem 1rem;
+    transition: max-width 0.3s ease;
+}
+
+.panel.panel-collapsed + .stage .stage-content {
+    max-width: 100vw;
+}
+
+/* ── Stage header (name + seed left, buttons right) ── */
+.stage-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0;
+}
+
+.stage-header-info {
+    min-width: 0;
+    text-align: left;
+    flex: 1;
+}
+
+/* ── Render card ── */
+.render-card {
+    border-radius: 0;
+    overflow: hidden;
+}
+
+.generated-text-wrap {
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.35s ease;
+}
+
+.render-card .generated-title {
+    padding: 0.625rem 1rem 0;
+}
+
+.render-card .generated-alt {
+    padding: 0.25rem 1rem 0.875rem;
+}
+
+.canvas-wrapper {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 0;
+}
+
+.canvas-wrapper canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    background: #080a0f;
+}
+
+.render-card .canvas-wrapper {
+    border-radius: 0;
+}
+
+.render-card .canvas-overlay {
+    border-radius: 0;
+}
+
+.canvas-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--modal-backdrop);
+    z-index: 10;
+    opacity: 1;
+    transition: opacity 0.2s ease-out;
+    pointer-events: auto;
+}
+
+.canvas-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.canvas-overlay-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.canvas-overlay-inner .loading-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.canvas-overlay-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent-text);
+    border-radius: 50%;
+    animation: thumb-spin 0.7s linear infinite;
+    position: relative;
+    z-index: 1;
+}
+
+.canvas-overlay-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Morph timebar ── */
+.morph-timebar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    z-index: 11;
+    pointer-events: none;
+    transition: opacity 0.3s ease-out;
+}
+.morph-timebar.hidden { opacity: 0; }
+.morph-timebar-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent-text, rgba(180, 140, 255, 0.6));
+    transition: width 0.05s linear;
+}
+
+/* ── Fullscreen ── */
+.render-card:fullscreen,
+.render-card:-webkit-full-screen {
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+}
+
+.render-card:fullscreen .canvas-wrapper,
+.render-card:-webkit-full-screen .canvas-wrapper {
+    padding: 0;
+    max-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.render-card:fullscreen .canvas-wrapper canvas,
+.render-card:-webkit-full-screen .canvas-wrapper canvas {
+    width: 100vw;
+    height: 100vh;
+}
+
+.render-card:fullscreen .generated-title,
+.render-card:fullscreen .generated-alt,
+.render-card:-webkit-full-screen .generated-title,
+.render-card:-webkit-full-screen .generated-alt {
+    display: none;
+}
+
+.fullscreen-close {
+    display: none;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 0.375rem;
+    line-height: 0;
+    transition: color 0.2s, background 0.2s;
+}
+
+.fullscreen-close:hover {
+    color: #fff;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.render-card:fullscreen .canvas-overlay,
+.render-card:-webkit-full-screen .canvas-overlay {
+    background: #000;
+}
+
+.render-card:fullscreen .fullscreen-close,
+.render-card:-webkit-full-screen .fullscreen-close {
+    display: block;
+}

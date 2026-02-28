@@ -11,6 +11,8 @@ uniform float uAmbientLight;
 uniform float uEdgeFadeThreshold;
 uniform float uMorphFade;
 uniform float uTime;
+uniform float uSparkleIntensity;
+uniform float uDriftSpeed;
 
 varying float fAlpha;
 varying float vFoldAlpha;
@@ -84,7 +86,7 @@ float nebulaCracks(vec2 uv) {
 }
 
 float nebulaDust(vec2 uv, float time) {
-    float drift = time * 0.02;
+    float drift = time * 0.02 * uDriftSpeed;
     float d = 0.0;
     d += noise3D(vec3(uv * 3.0 + drift * 0.3, drift * 0.1)) * 0.5;
     d += noise3D(vec3(uv * 6.5 + drift * 0.5, 3.0 + drift * 0.15)) * 0.3;
@@ -112,7 +114,7 @@ float starSparkle(vec2 p, float scale, float time) {
                 float phase = hash(vec3(cellId, 40.0)) * 6.283;
                 float rate = 0.5 + hash(vec3(cellId, 50.0)) * 1.5;
                 float flicker = 0.5 + 0.5 * sin(time * rate * 6.283 + phase);
-                sparkle += smoothstep(0.07, 0.0, d) * (brightness - 0.75) * 4.0 * flicker;
+                sparkle += smoothstep(0.07, 0.0, d) * (brightness - 0.75) * 4.0 * mix(1.0, flicker, uSparkleIntensity);
             }
         }
     }

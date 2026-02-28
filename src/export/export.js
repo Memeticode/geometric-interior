@@ -8,6 +8,7 @@ import { generateTitle, generateAltText, generateAnimAltText } from '../../lib/c
 import { evalControlsAt } from '../../lib/core/interpolation.js';
 import { ANIM_FPS, MOTION_BLUR_ENABLED, MB_DECAY, MB_ADD } from './animation.js';
 import { profileToConfig } from '../../lib/core/config-schema.js';
+import { getLocale } from '../i18n/locale.js';
 
 export function downloadBlob(filename, blob) {
     const url = URL.createObjectURL(blob);
@@ -154,19 +155,19 @@ export function safeName(s) {
     return (s || 'seed').replace(/[^a-z0-9_-]+/gi, '_').slice(0, 80);
 }
 
-export function computeKeyframeText(seedForTitles, landmarks) {
+export function computeKeyframeText(seedForTitles, landmarks, locale = 'en') {
     const out = [];
     for (const k of landmarks) {
         const seedFn = xmur3(seedForTitles + '::' + k.name);
         const rng = mulberry32(seedFn());
-        const title = generateTitle(k.controls, rng);
+        const title = generateTitle(k.controls, rng, locale);
 
         const seedFn2 = xmur3(seedForTitles + '::alt::' + k.name);
         const rng2 = mulberry32(seedFn2());
         const derived = deriveParams(k.controls, rng2);
         const nodeCount = derived.nodeCount;
 
-        const alt = generateAltText(k.controls, nodeCount, title);
+        const alt = generateAltText(k.controls, nodeCount, title, locale);
 
         out.push({
             name: k.name,
@@ -178,14 +179,14 @@ export function computeKeyframeText(seedForTitles, landmarks) {
     return out;
 }
 
-export function computeLoopSummaryTitleAlt(seed, landmarks, durationSecs) {
+export function computeLoopSummaryTitleAlt(seed, landmarks, durationSecs, locale = 'en') {
     const a0 = evalControlsAt(0.0, landmarks);
     const seedFn = xmur3(seed + '::bundle');
     const rng = mulberry32(seedFn());
-    const title = generateTitle(a0, rng);
+    const title = generateTitle(a0, rng, locale);
 
-    const keyframeTexts = computeKeyframeText(seed, landmarks);
-    const altText = generateAnimAltText(landmarks, durationSecs, keyframeTexts);
+    const keyframeTexts = computeKeyframeText(seed, landmarks, locale);
+    const altText = generateAnimAltText(landmarks, durationSecs, keyframeTexts, locale);
 
     return { title, altText };
 }
@@ -254,8 +255,9 @@ export async function packageAnimZip(rec, { landmarks, loopLandmarkNames, timeWa
     const ts = toIsoLocalish(new Date());
     const base = `animation_${safeName(rec.seed)}_${ts}`;
 
-    const keyframes = computeKeyframeText(rec.seed, landmarks);
-    const summary = computeLoopSummaryTitleAlt(rec.seed, landmarks, rec.durationMs / 1000);
+    const locale = getLocale();
+    const keyframes = computeKeyframeText(rec.seed, landmarks, locale);
+    const summary = computeLoopSummaryTitleAlt(rec.seed, landmarks, rec.durationMs / 1000, locale);
 
     const zip = new JSZip();
 

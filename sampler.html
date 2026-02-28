@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Parameter Space Sampler</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0e;
+      color: #c8c8d0;
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+      font-size: 13px;
+      padding: 20px;
+    }
+    h1 { font-size: 16px; font-weight: 500; margin-bottom: 16px; color: #e0e0e8; }
+
+    /* ── Controls bar ── */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      background: #12121a;
+      border-radius: 6px;
+      border: 1px solid #1e1e2a;
+    }
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .control-group label {
+      color: #888;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    select, input[type="text"] {
+      background: #1a1a26;
+      color: #d0d0d8;
+      border: 1px solid #2a2a3a;
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-family: inherit;
+      font-size: 12px;
+    }
+    select:focus, input:focus { outline: 1px solid #5050a0; border-color: #5050a0; }
+    input[type="range"] {
+      width: 80px;
+      accent-color: #6060b0;
+    }
+    .range-val {
+      color: #6868a0;
+      font-size: 11px;
+      min-width: 28px;
+      text-align: right;
+    }
+    button {
+      background: #2a2a4a;
+      color: #c8c8e0;
+      border: 1px solid #3a3a5a;
+      border-radius: 4px;
+      padding: 6px 16px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #3a3a5a; }
+    button:disabled { opacity: 0.4; cursor: default; }
+    button.cancel { background: #4a2020; border-color: #6a3030; }
+    button.cancel:hover { background: #5a2828; }
+
+    /* ── Held params ── */
+    .held-params {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 20px;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 8px 16px;
+      background: #10101a;
+      border-radius: 4px;
+      border: 1px solid #1a1a28;
+    }
+    .held-params .label { color: #666; font-size: 11px; text-transform: uppercase; }
+
+    /* ── Grid area ── */
+    .grid-container { position: relative; }
+    .axis-label {
+      color: #5858a0;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .axis-label.x-axis {
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .axis-label.y-axis {
+      writing-mode: vertical-lr;
+      transform: rotate(180deg);
+      position: absolute;
+      left: -24px;
+      top: 50%;
+      translate: 0 -50%;
+    }
+    .grid-wrapper {
+      position: relative;
+      padding-left: 28px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 2px;
+    }
+    .cell {
+      position: relative;
+      aspect-ratio: 200 / 130;
+      background: #08080c;
+      border-radius: 2px;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .cell canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .cell.pending { opacity: 0.3; }
+    .cell.rendering {
+      outline: 1px solid #5050a0;
+      opacity: 1;
+    }
+    .cell.done { opacity: 1; }
+    .cell:hover { outline: 1px solid #8080c0; }
+
+    /* ── Tick labels ── */
+    .x-ticks, .y-ticks { display: contents; }
+    .x-ticks-row {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 2px;
+      margin-top: 2px;
+      padding-left: 28px;
+    }
+    .x-ticks-row span {
+      text-align: center;
+      color: #4848a0;
+      font-size: 10px;
+    }
+    .y-tick {
+      position: absolute;
+      right: calc(100% + 6px);
+      color: #4848a0;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    /* ── Status bar ── */
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 12px;
+      padding: 8px 16px;
+      background: #10101a;
+      border-radius: 4px;
+      border: 1px solid #1a1a28;
+      min-height: 36px;
+    }
+    .progress { color: #6868a0; }
+    .hover-info { color: #9898b0; }
+    .timing { color: #585870; margin-left: auto; }
+
+    /* ── Full-size overlay ── */
+    .overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      cursor: pointer;
+    }
+    .overlay.visible { display: flex; }
+    .overlay canvas {
+      max-width: 90vw;
+      max-height: 80vh;
+      border-radius: 4px;
+    }
+    .overlay .info {
+      color: #9898b0;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Parameter Space Sampler</h1>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>X-axis</label>
+      <select id="xAxis">
+        <option value="density" selected>density</option>
+        <option value="fracture">fracture</option>
+        <option value="coherence">coherence</option>
+        <option value="luminosity">luminosity</option>
+        <option value="depth">depth</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Y-axis</label>
+      <select id="yAxis">
+        <option value="density">density</option>
+        <option value="fracture" selected>fracture</option>
+        <option value="coherence">coherence</option>
+        <option value="luminosity">luminosity</option>
+        <option value="depth">depth</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Seed</label>
+      <input type="text" id="seed" value="sampler-1" style="width:100px"/>
+    </div>
+    <div class="control-group">
+      <label>Palette</label>
+      <select id="palette"></select>
+    </div>
+    <button id="renderBtn">Render Grid</button>
+    <button id="cancelBtn" class="cancel" disabled>Cancel</button>
+  </div>
+
+  <div class="held-params" id="heldParams">
+    <span class="label">Hold:</span>
+  </div>
+
+  <div class="grid-container">
+    <div class="grid-wrapper">
+      <div class="axis-label x-axis" id="xAxisLabel">density</div>
+      <div class="axis-label y-axis" id="yAxisLabel">fracture</div>
+      <div class="grid" id="grid"></div>
+      <div class="x-ticks-row" id="xTicks"></div>
+    </div>
+  </div>
+
+  <div class="status">
+    <span class="progress" id="progress"></span>
+    <span class="hover-info" id="hoverInfo"></span>
+    <span class="timing" id="timing"></span>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <canvas id="fullCanvas" width="800" height="520"></canvas>
+    <div class="info" id="fullInfo"></div>
+  </div>
+
+  <!-- Hidden renderer canvas -->
+  <canvas id="renderCanvas" width="200" height="130" style="display:none"></canvas>
+
+  <script type="module">
+    import { createRenderer, PALETTE_KEYS, resetPalette } from './lib/index.js';
+
+    /* ── Constants ── */
+    const GRID = 8;
+    const CELL_W = 200;
+    const CELL_H = 130;
+    const AXES = ['density', 'fracture', 'coherence', 'luminosity', 'depth'];
+    const DEFAULTS = { density: 0.5, fracture: 0.5, coherence: 0.5, luminosity: 0.5, depth: 0.5 };
+
+    /* ── DOM refs ── */
+    const xAxisSel   = document.getElementById('xAxis');
+    const yAxisSel   = document.getElementById('yAxis');
+    const seedInput  = document.getElementById('seed');
+    const paletteSel = document.getElementById('palette');
+    const renderBtn  = document.getElementById('renderBtn');
+    const cancelBtn  = document.getElementById('cancelBtn');
+    const heldDiv    = document.getElementById('heldParams');
+    const gridDiv    = document.getElementById('grid');
+    const xTicksDiv  = document.getElementById('xTicks');
+    const xLabel     = document.getElementById('xAxisLabel');
+    const yLabel     = document.getElementById('yAxisLabel');
+    const progressEl = document.getElementById('progress');
+    const hoverEl    = document.getElementById('hoverInfo');
+    const timingEl   = document.getElementById('timing');
+    const overlay    = document.getElementById('overlay');
+    const fullCanvas = document.getElementById('fullCanvas');
+    const fullInfo   = document.getElementById('fullInfo');
+
+    /* ── Renderer ── */
+    const renderCanvas = document.getElementById('renderCanvas');
+    const renderer = createRenderer(renderCanvas, { dpr: 1 });
+    renderer.resize(CELL_W, CELL_H);
+
+    /* ── Full-size renderer (lazy) ── */
+    let fullRenderer = null;
+    function getFullRenderer() {
+      if (!fullRenderer) {
+        fullRenderer = createRenderer(fullCanvas, { dpr: 1 });
+        fullRenderer.resize(800, 520);
+      }
+      return fullRenderer;
+    }
+
+    /* ── Populate palette dropdown ── */
+    for (const key of PALETTE_KEYS) {
+      if (key === 'custom') continue;
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = key;
+      paletteSel.appendChild(opt);
+    }
+
+    /* ── Grid cells ── */
+    const cells = [];        // { canvas, ctx, row, col, meta }
+    const cellData = [];     // { controls, xVal, yVal } per cell
+
+    function buildGrid() {
+      gridDiv.innerHTML = '';
+      xTicksDiv.innerHTML = '';
+      cells.length = 0;
+      cellData.length = 0;
+
+      for (let row = 0; row < GRID; row++) {
+        for (let col = 0; col < GRID; col++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell pending';
+          const cvs = document.createElement('canvas');
+          cvs.width = CELL_W;
+          cvs.height = CELL_H;
+          cell.appendChild(cvs);
+
+          const idx = row * GRID + col;
+          cell.addEventListener('mouseenter', () => onCellHover(idx));
+          cell.addEventListener('mouseleave', () => { hoverEl.textContent = ''; });
+          cell.addEventListener('click', () => onCellClick(idx));
+
+          // Y-axis tick (left side, one per row, on first column)
+          if (col === 0) {
+            const tick = document.createElement('span');
+            tick.className = 'y-tick';
+            // Position: invert row so row 0 = top = high value
+            const yVal = 1 - row / (GRID - 1);
+            tick.textContent = yVal.toFixed(2);
+            tick.style.top = '50%';
+            tick.style.transform = 'translateY(-50%)';
+            cell.style.position = 'relative';
+            cell.appendChild(tick);
+          }
+
+          gridDiv.appendChild(cell);
+          cells.push({ canvas: cvs, ctx: cvs.getContext('2d'), row, col, meta: null });
+        }
+      }
+
+      // X-axis ticks
+      for (let col = 0; col < GRID; col++) {
+        const span = document.createElement('span');
+        span.textContent = (col / (GRID - 1)).toFixed(2);
+        xTicksDiv.appendChild(span);
+      }
+    }
+
+    /* ── Held parameter sliders ── */
+    const heldSliders = {};
+
+    function buildHeldParams() {
+      // Remove old sliders (keep the label span)
+      while (heldDiv.children.length > 1) heldDiv.removeChild(heldDiv.lastChild);
+
+      const xAxis = xAxisSel.value;
+      const yAxis = yAxisSel.value;
+      heldSliders.length = 0;
+
+      for (const axis of AXES) {
+        if (axis === xAxis || axis === yAxis) continue;
+        const group = document.createElement('div');
+        group.className = 'control-group';
+        const lbl = document.createElement('label');
+        lbl.textContent = axis;
+        const slider = document.createElement('input');
+        slider.type = 'range';
+        slider.min = '0';
+        slider.max = '1';
+        slider.step = '0.01';
+        slider.value = DEFAULTS[axis];
+        const valSpan = document.createElement('span');
+        valSpan.className = 'range-val';
+        valSpan.textContent = Number(slider.value).toFixed(2);
+        slider.addEventListener('input', () => {
+          valSpan.textContent = Number(slider.value).toFixed(2);
+        });
+        group.appendChild(lbl);
+        group.appendChild(slider);
+        group.appendChild(valSpan);
+        heldDiv.appendChild(group);
+        heldSliders[axis] = slider;
+      }
+    }
+
+    function updateLabels() {
+      xLabel.textContent = xAxisSel.value + ' \u2192';
+      yLabel.textContent = '\u2191 ' + yAxisSel.value;
+    }
+
+    xAxisSel.addEventListener('change', () => { buildHeldParams(); updateLabels(); });
+    yAxisSel.addEventListener('change', () => { buildHeldParams(); updateLabels(); });
+
+    /* ── Render loop ── */
+    let cancelled = false;
+
+    async function renderGrid() {
+      cancelled = false;
+      renderBtn.disabled = true;
+      cancelBtn.disabled = false;
+
+      const xAxis = xAxisSel.value;
+      const yAxis = yAxisSel.value;
+      const seed = seedInput.value || 'sampler-1';
+      const palette = paletteSel.value;
+
+      // Reset palette to defaults
+      resetPalette(palette);
+
+      // Gather held values
+      const held = {};
+      for (const axis of AXES) {
+        if (axis === xAxis || axis === yAxis) {
+          held[axis] = 0; // placeholder, overwritten per cell
+        } else {
+          held[axis] = parseFloat(heldSliders[axis]?.value ?? DEFAULTS[axis]);
+        }
+      }
+
+      buildGrid();
+      updateLabels();
+
+      const totalCells = GRID * GRID;
+      const t0 = performance.now();
+      let rendered = 0;
+
+      for (let row = 0; row < GRID; row++) {
+        for (let col = 0; col < GRID; col++) {
+          if (cancelled) {
+            progressEl.textContent = `Cancelled at ${rendered}/${totalCells}`;
+            break;
+          }
+
+          const idx = row * GRID + col;
+          const xVal = col / (GRID - 1);
+          const yVal = 1 - row / (GRID - 1); // row 0 = top = high y value
+
+          const controls = {
+            topology: 'flow-field',
+            palette: palette,
+            ...held,
+            [xAxis]: xVal,
+            [yAxis]: yVal,
+          };
+
+          cellData[idx] = { controls, xVal, yVal };
+
+          // Mark rendering
+          cells[idx].canvas.parentElement.className = 'cell rendering';
+
+          // Yield to let the UI update
+          await new Promise(r => setTimeout(r, 0));
+          if (cancelled) break;
+
+          // Render
+          const meta = renderer.renderWith(seed, controls);
+          cells[idx].meta = meta;
+
+          // Capture to cell canvas
+          cells[idx].ctx.drawImage(renderCanvas, 0, 0, CELL_W, CELL_H);
+          cells[idx].canvas.parentElement.className = 'cell done';
+
+          rendered++;
+          const elapsed = ((performance.now() - t0) / 1000).toFixed(1);
+          const avg = ((performance.now() - t0) / rendered / 1000).toFixed(2);
+          progressEl.textContent = `${rendered}/${totalCells}`;
+          timingEl.textContent = `${elapsed}s elapsed, ~${avg}s/cell`;
+        }
+        if (cancelled) break;
+      }
+
+      if (!cancelled) {
+        const total = ((performance.now() - t0) / 1000).toFixed(1);
+        progressEl.textContent = `${totalCells}/${totalCells} complete`;
+        timingEl.textContent = `${total}s total`;
+      }
+
+      renderBtn.disabled = false;
+      cancelBtn.disabled = true;
+    }
+
+    renderBtn.addEventListener('click', renderGrid);
+    cancelBtn.addEventListener('click', () => { cancelled = true; });
+
+    /* ── Hover ── */
+    function onCellHover(idx) {
+      const data = cellData[idx];
+      if (!data) return;
+      const meta = cells[idx].meta;
+      const xAxis = xAxisSel.value;
+      const yAxis = yAxisSel.value;
+      let text = `${xAxis}=${data.xVal.toFixed(3)}, ${yAxis}=${data.yVal.toFixed(3)}`;
+      if (meta) text += ` | nodes: ${meta.nodeCount}`;
+      hoverEl.textContent = text;
+    }
+
+    /* ── Click to enlarge ── */
+    function onCellClick(idx) {
+      const data = cellData[idx];
+      if (!data) return;
+
+      const seed = seedInput.value || 'sampler-1';
+      const palette = paletteSel.value;
+      resetPalette(palette);
+
+      const fr = getFullRenderer();
+      const meta = fr.renderWith(seed, data.controls);
+
+      const xAxis = xAxisSel.value;
+      const yAxis = yAxisSel.value;
+      fullInfo.textContent =
+        `${xAxis}=${data.xVal.toFixed(3)}, ${yAxis}=${data.yVal.toFixed(3)} | ` +
+        `nodes: ${meta.nodeCount} | ${meta.title}`;
+
+      overlay.classList.add('visible');
+    }
+
+    overlay.addEventListener('click', () => overlay.classList.remove('visible'));
+
+    /* ── Init ── */
+    buildHeldParams();
+    updateLabels();
+    buildGrid();
+  </script>
+</body>
+</html>

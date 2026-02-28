@@ -169,6 +169,12 @@ export function deriveParams(controls: Controls, _rng: () => number): DerivedPar
     const chromaticAberration = cl(frac, 0.001, 0.002, 0.004);
     const vignetteStrength = cl(dep, 0.20, 0.50, 0.86);
 
+    // Flow field: coherence controls large-scale directional alignment of chains.
+    // High coherence → low scale (large coherent regions) + strong influence (chains align).
+    // Low coherence → high scale (per-chain chaos) + weak influence (surface draping dominates).
+    const flowScale = cl(c.coherence, 5.0, 1.5, 0.5);
+    const flowInfluence = cl(c.coherence, 0.0, 0.15, 0.35);
+
     return {
         density: c.density,
         fracture: c.fracture,
@@ -207,5 +213,7 @@ export function deriveParams(controls: Controls, _rng: () => number): DerivedPar
         bloomThreshold,
         chromaticAberration,
         vignetteStrength,
+        flowScale,
+        flowInfluence,
     };
 }

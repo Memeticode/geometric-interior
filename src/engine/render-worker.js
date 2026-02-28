@@ -28,7 +28,8 @@ let loopRunning = false;
 let loopStartTime = 0;
 let animationEnabled = true;
 let tabVisible = true;
-const AMBIENT_INTERVAL = 1000 / 24; // ~24fps for ambient animation
+const AMBIENT_INTERVAL = 1000 / 12; // ~12fps for ambient animation
+const LOOP_LENGTH = 3.0; // seconds — animation loops every 3s
 let lastTickTime = 0;
 
 /* ── Fold state ── */
@@ -60,7 +61,7 @@ function tick() {
     if (!loopRunning || !renderer) return;
     const now = performance.now();
 
-    // Throttle ambient frames to ~24fps; morph/fold run at full framerate
+    // Throttle ambient frames to ~12fps; morph/fold run at full framerate
     if (!morphAnimating && !foldAnimating) {
         if (now - lastTickTime < AMBIENT_INTERVAL) {
             scheduleFrame(tick);
@@ -69,7 +70,9 @@ function tick() {
     }
     lastTickTime = now;
 
-    const elapsed = (now - loopStartTime) / 1000.0;
+    const rawElapsed = (now - loopStartTime) / 1000.0;
+    // Ambient animation loops; morph/fold use raw elapsed for one-shot timing
+    const elapsed = (morphAnimating || foldAnimating) ? rawElapsed : rawElapsed % LOOP_LENGTH;
 
     if (morphAnimating) {
         // Real-time morph: advance t each frame
@@ -141,7 +144,7 @@ function doRender() {
             renderer.resize(req.width, req.height);
         }
 
-        const meta = renderer.renderWith(req.seed, req.controls);
+        const meta = renderer.renderWith(req.seed, req.controls, req.locale || 'en');
         lastRenderReq = req;
 
         // Start render loop if animation is enabled
@@ -293,6 +296,12 @@ self.onmessage = function (e) {
                 startLoop();
             } else if (!animationEnabled) {
                 stopLoop();
+            }
+            break;
+
+        case 'set-anim-config':
+            if (renderer) {
+                renderer.setAnimConfig(msg);
             }
             break;
 

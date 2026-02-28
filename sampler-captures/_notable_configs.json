@@ -1,0 +1,74 @@
+[
+  {
+    "name": "ghost-prismatic",
+    "file": "ghost-prismatic.png",
+    "params": { "density": 0.14, "fracture": 0.86, "luminosity": 0.50, "coherence": 0.50, "depth": 0.50 },
+    "palette": "prismatic",
+    "seed": "sampler-1",
+    "nodes": 168,
+    "notes": "Colorful crystalline shards with visible hue variation. High fracture separates faces enough for prismatic palette to shine."
+  },
+  {
+    "name": "prismatic-dark-sparse",
+    "file": "prismatic-dark-sparse.png",
+    "params": { "density": 0.20, "fracture": 0.60, "luminosity": 0.20, "coherence": 0.30, "depth": 0.50 },
+    "palette": "prismatic",
+    "seed": "sampler-1",
+    "nodes": 205,
+    "notes": "Jewel-toned fragments. Low luminosity prevents additive blowout, preserving color differences between faces."
+  },
+  {
+    "name": "all-zero",
+    "file": "all-zero.png",
+    "params": { "density": 0.00, "fracture": 0.00, "luminosity": 0.00, "coherence": 0.00, "depth": 0.00 },
+    "palette": "violet-depth",
+    "seed": "sampler-1",
+    "nodes": 118,
+    "notes": "Intimate and starlike. Minimal element count makes individual glow dots readable. Surprisingly beautiful."
+  },
+  {
+    "name": "sparse-ghost",
+    "file": "sparse-ghost.png",
+    "params": { "density": 0.14, "fracture": 0.86, "luminosity": 0.50, "coherence": 0.50, "depth": 0.50 },
+    "palette": "violet-depth",
+    "seed": "sampler-1",
+    "nodes": 168,
+    "notes": "Angular, architectural, readable. Individual triangular faces visible. Structure reads as constructed."
+  },
+  {
+    "name": "all-min-except-lum",
+    "file": "all-min-except-lum.png",
+    "params": { "density": 0.00, "fracture": 0.00, "luminosity": 1.00, "coherence": 0.00, "depth": 0.00 },
+    "palette": "violet-depth",
+    "seed": "sampler-1",
+    "nodes": 118,
+    "notes": "Compact bright core with visible sparkle dots around it. Same geometry as all-zero but fully lit."
+  },
+  {
+    "name": "sweet-spot",
+    "file": "sweet-spot.png",
+    "params": { "density": 0.57, "fracture": 0.43, "luminosity": 0.50, "coherence": 0.50, "depth": 0.50 },
+    "palette": "violet-depth",
+    "seed": "sampler-1",
+    "nodes": 494,
+    "notes": "Balanced midpoint. Good density without blowout, moderate fracture preserves form."
+  },
+  {
+    "name": "scattered-nebula",
+    "file": "scattered-nebula.png",
+    "params": { "density": 0.86, "fracture": 0.86, "luminosity": 0.50, "coherence": 0.50, "depth": 0.50 },
+    "palette": "violet-depth",
+    "seed": "sampler-1",
+    "nodes": 912,
+    "notes": "High density + high fracture. Dual bright lobes with scattered geometry. Nebula-like."
+  },
+  {
+    "name": "structured-scatter",
+    "file": "structured-scatter.png",
+    "params": { "density": 0.50, "fracture": 0.90, "luminosity": 0.50, "coherence": 0.90, "depth": 0.50 },
+    "palette": "violet-depth",
+    "seed": "sampler-1",
+    "nodes": 335,
+    "notes": "High coherence + high fracture. Tests whether structure survives scattering. Dual-lobe form persists."
+  }
+]

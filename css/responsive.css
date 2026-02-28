@@ -1,0 +1,240 @@
+/* ── Responsive: Tablet ── */
+@media (max-width: 1023px) {
+    .app-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+    }
+
+    .panel {
+        position: fixed;
+        top: var(--header-h, 0px);
+        left: 0;
+        bottom: 0;
+        width: min(25rem, 90vw);
+        max-height: none;
+        background: var(--bg);
+        border-right: 1px solid var(--border);
+        border-bottom: none;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 500;
+        transform: translateX(0);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.3s ease,
+                    visibility 0.3s;
+        opacity: 1;
+        visibility: visible;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .panel.panel-collapsed {
+        transform: translateX(-100%);
+        opacity: 0;
+        visibility: hidden;
+        width: min(25rem, 90vw);
+        max-height: none;
+        padding: 0.5rem;
+        box-shadow: none;
+    }
+
+    .panel-backdrop {
+        display: block;
+        position: fixed;
+        top: var(--header-h, 0px);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 499;
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.3s ease, visibility 0.3s;
+    }
+
+    .panel-backdrop.hidden {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .app-container {
+        border-left: none;
+        border-right: none;
+    }
+}
+
+/* ── Responsive: Mobile ── */
+@media (max-width: 767px) {
+    .app-header {
+        padding: 0.625rem 0.75rem;
+    }
+
+    .header-brand h1 {
+        font-size: 0.75rem;
+    }
+
+    .header-links {
+        gap: 0.125rem;
+    }
+
+    .header-link {
+        padding: 0.25rem 0.25rem;
+    }
+
+    .panel {
+        width: 100vw;
+        padding: 0.5rem;
+        border-right: none;
+        box-shadow: none;
+    }
+
+    .panel.panel-collapsed {
+        width: 100vw;
+        padding: 0.5rem;
+    }
+
+    .collapsible-toggle {
+        padding: 0.375rem 0.25rem;
+    }
+
+    .stage-content {
+        padding: 0.75rem 0.5rem;
+        width: 100%;
+    }
+
+    .stage-header {
+        padding: 0;
+    }
+
+    .render-card {
+        border-radius: 0;
+    }
+
+    .modal-overlay {
+        padding: 0.75rem;
+    }
+
+    .modal-box {
+        max-height: 96vh;
+        border-radius: 14px;
+    }
+
+    .modal-tabs {
+        display: none;
+    }
+
+    .modal-tab-select {
+        display: block;
+    }
+
+    .modal-tab-select-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        background: var(--accent-bg);
+        border: 1px solid var(--accent);
+        border-radius: 999px;
+        color: var(--text);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+        font-family: inherit;
+        text-align: center;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .modal-tab-select-trigger:hover {
+        background: var(--accent-bg);
+        border-color: var(--accent-text);
+    }
+
+    .modal-tab-select-chevron {
+        font-size: 1rem;
+        flex-shrink: 0;
+        opacity: 0.6;
+        transform: rotate(-90deg);
+        transition: transform 0.3s ease;
+    }
+
+    .modal-tab-select.open .modal-tab-select-chevron {
+        transform: rotate(0deg);
+    }
+
+    .modal-tab-select-menu {
+        position: absolute;
+        top: calc(100% + 0.375rem);
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: 100%;
+        background: var(--modal-bg);
+        border: 1px solid var(--border-strong);
+        border-radius: 12px;
+        padding: 0.25rem;
+        z-index: 10;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+        opacity: 1;
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .modal-tab-select-menu.closing {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.97);
+        pointer-events: none;
+    }
+
+    .modal-tab-select-item {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 1rem;
+        background: none;
+        border: none;
+        border-radius: 8px;
+        color: var(--text-muted);
+        font-size: 0.75rem;
+        font-weight: 500;
+        font-family: inherit;
+        text-align: center;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .modal-tab-select-item:hover {
+        background: var(--surface-hover);
+        color: var(--text);
+    }
+
+    .modal-tab-select-item.active {
+        background: var(--accent-bg);
+        color: var(--text);
+        font-weight: 600;
+    }
+
+    .modal-header {
+        padding-right: 3.25rem;
+    }
+
+    .info-modal-box {
+        max-width: 90vw;
+    }
+
+    .app-footer {
+        padding: 0.625rem 0.75rem;
+    }
+
+    .profile-card .thumb-wrap {
+        width: 100px;
+        height: 65px;
+    }
+}
+
+/* ── Responsive: High-DPI screens ── */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .app-container {
+        border-left-width: 0.5px;
+        border-right-width: 0.5px;
+    }
+}

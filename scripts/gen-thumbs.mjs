@@ -13,15 +13,12 @@ import { chromium } from 'playwright';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { slugify } from '../src/shared/slugify.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = 5204;
 const BASE_URL = `http://localhost:${PORT}/`;
 const THUMB_DIR = resolve(__dirname, '..', 'public', 'thumbs');
-
-function slugify(name) {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-}
 
 async function main() {
     if (!existsSync(THUMB_DIR)) mkdirSync(THUMB_DIR, { recursive: true });

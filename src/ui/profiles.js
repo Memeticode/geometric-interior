@@ -3,6 +3,7 @@
  */
 
 import starterProfiles from '../core/starter-profiles.json';
+import { t } from '../i18n/locale.js';
 
 const LS_KEY = 'geo_self_portrait_profiles_v3';
 const ORDER_KEY = 'geo_self_portrait_profile_order_v1';
@@ -88,7 +89,7 @@ export function refreshProfileSelect(selectEl) {
     selectEl.innerHTML = '';
     const empty = document.createElement('option');
     empty.value = '';
-    empty.textContent = names.length ? '— Select a saved profile —' : '— No profiles yet —';
+    empty.textContent = names.length ? t('profile.selectSaved') : t('profile.noProfilesYet');
     selectEl.appendChild(empty);
 
     for (const name of names) {
@@ -219,7 +220,7 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
     if (landmarks.length === 0) {
         const d = document.createElement('div');
         d.className = 'small';
-        d.textContent = 'Add 2+ profiles to build a loop.';
+        d.textContent = t('profile.addToLoop');
         listEl.appendChild(d);
         return;
     }
@@ -252,7 +253,7 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
             detailsEl = document.createElement('details');
             detailsEl.className = 'item-details';
             const summary = document.createElement('summary');
-            summary.textContent = 'Details';
+            summary.textContent = t('profile.details');
             const sub = document.createElement('div');
             sub.className = 'subline';
             sub.textContent = `${c.topology} \u00b7 ${c.palette} \u00b7 den ${c.density.toFixed(2)} \u00b7 lum ${c.luminosity.toFixed(2)} \u00b7 frc ${c.fracture.toFixed(2)} \u00b7 dep ${c.depth.toFixed(2)} \u00b7 coh ${c.coherence.toFixed(2)}`;
@@ -261,7 +262,7 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
         } else {
             detailsEl = document.createElement('div');
             detailsEl.className = 'subline';
-            detailsEl.textContent = 'missing profile';
+            detailsEl.textContent = t('profile.missingProfile');
         }
 
         const controls = document.createElement('div');

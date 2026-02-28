@@ -1,0 +1,503 @@
+/* ── Topology tile selector ── */
+.topology-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.375rem;
+}
+
+.topo-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.25rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.topo-tile::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s;
+    border-radius: 9px;
+}
+
+.topo-tile:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-strong);
+}
+
+.topo-tile.active {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+    box-shadow: 0 0 12px rgba(130, 200, 255, 0.15);
+}
+
+.topo-tile.active::before {
+    opacity: 0.08;
+    background: radial-gradient(circle at center, var(--accent-text), transparent 70%);
+}
+
+.topo-tile svg {
+    width: 24px;
+    height: 24px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.topo-tile.active svg {
+    opacity: 1;
+}
+
+.topo-tile .topo-label {
+    font-size: 0.5625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.topo-tile.active .topo-label {
+    opacity: 0.9;
+    color: var(--accent-text);
+}
+
+/* ── Palette swatch selector ── */
+.palette-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.375rem;
+}
+
+.pal-chip {
+    position: relative;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+    overflow: hidden;
+}
+
+.pal-chip .pal-gradient {
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+}
+
+.pal-chip .pal-name {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    text-align: center;
+    font-size: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.8);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.pal-chip:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.pal-chip.active {
+    border-color: var(--accent-text);
+    transform: translateY(-1px);
+    box-shadow: 0 0 8px var(--accent), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.pal-chip.active .pal-name {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 1);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+
+/* ── Custom palette editor ── */
+.custom-palette-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.5rem 0.625rem;
+    background: var(--surface);
+    max-height: 20rem;
+    opacity: 1;
+    margin-top: 0.5rem;
+    overflow: hidden;
+    transition: max-height 0.3s ease, opacity 0.25s ease, margin-top 0.3s ease, padding 0.3s ease;
+}
+
+.custom-palette-editor.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    border-color: transparent;
+    pointer-events: none;
+}
+
+.custom-pal-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.custom-pal-row label {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-muted);
+}
+
+.custom-pal-row .label-info {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.pal-editor-btns {
+    display: flex;
+    gap: 0.375rem;
+    justify-content: center;
+    margin-top: 0.25rem;
+}
+
+.pal-editor-btns button {
+    flex: 1;
+    padding: 0.375rem 0.5rem;
+}
+
+.pal-editor-btns .wtc-slide {
+    max-width: 12rem;
+    opacity: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: max-width 0.25s ease, opacity 0.2s ease, margin-left 0.25s ease,
+                padding 0.25s ease, border-width 0.25s ease;
+}
+
+.pal-editor-btns .wtc-slide.wtc-collapsed {
+    max-width: 0;
+    opacity: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border-width: 0;
+    margin-left: -0.375rem;
+    pointer-events: none;
+}
+
+/* ── Engine slider with gradient track ── */
+.engine-slider {
+    position: relative;
+}
+
+.engine-slider .slider-track-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    border-radius: 3px;
+    border-bottom: 0.05rem solid var(--accent-text);
+    pointer-events: none;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+
+.engine-slider:hover .slider-track-bg {
+    opacity: 0.75;
+}
+
+.engine-slider input[type="range"] {
+    position: relative;
+    background: transparent;
+}
+
+/* Specific track gradients per slider */
+#densityTrack { background: linear-gradient(to right, rgba(130, 200, 255, 0.1), rgba(130, 200, 255, 0.6)); }
+#luminosityTrack { background: linear-gradient(to right, rgba(20, 20, 30, 0.8), rgba(255, 240, 200, 0.7)); }
+#fractureTrack { background: linear-gradient(to right, rgba(130, 200, 255, 0.15), rgba(255, 120, 180, 0.5)); }
+#depthTrack { background: linear-gradient(to right, rgba(200, 200, 255, 0.3), rgba(20, 15, 40, 0.7)); }
+#coherenceTrack { background: linear-gradient(to right, rgba(255, 160, 100, 0.3), rgba(130, 200, 255, 0.6)); }
+
+/* ── Slider value label ── */
+.slider-value {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.6875rem;
+    opacity: 0.7;
+    min-width: 2em;
+    text-align: right;
+}
+
+input[type="text"],
+textarea {
+    width: 100%;
+    padding: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: inherit;
+    outline: none;
+}
+
+/* ── Styled select dropdowns ── */
+select {
+    width: 100%;
+    padding: 0.4375rem 1.75rem 0.4375rem 0.625rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.75rem;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.625rem center;
+}
+
+select:hover {
+    border-color: var(--accent);
+}
+
+select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+[data-theme="dark"] select option {
+    background-color: #1a1e2e;
+    color: #e9eefc;
+}
+
+[data-theme="light"] select option {
+    background-color: #ffffff;
+    color: #1a1e2e;
+}
+
+.header-actions select {
+    width: auto;
+    padding: 0.3125rem 1.5rem 0.3125rem 0.5rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 4.5rem;
+    line-height: 1.35;
+}
+
+textarea.auto-grow {
+    resize: none;
+    min-height: 1.5em;
+    overflow: hidden;
+    field-sizing: content;
+}
+
+/* ── File drop zone ── */
+.file-drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 1.25rem 1rem;
+    border: 1.5px dashed var(--border-strong);
+    border-radius: 10px;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+    color: var(--text-muted);
+}
+
+.file-drop-zone:hover {
+    border-color: var(--accent);
+    background: var(--surface-hover);
+}
+
+.file-drop-zone.drag-over {
+    border-color: var(--accent-text);
+    background: var(--accent-bg);
+}
+
+.file-drop-zone input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.file-drop-text {
+    font-size: 0.75rem;
+}
+
+.file-drop-name {
+    font-size: 0.6875rem;
+    color: var(--accent-text);
+    word-break: break-all;
+}
+
+.file-drop-name:empty {
+    display: none;
+}
+
+.btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.625rem;
+}
+
+.row-inline {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.row-inline-even > button {
+    flex: 1;
+}
+
+.row-inline select,
+.row-inline .custom-select {
+    flex: 1;
+    min-width: 0;
+}
+
+button {
+    padding: 0.5625rem 0.6875rem;
+    border: 1px solid var(--border-strong);
+    background: var(--surface-hover);
+    color: inherit;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+    transition: opacity 0.3s ease;
+}
+
+button:hover {
+    background: var(--surface-active);
+}
+
+button.primary {
+    border-color: var(--accent);
+}
+
+button.danger {
+    border-color: var(--danger);
+}
+
+button[disabled] {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.hr {
+    height: 1px;
+    background: var(--border);
+    margin: 0.75rem 0;
+}
+
+.pillbar {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.collapsible-content > .pillbar {
+    margin-top: 0.375rem;
+}
+
+.pillbar button {
+    flex: 1;
+    border-radius: 999px;
+    padding: 0.5625rem 0.625rem;
+    background: var(--surface);
+}
+
+.pillbar button.active {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+}
+
+.small {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+    margin-top: 0.375rem;
+}
+
+#userGallery > .small {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.toast {
+    position: fixed;
+    top: 25%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.8125rem;
+    color: #fff;
+    background: var(--accent-text);
+    border: 1px solid var(--accent);
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.625rem 0.5rem 1.25rem;
+    box-shadow: 0 4px 20px var(--accent);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+    z-index: 9999;
+    white-space: nowrap;
+}
+
+.toast.visible {
+    opacity: 0.95;
+    pointer-events: auto;
+}
+
+.toast-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    padding: 0;
+    border: none;
+    background: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.toast-close:hover {
+    color: #fff;
+    background: var(--surface-hover);
+}

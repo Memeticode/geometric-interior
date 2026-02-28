@@ -3,6 +3,7 @@ uniform float uMorphFade;
 uniform float uMorphT;
 uniform float uTime;
 uniform float uFoldProgress;
+uniform float uWobbleAmp;
 
 varying float vFadeDir;
 
@@ -16,6 +17,6 @@ void main() {
     fade *= uFoldProgress;
 
     // Gentle brightness pulse
-    float pulse = 1.0 + 0.05 * sin(uTime * 1.885);
+    float pulse = 1.0 + 0.05 * uWobbleAmp * sin(uTime * 1.885);
     gl_FragColor = glow * fade * pulse;
 }

@@ -1,0 +1,171 @@
+/* ── Panel toggle ── */
+.panel-toggle-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem 0.375rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    flex-shrink: 0;
+}
+
+.panel-toggle-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+}
+
+.panel-toggle-icon {
+    position: relative;
+    width: 18px;
+    height: 18px;
+}
+
+.panel-toggle-icon .bar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 1.5px;
+    margin-left: -6px;
+    margin-top: -0.75px;
+    background: currentColor;
+    border-radius: 0.75px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+/* Closed: two equal horizontal lines */
+.bar-top { transform: translateY(-4px) rotate(0deg) scaleX(1); }
+.bar-mid { transform: translateY(0px) rotate(0deg) scaleX(0); opacity: 0; }
+.bar-bot { transform: translateY(4px) rotate(0deg) scaleX(1); }
+
+/* Open state — morph to X */
+.panel-toggle-btn.panel-open .bar-top {
+    transform: translateY(0px) rotate(45deg) scaleX(1);
+}
+
+.panel-toggle-btn.panel-open .bar-mid {
+    opacity: 0;
+    transform: translateY(0px) rotate(0deg) scaleX(0);
+}
+
+.panel-toggle-btn.panel-open .bar-bot {
+    transform: translateY(0px) rotate(-45deg) scaleX(1);
+}
+
+/* Accent highlight when open */
+.panel-toggle-btn.panel-open {
+    border-color: var(--accent);
+    color: var(--accent-text);
+}
+
+.panel-toggle-btn.panel-open:hover {
+    border-color: var(--accent-text);
+}
+
+/* ── App body ── */
+.app-body {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    flex: 1;
+    min-height: 0;
+}
+
+/* ── Panel ── */
+.panel {
+    width: 25rem;
+    padding: 0.5rem;
+    border-right: 1px solid var(--border);
+    background: var(--bg-panel);
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    transition: width 0.3s ease, padding 0.3s ease, opacity 0.2s ease, border-color 0.3s ease;
+}
+
+.panel.panel-collapsed {
+    width: 0;
+    padding: 0;
+    opacity: 0;
+    overflow: hidden;
+    border-right-color: transparent;
+}
+
+.panel.morph-locked {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* ── Panel drawer backdrop (tablet/mobile only) ── */
+.panel-backdrop {
+    display: none;
+}
+
+.sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+    margin-bottom: 0.625rem;
+}
+
+.row {
+    margin: 0.375rem 0;
+}
+
+#imageModeSection .row {
+    padding: 0.375rem 0.5rem;
+    border-radius: 10px;
+    transition: background-color 0.2s ease;
+}
+
+
+label {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.625rem;
+    font-size: 0.75rem;
+    opacity: 0.9;
+    margin-bottom: 0.375rem;
+}
+
+input[type="range"] {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--surface-active);
+    outline: none;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--accent-text);
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 8px var(--accent), 0 0 2px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    box-shadow: 0 0 14px var(--accent), 0 0 4px rgba(0, 0, 0, 0.4);
+    transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: var(--accent-text);
+    border: 2px solid var(--bg);
+    box-shadow: 0 0 8px var(--accent), 0 0 2px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+}

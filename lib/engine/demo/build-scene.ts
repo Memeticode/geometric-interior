@@ -112,7 +112,11 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
         const samples = sampleAlongCurve(curve, config.spacing, envelopeRadii);
 
         for (const sample of samples) {
-            const dir1 = drapingDirection(sample, config.spread, rng);
+            let dir1 = drapingDirection(sample, config.spread, rng);
+            if (params.flowInfluence > 0) {
+                const flow = flowFieldNormal(sample.pos, params.flowScale);
+                dir1.lerp(flow, params.flowInfluence).normalize();
+            }
             const familyHue = colorFieldHue(sample.pos, 1.2, params.baseHue, params.hueRange)
                 + (rng() - 0.5) * 30;
             const chainLen = config.chainLen();
@@ -125,7 +129,11 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
             if (rng() < config.dualProb) {
                 const flippedBinormal = sample.binormal.clone().negate();
                 const flippedSample = { ...sample, binormal: flippedBinormal };
-                const dir2 = drapingDirection(flippedSample, config.spread, rng);
+                let dir2 = drapingDirection(flippedSample, config.spread, rng);
+                if (params.flowInfluence > 0) {
+                    const flow = flowFieldNormal(sample.pos, params.flowScale);
+                    dir2.lerp(flow, params.flowInfluence).normalize();
+                }
                 createFoldingChain(accum, sample.pos, chainLen, planeScale,
                     sample.pos.length(), allDotPositions, chainConfig, rng, pickColor,
                     familyHue + (rng() - 0.5) * 15, dir2);
@@ -145,7 +153,7 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
             );
             attempts++;
         } while (envelopeSDF(pos, envelopeRadii) > -0.1 && attempts < 50);
-        const flowNorm = flowFieldNormal(pos, 1.5);
+        const flowNorm = flowFieldNormal(pos, params.flowScale);
         const familyHue = colorFieldHue(pos, 1.2, params.baseHue, params.hueRange)
             + (rng() - 0.5) * 40;
         const planeScale = 0.5 + rng() * 0.3;

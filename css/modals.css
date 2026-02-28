@@ -1,0 +1,515 @@
+/* ── Collapsible sections ── */
+.collapsible {
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 0.125rem;
+    transition: border-color 0.2s;
+}
+
+.collapsible-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0.5rem 0.25rem;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.collapsible-toggle:hover {
+    background: none;
+}
+
+.collapsible-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text);
+}
+
+.collapsible-chevron {
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.collapsible-toggle[aria-expanded="false"] .collapsible-chevron {
+    transform: rotate(-90deg);
+}
+
+.collapsible-content {
+    overflow: hidden;
+    max-height: 2000px;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+    opacity: 1;
+}
+
+.collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+}
+
+.collapsible-content.no-transition,
+.panel.no-transition {
+    transition: none;
+}
+
+/* ── Section label ── */
+.section-label {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.7;
+    margin-bottom: 0.375rem;
+}
+
+.sub-collapsible-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 0.25rem 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.6875rem;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.85;
+    margin-bottom: 0.375rem;
+    transition: opacity 0.2s;
+}
+
+.sub-collapsible-toggle:hover {
+    background: none;
+    opacity: 1;
+}
+
+.sub-collapsible-chevron {
+    order: 1;
+    font-size: 0.8125rem;
+    transition: transform 0.3s ease;
+}
+
+.sub-collapsible-toggle[aria-expanded="false"] .sub-collapsible-chevron {
+    transform: rotate(-90deg);
+}
+
+.sub-collapsible-content {
+    overflow: hidden;
+    max-height: 2000px;
+    transition: max-height 0.3s ease, opacity 0.2s ease;
+    opacity: 1;
+}
+
+.sub-collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+}
+
+/* ── Mode switch animation ── */
+@keyframes modeFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.mode-enter {
+    animation: modeFadeIn 0.25s ease forwards;
+}
+
+.tw-cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: var(--accent-text);
+    margin-left: 1px;
+    vertical-align: text-bottom;
+    animation: tw-blink 0.6s step-end infinite;
+}
+
+@keyframes tw-blink {
+    50% { background: transparent; }
+}
+
+.display-name {
+    font-size: 1rem;
+    font-weight: 650;
+    text-align: left;
+    word-break: break-word;
+}
+
+.display-intent {
+    font-size: 0.8125rem;
+    font-style: italic;
+    color: var(--text-muted);
+    text-align: left;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.generated-title {
+    font-weight: 600;
+    font-size: 0.8125rem;
+    letter-spacing: 0.3px;
+    text-align: center;
+    max-width: 100%;
+}
+
+.generated-alt {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    text-align: center;
+    max-width: 100%;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+}
+
+/* ── Progress bar ── */
+/* ── Modal ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--modal-backdrop);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 0.75rem;
+}
+
+.modal-overlay.modal-entering {
+    animation: modalOverlayIn 0.35s ease forwards;
+}
+
+.modal-overlay.modal-entering .modal-box {
+    animation: modalBoxIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.modal-overlay.modal-leaving {
+    animation: modalOverlayOut 0.25s ease forwards;
+}
+
+.modal-overlay.modal-leaving .modal-box {
+    animation: modalBoxOut 0.25s ease forwards;
+}
+
+@keyframes modalOverlayIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes modalOverlayOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+@keyframes modalBoxIn {
+    from {
+        opacity: 0;
+        transform: scale(0.92) translateY(16px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes modalBoxOut {
+    from {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.94) translateY(10px);
+    }
+}
+
+.modal-box {
+    background: var(--modal-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    max-width: 42.5rem;
+    width: 100%;
+    max-height: 96vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: height 0.3s ease;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    text-align: center;
+}
+
+.modal-title {
+    font-size: 0.8125rem;
+    font-weight: 650;
+    letter-spacing: 0.3px;
+}
+
+.modal-tabs {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.modal-tab {
+    padding: 0.375rem 0.875rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.modal-tab:hover:not(.active) {
+    background: var(--surface-hover);
+    border-color: var(--border-strong);
+    color: var(--text);
+}
+
+.modal-tab.active {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+    color: var(--text);
+}
+
+.modal-tab-title {
+    font-size: 0.875rem;
+    font-weight: 650;
+    letter-spacing: 0.3px;
+    text-align: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: -1.25rem;
+    background: var(--modal-bg);
+    z-index: 1;
+    margin-left: -1.25rem;
+    margin-right: -1.25rem;
+    margin-top: -1.25rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+    padding-top: 1.5rem;
+}
+
+.modal-tab-select {
+    display: none;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    right: 1rem;
+    background: none;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    color: var(--accent-text);
+    cursor: pointer;
+    padding: 0.25rem 0.375rem;
+    display: flex;
+    align-items: center;
+    transition: color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.modal-close:hover {
+    border-color: var(--accent-text);
+}
+
+/* Base bar styles for modal close button (self-contained, no panel.css dependency) */
+.modal-close .panel-toggle-icon {
+    position: relative;
+    width: 18px;
+    height: 18px;
+}
+
+.modal-close .panel-toggle-icon .bar {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 12px;
+    height: 1.5px;
+    margin-left: -6px;
+    margin-top: -0.75px;
+    background: currentColor;
+    border-radius: 0.75px;
+}
+
+.modal-close .bar-top {
+    transform: translateY(0px) rotate(45deg) scaleX(1);
+}
+
+.modal-close .bar-mid {
+    opacity: 0;
+}
+
+.modal-close .bar-bot {
+    transform: translateY(0px) rotate(-45deg) scaleX(1);
+}
+
+.modal-body {
+    overflow-y: auto;
+    padding: 1.25rem;
+    flex: 0 1 auto;
+    min-height: 0;
+}
+
+.confirm-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0 1.25rem 1.25rem;
+    justify-content: center;
+}
+
+.confirm-actions button {
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    transition: background-color 0.2s;
+}
+
+.confirm-actions button:hover {
+    background: var(--surface-hover);
+}
+
+.confirm-actions button.primary {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+}
+
+.confirm-actions button.primary:hover {
+    filter: brightness(1.1);
+}
+
+.manifesto {
+    font-family: inherit;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    margin: 0;
+    opacity: 0.90;
+    text-align: center;
+}
+
+#developerBody .manifesto {
+    text-align: left;
+}
+
+#governanceBody .manifesto {
+    text-align: left;
+    white-space: normal;
+}
+#governanceBody .manifesto h2 {
+    font-size: 0.9375rem;
+    font-weight: 650;
+    margin: 1.75rem 0 0.75rem;
+}
+#governanceBody .manifesto h2:first-child {
+    margin-top: 0;
+}
+#governanceBody .manifesto hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+}
+#governanceBody .manifesto p {
+    margin: 0 0 0.75rem;
+}
+
+/* ── Info modal (click/mobile) ── */
+.info-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--modal-backdrop);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1.5rem;
+}
+
+.info-modal-box {
+    background: var(--modal-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    max-width: 25rem;
+    width: 100%;
+    padding: 1.25rem;
+    position: relative;
+}
+
+.info-modal-title {
+    font-size: 0.8125rem;
+    font-weight: 650;
+    margin-bottom: 0.625rem;
+    letter-spacing: 0.3px;
+}
+
+.info-modal-body {
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+.info-modal-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    line-height: 1;
+}
+
+/* ── Coin-flip transition (statement modal) ── */
+@keyframes coinFlipOut {
+    from { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
+    to   { transform: perspective(1200px) rotateY(60deg); opacity: 0; }
+}
+
+@keyframes coinFlipIn {
+    from { transform: perspective(1200px) rotateY(-60deg); opacity: 0; }
+    to   { transform: perspective(1200px) rotateY(0deg); opacity: 1; }
+}
+
+.coin-flip-out {
+    animation: coinFlipOut 0.3s ease-in forwards;
+}
+
+.coin-flip-in {
+    animation: coinFlipIn 0.3s ease-out forwards;
+}
+
+.modal-tab-content {
+    transform-origin: center center;
+}
+
+.manifesto-note {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.6875rem;
+    font-style: italic;
+    text-align: center;
+    color: var(--text-muted);
+    opacity: 0.7;
+    white-space: pre-line;
+}

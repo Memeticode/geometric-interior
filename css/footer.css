@@ -1,0 +1,152 @@
+/* ── Footer ── */
+.app-footer {
+    flex-shrink: 0;
+    align-self: stretch;
+    margin-top: auto;
+    border-top: 1px solid var(--border);
+    padding: 0.75rem 1.25rem;
+    text-align: center;
+}
+
+.footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.footer-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: none;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.footer-link:hover {
+    opacity: 1;
+}
+
+.footer-sep {
+    color: var(--text-muted);
+    opacity: 0.3;
+    font-size: 0.6875rem;
+}
+
+/* ── Theme switcher (footer) ── */
+.theme-switcher {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    padding: 3px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.theme-slider {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    height: calc(100% - 6px);
+    border-radius: 7px;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.3s ease,
+                border-color 0.3s ease;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.theme-option {
+    position: relative;
+    z-index: 1;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+    padding: 0.3125rem 0.625rem;
+    cursor: pointer;
+    border-radius: 7px;
+    white-space: nowrap;
+    transition: color 0.25s ease;
+}
+
+.theme-option:hover {
+    color: var(--text);
+}
+
+.theme-option.active {
+    color: var(--text);
+    font-weight: 600;
+}
+
+/* ── Footer switchers wrapper ── */
+.footer-switchers {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+}
+
+/* ── Language switcher (footer) ── */
+.lang-switcher {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    padding: 3px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.lang-slider {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    height: calc(100% - 6px);
+    border-radius: 7px;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                background-color 0.3s ease,
+                border-color 0.3s ease;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.lang-option {
+    position: relative;
+    z-index: 1;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+    padding: 0.3125rem 0.625rem;
+    cursor: pointer;
+    border-radius: 7px;
+    white-space: nowrap;
+    transition: color 0.25s ease;
+}
+
+.lang-option:hover {
+    color: var(--text);
+}
+
+.lang-option.active {
+    color: var(--text);
+    font-weight: 600;
+}

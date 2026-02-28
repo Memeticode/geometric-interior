@@ -156,7 +156,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
     const FOLD_OUT_SPEED = 1.67; // 1→0 in ~600ms
     let lastUpdateTime = 0;
 
-    function renderWith(seed: string, controls: Controls): RenderMeta {
+    function renderWith(seed: string, controls: Controls, locale: string = 'en'): RenderMeta {
         syncSize();
 
         const hashFn = xmur3(seed);
@@ -195,6 +195,9 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         if (currentRefs.tendrilMat) { currentRefs.tendrilMat.opacity = foldProgress; currentRefs.tendrilMat.transparent = true; }
         if (currentRefs.sphereMat) { currentRefs.sphereMat.opacity = foldProgress; currentRefs.sphereMat.transparent = true; }
 
+        // Apply current animation config to new materials
+        applyAnimConfig();
+
         bloomEffect.intensity = params.bloomStrength;
         bloomEffect.luminanceMaterial.threshold = params.bloomThreshold;
 
@@ -206,8 +209,8 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         composer.render();
 
         const titleRng = mulberry32(xmur3(seed + ':title')());
-        const title = generateTitle(controls, titleRng);
-        const altText = generateAltText(controls, result.nodeCount, title);
+        const title = generateTitle(controls, titleRng, locale);
+        const altText = generateAltText(controls, result.nodeCount, title, locale);
 
         return { title, altText, nodeCount: result.nodeCount };
     }
@@ -424,13 +427,27 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         morphState = null;
     }
 
-    // --- Render loop methods ---
+    // --- Animation config ---
+    let animConfig = { sparkle: 1.0, drift: 1.0, wobble: 1.0 };
 
-    const TAU = Math.PI * 2;
-    const DRIFT_AMP_X = 0.015;
-    const DRIFT_AMP_Y = 0.010;
-    const DRIFT_FREQ_X = 0.07;
-    const DRIFT_FREQ_Y = 0.11;
+    function applyAnimConfig(): void {
+        if (currentRefs?.faceMat) {
+            currentRefs.faceMat.uniforms.uSparkleIntensity.value = animConfig.sparkle;
+            currentRefs.faceMat.uniforms.uDriftSpeed.value = animConfig.drift;
+        }
+        if (currentRefs?.glowMat) {
+            currentRefs.glowMat.uniforms.uWobbleAmp.value = animConfig.wobble;
+        }
+    }
+
+    function setAnimConfig(config: { sparkle?: number; drift?: number; wobble?: number }): void {
+        if (config.sparkle !== undefined) animConfig.sparkle = config.sparkle;
+        if (config.drift !== undefined) animConfig.drift = config.drift;
+        if (config.wobble !== undefined) animConfig.wobble = config.wobble;
+        applyAnimConfig();
+    }
+
+    // --- Render loop methods ---
 
     /** Reusable Object3D for InstancedMesh matrix updates */
     const _dummyObj = new THREE.Object3D();
@@ -446,30 +463,23 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         if (currentRefs.edgeMat) currentRefs.edgeMat.uniforms.uTime.value = seconds;
         if (currentRefs.glowMat) currentRefs.glowMat.uniforms.uTime.value = seconds;
 
-        // Camera drift (Lissajous orbit)
-        camera.position.set(
-            baseCameraPos.x + Math.sin(seconds * DRIFT_FREQ_X * TAU) * DRIFT_AMP_X,
-            baseCameraPos.y + Math.sin(seconds * DRIFT_FREQ_Y * TAU) * DRIFT_AMP_Y,
-            baseCameraPos.z,
-        );
-        camera.lookAt(0, 0, 0);
-
         // Light sphere wobble — update InstancedMesh matrices + light uniforms
+        // (matches shader wobble so sphere positions stay in sync with glow dots)
         if (currentRefs.sphereInst && currentRefs.glowPointData) {
             const lightPositions = currentRefs.lightUniforms.uLightPositions.value;
             const sphereData = currentRefs.glowPointData;
             const count = Math.min(sphereData.length, currentRefs.sphereInst.count);
+            const wAmp = animConfig.wobble;
             for (let i = 0; i < count; i++) {
                 const bp = sphereData[i];
                 const phase = bp.position.x * 12.9898 + bp.position.y * 78.233;
-                const wx = Math.sin(seconds * 0.8 + phase) * 0.008;
-                const wy = Math.cos(seconds * 0.6 + phase + 1.57) * 0.006;
-                const wz = Math.sin(seconds * 0.5 + phase + 3.14) * 0.005;
+                const wx = Math.sin(seconds * 0.8 + phase) * 0.008 * wAmp;
+                const wy = Math.cos(seconds * 0.6 + phase + 1.57) * 0.006 * wAmp;
+                const wz = Math.sin(seconds * 0.5 + phase + 3.14) * 0.005 * wAmp;
                 _dummyObj.position.set(bp.position.x + wx, bp.position.y + wy, bp.position.z + wz);
-                _dummyObj.scale.setScalar(bp.size * 0.015); // sphere radius scale
+                _dummyObj.scale.setScalar(bp.size * 0.015);
                 _dummyObj.updateMatrix();
                 currentRefs.sphereInst.setMatrixAt(i, _dummyObj.matrix);
-                // Sync light positions (up to 10 lights)
                 if (i < lightPositions.length) {
                     lightPositions[i].set(bp.position.x + wx, bp.position.y + wy, bp.position.z + wz);
                 }
@@ -515,7 +525,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
     return {
         renderWith, dispose, resize, syncSize, setDPR,
         morphPrepare, morphUpdate, morphEnd,
-        updateTime, renderFrame,
+        updateTime, renderFrame, setAnimConfig,
         foldIn, foldOut, setFoldImmediate, isFoldComplete,
         getCanvas: () => canvas,
     };

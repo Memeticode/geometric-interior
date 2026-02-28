@@ -1,0 +1,63 @@
+/* ── Header ── */
+.app-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.75rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+}
+
+.header-brand {
+    text-align: center;
+    flex: 1;
+}
+
+.header-brand h1 {
+    font-size: 0.875rem;
+    margin: 0;
+    letter-spacing: 0.3px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.header-links {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.header-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.header-link:hover {
+    opacity: 1;
+    background: var(--surface-hover);
+}
+
+.header-sep {
+    color: var(--accent-text);
+    opacity: 0.3;
+    font-size: 2.3rem;
+    line-height: 0;
+    margin-bottom: 0.33rem;
+    cursor: default;
+    user-select: none;
+}
