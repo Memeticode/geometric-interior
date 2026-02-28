@@ -36,30 +36,8 @@ export async function setProfileName(page, name) {
 }
 
 /**
- * Click a palette chip by its data-value attribute.
- * Panel must be open for this to work (use ensurePanelOpen first).
- */
-export async function selectPalette(page, paletteKey) {
-    await page.click(`.pal-chip[data-value="${paletteKey}"]`);
-}
-
-/**
- * Set custom palette slider values and dispatch input events.
- */
-export async function setCustomPalette(page, { hue, range, sat }) {
-    await page.evaluate(({ h, r, s }) => {
-        const hueEl = document.getElementById('customHue');
-        const rangeEl = document.getElementById('customHueRange');
-        const satEl = document.getElementById('customSat');
-        if (h !== undefined) { hueEl.value = h; hueEl.dispatchEvent(new Event('input', { bubbles: true })); }
-        if (r !== undefined) { rangeEl.value = r; rangeEl.dispatchEvent(new Event('input', { bubbles: true })); }
-        if (s !== undefined) { satEl.value = s; satEl.dispatchEvent(new Event('input', { bubbles: true })); }
-    }, { h: hue, r: range, s: sat });
-}
-
-/**
  * Bulk-set all controls in a single evaluate call.
- * @param {object} config - { seed, topology, palette, density, luminosity, fracture, depth, coherence }
+ * @param {object} config - { seed, topology, density, luminosity, fracture, coherence, hue, spectrum, chroma, scale, division, faceting }
  */
 export async function setAllControls(page, config) {
     await page.evaluate((c) => {
@@ -72,13 +50,7 @@ export async function setAllControls(page, config) {
                 t.classList.toggle('active', t.dataset.value === c.topology)
             );
         }
-        if (c.palette !== undefined) {
-            document.getElementById('palette').value = c.palette;
-            document.querySelectorAll('.pal-chip').forEach(t =>
-                t.classList.toggle('active', t.dataset.value === c.palette)
-            );
-        }
-        for (const key of ['density', 'luminosity', 'fracture', 'depth', 'coherence']) {
+        for (const key of ['density', 'luminosity', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow']) {
             if (c[key] !== undefined) {
                 document.getElementById(key).value = c[key];
             }
@@ -103,23 +75,17 @@ export async function triggerRender(page) {
 export async function readControlsFromPage(page) {
     return page.evaluate(() => ({
         topology: document.getElementById('topology').value,
-        palette: document.getElementById('palette').value,
         density: parseFloat(document.getElementById('density').value),
         luminosity: parseFloat(document.getElementById('luminosity').value),
         fracture: parseFloat(document.getElementById('fracture').value),
-        depth: parseFloat(document.getElementById('depth').value),
         coherence: parseFloat(document.getElementById('coherence').value),
-    }));
-}
-
-/**
- * Read custom palette tweak values from the DOM.
- */
-export async function readPaletteTweaksFromPage(page) {
-    return page.evaluate(() => ({
-        baseHue: parseFloat(document.getElementById('customHue').value),
-        hueRange: parseFloat(document.getElementById('customHueRange').value),
-        saturation: parseFloat(document.getElementById('customSat').value),
+        hue: parseFloat(document.getElementById('hue').value),
+        spectrum: parseFloat(document.getElementById('spectrum').value),
+        chroma: parseFloat(document.getElementById('chroma').value),
+        scale: parseFloat(document.getElementById('scale').value),
+        division: parseFloat(document.getElementById('division').value),
+        faceting: parseFloat(document.getElementById('faceting').value),
+        flow: parseFloat(document.getElementById('flow').value),
     }));
 }
 

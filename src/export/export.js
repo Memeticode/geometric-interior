@@ -194,7 +194,7 @@ export function computeLoopSummaryTitleAlt(seed, landmarks, durationSecs, locale
 /**
  * Package and download a still image ZIP.
  */
-export async function packageStillZip(canvas, { seed, controls, paletteTweaks, name, meta }) {
+export async function packageStillZip(canvas, { seed, controls, name, meta }) {
     const JSZip = window.JSZip;
     if (!JSZip) throw new Error('JSZip not loaded');
 
@@ -211,7 +211,7 @@ export async function packageStillZip(canvas, { seed, controls, paletteTweaks, n
     zip.file(`${base}/title.txt`, meta.title + '\n');
     zip.file(`${base}/alt-text.txt`, meta.altText + '\n');
 
-    const metadata = profileToConfig(name, { seed, controls, paletteTweaks });
+    const metadata = profileToConfig(name, { seed, controls });
     zip.file(`${base}/metadata.json`, JSON.stringify(metadata, null, 2) + '\n');
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });
@@ -222,7 +222,7 @@ export async function packageStillZip(canvas, { seed, controls, paletteTweaks, n
  * Package and download a still image ZIP from a pre-rendered PNG blob
  * (used when canvas is owned by a Web Worker via OffscreenCanvas).
  */
-export async function packageStillZipFromBlob(pngBlob, { seed, controls, paletteTweaks, name, meta, canvasWidth, canvasHeight }) {
+export async function packageStillZipFromBlob(pngBlob, { seed, controls, name, meta, canvasWidth, canvasHeight }) {
     const JSZip = window.JSZip;
     if (!JSZip) throw new Error('JSZip not loaded');
 
@@ -238,7 +238,7 @@ export async function packageStillZipFromBlob(pngBlob, { seed, controls, palette
     zip.file(`${base}/title.txt`, meta.title + '\n');
     zip.file(`${base}/alt-text.txt`, meta.altText + '\n');
 
-    const metadata = profileToConfig(name, { seed, controls, paletteTweaks });
+    const metadata = profileToConfig(name, { seed, controls });
     zip.file(`${base}/metadata.json`, JSON.stringify(metadata, null, 2) + '\n');
 
     const zipBlob = await zip.generateAsync({ type: 'blob' });

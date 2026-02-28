@@ -41,8 +41,20 @@
     <script>
         (function () {
             try {
+                var S = ['en', 'es'];
                 var s = localStorage.getItem('geo-self-portrait-locale');
-                if (s) document.documentElement.lang = s;
+                if (s && S.indexOf(s) !== -1) {
+                    document.documentElement.lang = s;
+                } else {
+                    var langs = navigator.languages || [navigator.language || ''];
+                    for (var i = 0; i < langs.length; i++) {
+                        var code = langs[i].split('-')[0].toLowerCase();
+                        if (S.indexOf(code) !== -1) {
+                            document.documentElement.lang = code;
+                            break;
+                        }
+                    }
+                }
             } catch (e) { }
         })();
     </script>
@@ -169,78 +181,10 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="The chromatic atmosphere. Double-click a preset to customize." data-label="Palette" data-i18n="control.palette" data-i18n-tooltip="control.palette.tooltip" data-i18n-label="control.palette">Palette<span class="info-icon">i</span></span></label>
-                    <input type="hidden" id="palette" value="violet-depth" />
-                    <div class="palette-selector" id="paletteSelector">
-                        <div class="pal-chip active" data-value="violet-depth" data-tooltip="Violet" data-i18n-tooltip="palette.violet">
-                            <div class="pal-gradient" style="background: linear-gradient(135deg, #2a1545, #6b3fa0, #a06cd5)"></div>
-                            <span class="pal-name" data-i18n="palette.violet">Violet</span>
-                        </div>
-                        <div class="pal-chip" data-value="warm-spectrum" data-tooltip="Warm" data-i18n-tooltip="palette.warm">
-                            <div class="pal-gradient" style="background: linear-gradient(135deg, #3d1a0e, #cc8844, #e6a8cc)"></div>
-                            <span class="pal-name" data-i18n="palette.warm">Warm</span>
-                        </div>
-                        <div class="pal-chip" data-value="teal-volumetric" data-tooltip="Teal" data-i18n-tooltip="palette.teal">
-                            <div class="pal-gradient" style="background: linear-gradient(135deg, #0a2a30, #1a8899, #66ddee)"></div>
-                            <span class="pal-name" data-i18n="palette.teal">Teal</span>
-                        </div>
-                        <div class="pal-chip" data-value="prismatic" data-tooltip="Prismatic" data-i18n-tooltip="palette.prismatic">
-                            <div class="pal-gradient" style="background: linear-gradient(135deg, #cc3355, #eeaa33, #33cc88, #4488ee, #aa44dd)"></div>
-                            <span class="pal-name" data-i18n="palette.prismatic">Prismatic</span>
-                        </div>
-                        <div class="pal-chip" data-value="crystal-lattice" data-tooltip="Crystal" data-i18n-tooltip="palette.crystal">
-                            <div class="pal-gradient" style="background: linear-gradient(135deg, #1a2540, #5577aa, #aabbdd)"></div>
-                            <span class="pal-name" data-i18n="palette.crystal">Crystal</span>
-                        </div>
-                        <div class="pal-chip" data-value="sapphire" data-tooltip="Sapphire" data-i18n-tooltip="palette.sapphire">
-                            <div class="pal-gradient" style="background: linear-gradient(135deg, #0a1535, #2244aa, #4466ee)"></div>
-                            <span class="pal-name" data-i18n="palette.sapphire">Sapphire</span>
-                        </div>
-                        <div class="pal-chip" data-value="amethyst" data-tooltip="Amethyst" data-i18n-tooltip="palette.amethyst">
-                            <div class="pal-gradient" style="background: linear-gradient(135deg, #2a0a30, #8833aa, #cc66ee)"></div>
-                            <span class="pal-name" data-i18n="palette.amethyst">Amethyst</span>
-                        </div>
-                        <div class="pal-chip" data-value="custom" data-tooltip="Custom" data-i18n-tooltip="palette.custom">
-                            <div class="pal-gradient" id="customPalGradient" style="background: linear-gradient(135deg, #2a0a35, #dd2288, #ff6655)"></div>
-                            <span class="pal-name" data-i18n="palette.custom">Custom</span>
-                        </div>
-                    </div>
-                    <div class="custom-palette-editor collapsed" id="customPaletteEditor">
-                        <div class="custom-pal-row">
-                            <label><span class="label-info" data-tooltip="Where on the spectrum the light begins." data-label="Hue" data-i18n="palette.hue" data-i18n-tooltip="palette.hue.tooltip" data-i18n-label="palette.hue">Hue<span class="info-icon">i</span></span> <span id="customHueLabel" class="slider-value">180</span></label>
-                            <div class="engine-slider">
-                                <div class="slider-track-bg" id="customHueTrack" style="background: linear-gradient(to right, hsl(0,70%,50%), hsl(60,70%,50%), hsl(120,70%,50%), hsl(180,70%,50%), hsl(240,70%,50%), hsl(300,70%,50%), hsl(360,70%,50%))"></div>
-                                <input id="customHue" type="range" min="0" max="360" step="1" value="180" />
-                            </div>
-                        </div>
-                        <div class="custom-pal-row">
-                            <label><span class="label-info" data-tooltip="How far color is allowed to wander from its origin." data-label="Hue Range" data-i18n="palette.range" data-i18n-tooltip="palette.range.tooltip" data-i18n-label="palette.range">Range<span class="info-icon">i</span></span> <span id="customHueRangeLabel" class="slider-value">60</span></label>
-                            <div class="engine-slider">
-                                <div class="slider-track-bg" id="customRangeTrack" style="background: linear-gradient(to right, rgba(130,200,255,0.15), rgba(130,200,255,0.6))"></div>
-                                <input id="customHueRange" type="range" min="5" max="360" step="1" value="60" />
-                            </div>
-                        </div>
-                        <div class="custom-pal-row">
-                            <label><span class="label-info" data-tooltip="The purity of pigment — dusty whisper to liquid jewel." data-label="Saturation" data-i18n="palette.saturation" data-i18n-tooltip="palette.saturation.tooltip" data-i18n-label="palette.saturation">Saturation<span class="info-icon">i</span></span> <span id="customSatLabel" class="slider-value">0.60</span></label>
-                            <div class="engine-slider">
-                                <div class="slider-track-bg" id="customSatTrack" style="background: linear-gradient(to right, rgba(180,180,180,0.3), rgba(130,200,255,0.7))"></div>
-                                <input id="customSat" type="range" min="0.1" max="1" step="0.01" value="0.60" />
-                            </div>
-                        </div>
-                        <div class="pal-editor-btns">
-                            <button id="resetPalette" data-tooltip="Reset color palette" data-i18n-tooltip="profile.resetPalette.tooltip">
-                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 3v4h4"/><path d="M2.5 10.5a6 6 0 1 0 1.5-6.5L1 7"/></svg>
-                            </button>
-                            <button id="writeToCustom" class="wtc-slide wtc-collapsed" data-tooltip="Apply the current palette configuration to custom palette" data-i18n-tooltip="profile.writeToCustom.tooltip"><span data-i18n="profile.writeToCustom">Write to Custom</span></button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
                     <label><span class="label-info" data-tooltip="How thickly forms crowd the void." data-label="Density" data-i18n="control.density" data-i18n-tooltip="control.density.tooltip" data-i18n-label="control.density">Density<span class="info-icon">i</span></span> <span id="densityLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="densityTrack"></div>
-                        <input id="density" type="range" min="0" max="1" step="0.01" value="0.65" />
+                        <input id="density" type="range" min="0" max="1" step="0.01" value="0.50" />
                     </div>
                 </div>
 
@@ -248,7 +192,7 @@
                     <label><span class="label-info" data-tooltip="The inner radiance of the scene." data-label="Luminosity" data-i18n="control.luminosity" data-i18n-tooltip="control.luminosity.tooltip" data-i18n-label="control.luminosity">Luminosity<span class="info-icon">i</span></span> <span id="luminosityLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="luminosityTrack"></div>
-                        <input id="luminosity" type="range" min="0" max="1" step="0.01" value="0.70" />
+                        <input id="luminosity" type="range" min="0" max="1" step="0.01" value="0.50" />
                     </div>
                 </div>
 
@@ -256,15 +200,7 @@
                     <label><span class="label-info" data-tooltip="How forms break and splinter through space." data-label="Fracture" data-i18n="control.fracture" data-i18n-tooltip="control.fracture.tooltip" data-i18n-label="control.fracture">Fracture<span class="info-icon">i</span></span> <span id="fractureLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="fractureTrack"></div>
-                        <input id="fracture" type="range" min="0" max="1" step="0.01" value="0.35" />
-                    </div>
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="How the eye travels into the scene." data-label="Depth" data-i18n="control.depth" data-i18n-tooltip="control.depth.tooltip" data-i18n-label="control.depth">Depth<span class="info-icon">i</span></span> <span id="depthLabel" class="slider-value"></span></label>
-                    <div class="engine-slider">
-                        <div class="slider-track-bg" id="depthTrack"></div>
-                        <input id="depth" type="range" min="0" max="1" step="0.01" value="0.40" />
+                        <input id="fracture" type="range" min="0" max="1" step="0.01" value="0.50" />
                     </div>
                 </div>
 
@@ -273,6 +209,61 @@
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="coherenceTrack"></div>
                         <input id="coherence" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="Where on the spectrum the light begins." data-label="Hue" data-i18n="control.hue" data-i18n-tooltip="control.hue.tooltip" data-i18n-label="control.hue">Hue<span class="info-icon">i</span></span> <span id="hueLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" style="background: linear-gradient(to right, hsl(0,70%,50%), hsl(60,70%,50%), hsl(120,70%,50%), hsl(180,70%,50%), hsl(240,70%,50%), hsl(300,70%,50%), hsl(360,70%,50%))"></div>
+                        <input id="hue" type="range" min="0" max="1" step="0.01" value="0.78" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="How far color is allowed to wander from its origin." data-label="Spectrum" data-i18n="control.spectrum" data-i18n-tooltip="control.spectrum.tooltip" data-i18n-label="control.spectrum">Spectrum<span class="info-icon">i</span></span> <span id="spectrumLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="spectrumTrack"></div>
+                        <input id="spectrum" type="range" min="0" max="1" step="0.01" value="0.24" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="The purity of pigment — dusty whisper to liquid jewel." data-label="Chroma" data-i18n="control.chroma" data-i18n-tooltip="control.chroma.tooltip" data-i18n-label="control.chroma">Chroma<span class="info-icon">i</span></span> <span id="chromaLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="chromaTrack"></div>
+                        <input id="chroma" type="range" min="0" max="1" step="0.01" value="0.42" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="The relative magnitude of forms — monumental to atmospheric." data-label="Scale" data-i18n="control.scale" data-i18n-tooltip="control.scale.tooltip" data-i18n-label="control.scale">Scale<span class="info-icon">i</span></span> <span id="scaleLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="scaleTrack"></div>
+                        <input id="scale" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="How the envelope subdivides into lobes and grooves." data-label="Division" data-i18n="control.division" data-i18n-tooltip="control.division.tooltip" data-i18n-label="control.division">Division<span class="info-icon">i</span></span> <span id="divisionLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="divisionTrack"></div>
+                        <input id="division" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="The angularity of folded surfaces — flat panels to sharp shards." data-label="Faceting" data-i18n="control.faceting" data-i18n-tooltip="control.faceting.tooltip" data-i18n-label="control.faceting">Faceting<span class="info-icon">i</span></span> <span id="facetingLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="facetingTrack"></div>
+                        <input id="faceting" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    </div>
+                </div>
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="The directional field pattern — radial starburst to noise to orbital bands." data-label="Flow" data-i18n="control.flow" data-i18n-tooltip="control.flow.tooltip" data-i18n-label="control.flow">Flow<span class="info-icon">i</span></span> <span id="flowLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="flowTrack"></div>
+                        <input id="flow" type="range" min="0" max="1" step="0.01" value="0.50" />
                     </div>
                 </div>
 
@@ -466,6 +457,42 @@
 
         <footer class="app-footer">
             <div class="footer-content">
+                <div class="settings-btn-wrap">
+                    <button id="pageSettingsBtn" class="footer-link" data-tooltip="Settings" data-i18n-tooltip="footer.settings">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                            <circle cx="8" cy="8" r="2"/>
+                            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M13.07 2.93l-1.41 1.41M4.34 11.66l-1.41 1.41"/>
+                        </svg>
+                    </button>
+                    <div id="pageSettingsPopover" class="settings-popover hidden">
+                        <div class="settings-section">
+                            <span class="settings-section-label" data-i18n="footer.theme">Theme</span>
+                            <div class="theme-switcher" id="themeSwitcher">
+                                <div class="theme-slider" id="themeSlider"></div>
+                                <button class="theme-option" data-theme="system" data-i18n="theme.system">System</button>
+                                <button class="theme-option" data-theme="light" data-i18n="theme.light">Light</button>
+                                <button class="theme-option" data-theme="dark" data-i18n="theme.dark">Dark</button>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <span class="settings-section-label" data-i18n="footer.language">Language</span>
+                            <select id="langSelect" class="lang-select" aria-label="Language" data-i18n-aria="footer.langLabel">
+                                <option value="en">English</option>
+                                <option value="es">Espa&#241;ol</option>
+                            </select>
+                        </div>
+                        <div class="settings-section">
+                            <span class="settings-section-label" data-i18n="footer.resolution">Resolution</span>
+                            <select id="resolutionSelect" class="lang-select" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel">
+                                <option value="sd">SD (840&#215;540)</option>
+                                <option value="hd" selected>HD (1400&#215;900)</option>
+                                <option value="fhd">FHD (1680&#215;1080)</option>
+                                <option value="qhd">QHD (2520&#215;1620)</option>
+                                <option value="4k">4K (3360&#215;2160)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
                 <a href="https://github.com/Memeticode/symmetrical-barnacle" target="_blank" rel="noopener"
                     class="footer-link footer-github">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -473,19 +500,6 @@
                     </svg>
                     <span data-i18n="footer.github">GitHub</span>
                 </a>
-                <div class="footer-switchers">
-                    <div class="lang-switcher" id="langSwitcher">
-                        <div class="lang-slider" id="langSlider"></div>
-                        <button class="lang-option" data-lang="en">EN</button>
-                        <button class="lang-option" data-lang="es">ES</button>
-                    </div>
-                    <div class="theme-switcher" id="themeSwitcher">
-                        <div class="theme-slider" id="themeSlider"></div>
-                        <button class="theme-option" data-theme="system" data-i18n="theme.system">System</button>
-                        <button class="theme-option" data-theme="light" data-i18n="theme.light">Light</button>
-                        <button class="theme-option" data-theme="dark" data-i18n="theme.dark">Dark</button>
-                    </div>
-                </div>
             </div>
         </footer>
         </main>

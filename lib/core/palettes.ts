@@ -1,11 +1,12 @@
 /**
- * Palette definitions for the crystalline plane engine.
+ * Palette definitions and color utilities for the crystalline plane engine.
  */
 
-import type { PaletteData, PaletteKey, PaletteTweaks } from '../types.js';
+import type { PaletteData } from '../types.js';
 
-type BuiltinPaletteKey = Exclude<PaletteKey, 'custom'>;
+type BuiltinPaletteKey = 'violet-depth' | 'warm-spectrum' | 'teal-volumetric' | 'prismatic' | 'crystal-lattice' | 'sapphire' | 'amethyst';
 
+/** Original palette data — kept as reference for PRESETS derivation. */
 export const PALETTES: Record<BuiltinPaletteKey, PaletteData> = {
     'violet-depth': {
         label: 'Violet Depth',
@@ -79,21 +80,8 @@ export const PALETTES: Record<BuiltinPaletteKey, PaletteData> = {
     },
 };
 
-/** Frozen snapshots of original palette values (for reset after editing). */
-export const PALETTE_DEFAULTS: Record<BuiltinPaletteKey, Readonly<PaletteData>> = Object.fromEntries(
-    Object.entries(PALETTES).map(([k, v]) => [k, Object.freeze({
-        ...v,
-        fogColor: [...v.fogColor] as [number, number, number],
-        bgColor: [...v.bgColor] as [number, number, number],
-        edgeColor: [...v.edgeColor] as [number, number, number],
-    })])
-) as Record<BuiltinPaletteKey, Readonly<PaletteData>>;
-
-export const PALETTE_KEYS: string[] = [...Object.keys(PALETTES), 'custom'];
-
-/* ── Custom palette (mutable) ── */
-
-function hslToRgb01(h: number, s: number, l: number): [number, number, number] {
+/** Convert HSL (h in degrees, s/l in 0-1) to RGB in 0-1 range. */
+export function hslToRgb01(h: number, s: number, l: number): [number, number, number] {
     h = ((h % 360) + 360) % 360;
     const c = (1 - Math.abs(2 * l - 1)) * s;
     const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
@@ -108,65 +96,13 @@ function hslToRgb01(h: number, s: number, l: number): [number, number, number] {
     return [r + m, g + m, b + m];
 }
 
-export function deriveCustomColors(baseHue: number): Pick<PaletteData, 'fogColor' | 'bgColor' | 'edgeColor' | 'accentHue'> {
-    const h = ((baseHue % 360) + 360) % 360;
-    return {
-        fogColor: hslToRgb01(h, 0.2, 0.04),
-        bgColor: hslToRgb01(h, 0.15, 0.025),
-        edgeColor: hslToRgb01(h, 0.7, 0.8),
-        accentHue: (h + 10) % 360,
-    };
-}
-
-export const customPalette: PaletteData = {
-    label: 'Custom',
-    baseHue: 325,
-    hueRange: 100,
-    saturation: 0.75,
-    ...deriveCustomColors(325),
+/** Preset coordinates mapping palette names → continuous (hue, spectrum, chroma) axes. */
+export const PRESETS: Record<string, { hue: number; spectrum: number; chroma: number }> = {
+    'violet-depth':     { hue: 282 / 360, spectrum: Math.sqrt(Math.max(0, (30 - 10) / 350)),  chroma: (0.55 - 0.05) / (2 * 0.60) },
+    'warm-spectrum':    { hue: 22 / 360,  spectrum: Math.sqrt(Math.max(0, (27 - 10) / 350)),  chroma: 0.5 + (0.97 - 0.65) / (2 * 0.35) },
+    'teal-volumetric':  { hue: 185 / 360, spectrum: Math.sqrt(Math.max(0, (25 - 10) / 350)),  chroma: (0.60 - 0.05) / (2 * 0.60) },
+    'sapphire':         { hue: 225 / 360, spectrum: Math.sqrt(Math.max(0, (30 - 10) / 350)),  chroma: 0.5 + (0.90 - 0.65) / (2 * 0.35) },
+    'amethyst':         { hue: 312 / 360, spectrum: Math.sqrt(Math.max(0, (35 - 10) / 350)),  chroma: (0.55 - 0.05) / (2 * 0.60) },
+    'crystal-lattice':  { hue: 211 / 360, spectrum: 0.0,                                       chroma: 0.0 },
+    'prismatic':        { hue: 0 / 360,   spectrum: 1.0,                                       chroma: 1.0 },
 };
-
-/** Update any palette in-place (built-in or custom). Derives fog/bg/edge from baseHue. */
-export function updatePalette(key: string, { baseHue, hueRange, saturation }: PaletteTweaks): void {
-    const target: PaletteData | undefined = key === 'custom'
-        ? customPalette
-        : (PALETTES as Record<string, PaletteData>)[key];
-    if (!target) return;
-    const derived = deriveCustomColors(baseHue);
-    target.baseHue = baseHue;
-    target.hueRange = hueRange;
-    target.saturation = saturation;
-    target.fogColor = derived.fogColor;
-    target.bgColor = derived.bgColor;
-    target.edgeColor = derived.edgeColor;
-    target.accentHue = derived.accentHue;
-}
-
-/** Backward-compat alias. */
-export function updateCustomPalette(settings: PaletteTweaks): void {
-    updatePalette('custom', settings);
-}
-
-/** Reset a built-in palette to its original hand-tuned defaults. */
-export function resetPalette(key: string): void {
-    const defaults = (PALETTE_DEFAULTS as Record<string, Readonly<PaletteData>>)[key];
-    const target = (PALETTES as Record<string, PaletteData>)[key];
-    if (!defaults || !target) return;
-    Object.assign(target, {
-        ...defaults,
-        fogColor: [...defaults.fogColor] as [number, number, number],
-        bgColor: [...defaults.bgColor] as [number, number, number],
-        edgeColor: [...defaults.edgeColor] as [number, number, number],
-    });
-}
-
-/** Get the original default values for a palette (read-only). */
-export function getPaletteDefaults(key: string): Pick<PaletteData, 'baseHue' | 'hueRange' | 'saturation'> {
-    if (key === 'custom') return { baseHue: 325, hueRange: 100, saturation: 0.75 };
-    return (PALETTE_DEFAULTS as Record<string, Readonly<PaletteData>>)[key] || PALETTE_DEFAULTS['violet-depth'];
-}
-
-export function getPalette(key: string): PaletteData {
-    if (key === 'custom') return customPalette;
-    return (PALETTES as Record<string, PaletteData>)[key] || PALETTES['violet-depth'];
-}

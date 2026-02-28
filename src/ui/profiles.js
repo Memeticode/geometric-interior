@@ -3,9 +3,62 @@
  */
 
 import starterProfiles from '../core/starter-profiles.json';
+import { PRESETS } from '../../lib/core/palettes.js';
 import { t } from '../i18n/locale.js';
 
 const LS_KEY = 'geo_self_portrait_profiles_v3';
+
+/**
+ * Migrate a legacy profile (palette+paletteTweaks) to the new 10-axis format.
+ * Returns the profile unchanged if already in new format.
+ */
+function migrateProfile(p) {
+    if (!p || !p.controls) return p;
+    // Already migrated?
+    if ('hue' in p.controls && !('palette' in p.controls)) return p;
+
+    const c = p.controls;
+    const tweaks = p.paletteTweaks;
+
+    // Determine hue/spectrum/chroma from paletteTweaks or palette preset
+    let hue = 0.783, spectrum = 0.239, chroma = 0.417; // violet-depth defaults
+    if (tweaks && tweaks.baseHue !== undefined) {
+        hue = tweaks.baseHue / 360;
+        spectrum = Math.sqrt(Math.max(0, (tweaks.hueRange - 10) / 350));
+        const sat = tweaks.saturation;
+        if (sat <= 0.65) {
+            chroma = (sat - 0.05) / (2 * 0.60);
+        } else {
+            chroma = 0.5 + (sat - 0.65) / (2 * 0.35);
+        }
+        chroma = Math.max(0, Math.min(1, chroma));
+    } else if (c.palette && c.palette !== 'custom') {
+        const preset = PRESETS[c.palette];
+        if (preset) {
+            hue = preset.hue;
+            spectrum = preset.spectrum;
+            chroma = preset.chroma;
+        }
+    }
+
+    // Build new controls
+    const newControls = {
+        topology: c.topology || 'flow-field',
+        density: c.density ?? 0.5,
+        luminosity: c.luminosity ?? 0.5,
+        fracture: c.fracture ?? 0.5,
+        coherence: c.coherence ?? 0.5,
+        hue,
+        spectrum,
+        chroma,
+        scale: 0.5,
+        division: 0.5,
+        faceting: 0.5,
+        flow: 0.5,
+    };
+
+    return { seed: p.seed, controls: newControls };
+}
 const ORDER_KEY = 'geo_self_portrait_profile_order_v1';
 const ANIM_LS_KEY = 'geo_self_portrait_anim_profiles_v1';
 
@@ -29,6 +82,13 @@ export function loadProfiles() {
             }
             if ('note' in p) {
                 delete p.note;
+                migrated = true;
+            }
+        }
+        // Migrate: palette+paletteTweaks → hue/spectrum/chroma axes
+        for (const [name, p] of Object.entries(parsed)) {
+            if (p.controls && ('palette' in p.controls || 'depth' in p.controls)) {
+                parsed[name] = migrateProfile(p);
                 migrated = true;
             }
         }
@@ -238,7 +298,7 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
             const thumbImg = document.createElement('img');
             thumbImg.className = 'loop-thumb';
             left.appendChild(thumbImg);
-            renderThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
+            renderThumbnail(p.seed, p.controls, thumbImg);
         }
 
         const nm = document.createElement('div');
@@ -256,7 +316,7 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
             summary.textContent = t('profile.details');
             const sub = document.createElement('div');
             sub.className = 'subline';
-            sub.textContent = `${c.topology} \u00b7 ${c.palette} \u00b7 den ${c.density.toFixed(2)} \u00b7 lum ${c.luminosity.toFixed(2)} \u00b7 frc ${c.fracture.toFixed(2)} \u00b7 dep ${c.depth.toFixed(2)} \u00b7 coh ${c.coherence.toFixed(2)}`;
+            sub.textContent = `${c.topology} \u00b7 den ${c.density.toFixed(2)} \u00b7 lum ${c.luminosity.toFixed(2)} \u00b7 frc ${c.fracture.toFixed(2)} \u00b7 coh ${c.coherence.toFixed(2)} \u00b7 hue ${c.hue.toFixed(2)} \u00b7 spc ${(c.spectrum ?? 0).toFixed(2)} \u00b7 chr ${(c.chroma ?? 0).toFixed(2)} \u00b7 scl ${(c.scale ?? 0.5).toFixed(2)} \u00b7 flw ${(c.flow ?? 0.5).toFixed(2)}`;
             detailsEl.appendChild(summary);
             detailsEl.appendChild(sub);
         } else {

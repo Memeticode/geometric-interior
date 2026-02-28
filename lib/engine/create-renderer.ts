@@ -19,8 +19,7 @@ import { buildDemoScene } from './demo/build-scene.js';
 import { matchDots, buildMorphGlowGeometry } from './demo/dot-matching.js';
 import { createDemoGlowMaterial } from './materials.js';
 import { createGlowTexture } from './demo/dots.js';
-import { resetPalette, updatePalette } from '../core/palettes.js';
-import type { Controls, PaletteTweaks, Renderer, RendererOptions, RenderMeta, SceneRefs, DerivedParams } from '../types.js';
+import type { Controls, Renderer, RendererOptions, RenderMeta, SceneRefs, DerivedParams } from '../types.js';
 
 export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts: RendererOptions = {}): Renderer {
     const renderer = new THREE.WebGLRenderer({
@@ -130,9 +129,19 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
     const _sizeVec = new THREE.Vector2();
 
+    // Target resolution override (0 = use clientWidth/clientHeight)
+    let targetW = 0, targetH = 0;
+
     syncSize();
 
     function syncSize(): void {
+        if (targetW > 0 && targetH > 0) {
+            renderer.getSize(_sizeVec);
+            if (_sizeVec.x !== targetW || _sizeVec.y !== targetH) {
+                resize(targetW, targetH);
+            }
+            return;
+        }
         if ((canvas as HTMLCanvasElement).clientWidth > 0 && (canvas as HTMLCanvasElement).clientHeight > 0) {
             const displayW = (canvas as HTMLCanvasElement).clientWidth;
             const displayH = (canvas as HTMLCanvasElement).clientHeight;
@@ -142,6 +151,17 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
                 composer.setSize(displayW, displayH);
             }
         }
+    }
+
+    function setTargetResolution(w: number, h: number): void {
+        targetW = w;
+        targetH = h;
+        resize(w, h);
+    }
+
+    function clearTargetResolution(): void {
+        targetW = 0;
+        targetH = 0;
     }
 
     // --- Persistent scene state for render loop ---
@@ -276,28 +296,13 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
     function morphPrepare(
         seedA: string, controlsA: Controls, seedB: string, controlsB: Controls,
-        paletteTweaksA?: Record<string, PaletteTweaks>, paletteTweaksB?: Record<string, PaletteTweaks>,
     ): void {
         syncSize();
         clearScene(scene);
 
-        // Set up palette A before deriving its params
-        if (paletteTweaksA) {
-            for (const [key, tweaks] of Object.entries(paletteTweaksA)) {
-                resetPalette(key);
-                updatePalette(key, tweaks);
-            }
-        }
         const rngA = mulberry32(xmur3(seedA)());
         const paramsA = deriveParams(controlsA, rngA);
 
-        // Set up palette B before deriving its params
-        if (paletteTweaksB) {
-            for (const [key, tweaks] of Object.entries(paletteTweaksB)) {
-                resetPalette(key);
-                updatePalette(key, tweaks);
-            }
-        }
         const rngB = mulberry32(xmur3(seedB)());
         const paramsB = deriveParams(controlsB, rngB);
 
@@ -524,6 +529,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
     return {
         renderWith, dispose, resize, syncSize, setDPR,
+        setTargetResolution, clearTargetResolution,
         morphPrepare, morphUpdate, morphEnd,
         updateTime, renderFrame, setAnimConfig,
         foldIn, foldOut, setFoldImmediate, isFoldComplete,

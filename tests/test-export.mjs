@@ -5,8 +5,7 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { ensurePanelOpen, ensureConfigExpanded, scrollToElement, reloadPage } from './helpers/browser.mjs';
-import { readControlsFromPage, readPaletteTweaksFromPage, readSeed } from './helpers/controls.mjs';
-import { setSlider } from './helpers/controls.mjs';
+import { readControlsFromPage, readSeed, setSlider } from './helpers/controls.mjs';
 import { waitForStillRendered, sleep } from './helpers/waits.mjs';
 import { assertDisabled, assertEnabled, assertNoPageErrors } from './helpers/assertions.mjs';
 import fs from 'fs';
@@ -65,22 +64,23 @@ export async function runTests(page, errors) {
         }
     });
 
-    // ── Test: JSON config has valid still schema ──
-    await test('JSON config has valid still config schema', async () => {
+    // ── Test: JSON config has valid still-v2 schema ──
+    await test('JSON config has valid still-v2 config schema', async () => {
         if (!exportedConfig) throw new Error('No config from previous export');
 
         const m = exportedConfig;
-        if (m.kind !== 'still') throw new Error(`Expected kind "still", got "${m.kind}"`);
+        if (m.kind !== 'still-v2') throw new Error(`Expected kind "still-v2", got "${m.kind}"`);
         if (typeof m.name !== 'string' || !m.name.trim()) throw new Error('name is empty or not a string');
         if (typeof m.intent !== 'string' || !m.intent.trim()) throw new Error('intent is empty or not a string');
 
-        if (!m.palette || typeof m.palette !== 'object') throw new Error('palette missing or not an object');
-        if (typeof m.palette.hue !== 'number') throw new Error('palette.hue not a number');
-        if (typeof m.palette.range !== 'number') throw new Error('palette.range not a number');
-        if (typeof m.palette.saturation !== 'number') throw new Error('palette.saturation not a number');
+        if (!m.color || typeof m.color !== 'object') throw new Error('color missing or not an object');
+        for (const key of ['hue', 'spectrum', 'chroma']) {
+            if (typeof m.color[key] !== 'number') throw new Error(`color.${key} not a number`);
+            if (m.color[key] < 0 || m.color[key] > 1) throw new Error(`color.${key} out of range`);
+        }
 
         if (!m.structure || typeof m.structure !== 'object') throw new Error('structure missing or not an object');
-        for (const key of ['density', 'luminosity', 'fracture', 'depth', 'coherence']) {
+        for (const key of ['density', 'luminosity', 'fracture', 'coherence', 'scale', 'division', 'faceting', 'flow']) {
             if (typeof m.structure[key] !== 'number') throw new Error(`structure.${key} not a number`);
             if (m.structure[key] < 0 || m.structure[key] > 1) throw new Error(`structure.${key} out of range`);
         }
@@ -92,27 +92,22 @@ export async function runTests(page, errors) {
 
         const seed = await readSeed(page);
         const controls = await readControlsFromPage(page);
-        const tweaks = await readPaletteTweaksFromPage(page);
 
         if (exportedConfig.intent !== seed) {
             throw new Error(`intent: expected "${seed}", got "${exportedConfig.intent}"`);
         }
 
         const tol = 0.02;
-        for (const key of ['density', 'luminosity', 'fracture', 'depth', 'coherence']) {
+        for (const key of ['density', 'luminosity', 'fracture', 'coherence', 'scale', 'division', 'faceting', 'flow']) {
             if (Math.abs(exportedConfig.structure[key] - controls[key]) > tol) {
                 throw new Error(`structure.${key}: expected ~${controls[key]}, got ${exportedConfig.structure[key]}`);
             }
         }
 
-        if (Math.abs(exportedConfig.palette.hue - tweaks.baseHue) > 1) {
-            throw new Error(`palette.hue: expected ~${tweaks.baseHue}, got ${exportedConfig.palette.hue}`);
-        }
-        if (Math.abs(exportedConfig.palette.range - tweaks.hueRange) > 1) {
-            throw new Error(`palette.range: expected ~${tweaks.hueRange}, got ${exportedConfig.palette.range}`);
-        }
-        if (Math.abs(exportedConfig.palette.saturation - tweaks.saturation) > 0.02) {
-            throw new Error(`palette.saturation: expected ~${tweaks.saturation}, got ${exportedConfig.palette.saturation}`);
+        for (const key of ['hue', 'spectrum', 'chroma']) {
+            if (Math.abs(exportedConfig.color[key] - controls[key]) > tol) {
+                throw new Error(`color.${key}: expected ~${controls[key]}, got ${exportedConfig.color[key]}`);
+            }
         }
     });
 

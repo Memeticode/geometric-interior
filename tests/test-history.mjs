@@ -4,7 +4,7 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { ensurePanelOpen, ensureConfigExpanded } from './helpers/browser.mjs';
-import { readControlsFromPage, readPaletteTweaksFromPage, readSeed } from './helpers/controls.mjs';
+import { readControlsFromPage, readSeed } from './helpers/controls.mjs';
 import { waitForStillRendered, waitForMorphComplete, sleep } from './helpers/waits.mjs';
 import { assertDisabled, assertEnabled, assertNoPageErrors } from './helpers/assertions.mjs';
 import { clickAnyProfileCard } from './helpers/profiles.mjs';
@@ -113,8 +113,8 @@ export async function runTests(page, errors) {
         await assertEnabled(page, '#historyBackBtn');
     });
 
-    // ── Test: History preserves controls and palette through round-trip ──
-    await test('History preserves seed, controls, and palette tweaks', async () => {
+    // ── Test: History preserves controls through round-trip ──
+    await test('History preserves seed and controls', async () => {
         const portraits = await page.$$eval(
             '#portraitGallery .profile-card .profile-card-name',
             els => els.map(el => el.textContent)
@@ -126,7 +126,6 @@ export async function runTests(page, errors) {
 
         const seedBefore = await readSeed(page);
         const controlsBefore = await readControlsFromPage(page);
-        const tweaksBefore = await readPaletteTweaksFromPage(page);
 
         if (portraits.length > 2) {
             await clickProfileAndDismiss(portraits[2]);

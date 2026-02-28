@@ -1,5 +1,5 @@
 /**
- * Morph transition tests: animation, cancellation, chaining, palette snap.
+ * Morph transition tests: animation, cancellation, chaining.
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
@@ -147,38 +147,6 @@ export async function runTests(page, errors) {
             const afterSeed = await page.$eval('#profileName', el => el.value);
             if (afterSeed === beforeSeed) {
                 console.log('    (Note: back may have returned to same seed)');
-            }
-        }
-    });
-
-    // ── Test: Palette snaps at midpoint ──
-    await test('Palette snaps at midpoint during morph', async () => {
-        // Use evaluate to bypass potential pointer-events restrictions
-        await page.evaluate(() => {
-            const chip = document.querySelector('.pal-chip[data-value="sapphire"]');
-            if (chip) chip.click();
-        });
-        await sleep(300);
-
-        if (portraits.length > 0) {
-            const paletteBefore = await page.$eval('#palette', el => el.value);
-            await clickProfileAndDismiss(portraits[0]);
-
-            await sleep(300);
-            const earlyPalette = await page.$eval('#palette', el => el.value);
-
-            await sleep(600);
-            const latePalette = await page.$eval('#palette', el => el.value);
-
-            await waitForMorphComplete(page);
-            const finalPalette = await page.$eval('#palette', el => el.value);
-
-            if (paletteBefore !== finalPalette) {
-                if (earlyPalette !== paletteBefore && latePalette !== finalPalette) {
-                    console.log(`    (Palette transition: ${paletteBefore} → ${earlyPalette} → ${latePalette} → ${finalPalette})`);
-                }
-            } else {
-                console.log('    (Note: portrait uses same palette — snap not observable)');
             }
         }
     });

@@ -108,22 +108,18 @@ export function initStatementModal(dom) {
         /* Hide scrollbar for the entire transition (flip-out + flip-in) */
         modalBody.style.overflow = 'hidden';
 
-        outgoing.classList.add('coin-flip-out');
-        dom.statementTitle.classList.add('coin-flip-out');
+        /* Flip the modal body (content area), keeping the header/tabs static */
+        modalBody.classList.add('coin-flip-out');
 
         setTimeout(() => {
+            modalBody.classList.remove('coin-flip-out');
+
             /* Suppress the modal-box height transition so it snaps instantly */
             modalBox.style.transition = 'none';
 
-            outgoing.classList.remove('coin-flip-out');
             outgoing.classList.add('hidden');
-
-            dom.statementTitle.classList.remove('coin-flip-out');
             dom.statementTitle.textContent = STATEMENT_TITLES[tab] || '';
-
             incoming.classList.remove('hidden');
-            incoming.classList.add('coin-flip-in');
-            dom.statementTitle.classList.add('coin-flip-in');
 
             modalBody.scrollTop = 0;
 
@@ -132,13 +128,14 @@ export function initStatementModal(dom) {
             void modalBox.offsetHeight;
             modalBox.style.transition = '';
 
+            modalBody.classList.add('coin-flip-in');
+
             const cleanup = () => {
-                incoming.classList.remove('coin-flip-in');
-                dom.statementTitle.classList.remove('coin-flip-in');
+                modalBody.classList.remove('coin-flip-in');
                 modalBody.style.overflow = '';
                 statementFlipping = false;
             };
-            incoming.addEventListener('animationend', cleanup, { once: true });
+            modalBody.addEventListener('animationend', cleanup, { once: true });
         }, FLIP_OUT_MS);
     }
 

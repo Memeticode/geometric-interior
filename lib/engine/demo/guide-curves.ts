@@ -4,7 +4,7 @@
 
 import { Vector3, Quaternion } from 'three';
 import { envelopeSDF, envelopeNormal, projectToEnvelope, generateSeedPoints } from './envelope.js';
-import type { CurveSample, GuideCurve } from '../../types.js';
+import type { CurveSample, DivisionParams, GuideCurve } from '../../types.js';
 
 // Reusable temporaries to reduce GC pressure in guide curve generation
 const _gcAway = new Vector3();
@@ -20,16 +20,17 @@ export function generateGuideCurve(
     curvature: number,
     rng: () => number,
     radii: Vector3,
+    div?: DivisionParams,
 ): Vector3[] {
     const points: Vector3[] = [seed.clone()];
-    const normal = envelopeNormal(seed, radii);
+    const normal = envelopeNormal(seed, radii, div);
     let tangent = new Vector3(rng() - 0.5, rng() - 0.5, rng() - 0.5);
     _gcTmp.copy(normal).multiplyScalar(tangent.dot(normal));
     tangent.sub(_gcTmp).normalize();
 
     for (let step = 0; step < maxSteps; step++) {
         const current = points[points.length - 1];
-        const currentNormal = envelopeNormal(current, radii);
+        const currentNormal = envelopeNormal(current, radii, div);
 
         _gcTmp.copy(currentNormal).multiplyScalar(tangent.dot(currentNormal));
         tangent.sub(_gcTmp).normalize();
@@ -65,15 +66,15 @@ export function generateGuideCurve(
         }
 
         _gcNext.copy(current).addScaledVector(tangent, stepSize);
-        const projected = projectToEnvelope(_gcNext, radii);
-        if (envelopeSDF(projected, radii) > 0.05 || projected.length() > 1.8) break;
+        const projected = projectToEnvelope(_gcNext, radii, div);
+        if (envelopeSDF(projected, radii, div) > 0.05 || projected.length() > 1.8) break;
         points.push(projected);
         tangent = projected.clone().sub(current).normalize();
     }
     return points;
 }
 
-export function sampleAlongCurve(curvePoints: Vector3[], spacing: number, radii: Vector3): CurveSample[] {
+export function sampleAlongCurve(curvePoints: Vector3[], spacing: number, radii: Vector3, div?: DivisionParams): CurveSample[] {
     const samples: CurveSample[] = [];
     let accumulated = 0;
     for (let i = 1; i < curvePoints.length; i++) {
@@ -84,7 +85,7 @@ export function sampleAlongCurve(curvePoints: Vector3[], spacing: number, radii:
             const prev = curvePoints[Math.max(0, i - 1)];
             const next = curvePoints[Math.min(curvePoints.length - 1, i + 1)];
             const tangent = next.clone().sub(prev).normalize();
-            const normal = envelopeNormal(pos, radii);
+            const normal = envelopeNormal(pos, radii, div);
             const binormal = new Vector3().crossVectors(tangent, normal).normalize();
             samples.push({ pos, tangent, normal, binormal });
         }
@@ -107,6 +108,7 @@ export function generateAllGuideCurves(
     config: { primary: { seedCount: number; maxCount: number; maxSteps: number; stepSize: number; curvature: number; minLength: number }; secondary: typeof config.primary; tertiary: typeof config.primary },
     rng: () => number,
     radii: Vector3,
+    div?: DivisionParams,
 ): GuideCurve[] {
     const allCurves: GuideCurve[] = [];
 
@@ -117,10 +119,10 @@ export function generateAllGuideCurves(
     ];
 
     for (const { tier, seedCount, maxCount, maxSteps, stepSize, curvature, minLength } of tiers) {
-        const seeds = generateSeedPoints(seedCount, radii);
+        const seeds = generateSeedPoints(seedCount, radii, div);
         for (const seed of seeds) {
             const steps = maxSteps + Math.floor(rng() * (maxSteps * 0.5));
-            const curve = generateGuideCurve(seed, allCurves, steps, stepSize, curvature, rng, radii) as GuideCurve;
+            const curve = generateGuideCurve(seed, allCurves, steps, stepSize, curvature, rng, radii, div) as GuideCurve;
             if (curve.length > minLength) {
                 curve.tier = tier;
                 allCurves.push(curve);

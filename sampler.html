@@ -208,29 +208,37 @@
       <label>X-axis</label>
       <select id="xAxis">
         <option value="density" selected>density</option>
+        <option value="luminosity">luminosity</option>
         <option value="fracture">fracture</option>
         <option value="coherence">coherence</option>
-        <option value="luminosity">luminosity</option>
-        <option value="depth">depth</option>
+        <option value="hue">hue</option>
+        <option value="spectrum">spectrum</option>
+        <option value="chroma">chroma</option>
+        <option value="scale">scale</option>
+        <option value="division">division</option>
+        <option value="faceting">faceting</option>
+        <option value="flow">flow</option>
       </select>
     </div>
     <div class="control-group">
       <label>Y-axis</label>
       <select id="yAxis">
         <option value="density">density</option>
+        <option value="luminosity">luminosity</option>
         <option value="fracture" selected>fracture</option>
         <option value="coherence">coherence</option>
-        <option value="luminosity">luminosity</option>
-        <option value="depth">depth</option>
+        <option value="hue">hue</option>
+        <option value="spectrum">spectrum</option>
+        <option value="chroma">chroma</option>
+        <option value="scale">scale</option>
+        <option value="division">division</option>
+        <option value="faceting">faceting</option>
+        <option value="flow">flow</option>
       </select>
     </div>
     <div class="control-group">
       <label>Seed</label>
       <input type="text" id="seed" value="sampler-1" style="width:100px"/>
-    </div>
-    <div class="control-group">
-      <label>Palette</label>
-      <select id="palette"></select>
     </div>
     <button id="renderBtn">Render Grid</button>
     <button id="cancelBtn" class="cancel" disabled>Cancel</button>
@@ -264,20 +272,19 @@
   <canvas id="renderCanvas" width="200" height="130" style="display:none"></canvas>
 
   <script type="module">
-    import { createRenderer, PALETTE_KEYS, resetPalette } from './lib/index.js';
+    import { createRenderer } from './lib/index.js';
 
     /* ── Constants ── */
     const GRID = 8;
     const CELL_W = 200;
     const CELL_H = 130;
-    const AXES = ['density', 'fracture', 'coherence', 'luminosity', 'depth'];
-    const DEFAULTS = { density: 0.5, fracture: 0.5, coherence: 0.5, luminosity: 0.5, depth: 0.5 };
+    const AXES = ['density', 'luminosity', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
+    const DEFAULTS = { density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5, hue: 0.783, spectrum: 0.239, chroma: 0.417, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 };
 
     /* ── DOM refs ── */
     const xAxisSel   = document.getElementById('xAxis');
     const yAxisSel   = document.getElementById('yAxis');
     const seedInput  = document.getElementById('seed');
-    const paletteSel = document.getElementById('palette');
     const renderBtn  = document.getElementById('renderBtn');
     const cancelBtn  = document.getElementById('cancelBtn');
     const heldDiv    = document.getElementById('heldParams');
@@ -295,6 +302,7 @@
     /* ── Renderer ── */
     const renderCanvas = document.getElementById('renderCanvas');
     const renderer = createRenderer(renderCanvas, { dpr: 1 });
+    window._renderer = renderer;
     renderer.resize(CELL_W, CELL_H);
 
     /* ── Full-size renderer (lazy) ── */
@@ -305,15 +313,6 @@
         fullRenderer.resize(800, 520);
       }
       return fullRenderer;
-    }
-
-    /* ── Populate palette dropdown ── */
-    for (const key of PALETTE_KEYS) {
-      if (key === 'custom') continue;
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = key;
-      paletteSel.appendChild(opt);
     }
 
     /* ── Grid cells ── */
@@ -422,10 +421,6 @@
       const xAxis = xAxisSel.value;
       const yAxis = yAxisSel.value;
       const seed = seedInput.value || 'sampler-1';
-      const palette = paletteSel.value;
-
-      // Reset palette to defaults
-      resetPalette(palette);
 
       // Gather held values
       const held = {};
@@ -457,7 +452,6 @@
 
           const controls = {
             topology: 'flow-field',
-            palette: palette,
             ...held,
             [xAxis]: xVal,
             [yAxis]: yVal,
@@ -520,8 +514,6 @@
       if (!data) return;
 
       const seed = seedInput.value || 'sampler-1';
-      const palette = paletteSel.value;
-      resetPalette(palette);
 
       const fr = getFullRenderer();
       const meta = fr.renderWith(seed, data.controls);

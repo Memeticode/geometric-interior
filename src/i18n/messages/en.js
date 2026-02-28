@@ -189,6 +189,12 @@ export default {
 
     /* ── Footer ── */
     'footer.github': 'GitHub',
+    'footer.langLabel': 'Language',
+    'footer.settings': 'Settings',
+    'footer.theme': 'Theme',
+    'footer.language': 'Language',
+    'footer.resolution': 'Resolution',
+    'footer.resolutionLabel': 'Render resolution',
 
     /* ── Page titles ── */
     'page.gallery': 'Gallery \u2014 Geometric Interior',

@@ -28,8 +28,20 @@
     <script>
         (function () {
             try {
+                var S = ['en', 'es'];
                 var s = localStorage.getItem('geo-self-portrait-locale');
-                if (s) document.documentElement.lang = s;
+                if (s && S.indexOf(s) !== -1) {
+                    document.documentElement.lang = s;
+                } else {
+                    var langs = navigator.languages || [navigator.language || ''];
+                    for (var i = 0; i < langs.length; i++) {
+                        var code = langs[i].split('-')[0].toLowerCase();
+                        if (S.indexOf(code) !== -1) {
+                            document.documentElement.lang = code;
+                            break;
+                        }
+                    }
+                }
             } catch (e) { }
         })();
     </script>
@@ -120,6 +132,42 @@
 
         <footer class="app-footer">
             <div class="footer-content">
+                <div class="settings-btn-wrap">
+                    <button id="pageSettingsBtn" class="footer-link" data-tooltip="Settings" data-i18n-tooltip="footer.settings">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                            <circle cx="8" cy="8" r="2"/>
+                            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M13.07 2.93l-1.41 1.41M4.34 11.66l-1.41 1.41"/>
+                        </svg>
+                    </button>
+                    <div id="pageSettingsPopover" class="settings-popover hidden">
+                        <div class="settings-section">
+                            <span class="settings-section-label" data-i18n="footer.theme">Theme</span>
+                            <div class="theme-switcher" id="themeSwitcher">
+                                <div class="theme-slider" id="themeSlider"></div>
+                                <button class="theme-option" data-theme="system" data-i18n="theme.system">System</button>
+                                <button class="theme-option" data-theme="light" data-i18n="theme.light">Light</button>
+                                <button class="theme-option" data-theme="dark" data-i18n="theme.dark">Dark</button>
+                            </div>
+                        </div>
+                        <div class="settings-section">
+                            <span class="settings-section-label" data-i18n="footer.language">Language</span>
+                            <select id="langSelect" class="lang-select" aria-label="Language" data-i18n-aria="footer.langLabel">
+                                <option value="en">English</option>
+                                <option value="es">Espa&#241;ol</option>
+                            </select>
+                        </div>
+                        <div class="settings-section">
+                            <span class="settings-section-label" data-i18n="footer.resolution">Resolution</span>
+                            <select id="resolutionSelect" class="lang-select" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel">
+                                <option value="sd">SD (840&#215;540)</option>
+                                <option value="hd" selected>HD (1400&#215;900)</option>
+                                <option value="fhd">FHD (1680&#215;1080)</option>
+                                <option value="qhd">QHD (2520&#215;1620)</option>
+                                <option value="4k">4K (3360&#215;2160)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
                 <a href="https://github.com/Memeticode/symmetrical-barnacle" target="_blank" rel="noopener"
                     class="footer-link footer-github">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -127,19 +175,6 @@
                     </svg>
                     <span data-i18n="footer.github">GitHub</span>
                 </a>
-                <div class="footer-switchers">
-                    <div class="lang-switcher" id="langSwitcher">
-                        <div class="lang-slider" id="langSlider"></div>
-                        <button class="lang-option" data-lang="en">EN</button>
-                        <button class="lang-option" data-lang="es">ES</button>
-                    </div>
-                    <div class="theme-switcher" id="themeSwitcher">
-                        <div class="theme-slider" id="themeSlider"></div>
-                        <button class="theme-option" data-theme="system" data-i18n="theme.system">System</button>
-                        <button class="theme-option" data-theme="light" data-i18n="theme.light">Light</button>
-                        <button class="theme-option" data-theme="dark" data-i18n="theme.dark">Dark</button>
-                    </div>
-                </div>
             </div>
         </footer>
     </div>

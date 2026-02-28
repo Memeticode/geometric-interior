@@ -4,7 +4,7 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { BASE_URL, navigateToURL, ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
-import { readControlsFromPage, readPaletteTweaksFromPage, readSeed, readProfileName, setSlider } from './helpers/controls.mjs';
+import { readControlsFromPage, readSeed, readProfileName, setSlider } from './helpers/controls.mjs';
 import { waitForStillRendered, sleep } from './helpers/waits.mjs';
 import { assertNoPageErrors, assertEnabled, assertDisabled, assertHidden, assertVisible } from './helpers/assertions.mjs';
 
@@ -42,14 +42,15 @@ export async function runTests(page, errors) {
     console.log('\n=== URL State Tests ===\n');
 
     // ════════════════════════════════════════
-    // Cluster 1: URL Decode
+    // Cluster 1: URL Decode (v2 format)
     // ════════════════════════════════════════
 
-    await test('Full URL params populate all controls correctly', async () => {
+    await test('Full v2 URL params populate all controls correctly', async () => {
         const url = buildTestURL({
-            n: 'TestName', s: 'test-seed-42', p: 'warm-spectrum',
-            d: '0.33', l: '0.88', f: '0.15', z: '0.72', c: '0.61',
-            h: '120', r: '45', a: '0.80',
+            n: 'TestName', s: 'test-seed-42',
+            d: '0.33', l: '0.88', f: '0.15', c: '0.61',
+            h: '0.500', sp: '0.400', ch: '0.600',
+            sc: '0.70', dv: '0.30', ft: '0.80', fl: '0.65',
         });
         await navigateToURL(page, url);
         await waitForStillRendered(page);
@@ -61,17 +62,17 @@ export async function runTests(page, errors) {
         if (name !== 'TestName') throw new Error(`Name: expected "TestName", got "${name}"`);
 
         const c = await readControlsFromPage(page);
-        if (c.palette !== 'warm-spectrum') throw new Error(`Palette: expected "warm-spectrum", got "${c.palette}"`);
         assertClose(c.density, 0.33, 0.02, 'density');
         assertClose(c.luminosity, 0.88, 0.02, 'luminosity');
         assertClose(c.fracture, 0.15, 0.02, 'fracture');
-        assertClose(c.depth, 0.72, 0.02, 'depth');
         assertClose(c.coherence, 0.61, 0.02, 'coherence');
-
-        const t = await readPaletteTweaksFromPage(page);
-        assertClose(t.baseHue, 120, 1, 'baseHue');
-        assertClose(t.hueRange, 45, 1, 'hueRange');
-        assertClose(t.saturation, 0.80, 0.02, 'saturation');
+        assertClose(c.hue, 0.500, 0.01, 'hue');
+        assertClose(c.spectrum, 0.400, 0.01, 'spectrum');
+        assertClose(c.chroma, 0.600, 0.01, 'chroma');
+        assertClose(c.scale, 0.70, 0.02, 'scale');
+        assertClose(c.division, 0.30, 0.02, 'division');
+        assertClose(c.faceting, 0.80, 0.02, 'faceting');
+        assertClose(c.flow, 0.65, 0.02, 'flow');
     });
 
     await test('Seed-only URL uses default values for missing params', async () => {
@@ -82,18 +83,40 @@ export async function runTests(page, errors) {
         if (seed !== 'minimal-seed') throw new Error(`Seed: expected "minimal-seed", got "${seed}"`);
 
         const c = await readControlsFromPage(page);
-        if (c.palette !== 'violet-depth') throw new Error(`Palette: expected "violet-depth", got "${c.palette}"`);
-        assertClose(c.density, 0.65, 0.02, 'density');
-        assertClose(c.luminosity, 0.70, 0.02, 'luminosity');
-        assertClose(c.fracture, 0.35, 0.02, 'fracture');
-        assertClose(c.depth, 0.40, 0.02, 'depth');
+        assertClose(c.density, 0.50, 0.02, 'density');
+        assertClose(c.luminosity, 0.50, 0.02, 'luminosity');
+        assertClose(c.fracture, 0.50, 0.02, 'fracture');
         assertClose(c.coherence, 0.50, 0.02, 'coherence');
+        assertClose(c.hue, 0.783, 0.01, 'hue');
+        assertClose(c.spectrum, 0.239, 0.01, 'spectrum');
+        assertClose(c.chroma, 0.417, 0.01, 'chroma');
+        assertClose(c.scale, 0.50, 0.02, 'scale');
+        assertClose(c.division, 0.50, 0.02, 'division');
+        assertClose(c.faceting, 0.50, 0.02, 'faceting');
+        assertClose(c.flow, 0.50, 0.02, 'flow');
+    });
+
+    await test('Legacy v1 URL (with palette param) migrates to v2 controls', async () => {
+        const url = buildTestURL({
+            s: 'legacy-test', p: 'warm-spectrum',
+            d: '0.33', l: '0.88', f: '0.15', z: '0.72', c: '0.61',
+        });
+        await navigateToURL(page, url);
+        await waitForStillRendered(page);
+
+        const c = await readControlsFromPage(page);
+        // warm-spectrum preset: hue≈0.061, spectrum≈0.220, chroma≈0.957
+        assertClose(c.hue, 0.061, 0.02, 'hue (from warm-spectrum preset)');
+        assertClose(c.spectrum, 0.220, 0.05, 'spectrum (from warm-spectrum preset)');
+        assertClose(c.chroma, 0.957, 0.05, 'chroma (from warm-spectrum preset)');
+        assertClose(c.density, 0.33, 0.02, 'density');
+        assertClose(c.luminosity, 0.88, 0.02, 'luminosity');
     });
 
     await test('Name auto-generated when n param absent', async () => {
         const url = buildTestURL({
-            s: 'auto-name-seed', p: 'violet-depth',
-            d: '0.50', l: '0.50', f: '0.50', z: '0.50', c: '0.50',
+            s: 'auto-name-seed',
+            d: '0.50', l: '0.50', f: '0.50', c: '0.50',
         });
         await navigateToURL(page, url);
         await waitForStillRendered(page);
@@ -118,8 +141,9 @@ export async function runTests(page, errors) {
     await test('Out-of-range values are clamped', async () => {
         const url = buildTestURL({
             s: 'clamp-test',
-            d: '-0.5', l: '2.0', f: '0.50', z: '-1', c: '999',
-            h: '-50', r: '0', a: '5.0',
+            d: '-0.5', l: '2.0', f: '0.50', c: '999',
+            h: '-0.5', sp: '5.0', ch: '-1.0',
+            sc: '2.0', dv: '-0.5', ft: '3.0', fl: '-1.0',
         });
         await navigateToURL(page, url);
         await waitForStillRendered(page);
@@ -128,23 +152,14 @@ export async function runTests(page, errors) {
         assertClose(c.density, 0, 0.02, 'density (clamped from -0.5)');
         assertClose(c.luminosity, 1, 0.02, 'luminosity (clamped from 2.0)');
         assertClose(c.fracture, 0.50, 0.02, 'fracture');
-        assertClose(c.depth, 0, 0.02, 'depth (clamped from -1)');
         assertClose(c.coherence, 1, 0.02, 'coherence (clamped from 999)');
-
-        const t = await readPaletteTweaksFromPage(page);
-        assertClose(t.baseHue, 0, 1, 'baseHue (clamped from -50)');
-        assertClose(t.hueRange, 5, 1, 'hueRange (clamped from 0)');
-        assertClose(t.saturation, 1, 0.02, 'saturation (clamped from 5.0)');
-    });
-
-    await test('Invalid palette key falls back to violet-depth', async () => {
-        await navigateToURL(page, buildTestURL({ s: 'bad-palette', p: 'nonexistent-palette' }));
-        await waitForStillRendered(page);
-
-        const c = await readControlsFromPage(page);
-        if (c.palette !== 'violet-depth') {
-            throw new Error(`Palette: expected "violet-depth" fallback, got "${c.palette}"`);
-        }
+        assertClose(c.hue, 0, 0.02, 'hue (clamped from -0.5)');
+        assertClose(c.spectrum, 1, 0.02, 'spectrum (clamped from 5.0)');
+        assertClose(c.chroma, 0, 0.02, 'chroma (clamped from -1.0)');
+        assertClose(c.scale, 1, 0.02, 'scale (clamped from 2.0)');
+        assertClose(c.division, 0, 0.02, 'division (clamped from -0.5)');
+        assertClose(c.faceting, 1, 0.02, 'faceting (clamped from 3.0)');
+        assertClose(c.flow, 0, 0.02, 'flow (clamped from -1.0)');
     });
 
     await test('Non-numeric param values fall back to defaults', async () => {
@@ -152,9 +167,9 @@ export async function runTests(page, errors) {
         await waitForStillRendered(page);
 
         const c = await readControlsFromPage(page);
-        assertClose(c.density, 0.65, 0.02, 'density (NaN fallback)');
-        assertClose(c.luminosity, 0.70, 0.02, 'luminosity (NaN fallback)');
-        assertClose(c.fracture, 0.35, 0.02, 'fracture (NaN fallback)');
+        assertClose(c.density, 0.50, 0.02, 'density (NaN fallback)');
+        assertClose(c.luminosity, 0.50, 0.02, 'luminosity (NaN fallback)');
+        assertClose(c.fracture, 0.50, 0.02, 'fracture (NaN fallback)');
     });
 
     await test('No URL params loads default randomized state', async () => {
@@ -163,7 +178,6 @@ export async function runTests(page, errors) {
 
         const seed = await readSeed(page);
         if (!seed || seed.trim().length === 0) throw new Error('Seed is empty with no URL params');
-        // Seed should be set (randomized by the app, not from URL)
     });
 
     // ════════════════════════════════════════
@@ -190,20 +204,16 @@ export async function runTests(page, errors) {
         await navigateToURL(page, BASE_URL);
         await waitForStillRendered(page);
 
-        // Initially hidden
         await assertHidden(page, '#sharePopover');
 
-        // Click share button — opens
         await page.click('#shareBtn');
         await sleep(200);
         await assertVisible(page, '#sharePopover');
 
-        // Click again — closes (toggle)
         await page.click('#shareBtn');
         await sleep(200);
         await assertHidden(page, '#sharePopover');
 
-        // Re-open, then click outside — closes
         await page.click('#shareBtn');
         await sleep(200);
         await assertVisible(page, '#sharePopover');
@@ -211,7 +221,6 @@ export async function runTests(page, errors) {
         await sleep(200);
         await assertHidden(page, '#sharePopover');
 
-        // Re-open, then press Escape — closes
         await page.click('#shareBtn');
         await sleep(200);
         await assertVisible(page, '#sharePopover');
@@ -220,15 +229,16 @@ export async function runTests(page, errors) {
         await assertHidden(page, '#sharePopover');
     });
 
-    await test('Copy Link writes correct URL to clipboard', async () => {
+    await test('Copy Link writes correct v2 URL to clipboard', async () => {
         const url = buildTestURL({
-            s: 'clipboard-seed', p: 'sapphire',
-            d: '0.40', l: '0.60', f: '0.20', z: '0.80', c: '0.55',
+            s: 'clipboard-seed',
+            d: '0.40', l: '0.60', f: '0.20', c: '0.55',
+            h: '0.500', sp: '0.300', ch: '0.700',
+            sc: '0.60', dv: '0.40', ft: '0.80', fl: '0.35',
         });
         await navigateToURL(page, url);
         await waitForStillRendered(page);
 
-        // Spy on clipboard.writeText
         await page.evaluate(() => {
             window.__clipboardText = null;
             navigator.clipboard.writeText = (text) => {
@@ -247,22 +257,29 @@ export async function runTests(page, errors) {
 
         const params = new URL(clipURL).searchParams;
         if (params.get('s') !== 'clipboard-seed') throw new Error(`Seed: expected "clipboard-seed", got "${params.get('s')}"`);
-        if (params.get('p') !== 'sapphire') throw new Error(`Palette: expected "sapphire", got "${params.get('p')}"`);
         assertClose(parseFloat(params.get('d')), 0.40, 0.02, 'density in URL');
         assertClose(parseFloat(params.get('l')), 0.60, 0.02, 'luminosity in URL');
         assertClose(parseFloat(params.get('f')), 0.20, 0.02, 'fracture in URL');
-        assertClose(parseFloat(params.get('z')), 0.80, 0.02, 'depth in URL');
         assertClose(parseFloat(params.get('c')), 0.55, 0.02, 'coherence in URL');
+        assertClose(parseFloat(params.get('h')), 0.500, 0.01, 'hue in URL');
+        assertClose(parseFloat(params.get('sp')), 0.300, 0.02, 'spectrum in URL');
+        assertClose(parseFloat(params.get('ch')), 0.700, 0.02, 'chroma in URL');
+        assertClose(parseFloat(params.get('sc')), 0.60, 0.02, 'scale in URL');
+        assertClose(parseFloat(params.get('dv')), 0.40, 0.02, 'division in URL');
+        assertClose(parseFloat(params.get('ft')), 0.80, 0.02, 'faceting in URL');
+        assertClose(parseFloat(params.get('fl')), 0.35, 0.02, 'flow in URL');
 
-        // Popover should close after copy
+        // v2 URL should NOT have legacy params
+        if (params.has('p')) throw new Error('v2 URL should not have legacy "p" param');
+        if (params.has('z')) throw new Error('v2 URL should not have legacy "z" param');
+
         await assertHidden(page, '#sharePopover');
     });
 
     await test('Twitter share opens correct intent URL', async () => {
-        await navigateToURL(page, buildTestURL({ s: 'twitter-test', p: 'violet-depth', d: '0.50', l: '0.50', f: '0.50', z: '0.50', c: '0.50' }));
+        await navigateToURL(page, buildTestURL({ s: 'twitter-test', d: '0.50', l: '0.50', f: '0.50', c: '0.50' }));
         await waitForStillRendered(page);
 
-        // Spy on window.open
         await page.evaluate(() => {
             window.__openedURL = null;
             window.open = (url) => { window.__openedURL = url; return null; };
@@ -286,10 +303,9 @@ export async function runTests(page, errors) {
     });
 
     await test('Facebook share opens correct sharer URL', async () => {
-        await navigateToURL(page, buildTestURL({ s: 'fb-test', p: 'violet-depth', d: '0.50', l: '0.50', f: '0.50', z: '0.50', c: '0.50' }));
+        await navigateToURL(page, buildTestURL({ s: 'fb-test', d: '0.50', l: '0.50', f: '0.50', c: '0.50' }));
         await waitForStillRendered(page);
 
-        // Spy on window.open
         await page.evaluate(() => {
             window.__openedURL = null;
             window.open = (url) => { window.__openedURL = url; return null; };
@@ -305,7 +321,6 @@ export async function runTests(page, errors) {
         if (!openedURL.includes('facebook.com/sharer/sharer.php')) {
             throw new Error(`Expected Facebook sharer URL, got: ${openedURL.slice(0, 100)}`);
         }
-        // Verify the URL param contains our share URL with seed
         if (!openedURL.includes('s%3D') && !openedURL.includes('s=')) {
             throw new Error('Facebook sharer URL does not contain the share link with seed param');
         }
@@ -314,7 +329,7 @@ export async function runTests(page, errors) {
     });
 
     await test('Bluesky share opens correct intent URL', async () => {
-        await navigateToURL(page, buildTestURL({ s: 'bsky-test', p: 'violet-depth', d: '0.50', l: '0.50', f: '0.50', z: '0.50', c: '0.50' }));
+        await navigateToURL(page, buildTestURL({ s: 'bsky-test', d: '0.50', l: '0.50', f: '0.50', c: '0.50' }));
         await waitForStillRendered(page);
 
         await page.evaluate(() => {
@@ -340,7 +355,7 @@ export async function runTests(page, errors) {
     });
 
     await test('Reddit share opens correct submit URL', async () => {
-        await navigateToURL(page, buildTestURL({ s: 'reddit-test', p: 'violet-depth', d: '0.50', l: '0.50', f: '0.50', z: '0.50', c: '0.50' }));
+        await navigateToURL(page, buildTestURL({ s: 'reddit-test', d: '0.50', l: '0.50', f: '0.50', c: '0.50' }));
         await waitForStillRendered(page);
 
         await page.evaluate(() => {
@@ -369,7 +384,7 @@ export async function runTests(page, errors) {
     });
 
     await test('LinkedIn share opens correct share URL', async () => {
-        await navigateToURL(page, buildTestURL({ s: 'linkedin-test', p: 'violet-depth', d: '0.50', l: '0.50', f: '0.50', z: '0.50', c: '0.50' }));
+        await navigateToURL(page, buildTestURL({ s: 'linkedin-test', d: '0.50', l: '0.50', f: '0.50', c: '0.50' }));
         await waitForStillRendered(page);
 
         await page.evaluate(() => {
@@ -395,10 +410,9 @@ export async function runTests(page, errors) {
     });
 
     await test('Email share sets correct mailto link', async () => {
-        await navigateToURL(page, buildTestURL({ s: 'email-test', p: 'violet-depth', d: '0.50', l: '0.50', f: '0.50', z: '0.50', c: '0.50' }));
+        await navigateToURL(page, buildTestURL({ s: 'email-test', d: '0.50', l: '0.50', f: '0.50', c: '0.50' }));
         await waitForStillRendered(page);
 
-        // Spy on window.open (email handler uses window.open for mailto:)
         await page.evaluate(() => {
             window.__openedURL = null;
             window.open = (url) => { window.__openedURL = url; return null; };
@@ -425,76 +439,6 @@ export async function runTests(page, errors) {
         }
 
         await assertHidden(page, '#sharePopover');
-    });
-
-    // ════════════════════════════════════════
-    // Cluster 4: Smart Encoding
-    // ════════════════════════════════════════
-
-    await test('Palette tweaks omitted from URL when matching defaults', async () => {
-        // Navigate with violet-depth defaults (no h/r/a in URL → uses palette defaults)
-        await navigateToURL(page, buildTestURL({
-            s: 'encode-test', p: 'violet-depth',
-            d: '0.50', l: '0.50', f: '0.50', z: '0.50', c: '0.50',
-        }));
-        await waitForStillRendered(page);
-
-        // Spy on clipboard
-        await page.evaluate(() => {
-            window.__clipboardText = null;
-            navigator.clipboard.writeText = (text) => {
-                window.__clipboardText = text;
-                return Promise.resolve();
-            };
-        });
-
-        await page.click('#shareBtn');
-        await sleep(200);
-        await page.click('#shareCopyLink');
-        await sleep(300);
-
-        const url1 = await page.evaluate(() => window.__clipboardText);
-        if (!url1) throw new Error('Clipboard not written');
-        const params1 = new URL(url1).searchParams;
-
-        // Palette tweaks should NOT be present (they match violet-depth defaults)
-        if (params1.has('h') || params1.has('r') || params1.has('a')) {
-            throw new Error(`Palette tweaks should be omitted for default values, got: h=${params1.get('h')}, r=${params1.get('r')}, a=${params1.get('a')}`);
-        }
-
-        // Now navigate with custom tweaks that differ from defaults
-        await navigateToURL(page, buildTestURL({
-            s: 'encode-test', p: 'violet-depth',
-            d: '0.50', l: '0.50', f: '0.50', z: '0.50', c: '0.50',
-            h: '100', r: '60', a: '0.90',
-        }));
-        await waitForStillRendered(page);
-
-        // Re-spy clipboard
-        await page.evaluate(() => {
-            window.__clipboardText = null;
-            navigator.clipboard.writeText = (text) => {
-                window.__clipboardText = text;
-                return Promise.resolve();
-            };
-        });
-
-        await page.click('#shareBtn');
-        await sleep(200);
-        await page.click('#shareCopyLink');
-        await sleep(300);
-
-        const url2 = await page.evaluate(() => window.__clipboardText);
-        if (!url2) throw new Error('Clipboard not written (second check)');
-        const params2 = new URL(url2).searchParams;
-
-        // Palette tweaks SHOULD be present (they differ from violet-depth defaults)
-        if (!params2.has('h') || !params2.has('r') || !params2.has('a')) {
-            throw new Error('Palette tweaks should be included when they differ from defaults');
-        }
-        if (params2.get('h') !== '100') throw new Error(`Expected h=100, got h=${params2.get('h')}`);
-        if (params2.get('r') !== '60') throw new Error(`Expected r=60, got r=${params2.get('r')}`);
-        if (params2.get('a') !== '0.90') throw new Error(`Expected a=0.90, got a=${params2.get('a')}`);
     });
 
     // ── Final ──

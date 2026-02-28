@@ -81,6 +81,11 @@
         padding: 0.25rem 0.25rem;
     }
 
+    .lang-select {
+        font-size: 0.75rem;
+        padding: 0.1875rem 1.25rem 0.1875rem 0.375rem;
+    }
+
     .panel {
         width: 100vw;
         padding: 0.5rem;

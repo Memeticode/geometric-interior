@@ -299,6 +299,12 @@ interface ChainConfig {
     edgeOpacityBase: number;
     edgeOpacityFadeScale: number;
     crackExtendScale: number;
+    faceOpacityScale: number;
+    quadProbability: number;
+    dihedralBase: number;
+    dihedralRange: number;
+    contractionBase: number;
+    contractionRange: number;
 }
 
 // Triangle UVs (constant)
@@ -363,9 +369,9 @@ export function createFoldingChain(
         const illum = lightPositions ? computeIllumination(_wp, lightPositions) : 0;
 
         const color = pickColorFn(distFromCenter + p * 0.1, decayRate, illum * 0.15, familyHue);
-        const baseOpacity = (0.008 + thisFade * 0.04) * (0.4 + rng() * 0.6);
+        const baseOpacity = (0.008 + thisFade * 0.04) * (0.4 + rng() * 0.6) * config.faceOpacityScale;
         const edgeFade = thisFade * thisFade;
-        const baseEdgeOpacity = (config.edgeOpacityBase + edgeFade * config.edgeOpacityFadeScale) * (0.3 + rng() * 0.7);
+        const baseEdgeOpacity = (config.edgeOpacityBase + edgeFade * config.edgeOpacityFadeScale) * (0.3 + rng() * 0.7) * config.faceOpacityScale;
 
         // Compute vertex alpha using world-space position
         const vAlphaFn = (lv: THREE.Vector3): number => {
@@ -373,7 +379,7 @@ export function createFoldingChain(
             return vertexAlpha(_wp, lightPositions);
         };
 
-        const makeQuad = rng() < 0.7;
+        const makeQuad = rng() < config.quadProbability;
         const ns = 6 + rng() * 8;
         const nst = 0.15 + rng() * 0.35;
 
@@ -437,12 +443,12 @@ export function createFoldingChain(
         const midpoint = sharedA.clone().add(sharedB).multiplyScalar(0.5);
         const reflected = reflectAcrossEdge(oldFree, midpoint, edgeVec);
 
-        const dihedral = (0.02 + rng() * 0.08) * (rng() < 0.5 ? 1 : -1);
+        const dihedral = (config.dihedralBase + rng() * config.dihedralRange) * (rng() < 0.5 ? 1 : -1);
         const newFree = midpoint.clone().add(
             rotateAround(reflected.clone().sub(midpoint), edgeVec, dihedral)
         );
 
-        const scaleFactor = 0.92 + rng() * 0.12;
+        const scaleFactor = config.contractionBase + rng() * config.contractionRange;
         const center = sharedA.clone().add(sharedB).add(newFree).divideScalar(3);
         const scaleFrom = (v: THREE.Vector3) => center.clone().add(v.clone().sub(center).multiplyScalar(scaleFactor));
 

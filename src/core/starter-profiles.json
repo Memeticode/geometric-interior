@@ -1,52 +1,42 @@
 {
   "Verdant Stream": {
     "seed": "The color of infinite nearness finds its shape.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.05, "luminosity": 0.70, "fracture": 0.61, "depth": 0.84, "coherence": 0.87 },
-    "paletteTweaks": { "baseHue": 135, "hueRange": 53, "saturation": 0.78 }
+    "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.70, "fracture": 0.61, "coherence": 0.87, "hue": 0.375, "spectrum": 0.351, "chroma": 0.686, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Prismatic Abyss": {
     "seed": "What remains after luminous absence.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.07, "luminosity": 0.43, "fracture": 0.90, "depth": 0.95, "coherence": 0.50 },
-    "paletteTweaks": { "baseHue": 306, "hueRange": 144, "saturation": 0.59 }
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.43, "fracture": 0.90, "coherence": 0.50, "hue": 0.850, "spectrum": 0.619, "chroma": 0.450, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Rose Quartz": {
     "seed": "The memory of soft collapse turns to light.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.07, "luminosity": 0.65, "fracture": 0.35, "depth": 0.88, "coherence": 0.78 },
-    "paletteTweaks": { "baseHue": 340, "hueRange": 40, "saturation": 0.60 }
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.65, "fracture": 0.35, "coherence": 0.78, "hue": 0.944, "spectrum": 0.293, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Sapphire Lattice": {
     "seed": "A window into bright silence touches the edge.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.03, "luminosity": 0.80, "fracture": 0.20, "depth": 0.88, "coherence": 0.95 },
-    "paletteTweaks": { "baseHue": 200, "hueRange": 30, "saturation": 0.55 }
+    "controls": { "topology": "flow-field", "density": 0.03, "luminosity": 0.80, "fracture": 0.20, "coherence": 0.95, "hue": 0.556, "spectrum": 0.239, "chroma": 0.417, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Spectral Drift": {
     "seed": "The distance between warm void and infinite nearness.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.12, "luminosity": 0.50, "fracture": 0.60, "depth": 0.80, "coherence": 0.55 },
-    "paletteTweaks": { "baseHue": 30, "hueRange": 180, "saturation": 0.75 }
+    "controls": { "topology": "flow-field", "density": 0.12, "luminosity": 0.50, "fracture": 0.60, "coherence": 0.55, "hue": 0.083, "spectrum": 0.697, "chroma": 0.643, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Violet Sanctum": {
     "seed": "The space where radiant emptiness begins to sing.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "depth": 0.85, "coherence": 0.75 },
-    "paletteTweaks": { "baseHue": 268, "hueRange": 45, "saturation": 0.60 }
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Citrine Whisper": {
     "seed": "A geometry that dreams of warm void forgets itself.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.06, "luminosity": 0.55, "fracture": 0.55, "depth": 0.90, "coherence": 0.75 },
-    "paletteTweaks": { "baseHue": 50, "hueRange": 45, "saturation": 0.80 }
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.55, "fracture": 0.55, "coherence": 0.75, "hue": 0.139, "spectrum": 0.316, "chroma": 0.714, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Coral Breath": {
     "seed": "What light does to suspended breath folds inward.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.05, "luminosity": 0.65, "fracture": 0.50, "depth": 0.92, "coherence": 0.75 },
-    "paletteTweaks": { "baseHue": 15, "hueRange": 50, "saturation": 0.72 }
+    "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.65, "fracture": 0.50, "coherence": 0.75, "hue": 0.042, "spectrum": 0.338, "chroma": 0.600, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Teal Meridian": {
     "seed": "The interior of liquid geometry becomes a door.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.06, "luminosity": 0.62, "fracture": 0.25, "depth": 0.90, "coherence": 0.92 },
-    "paletteTweaks": { "baseHue": 175, "hueRange": 25, "saturation": 0.70 }
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.62, "fracture": 0.25, "coherence": 0.92, "hue": 0.486, "spectrum": 0.207, "chroma": 0.571, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Dark Ruby": {
     "seed": "What remains after burning fog forgets itself.",
-    "controls": { "topology": "flow-field", "palette": "custom", "density": 0.25, "luminosity": 0.30, "fracture": 0.60, "depth": 0.65, "coherence": 0.55 },
-    "paletteTweaks": { "baseHue": 355, "hueRange": 40, "saturation": 0.70 }
+    "controls": { "topology": "flow-field", "density": 0.25, "luminosity": 0.30, "fracture": 0.60, "coherence": 0.55, "hue": 0.986, "spectrum": 0.293, "chroma": 0.571, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   }
 }

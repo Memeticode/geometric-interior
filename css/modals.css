@@ -176,10 +176,10 @@
     inset: 0;
     background: var(--modal-backdrop);
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     z-index: 1000;
-    padding: 0.75rem;
+    padding: 3vh 0.75rem 0.75rem;
 }
 
 .modal-overlay.modal-entering {

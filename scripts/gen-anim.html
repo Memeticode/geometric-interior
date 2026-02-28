@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Anim Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font: 13px/1.6 monospace; background: #111; color: #ccc; display: flex; flex-direction: column; align-items: center; padding: 24px; }
+    canvas { display: block; outline: 1px solid #222; border-radius: 2px; margin-bottom: 16px; max-width: 100%; height: auto; }
+    #controls { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+    button { padding: 6px 20px; background: #282828; border: 1px solid #444; color: #ccc; cursor: pointer; font: inherit; border-radius: 2px; }
+    button:hover:not(:disabled) { background: #333; }
+    button:disabled { opacity: 0.35; cursor: default; }
+    .progress-bar { width: 800px; height: 4px; background: #222; border-radius: 2px; margin-bottom: 8px; }
+    .progress-fill { height: 100%; width: 0%; background: #6a6; border-radius: 2px; transition: width 0.15s; }
+    #status { font-size: 12px; color: #666; text-align: center; }
+    #log { font-size: 11px; color: #444; margin-top: 12px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; width: 800px; }
+  </style>
+</head>
+<body>
+  <canvas id="c" width="3840" height="2160"></canvas>
+  <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+  <div id="controls">
+    <button id="generateBtn">Generate 60s Sweep</button>
+  </div>
+  <div id="status">Ready</div>
+  <pre id="log"></pre>
+  <script type="module" src="./gen-anim.ts"></script>
+</body>
+</html>

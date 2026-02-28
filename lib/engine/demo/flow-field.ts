@@ -41,6 +41,52 @@ export function flowFieldNormal(pos: Vector3, scale = 1.5): Vector3 {
     return result.subScalar(0.5).normalize();
 }
 
+/**
+ * Radial starburst: direction points away from the origin.
+ */
+function radialField(pos: Vector3): Vector3 {
+    const len = pos.length();
+    if (len < 1e-6) return new Vector3(0, 1, 0);
+    return pos.clone().divideScalar(len);
+}
+
+/**
+ * Orbital bands: direction is tangent to circles around the Y axis.
+ */
+function orbitalField(pos: Vector3): Vector3 {
+    // cross(Y, pos) gives tangent direction in horizontal plane
+    const tangent = new Vector3(-pos.z, 0, pos.x);
+    const len = tangent.length();
+    if (len < 1e-6) return new Vector3(1, 0, 0);
+    return tangent.divideScalar(len);
+}
+
+/**
+ * Composite flow field: piecewise blend of three regimes.
+ *   flowType=0   → radial starburst
+ *   flowType=0.5 → noise (current behavior, flowFieldNormal)
+ *   flowType=1   → orbital bands
+ *
+ * Each half uses smoothstep blending so midpoint is pure noise.
+ */
+export function compositeFlowField(pos: Vector3, noiseScale: number, flowType: number): Vector3 {
+    if (flowType <= 0.001) return radialField(pos);
+    if (flowType >= 0.999) return orbitalField(pos);
+
+    const noise = flowFieldNormal(pos, noiseScale);
+    if (flowType < 0.5) {
+        // blend radial → noise
+        const t = flowType * 2; // 0..1
+        const s = t * t * (3 - 2 * t); // smoothstep
+        return radialField(pos).lerp(noise, s).normalize();
+    } else {
+        // blend noise → orbital
+        const t = (flowType - 0.5) * 2; // 0..1
+        const s = t * t * (3 - 2 * t); // smoothstep
+        return noise.lerp(orbitalField(pos), s).normalize();
+    }
+}
+
 export function colorFieldHue(pos: Vector3, scale = 1.2, baseHue = 280, hueRange = 140): number {
     const sp = pos.clone().multiplyScalar(scale);
     sp.x += 73.1; sp.y += 159.4; sp.z += 213.7;

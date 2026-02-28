@@ -127,7 +127,7 @@ export async function runTests(page, errors) {
     await test('Schema validation catches out-of-range values', async () => {
         const outOfRange = {
             ...VALID_STILL_CONFIG,
-            palette: { hue: 0, range: 0, saturation: 5.0 },
+            color: { hue: 5.0, spectrum: 0.5, chroma: 0.5 },
         };
         await openImport();
         await pasteAndImport(JSON.stringify(outOfRange));

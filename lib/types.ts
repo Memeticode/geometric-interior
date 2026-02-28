@@ -1,6 +1,6 @@
 import type { Vector3, ShaderMaterial, LineBasicMaterial, Points, Mesh, LineSegments, InstancedMesh, MeshBasicMaterial } from 'three';
 
-/** Palette identifier — union of built-in names + 'custom' */
+/** @deprecated — kept for profile migration only */
 export type PaletteKey =
     | 'violet-depth'
     | 'warm-spectrum'
@@ -14,15 +14,24 @@ export type PaletteKey =
 /** User-facing control sliders (all 0-1 range) */
 export interface Controls {
     topology: 'flow-field';
-    palette: PaletteKey;
-    density: number;
-    luminosity: number;
-    fracture: number;
-    depth: number;
-    coherence: number;
+    // Color axes
+    hue: number;          // 0-1: dominant hue (maps to 0-360°)
+    spectrum: number;     // 0-1: hue range (monochrome → prismatic)
+    chroma: number;       // 0-1: color intensity (gray → vivid)
+    // Geometric form
+    density: number;      // 0-1: element count / population
+    fracture: number;     // 0-1: scatter / fragmentation
+    coherence: number;    // 0-1: flow alignment / organization
+    // Light
+    luminosity: number;   // 0-1: brightness / energy
+    // New geometric dimensions
+    scale: number;        // 0-1: size distribution (monumental → atmospheric)
+    division: number;     // 0-1: form topology (1 lobe → 2 → 3)
+    faceting: number;     // 0-1: shard character (broad/flat → sharp/angular)
+    flow: number;         // 0-1: field pattern (radial → noise → orbital)
 }
 
-/** Palette color tweaks */
+/** @deprecated — kept for profile migration only */
 export interface PaletteTweaks {
     baseHue: number;
     hueRange: number;
@@ -43,20 +52,32 @@ export interface PaletteData {
 
 /** Canonical still image configuration (public API type) */
 export interface StillConfig {
-    kind: 'still';
+    kind: 'still' | 'still-v2';
     name: string;
     intent: string;
-    palette: {
+    /** @deprecated v1 format — use `color` instead */
+    palette?: {
         hue: number;
         range: number;
         saturation: number;
+    };
+    /** v2 format — continuous color axes */
+    color?: {
+        hue: number;
+        spectrum: number;
+        chroma: number;
     };
     structure: {
         density: number;
         luminosity: number;
         fracture: number;
-        depth: number;
+        /** @deprecated v1 format — removed in v2 */
+        depth?: number;
         coherence: number;
+        scale?: number;
+        division?: number;
+        faceting?: number;
+        flow?: number;
     };
 }
 
@@ -70,8 +91,7 @@ export interface RenderMeta {
 /** Renderer instance returned by createRenderer() */
 export interface Renderer {
     renderWith(seed: string, controls: Controls): RenderMeta;
-    morphPrepare(seedA: string, controlsA: Controls, seedB: string, controlsB: Controls,
-        paletteTweaksA?: Record<string, PaletteTweaks>, paletteTweaksB?: Record<string, PaletteTweaks>): void;
+    morphPrepare(seedA: string, controlsA: Controls, seedB: string, controlsB: Controls): void;
     morphUpdate(t: number): void;
     morphEnd(): void;
     updateTime(seconds: number): void;
@@ -83,6 +103,8 @@ export interface Renderer {
     isFoldComplete(): boolean;
     resize(width: number, height: number): void;
     syncSize(): void;
+    setTargetResolution(w: number, h: number): void;
+    clearTargetResolution(): void;
     setDPR(dpr: number): void;
     dispose(): void;
     getCanvas(): HTMLCanvasElement | OffscreenCanvas;
@@ -96,7 +118,6 @@ export interface RendererOptions {
 export interface Profile {
     seed: string;
     controls: Controls;
-    paletteTweaks: PaletteTweaks;
 }
 
 /** Validation result */
@@ -159,6 +180,24 @@ export interface DotConfig {
     microDotBaseHue: number;
 }
 
+/** Division parameters for envelope SDF */
+export interface DivisionParams {
+    grooveDepth: number;
+    grooveWidth: number;
+    secondaryGrooveDepth: number;
+    secondaryGrooveAngle: number;
+    noiseAmplitude: number;
+}
+
+/** Faceting parameters for folding chain geometry */
+export interface FacetingParams {
+    quadProbability: number;
+    dihedralBase: number;
+    dihedralRange: number;
+    contractionBase: number;
+    contractionRange: number;
+}
+
 /** Derived engine parameters from deriveParams() */
 export interface DerivedParams {
     density: number;
@@ -206,8 +245,13 @@ export interface DerivedParams {
     bloomThreshold: number;
     chromaticAberration: number;
     vignetteStrength: number;
+    faceOpacityScale: number;
     flowScale: number;
     flowInfluence: number;
+    flowType: number;
+    colorFieldScale: number;
+    divisionParams: DivisionParams;
+    facetingParams: FacetingParams;
 }
 
 /** Scene build result refs for morph transitions */

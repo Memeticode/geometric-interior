@@ -13,13 +13,11 @@
  *   /generate/animation                      — navigates to animation.html
  */
 
-import { initTheme } from '../ui/theme.js';
+import { initPageSettings } from '../ui/page-settings.js';
 import { initLocale, t, getLocale } from '../i18n/locale.js';
-import { initLangSelector } from '../i18n/lang-selector.js';
 import { createFaviconAnimation } from '../ui/animated-favicon.js';
 import { loadProfiles, loadPortraits, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder } from '../ui/profiles.js';
 import { getAllThumbs, deleteThumb } from '../ui/thumb-cache.js';
-import { getPaletteDefaults, updatePalette } from '../../lib/core/palettes.js';
 import { generateTitle, generateAltText } from '../../lib/core/text.js';
 import { xmur3, mulberry32 } from '../../lib/core/prng.js';
 import { initToastClose, toast } from '../shared/toast.js';
@@ -29,8 +27,10 @@ import { slugify } from '../shared/slugify.js';
 
 /* ── Theme + Locale + Favicon ── */
 initLocale();
-initTheme(document.getElementById('themeSwitcher'));
-initLangSelector(document.getElementById('langSwitcher'));
+initPageSettings(
+    document.getElementById('pageSettingsBtn'),
+    document.getElementById('pageSettingsPopover'),
+);
 createFaviconAnimation();
 initToastClose();
 
@@ -69,10 +69,8 @@ const ARROW_DOWN_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColo
 /* ── Thumbnail cache ── */
 let thumbCache = new Map();
 
-function thumbCacheKey(seed, controls, paletteTweaks) {
-    let k = seed + '|' + JSON.stringify(controls);
-    if (paletteTweaks) k += '|' + JSON.stringify(paletteTweaks);
-    return k;
+function thumbCacheKey(seed, controls) {
+    return seed + '|' + JSON.stringify(controls);
 }
 
 /* ── DOM refs ── */
@@ -200,11 +198,6 @@ function generateProfileText(profile) {
     const c = profile.controls;
     if (!c) return { title: '', altText: '' };
 
-    const tweaks = profile.paletteTweaks || getPaletteDefaults(c.palette || 'violet-depth');
-    if (c.palette === 'custom' && profile.paletteTweaks) {
-        updatePalette('custom', profile.paletteTweaks);
-    }
-
     const seed = profile.seed || '';
     const titleRng = mulberry32(xmur3(seed + ':title')());
     const locale = getLocale();
@@ -223,8 +216,7 @@ function getThumbSrc(name, profile, isPortrait) {
         return `/thumbs/${slugify(name)}.png`;
     }
     if (profile.seed && profile.controls) {
-        const tweaks = profile.paletteTweaks || getPaletteDefaults(profile.controls.palette || 'violet-depth');
-        const key = thumbCacheKey(profile.seed, profile.controls, tweaks);
+        const key = thumbCacheKey(profile.seed, profile.controls);
         if (thumbCache.has(key)) return thumbCache.get(key);
     }
     return '';
@@ -236,10 +228,10 @@ const FOLD_FRAMES = 60;
 const FOLD_EXPAND_MS = 3000;
 const FOLD_COLLAPSE_MS = 3000;
 
-// Ease-out cubic: fast start, decelerates to a stop
-function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
-// Ease-in cubic: slow start, accelerates
-function easeInCubic(t) { return t * t * t; }
+// Ease-out quadratic: fast start, decelerates to a stop
+function easeOutQuad(t) { return t * (2 - t); }
+// Ease-in quadratic: slow start, accelerates
+function easeInQuad(t) { return t * t; }
 const spriteCache = new Map(); // slug → Image
 
 let foldAnimating = false;
@@ -278,6 +270,9 @@ function playFoldExpand(sprite) {
     return new Promise(resolve => {
         const myId = ++foldAnimId;
         const frameH = sprite.naturalHeight / FOLD_FRAMES;
+        const sw = sprite.naturalWidth;
+        const w = selectedCanvas.width;
+        const h = selectedCanvas.height;
         let startTime = null;
 
         function tick(timestamp) {
@@ -285,19 +280,30 @@ function playFoldExpand(sprite) {
             if (!startTime) startTime = timestamp;
             const elapsed = timestamp - startTime;
             const rawT = Math.min(elapsed / FOLD_EXPAND_MS, 1);
-            const easedT = easeOutCubic(rawT);
-            const frame = Math.min(Math.round(easedT * (FOLD_FRAMES - 1)), FOLD_FRAMES - 1);
+            const easedT = easeOutQuad(rawT);
 
-            canvasCtx.clearRect(0, 0, selectedCanvas.width, selectedCanvas.height);
-            canvasCtx.drawImage(
-                sprite,
-                0, frame * frameH, sprite.naturalWidth, frameH,
-                0, 0, selectedCanvas.width, selectedCanvas.height
-            );
+            const exactFrame = easedT * (FOLD_FRAMES - 1);
+            const frameA = Math.floor(exactFrame);
+            const frameB = Math.min(frameA + 1, FOLD_FRAMES - 1);
+            const blend = exactFrame - frameA;
+
+            canvasCtx.clearRect(0, 0, w, h);
+            canvasCtx.globalAlpha = 1;
+            canvasCtx.drawImage(sprite, 0, frameA * frameH, sw, frameH, 0, 0, w, h);
+            if (blend > 0.01 && frameA !== frameB) {
+                canvasCtx.globalAlpha = blend;
+                canvasCtx.drawImage(sprite, 0, frameB * frameH, sw, frameH, 0, 0, w, h);
+                canvasCtx.globalAlpha = 1;
+            }
 
             if (rawT < 1) {
                 requestAnimationFrame(tick);
             } else {
+                // Draw the thumbnail as final frame for seamless canvas→image transition
+                if (selectedImage.complete && selectedImage.naturalWidth > 0) {
+                    canvasCtx.clearRect(0, 0, w, h);
+                    canvasCtx.drawImage(selectedImage, 0, 0, w, h);
+                }
                 resolve();
             }
         }
@@ -313,6 +319,9 @@ function playFoldCollapse(sprite) {
     return new Promise(resolve => {
         const myId = ++foldAnimId;
         const frameH = sprite.naturalHeight / FOLD_FRAMES;
+        const sw = sprite.naturalWidth;
+        const w = selectedCanvas.width;
+        const h = selectedCanvas.height;
         let startTime = null;
 
         function tick(timestamp) {
@@ -320,16 +329,21 @@ function playFoldCollapse(sprite) {
             if (!startTime) startTime = timestamp;
             const elapsed = timestamp - startTime;
             const rawT = Math.min(elapsed / FOLD_COLLAPSE_MS, 1);
-            const easedT = easeInCubic(rawT);
+            const easedT = easeInQuad(rawT);
             // Collapse: fold goes 1→0, so frame index goes (N-1)→0
-            const frame = Math.max(Math.round((1 - easedT) * (FOLD_FRAMES - 1)), 0);
+            const exactFrame = (1 - easedT) * (FOLD_FRAMES - 1);
+            const frameA = Math.floor(exactFrame);
+            const frameB = Math.min(frameA + 1, FOLD_FRAMES - 1);
+            const blend = exactFrame - frameA;
 
-            canvasCtx.clearRect(0, 0, selectedCanvas.width, selectedCanvas.height);
-            canvasCtx.drawImage(
-                sprite,
-                0, frame * frameH, sprite.naturalWidth, frameH,
-                0, 0, selectedCanvas.width, selectedCanvas.height
-            );
+            canvasCtx.clearRect(0, 0, w, h);
+            canvasCtx.globalAlpha = 1;
+            canvasCtx.drawImage(sprite, 0, frameA * frameH, sw, frameH, 0, 0, w, h);
+            if (blend > 0.01 && frameA !== frameB) {
+                canvasCtx.globalAlpha = blend;
+                canvasCtx.drawImage(sprite, 0, frameB * frameH, sw, frameH, 0, 0, w, h);
+                canvasCtx.globalAlpha = 1;
+            }
 
             if (rawT < 1) {
                 requestAnimationFrame(tick);
@@ -413,8 +427,7 @@ function applySelection(name, profile, isPortrait) {
         selectedImage.onerror = () => {
             selectedImage.onerror = null;
             if (profile.seed && profile.controls) {
-                const tweaks = profile.paletteTweaks || getPaletteDefaults(profile.controls.palette || 'violet-depth');
-                const key = thumbCacheKey(profile.seed, profile.controls, tweaks);
+                const key = thumbCacheKey(profile.seed, profile.controls);
                 if (thumbCache.has(key)) selectedImage.src = thumbCache.get(key);
             }
         };
@@ -516,8 +529,7 @@ function buildCard(name, profile, { isPortrait = false, index = 0, total = 1 } =
     if (isPortrait) {
         thumbImg.onerror = () => {
             if (profile.seed && profile.controls) {
-                const tweaks = profile.paletteTweaks || getPaletteDefaults(profile.controls.palette || 'violet-depth');
-                const key = thumbCacheKey(profile.seed, profile.controls, tweaks);
+                const key = thumbCacheKey(profile.seed, profile.controls);
                 if (thumbCache.has(key)) thumbImg.src = thumbCache.get(key);
             }
         };
@@ -575,8 +587,7 @@ function buildCard(name, profile, { isPortrait = false, index = 0, total = 1 } =
                         const profiles = loadProfiles();
                         const pd = profiles[name];
                         if (pd && pd.seed && pd.controls) {
-                            const tweaks = pd.paletteTweaks || getPaletteDefaults(pd.controls.palette || 'violet-depth');
-                            const cacheKey = thumbCacheKey(pd.seed, pd.controls, tweaks);
+                            const cacheKey = thumbCacheKey(pd.seed, pd.controls);
                             thumbCache.delete(cacheKey);
                             deleteThumb(cacheKey);
                         }
@@ -654,14 +665,20 @@ function showImageGallery() {
         const first = portraitList[0];
         applySelection(first.name, first.profile, true);
 
+        // Show canvas immediately to prevent thumbnail flash before sprite loads
+        showCanvas();
+        syncCanvasSize();
+        canvasCtx.fillStyle = '#000';
+        canvasCtx.fillRect(0, 0, selectedCanvas.width, selectedCanvas.height);
+
         // Play fold-expand animation for initial portrait
         const slug = slugify(first.name);
         loadFoldSprite(slug).then(sprite => {
             if (sprite) {
                 currentFoldSprite = sprite;
-                showCanvas();
-                syncCanvasSize();
                 playFoldExpand(sprite).then(hideCanvas);
+            } else {
+                hideCanvas();
             }
         });
 
@@ -743,22 +760,32 @@ if (window.location.pathname === '/' || window.location.pathname === '/index.htm
 }
 
 if (activeType === 'image' && route.profileSlug) {
-    showImageGallery();
     const entry = findProfileBySlug(route.profileSlug, route.source);
     if (entry) {
+        // Pre-set selected so showImageGallery() skips auto-select
+        selected = { name: entry.name, isPortrait: entry.isPortrait };
+        showImageGallery();
         applySelection(entry.name, entry.profile, entry.isPortrait);
         // Play fold-expand for direct URL load
         if (entry.isPortrait) {
+            // Show canvas immediately to prevent thumbnail flash before sprite loads
+            showCanvas();
+            syncCanvasSize();
+            canvasCtx.fillStyle = '#000';
+            canvasCtx.fillRect(0, 0, selectedCanvas.width, selectedCanvas.height);
+
             const slug = slugify(entry.name);
             loadFoldSprite(slug).then(sprite => {
                 if (sprite) {
                     currentFoldSprite = sprite;
-                    showCanvas();
-                    syncCanvasSize();
                     playFoldExpand(sprite).then(hideCanvas);
+                } else {
+                    hideCanvas();
                 }
             });
         }
+    } else {
+        showImageGallery();
     }
 } else {
     refreshGallery();

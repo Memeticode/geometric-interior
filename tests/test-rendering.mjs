@@ -1,14 +1,14 @@
 /**
- * Rendering tests: canvas integrity, combos, palettes, determinism.
+ * Rendering tests: canvas integrity, combos, determinism.
  * Replaces the original test-render.mjs with extended coverage.
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { screenshotCanvas, ensurePanelOpen, ensureConfigExpanded, scrollToElement, reloadPage } from './helpers/browser.mjs';
-import { setAllControls, triggerRender, selectPalette } from './helpers/controls.mjs';
+import { screenshotCanvas, ensurePanelOpen, ensureConfigExpanded, reloadPage } from './helpers/browser.mjs';
+import { setAllControls, triggerRender } from './helpers/controls.mjs';
 import { waitForRender, waitForStillRendered } from './helpers/waits.mjs';
 import { assertCanvasNonEmpty, assertScreenshotsDiffer, assertNoPageErrors } from './helpers/assertions.mjs';
-import { RENDER_COMBOS, ALL_PALETTE_KEYS } from './helpers/constants.mjs';
+import { RENDER_COMBOS } from './helpers/constants.mjs';
 
 export async function runTests(page, errors) {
     let passed = 0, failed = 0;
@@ -30,8 +30,8 @@ export async function runTests(page, errors) {
 
     console.log('\n=== Rendering Tests ===\n');
 
-    // ── Test: All 14 combos render without page errors ──
-    await test('All 14 combos render without page errors', async () => {
+    // ── Test: All combos render without page errors ──
+    await test('All render combos produce non-empty canvas without errors', async () => {
         for (const combo of RENDER_COMBOS) {
             await setAllControls(page, combo);
             await triggerRender(page);
@@ -43,50 +43,6 @@ export async function runTests(page, errors) {
         assertNoPageErrors(errors);
     });
 
-    // ── Test: Each palette produces non-empty render ──
-    await test('Each of 7 palette presets produces non-empty render', async () => {
-        await ensurePanelOpen(page);
-        await ensureConfigExpanded(page);
-        await scrollToElement(page, '#paletteSelector');
-        const presets = ALL_PALETTE_KEYS.filter(k => k !== 'custom');
-        for (const key of presets) {
-            await setAllControls(page, {
-                seed: `palette-test-${key}`,
-                topology: 'flow-field',
-                palette: key,
-                density: 0.5, luminosity: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5,
-            });
-            await scrollToElement(page, '#paletteSelector');
-            await selectPalette(page, key);
-            await triggerRender(page);
-            await waitForRender(page);
-
-            const shot = await screenshotCanvas(page);
-            assertCanvasNonEmpty(shot);
-        }
-    });
-
-    // ── Test: Custom palette renders ──
-    await test('Custom palette with specific hue/range/sat renders', async () => {
-        await ensurePanelOpen(page);
-        await ensureConfigExpanded(page);
-        await scrollToElement(page, '#paletteSelector');
-        await selectPalette(page, 'custom');
-        await page.evaluate(() => {
-            document.getElementById('customHue').value = 180;
-            document.getElementById('customHue').dispatchEvent(new Event('input', { bubbles: true }));
-            document.getElementById('customHueRange').value = 60;
-            document.getElementById('customHueRange').dispatchEvent(new Event('input', { bubbles: true }));
-            document.getElementById('customSat').value = 0.8;
-            document.getElementById('customSat').dispatchEvent(new Event('input', { bubbles: true }));
-        });
-        await triggerRender(page);
-        await waitForRender(page);
-
-        const shot = await screenshotCanvas(page);
-        assertCanvasNonEmpty(shot);
-    });
-
     // ── Test: Canvas has non-uniform pixels ──
     await test('Canvas has non-uniform pixels (not solid black)', async () => {
         const shot = await screenshotCanvas(page);
@@ -96,8 +52,10 @@ export async function runTests(page, errors) {
     // ── Test: Different seeds produce different renders ──
     await test('Different seeds produce different renders', async () => {
         const baseControls = {
-            topology: 'flow-field', palette: 'violet-depth',
-            density: 0.5, luminosity: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5,
+            topology: 'flow-field',
+            density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5,
+            hue: 0.783, spectrum: 0.239, chroma: 0.417,
+            scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5,
         };
 
         await setAllControls(page, { ...baseControls, seed: 'alpha-test-seed' });
@@ -118,18 +76,12 @@ export async function runTests(page, errors) {
         const fullSetup = async () => {
             await ensurePanelOpen(page);
             await ensureConfigExpanded(page);
-            await scrollToElement(page, '#paletteSelector');
             await setAllControls(page, {
                 seed: 'determinism-check',
                 topology: 'flow-field',
-                palette: 'violet-depth',
-                density: 0.5, luminosity: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5,
-            });
-            await selectPalette(page, 'violet-depth');
-            await page.evaluate(() => {
-                document.getElementById('customHue').value = 135;
-                document.getElementById('customHueRange').value = 53;
-                document.getElementById('customSat').value = 0.55;
+                density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5,
+                hue: 0.375, spectrum: 0.300, chroma: 0.450,
+                scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5,
             });
             await triggerRender(page);
             await waitForRender(page, 3000);

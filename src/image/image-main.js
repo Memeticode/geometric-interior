@@ -5,11 +5,12 @@
  */
 
 import { createRenderer } from '../../lib/engine/create-renderer.js';
-import { PALETTE_KEYS, updatePalette, resetPalette, getPaletteDefaults, getPalette } from '../../lib/core/palettes.js';
+import { PRESETS } from '../../lib/core/palettes.js';
 import { loadProfiles, saveProfiles, deleteProfile, ensureStarterProfiles, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder, syncProfileOrder } from '../ui/profiles.js';
 import { packageStillZip, packageStillZipFromBlob, downloadBlob, canvasToPngBlob, injectPngTextChunks, toIsoLocalish, safeName } from '../export/export.js';
 import { encodeStateToURL, decodeStateFromURL } from '../core/url-state.js';
-import { initTheme } from '../ui/theme.js';
+import { initPageSettings } from '../ui/page-settings.js';
+import { getResolution } from '../ui/resolution.js';
 import { createFaviconAnimation } from '../ui/animated-favicon.js';
 import { generateTitle, generateAltText } from '../../lib/core/text.js';
 import { xmur3, mulberry32 } from '../../lib/core/prng.js';
@@ -25,7 +26,6 @@ import { showConfirm, initModals, closeInfoModal } from '../shared/modals.js';
 import { slugify, validateProfileName } from '../shared/slugify.js';
 import { generateIntent } from '../shared/intent.js';
 import { initLocale, t, getLocale } from '../i18n/locale.js';
-import { initLangSelector } from '../i18n/lang-selector.js';
 
 /* ---------------------------
  * DOM references
@@ -49,22 +49,32 @@ const el = {
 
     // Discrete controls (hidden inputs driven by tile/swatch UI)
     topology: document.getElementById('topology'),
-    palette: document.getElementById('palette'),
     topologySelector: document.getElementById('topologySelector'),
-    paletteSelector: document.getElementById('paletteSelector'),
 
     // Continuous controls
     density: document.getElementById('density'),
     luminosity: document.getElementById('luminosity'),
     fracture: document.getElementById('fracture'),
-    depth: document.getElementById('depth'),
     coherence: document.getElementById('coherence'),
+    hue: document.getElementById('hue'),
+    spectrum: document.getElementById('spectrum'),
+    chroma: document.getElementById('chroma'),
+    scale: document.getElementById('scale'),
+    division: document.getElementById('division'),
+    faceting: document.getElementById('faceting'),
+    flow: document.getElementById('flow'),
 
     densityLabel: document.getElementById('densityLabel'),
     luminosityLabel: document.getElementById('luminosityLabel'),
     fractureLabel: document.getElementById('fractureLabel'),
-    depthLabel: document.getElementById('depthLabel'),
     coherenceLabel: document.getElementById('coherenceLabel'),
+    hueLabel: document.getElementById('hueLabel'),
+    spectrumLabel: document.getElementById('spectrumLabel'),
+    chromaLabel: document.getElementById('chromaLabel'),
+    scaleLabel: document.getElementById('scaleLabel'),
+    divisionLabel: document.getElementById('divisionLabel'),
+    facetingLabel: document.getElementById('facetingLabel'),
+    flowLabel: document.getElementById('flowLabel'),
 
     profileNameField: document.getElementById('profileNameField'),
     saveProfile: document.getElementById('saveProfile'),
@@ -113,20 +123,11 @@ const el = {
     infoModalBody: document.getElementById('infoModalBody'),
     infoModalClose: document.getElementById('infoModalClose'),
 
-    // Custom palette editor
-    customPaletteEditor: document.getElementById('customPaletteEditor'),
-    customHue: document.getElementById('customHue'),
-    customHueRange: document.getElementById('customHueRange'),
-    customSat: document.getElementById('customSat'),
-    customHueLabel: document.getElementById('customHueLabel'),
-    customHueRangeLabel: document.getElementById('customHueRangeLabel'),
-    customSatLabel: document.getElementById('customSatLabel'),
-    customPalGradient: document.getElementById('customPalGradient'),
 };
 
 initAutoGrowTextareas();
 
-const SLIDER_KEYS = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
+const SLIDER_KEYS = ['density', 'luminosity', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
 const TOPOLOGY_VALUES = ['flow-field', 'icosahedral', 'mobius', 'multi-attractor'];
 
 /* ---------------------------
@@ -175,11 +176,13 @@ function initWorkerRenderer() {
             activateFallbackRenderer();
         };
         const rect = canvas.getBoundingClientRect();
+        const initRes = getResolution();
+        const useTarget = initRes.key !== 'hd';
         worker.postMessage({
             type: 'init',
             canvas: offscreen,
-            width: rect.width,
-            height: rect.height,
+            width: useTarget ? initRes.w : rect.width,
+            height: useTarget ? initRes.h : rect.height,
             dpr: window.devicePixelRatio,
         }, [offscreen]);
 
@@ -237,7 +240,6 @@ function onWorkerMessage(e) {
             break;
         case 'morph-complete':
             // Image editor: morph UI removed
-            morphLastPalette = null;
             setMorphLocked(false);
             setStillRendered(true);
             refreshGeneratedText(true);
@@ -259,16 +261,27 @@ function onWorkerMessage(e) {
     }
 }
 
+// Apply stored resolution to canvas
+const initialRes = getResolution();
+canvas.width = initialRes.w;
+canvas.height = initialRes.h;
+
 renderWorker = initWorkerRenderer();
 if (!renderWorker) {
     fallbackRenderer = createRenderer(canvas);
+    fallbackRenderer.setTargetResolution(initialRes.w, initialRes.h);
 }
+
+// Current target resolution (overrides ResizeObserver when set)
+let targetRes = initialRes.key !== 'hd' ? { w: initialRes.w, h: initialRes.h } : null;
 
 // Track canvas size changes and forward to worker
 if (renderWorker) {
     const resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
             if (entry.target === canvas) {
+                // When a target resolution is set, don't let display size override it
+                if (targetRes) return;
                 const { width, height } = entry.contentRect;
                 if (width > 0 && height > 0 && workerReady) {
                     renderWorker.postMessage({
@@ -283,6 +296,23 @@ if (renderWorker) {
     });
     resizeObserver.observe(canvas);
 }
+
+// Listen for resolution changes from the settings popover
+document.addEventListener('resolutionchange', (e) => {
+    const { w, h } = e.detail;
+    canvas.width = w;
+    canvas.height = h;
+    targetRes = { w, h };
+    if (renderWorker && workerReady) {
+        renderWorker.postMessage({ type: 'resize', width: w, height: h, dpr: window.devicePixelRatio });
+    } else if (fallbackRenderer) {
+        fallbackRenderer.setTargetResolution(w, h);
+    }
+    // Re-render current scene at new resolution
+    const seed = el.seed.value.trim() || 'seed';
+    const controls = readControlsFromUI();
+    sendRenderRequest(seed, controls);
+});
 
 /* ---------------------------
  * Thumbnail generator
@@ -311,17 +341,12 @@ const thumbCacheReady = getAllThumbs().then(persisted => {
     for (const [key, url] of persisted) thumbCache.set(key, url);
 });
 
-function thumbCacheKey(seed, controls, paletteTweaks) {
-    let k = seed + '|' + JSON.stringify(controls);
-    if (paletteTweaks) k += '|' + JSON.stringify(paletteTweaks);
-    return k;
+function thumbCacheKey(seed, controls) {
+    return seed + '|' + JSON.stringify(controls);
 }
 
-function queueThumbnail(seed, controls, destImg, paletteTweaks) {
-    // Normalize: if no tweaks provided, use factory defaults for the palette
-    // so cache keys and render results are identical either way
-    const tweaks = paletteTweaks || getPaletteDefaults(controls.palette || 'violet-depth');
-    const key = thumbCacheKey(seed, controls, tweaks);
+function queueThumbnail(seed, controls, destImg) {
+    const key = thumbCacheKey(seed, controls);
     const wrap = destImg.closest('.thumb-wrap');
     if (thumbCache.has(key)) {
         destImg.src = thumbCache.get(key);
@@ -329,7 +354,7 @@ function queueThumbnail(seed, controls, destImg, paletteTweaks) {
         return;
     }
     if (wrap) wrap.classList.add('thumb-loading');
-    thumbQueue.push({ seed, controls, destImg, key, paletteTweaks: tweaks });
+    thumbQueue.push({ seed, controls, destImg, key });
     drainThumbQueue();
 }
 
@@ -350,9 +375,6 @@ function drainThumbQueue() {
                 if (item.destImg.isConnected) item.destImg.src = thumbCache.get(item.key);
                 if (wrap) wrap.classList.remove('thumb-loading');
             } else if (item && item.destImg.isConnected) {
-                const palKey = item.controls.palette;
-                resetPalette(palKey);
-                if (item.paletteTweaks) updatePalette(palKey, item.paletteTweaks);
                 getThumbRenderer().renderWith(item.seed, item.controls);
                 const url = thumbOffscreen.toDataURL('image/png');
                 thumbCache.set(item.key, url);
@@ -373,11 +395,12 @@ window.__renderPortraitThumb = function(profileName) {
     const portraits = loadPortraits();
     const p = portraits[profileName];
     if (!p) throw new Error(`Portrait not found: ${profileName}`);
-    const tweaks = p.paletteTweaks || getPaletteDefaults(p.controls.palette || 'violet-depth');
-    const palKey = p.controls.palette;
-    resetPalette(palKey);
-    if (tweaks) updatePalette(palKey, tweaks);
-    getThumbRenderer().renderWith(p.seed, p.controls);
+    const r = getThumbRenderer();
+    r.renderWith(p.seed, p.controls);
+    // Match sprite last frame: fold=1.0, time=3.0
+    r.setFoldImmediate(1.0);
+    r.updateTime(3.0);
+    r.renderFrame();
     return thumbOffscreen.toDataURL('image/png');
 };
 
@@ -386,10 +409,6 @@ window.__renderPortraitFold = function(profileName, frameCount = 60) {
     const portraits = loadPortraits();
     const p = portraits[profileName];
     if (!p) throw new Error(`Portrait not found: ${profileName}`);
-    const tweaks = p.paletteTweaks || getPaletteDefaults(p.controls.palette || 'violet-depth');
-    const palKey = p.controls.palette;
-    resetPalette(palKey);
-    if (tweaks) updatePalette(palKey, tweaks);
 
     // Build scene (renders at current fold state)
     const r = getThumbRenderer();
@@ -440,262 +459,6 @@ function setTopologyUI(value) {
     });
 }
 
-/* ---------------------------
- * Palette swatch selector
- * ---------------------------
- */
-/* ── Chip gradient cache (for restoring after edits) ── */
-const originalChipGradients = new Map();
-
-function cacheChipGradients() {
-    for (const chip of el.paletteSelector.querySelectorAll('.pal-chip')) {
-        const g = chip.querySelector('.pal-gradient');
-        if (g) originalChipGradients.set(chip.dataset.value, g.style.background);
-    }
-}
-
-function restoreChipGradient(key) {
-    const orig = originalChipGradients.get(key);
-    if (!orig) return;
-    const chip = el.paletteSelector.querySelector(`.pal-chip[data-value="${key}"]`);
-    const g = chip?.querySelector('.pal-gradient');
-    if (g) g.style.background = orig;
-}
-
-function updateActiveChipGradient(key, settings) {
-    const chip = el.paletteSelector.querySelector(`.pal-chip[data-value="${key}"]`);
-    const g = chip?.querySelector('.pal-gradient');
-    if (!g) return;
-    const h = settings.baseHue;
-    const hr = settings.hueRange;
-    if (hr >= 180) {
-        // Wide hue range: 5-stop rainbow across the full span
-        const stops = [];
-        for (let i = 0; i < 5; i++) {
-            const t = i / 4;
-            const hue = ((h - hr / 2) + hr * t + 360) % 360;
-            const lit = 15 + t * 55;
-            stops.push(`hsl(${hue} 65% ${lit}%)`);
-        }
-        g.style.background = `linear-gradient(135deg, ${stops.join(', ')})`;
-    } else {
-        const h1 = ((h - hr / 2) + 360) % 360;
-        const h3 = (h + hr / 2) % 360;
-        g.style.background =
-            `linear-gradient(135deg, hsl(${h1} 50% 15%), hsl(${h} 60% 45%), hsl(${h3} 60% 70%))`;
-    }
-}
-
-/* ── Palette editor (works for all palettes) ── */
-
-const PAL_LS_PREFIX = 'geo_self_portrait_palette_v2_';
-function paletteLSKey(key) { return PAL_LS_PREFIX + key; }
-
-function readPaletteFromUI() {
-    return {
-        baseHue: parseInt(el.customHue.value, 10),
-        hueRange: parseInt(el.customHueRange.value, 10),
-        saturation: parseFloat(el.customSat.value),
-    };
-}
-
-function loadPaletteIntoEditor(key) {
-    const defaults = getPaletteDefaults(key);
-    let vals = defaults;
-    // Only restore localStorage tweaks for the custom palette;
-    // built-in palettes always reset to their defaults when selected
-    if (key === 'custom') {
-        try {
-            const raw = localStorage.getItem(paletteLSKey(key));
-            if (raw) {
-                const s = JSON.parse(raw);
-                vals = {
-                    baseHue: s.baseHue ?? defaults.baseHue,
-                    hueRange: s.hueRange ?? defaults.hueRange,
-                    saturation: s.saturation ?? defaults.saturation,
-                };
-            }
-        } catch { /* ignore */ }
-    } else {
-        // Reset the built-in palette to factory defaults
-        resetPalette(key);
-        localStorage.removeItem(paletteLSKey(key));
-    }
-    el.customHue.value = vals.baseHue;
-    el.customHueRange.value = vals.hueRange;
-    el.customSat.value = vals.saturation;
-    syncPaletteEditor();
-}
-
-function syncPaletteEditor() {
-    const key = el.palette.value;
-    const settings = readPaletteFromUI();
-    updatePalette(key, settings);
-    localStorage.setItem(paletteLSKey(key), JSON.stringify(settings));
-
-    // Update labels
-    el.customHueLabel.textContent = settings.baseHue;
-    el.customHueRangeLabel.textContent = settings.hueRange;
-    el.customSatLabel.textContent = settings.saturation.toFixed(2);
-
-    // Only update the custom chip dynamically; built-in chips keep cached originals
-    if (key === 'custom') updateActiveChipGradient(key, settings);
-
-    // Show/hide "Write to Custom" button
-    const wtc = document.getElementById('writeToCustom');
-    if (wtc) wtc.classList.toggle('wtc-collapsed', key === 'custom');
-}
-
-function initPaletteSelector() {
-    // Generate all chip gradients from palette data so they match the active state
-    for (const chip of el.paletteSelector.querySelectorAll('.pal-chip')) {
-        const key = chip.dataset.value;
-        if (key === 'custom') continue;
-        const pal = getPalette(key);
-        if (pal) updateActiveChipGradient(key, pal);
-    }
-    // Sync custom chip gradient from localStorage (or defaults) so it always
-    // reflects the user's configured colors, not the hardcoded HTML fallback
-    {
-        const defaults = getPaletteDefaults('custom');
-        let customSettings = defaults;
-        try {
-            const raw = localStorage.getItem(paletteLSKey('custom'));
-            if (raw) {
-                const s = JSON.parse(raw);
-                customSettings = {
-                    baseHue: s.baseHue ?? defaults.baseHue,
-                    hueRange: s.hueRange ?? defaults.hueRange,
-                    saturation: s.saturation ?? defaults.saturation,
-                };
-            }
-        } catch { /* ignore */ }
-        updateActiveChipGradient('custom', customSettings);
-    }
-    cacheChipGradients();
-
-    const chips = el.paletteSelector.querySelectorAll('.pal-chip');
-    chips.forEach(chip => {
-        chip.addEventListener('click', () => {
-            const key = chip.dataset.value;
-            const alreadyActive = chip.classList.contains('active');
-            const prevKey = el.palette.value;
-
-            // Reset previous built-in palette when switching away
-            if (prevKey !== key && prevKey !== 'custom') {
-                resetPalette(prevKey);
-                restoreChipGradient(prevKey);
-            }
-
-            chips.forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
-            el.palette.value = key;
-
-            if (alreadyActive) {
-                // Re-click: toggle editor open/closed
-                el.customPaletteEditor.classList.toggle('collapsed');
-            } else if (key === 'custom') {
-                // Custom always opens editor
-                el.customPaletteEditor.classList.remove('collapsed');
-                loadPaletteIntoEditor(key);
-            } else {
-                // Non-custom preset: keep editor in its current state
-                // (stays open if already open, stays closed if closed)
-                loadPaletteIntoEditor(key);
-            }
-            onControlChange();
-        });
-    });
-
-    // Wire palette sliders (work for any active palette)
-    for (const id of ['customHue', 'customHueRange', 'customSat']) {
-        el[id].addEventListener('input', () => {
-            syncPaletteEditor();
-            onControlChange();
-        });
-    }
-
-    // "Reset" button — restore palette to factory defaults
-    const resetBtn = document.getElementById('resetPalette');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            const key = el.palette.value;
-            if (key !== 'custom') resetPalette(key);
-            localStorage.removeItem(paletteLSKey(key));
-            restoreChipGradient(key);
-            const defaults = getPaletteDefaults(key);
-            el.customHue.value = defaults.baseHue;
-            el.customHueRange.value = defaults.hueRange;
-            el.customSat.value = defaults.saturation;
-            syncPaletteEditor();
-            onControlChange();
-        });
-    }
-
-    // "Write to Custom" button
-    const wtc = document.getElementById('writeToCustom');
-    if (wtc) {
-        wtc.addEventListener('click', () => {
-            const settings = readPaletteFromUI();
-            updatePalette('custom', settings);
-            localStorage.setItem(paletteLSKey('custom'), JSON.stringify(settings));
-            // Reset the current built-in palette
-            const prevKey = el.palette.value;
-            if (prevKey !== 'custom') {
-                resetPalette(prevKey);
-                restoreChipGradient(prevKey);
-            }
-            // Switch UI to custom
-            el.palette.value = 'custom';
-            chips.forEach(c => c.classList.toggle('active', c.dataset.value === 'custom'));
-            syncPaletteEditor();
-            onControlChange();
-        });
-    }
-}
-
-function setPaletteUI(value) {
-    const prevKey = el.palette.value;
-    if (prevKey !== value && prevKey !== 'custom') {
-        resetPalette(prevKey);
-        restoreChipGradient(prevKey);
-    }
-    el.palette.value = value;
-    const chips = el.paletteSelector.querySelectorAll('.pal-chip');
-    chips.forEach(c => c.classList.toggle('active', c.dataset.value === value));
-    loadPaletteIntoEditor(value);
-    el.customPaletteEditor.classList.add('collapsed');
-}
-
-function restorePaletteTweaksFromStorage() {
-    // Migrate old custom palette key
-    const OLD_KEY = 'geo_self_portrait_custom_palette_v1';
-    try {
-        const old = localStorage.getItem(OLD_KEY);
-        if (old && !localStorage.getItem(paletteLSKey('custom'))) {
-            localStorage.setItem(paletteLSKey('custom'), old);
-        }
-        localStorage.removeItem(OLD_KEY);
-    } catch { /* ignore */ }
-
-    // Restore custom palette
-    try {
-        const raw = localStorage.getItem(paletteLSKey('custom'));
-        if (raw) {
-            const s = JSON.parse(raw);
-            updatePalette('custom', s);
-        }
-    } catch { /* ignore */ }
-
-    // Restore active built-in palette tweaks
-    const activeKey = el.palette.value;
-    if (activeKey && activeKey !== 'custom') {
-        try {
-            const raw = localStorage.getItem(paletteLSKey(activeKey));
-            if (raw) updatePalette(activeKey, JSON.parse(raw));
-        } catch { /* ignore */ }
-    }
-}
 
 /* ---------------------------
  * State
@@ -727,20 +490,15 @@ function sendRenderRequest(seed, controls, { deliberate = false, callback = null
     if (callback) pendingCallbacks.set(id, callback);
 
     if (renderWorker && workerReady) {
-        // Gather palette tweaks for the active palette
-        const paletteTweaks = {};
-        paletteTweaks[controls.palette] = readPaletteFromUI();
-
         renderWorker.postMessage({
             type: 'render',
             seed,
             controls,
-            paletteTweaks,
             requestId: id,
             deliberate,
             locale: getLocale(),
-            width: canvas.clientWidth || canvas.getBoundingClientRect().width,
-            height: canvas.clientHeight || canvas.getBoundingClientRect().height,
+            width: targetRes ? targetRes.w : (canvas.clientWidth || canvas.getBoundingClientRect().width),
+            height: targetRes ? targetRes.h : (canvas.clientHeight || canvas.getBoundingClientRect().height),
         });
     } else if (fallbackRenderer) {
         const meta = fallbackRenderer.renderWith(seed, controls, getLocale());
@@ -780,8 +538,6 @@ function cancelPendingRender() {
  * Morph controller
  * ---------------------------
  */
-let morphLastPalette = null;
-
 let morphPrepareCallback = null;
 let foldOutCallback = null;
 let foldInCallback = null;
@@ -815,23 +571,13 @@ function sendFoldImmediate(value) {
 }
 
 /**
- * Snap all UI controls to a target state (seed, sliders, palette, tweaks).
+ * Snap all UI controls to a target state (seed, sliders).
  * Used during fold transitions when the canvas is invisible.
  */
 function snapUIToState(state) {
     el.seed.value = state.seed;
     autoGrow(el.seed);
     setControlsInUI(state.controls);
-    if (state.paletteTweaks) {
-        const palKey = state.controls.palette;
-        el.customHue.value = Math.round(state.paletteTweaks.baseHue);
-        el.customHueRange.value = Math.round(state.paletteTweaks.hueRange);
-        el.customSat.value = state.paletteTweaks.saturation.toFixed(2);
-        el.customHueLabel.textContent = Math.round(state.paletteTweaks.baseHue);
-        el.customHueRangeLabel.textContent = Math.round(state.paletteTweaks.hueRange);
-        el.customSatLabel.textContent = state.paletteTweaks.saturation.toFixed(2);
-        updatePalette(palKey, state.paletteTweaks);
-    }
     syncDisplayFields();
 }
 
@@ -867,9 +613,6 @@ function startProfileTransition(fromState, toState) {
     if (!animationEnabled) {
         // Animation disabled: instant rebuild, no fold
         snapUIToState(toState);
-        const palKey = toState.controls.palette;
-        resetPalette(palKey);
-        if (toState.paletteTweaks) updatePalette(palKey, toState.paletteTweaks);
         sendRenderRequest(toState.seed, toState.controls, {
             deliberate: true,
             callback(meta) {
@@ -901,11 +644,7 @@ function startProfileTransition(fromState, toState) {
         // Snap UI while scene is invisible
         snapUIToState(foldTransitionTarget);
 
-        // Apply palette for render
         const target = foldTransitionTarget;
-        const palKey = target.controls.palette;
-        resetPalette(palKey);
-        if (target.paletteTweaks) updatePalette(palKey, target.paletteTweaks);
 
         // Rebuild scene (will be built at foldProgress=0, invisible)
         sendRenderRequest(target.seed, target.controls, {
@@ -950,11 +689,6 @@ function startProfileTransition(fromState, toState) {
  * Calls onReady once both scenes are built.
  */
 function sendMorphPrepare(fromState, toState, onReady) {
-    const paletteTweaksA = {};
-    paletteTweaksA[fromState.controls.palette] = fromState.paletteTweaks;
-    const paletteTweaksB = {};
-    paletteTweaksB[toState.controls.palette] = toState.paletteTweaks;
-
     if (renderWorker && workerReady) {
         morphPrepareCallback = onReady;
         renderWorker.postMessage({
@@ -963,18 +697,10 @@ function sendMorphPrepare(fromState, toState, onReady) {
             controlsA: fromState.controls,
             seedB: toState.seed,
             controlsB: toState.controls,
-            paletteTweaksA,
-            paletteTweaksB,
-            width: canvas.clientWidth || canvas.getBoundingClientRect().width,
-            height: canvas.clientHeight || canvas.getBoundingClientRect().height,
+            width: targetRes ? targetRes.w : (canvas.clientWidth || canvas.getBoundingClientRect().width),
+            height: targetRes ? targetRes.h : (canvas.clientHeight || canvas.getBoundingClientRect().height),
         });
     } else if (fallbackRenderer) {
-        for (const [key, tweaks] of Object.entries(paletteTweaksA)) {
-            updatePalette(key, tweaks);
-        }
-        for (const [key, tweaks] of Object.entries(paletteTweaksB)) {
-            updatePalette(key, tweaks);
-        }
         fallbackRenderer.morphPrepare(fromState.seed, fromState.controls, toState.seed, toState.controls);
         onReady();
     }
@@ -1031,7 +757,6 @@ function startMorph(fromState, toState) {
 
     // Cancel any pending morph-prepare callback
     morphPrepareCallback = null;
-    morphLastPalette = fromState.controls.palette;
     setStillRendered(false);
     setMorphLocked(true);
     showCanvasOverlay('');
@@ -1051,26 +776,31 @@ function startMorph(fromState, toState) {
 function readControlsFromUI() {
     return {
         topology: 'flow-field',
-        palette: el.palette.value,
         density: parseFloat(el.density.value),
         luminosity: parseFloat(el.luminosity.value),
         fracture: parseFloat(el.fracture.value),
-        depth: parseFloat(el.depth.value),
         coherence: parseFloat(el.coherence.value),
+        hue: parseFloat(el.hue.value),
+        spectrum: parseFloat(el.spectrum.value),
+        chroma: parseFloat(el.chroma.value),
+        scale: parseFloat(el.scale.value),
+        division: parseFloat(el.division.value),
+        faceting: parseFloat(el.faceting.value),
+        flow: parseFloat(el.flow.value),
     };
 }
 
 function updateSliderLabels(controls) {
-    el.densityLabel.textContent = controls.density.toFixed(2);
-    el.luminosityLabel.textContent = controls.luminosity.toFixed(2);
-    el.fractureLabel.textContent = controls.fracture.toFixed(2);
-    el.depthLabel.textContent = controls.depth.toFixed(2);
-    el.coherenceLabel.textContent = controls.coherence.toFixed(2);
+    for (const key of SLIDER_KEYS) {
+        const label = el[key + 'Label'];
+        if (label && controls[key] !== undefined) {
+            label.textContent = controls[key].toFixed(2);
+        }
+    }
 }
 
 function setControlsInUI(controls) {
     setTopologyUI(controls.topology || 'flow-field');
-    setPaletteUI(controls.palette || 'violet-depth');
     for (const key of SLIDER_KEYS) {
         if (el[key] && controls[key] !== undefined) {
             el[key].value = controls[key];
@@ -1099,30 +829,7 @@ function loadProfileDataIntoUI(name, p) {
     autoGrow(el.seed);
     if (p.controls) {
         setControlsInUI(p.controls);
-
-        // Apply profile's stored palette tweaks AFTER setControlsInUI
-        // (setControlsInUI calls loadPaletteIntoEditor which reads from
-        // localStorage and would overwrite profile-specific tweaks)
-        const palKey = p.controls.palette || 'violet-depth';
-        const tweaks = p.paletteTweaks || (palKey === 'custom' ? p.customPalette : null);
-        if (tweaks) {
-            el.customHue.value = tweaks.baseHue;
-            el.customHueRange.value = tweaks.hueRange;
-            el.customSat.value = tweaks.saturation;
-            updatePalette(palKey, tweaks);
-            updateActiveChipGradient(palKey, tweaks);
-        } else {
-            // No stored tweaks — reset to factory defaults so thumbnail
-            // and main canvas match (thumbnails use defaults when no tweaks)
-            const defaults = getPaletteDefaults(palKey);
-            el.customHue.value = defaults.baseHue;
-            el.customHueRange.value = defaults.hueRange;
-            el.customSat.value = defaults.saturation;
-            resetPalette(palKey);
-            updateActiveChipGradient(palKey, defaults);
-        }
     }
-    el.customPaletteEditor.classList.add('collapsed');
     syncDisplayFields();
     setDirty(false);
     setUserEdited(false);
@@ -1458,10 +1165,6 @@ async function saveCurrentProfile() {
             seed: currentSeed,
             controls,
         };
-        profileData.paletteTweaks = readPaletteFromUI();
-        if (controls.palette === 'custom') {
-            profileData.customPalette = profileData.paletteTweaks;
-        }
         profiles[name] = profileData;
         saveProfiles(profiles);
 
@@ -1518,7 +1221,6 @@ function captureSnapshot() {
         seed: el.seed.value.trim(),
         name: el.profileNameField.value.trim(),
         controls: readControlsFromUI(),
-        paletteTweaks: readPaletteFromUI(),
         profileName: loadedProfileName || '',
         isPortrait: loadedFromPortrait,
         wasDirty: dirty,
@@ -1534,7 +1236,6 @@ function restoreSnapshot(snap) {
     const fromState = {
         seed: el.seed.value.trim() || 'seed',
         controls: readControlsFromUI(),
-        paletteTweaks: readPaletteFromUI(),
     };
 
     el.seed.value = snap.seed;
@@ -1542,10 +1243,6 @@ function restoreSnapshot(snap) {
     el.profileNameField.value = snap.name;
     autoGrow(el.profileNameField);
     setControlsInUI(snap.controls);
-    el.customHue.value = snap.paletteTweaks.baseHue;
-    el.customHueRange.value = snap.paletteTweaks.hueRange;
-    el.customSat.value = snap.paletteTweaks.saturation;
-    syncPaletteEditor();
     updateSliderLabels(snap.controls);
     syncDisplayFields();
 
@@ -1578,7 +1275,6 @@ function restoreSnapshot(snap) {
     const toState = {
         seed: el.seed.value.trim() || 'seed',
         controls: readControlsFromUI(),
-        paletteTweaks: readPaletteFromUI(),
     };
     startProfileTransition(fromState, toState);
 }
@@ -1605,8 +1301,7 @@ function captureCurrentBeforeNavigating() {
         || current.name !== stored.name
         || current.profileName !== stored.profileName
         || current.wasDirty !== stored.wasDirty
-        || JSON.stringify(current.controls) !== JSON.stringify(stored.controls)
-        || JSON.stringify(current.paletteTweaks) !== JSON.stringify(stored.paletteTweaks);
+        || JSON.stringify(current.controls) !== JSON.stringify(stored.controls);
     if (changed) {
         navHistory[historyIndex] = current;
     }
@@ -1622,8 +1317,7 @@ function pushToHistory() {
         if (cur.seed === snap.seed
             && cur.profileName === snap.profileName
             && cur.isPortrait === snap.isPortrait
-            && JSON.stringify(cur.controls) === JSON.stringify(snap.controls)
-            && JSON.stringify(cur.paletteTweaks) === JSON.stringify(snap.paletteTweaks)) {
+            && JSON.stringify(cur.controls) === JSON.stringify(snap.controls)) {
             return;
         }
     }
@@ -1646,13 +1340,6 @@ function randomizeUI() {
 
     // Topology hidden — always flow-field
     setTopologyUI('flow-field');
-    const chosenPalette = PALETTE_KEYS[Math.floor(Math.random() * PALETTE_KEYS.length)];
-    setPaletteUI(chosenPalette);
-    el.customHue.value = Math.floor(Math.random() * 360);
-    el.customHueRange.value = Math.floor(20 + Math.random() * 140);
-    el.customSat.value = (0.3 + Math.random() * 0.5).toFixed(2);
-    syncPaletteEditor();
-    el.customPaletteEditor.classList.remove('collapsed');
     for (const id of SLIDER_KEYS) {
         el[id].value = Math.random().toFixed(2);
     }
@@ -1718,7 +1405,6 @@ async function randomize() {
     const fromState = {
         seed: el.seed.value.trim() || 'seed',
         controls: readControlsFromUI(),
-        paletteTweaks: readPaletteFromUI(),
     };
 
     captureCurrentBeforeNavigating();
@@ -1731,7 +1417,6 @@ async function randomize() {
     const toState = {
         seed: el.seed.value.trim() || 'seed',
         controls: readControlsFromUI(),
-        paletteTweaks: readPaletteFromUI(),
     };
     startProfileTransition(fromState, toState);
 }
@@ -1787,8 +1472,7 @@ function updateActivePreview() {
 
     // Queue a thumbnail for the current config
     const controls = readControlsFromUI();
-    const paletteTweaks = readPaletteFromUI();
-    queueThumbnail(seed || 'seed', controls, el.activePreviewThumb, paletteTweaks);
+    queueThumbnail(seed || 'seed', controls, el.activePreviewThumb);
 }
 
 async function selectCard(cardEl) {
@@ -1815,7 +1499,6 @@ async function selectCard(cardEl) {
     const fromState = {
         seed: el.seed.value.trim() || 'seed',
         controls: readControlsFromUI(),
-        paletteTweaks: readPaletteFromUI(),
     };
 
     // Preserve current state in history before switching
@@ -1838,7 +1521,6 @@ async function selectCard(cardEl) {
     const toState = {
         seed: el.seed.value.trim() || 'seed',
         controls: readControlsFromUI(),
-        paletteTweaks: readPaletteFromUI(),
     };
 
     // Morph from current to target
@@ -1865,11 +1547,11 @@ function buildProfileCard(name, p, { isPortrait = false, index = 0, total = 1 } 
         // Use pre-generated static thumbnail; fall back to live render if missing
         thumbImg.src = `/thumbs/${slugify(name)}.png`;
         thumbImg.onerror = () => {
-            if (p.seed && p.controls) queueThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
+            if (p.seed && p.controls) queueThumbnail(p.seed, p.controls, thumbImg);
         };
         thumbWrap.classList.remove('thumb-loading');
     } else if (p.seed && p.controls) {
-        queueThumbnail(p.seed, p.controls, thumbImg, p.paletteTweaks);
+        queueThumbnail(p.seed, p.controls, thumbImg);
     }
 
     const body = document.createElement('div');
@@ -1927,8 +1609,7 @@ function buildProfileCard(name, p, { isPortrait = false, index = 0, total = 1 } 
                 const profiles = loadProfiles();
                 const pd = profiles[realName];
                 if (pd && pd.seed && pd.controls) {
-                    const tweaks = pd.paletteTweaks || getPaletteDefaults(pd.controls.palette || 'violet-depth');
-                    const cacheKey = thumbCacheKey(pd.seed, pd.controls, tweaks);
+                    const cacheKey = thumbCacheKey(pd.seed, pd.controls);
                     thumbCache.delete(cacheKey);
                     deleteThumb(cacheKey);
                 }
@@ -2013,10 +1694,9 @@ el.exportBtn.addEventListener('click', () => {
     try {
         const seed = el.seed.value.trim() || 'seed';
         const controls = readControlsFromUI();
-        const paletteTweaks = readPaletteFromUI();
         const name = el.profileNameField.value.trim() || 'Untitled';
 
-        const config = profileToConfig(name, { seed, controls, paletteTweaks });
+        const config = profileToConfig(name, { seed, controls });
         const json = JSON.stringify(config, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const ts = toIsoLocalish();
@@ -2038,7 +1718,6 @@ function buildShareURL() {
     return encodeStateToURL(window.location.origin, {
         seed: el.seed.value.trim() || 'seed',
         controls: readControlsFromUI(),
-        paletteTweaks: readPaletteFromUI(),
         name: el.profileNameField.value.trim(),
     });
 }
@@ -2122,7 +1801,6 @@ document.getElementById('shareDownloadPng').addEventListener('click', async () =
 
     const seed = el.seed.value.trim() || 'seed';
     const controls = readControlsFromUI();
-    const paletteTweaks = readPaletteFromUI();
     const name = el.profileNameField.value.trim() || 'Untitled';
 
     const titleRng = mulberry32(xmur3(seed + ':title')());
@@ -2139,12 +1817,12 @@ document.getElementById('shareDownloadPng').addEventListener('click', async () =
             });
             const rect = canvas.getBoundingClientRect();
             await packageStillZipFromBlob(blob, {
-                seed, controls, paletteTweaks, name, meta,
+                seed, controls, name, meta,
                 canvasWidth: Math.round(rect.width * window.devicePixelRatio),
                 canvasHeight: Math.round(rect.height * window.devicePixelRatio),
             });
         } else {
-            await packageStillZip(canvas, { seed, controls, paletteTweaks, name, meta });
+            await packageStillZip(canvas, { seed, controls, name, meta });
         }
         toast(t('toast.visualExported'));
     } catch (err) {
@@ -2409,8 +2087,6 @@ function toggleActiveConfig() {
     el.activeCardToggle.setAttribute('data-tooltip', expanded ? 'Open Configuration' : 'Close Configuration');
     refreshTooltip(el.activeCardToggle);
     document.getElementById('configControls').classList.toggle('collapsed', expanded);
-    // Collapse palette editor each time config panel is opened
-    if (expanded === false) el.customPaletteEditor.classList.add('collapsed');
 }
 
 document.querySelector('.active-card-main').addEventListener('click', (e) => {
@@ -2450,11 +2126,11 @@ document.getElementById('historyForwardBtn').addEventListener('click', () => {
  */
 initPanel();
 initTopologySelector();
-initPaletteSelector();
-restorePaletteTweaksFromStorage();
 initLocale();
-initTheme(document.getElementById('themeSwitcher'));
-initLangSelector(document.getElementById('langSwitcher'));
+initPageSettings(
+    document.getElementById('pageSettingsBtn'),
+    document.getElementById('pageSettingsPopover'),
+);
 createFaviconAnimation().start();
 loadStatementContent();
 ensureStarterProfiles();
@@ -2475,12 +2151,6 @@ if (sharedState) {
         autoGrow(el.profileNameField);
     }
     setControlsInUI(sharedState.controls);
-    if (sharedState.paletteTweaks) {
-        el.customHue.value = sharedState.paletteTweaks.baseHue;
-        el.customHueRange.value = sharedState.paletteTweaks.hueRange;
-        el.customSat.value = sharedState.paletteTweaks.saturation;
-    }
-    syncPaletteEditor();
     syncDisplayFields();
     // Generate display name if none provided
     if (!sharedState.name) {

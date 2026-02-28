@@ -7,8 +7,24 @@ import type { Controls } from '../types.js';
 
 export const TIME_WARP_STRENGTH = 0.78;
 
-const NUMERIC_KEYS: (keyof Controls)[] = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
-const DISCRETE_KEYS: (keyof Controls)[] = ['topology', 'palette'];
+const NUMERIC_KEYS: (keyof Controls)[] = ['density', 'luminosity', 'fracture', 'coherence', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
+const DISCRETE_KEYS: (keyof Controls)[] = ['topology'];
+
+/** Circular lerp on [0, period) domain. */
+function circularLerp(a: number, b: number, t: number, period = 1): number {
+    let diff = b - a;
+    if (diff > period / 2) diff -= period;
+    if (diff < -period / 2) diff += period;
+    return ((a + diff * t) % period + period) % period;
+}
+
+/** Unwrap a value to be within ±period/2 of the anchor. */
+function unwrapCircular(val: number, anchor: number, period = 1): number {
+    let diff = val - anchor;
+    if (diff > period / 2) diff -= period;
+    if (diff < -period / 2) diff += period;
+    return anchor + diff;
+}
 
 export function smootherstep(t: number): number {
     t = clamp01(t);
@@ -57,6 +73,8 @@ export function evalControlsAt(tNorm: number, landmarks: Array<{ controls: Contr
         for (const key of NUMERIC_KEYS) {
             (result as unknown as Record<string, unknown>)[key] = lerp(c0[key] as number, c1[key] as number, u);
         }
+        // Hue: circular interpolation on [0, 1)
+        (result as unknown as Record<string, unknown>).hue = circularLerp(c0.hue, c1.hue, u);
         return result;
     }
 
@@ -81,6 +99,12 @@ export function evalControlsAt(tNorm: number, landmarks: Array<{ controls: Contr
             catmullRom(C0[key] as number, C1[key] as number, C2[key] as number, C3[key] as number, t)
         );
     }
+    // Hue: unwrap to C1 anchor, Catmull-Rom, then re-wrap to [0, 1)
+    const h0 = unwrapCircular(C0.hue, C1.hue);
+    const h2 = unwrapCircular(C2.hue, C1.hue);
+    const h3 = unwrapCircular(C3.hue, C1.hue);
+    const rawHue = catmullRom(h0, C1.hue, h2, h3, t);
+    (result as unknown as Record<string, unknown>).hue = ((rawHue % 1) + 1) % 1;
     return result;
 }
 

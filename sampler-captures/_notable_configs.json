@@ -70,5 +70,77 @@
     "seed": "sampler-1",
     "nodes": 335,
     "notes": "High coherence + high fracture. Tests whether structure survives scattering. Dual-lobe form persists."
+  },
+  {
+    "name": "stained-glass",
+    "file": "v2-stained-glass.png",
+    "params": { "density": 0.10, "fracture": 1.00, "luminosity": 0.10, "coherence": 0.60, "depth": 0.50 },
+    "palette": "prismatic",
+    "seed": "sampler-1",
+    "nodes": 149,
+    "notes": "v2. Two distinct color centers (magenta left, gold right) with individually readable prismatic faces. Extreme fracture + low density + low lum = maximum color separation."
+  },
+  {
+    "name": "dark-jewel",
+    "file": "v2-dark-jewel.png",
+    "params": { "density": 0.20, "fracture": 0.70, "luminosity": 0.00, "coherence": 0.50, "depth": 0.50 },
+    "palette": "prismatic",
+    "seed": "sampler-1",
+    "nodes": 200,
+    "notes": "v2. Rich saturated colors at lum=0 — magenta, green, gold, purple. The tightened luminosity range makes the entire dark region viable. Individual faces and sparkle dots readable."
+  },
+  {
+    "name": "dark-teal",
+    "file": "v2-dark-teal.png",
+    "params": { "density": 0.20, "fracture": 0.70, "luminosity": 0.00, "coherence": 0.50, "depth": 0.50 },
+    "palette": "teal-volumetric",
+    "seed": "sampler-1",
+    "nodes": 200,
+    "notes": "v2. Cool, icy, architectural. Face edges clearly visible against deep teal haze. Moody and deep."
+  },
+  {
+    "name": "dark-warm",
+    "file": "v2-dark-warm.png",
+    "params": { "density": 0.20, "fracture": 0.70, "luminosity": 0.00, "coherence": 0.50, "depth": 0.50 },
+    "palette": "warm-spectrum",
+    "seed": "sampler-1",
+    "nodes": 200,
+    "notes": "v2. Rich amber/gold. Like looking into warm amber. Face structure clearly visible at low luminosity."
+  },
+  {
+    "name": "prism-ghost-aligned",
+    "file": "v2-prism-ghost-aligned.png",
+    "params": { "density": 0.14, "fracture": 0.86, "luminosity": 0.50, "coherence": 1.00, "depth": 0.50 },
+    "palette": "prismatic",
+    "seed": "sampler-1",
+    "nodes": 169,
+    "notes": "v2. Large aligned colored shards — teal, gold, rose, purple. Two bright centers connected by overlapping faces. Coherence creates visible directional alignment."
+  },
+  {
+    "name": "pure-coherence",
+    "file": "v2-pure-coherence.png",
+    "params": { "density": 0.00, "fracture": 0.00, "luminosity": 0.50, "coherence": 1.00, "depth": 0.50 },
+    "palette": "violet-depth",
+    "seed": "sampler-1",
+    "nodes": 118,
+    "notes": "v2. Nebula-like. Minimal geometry + maximum coherence creates atmospheric form with visible tendrils and scattered sparkle dots around a soft compact core."
+  },
+  {
+    "name": "aurora-warm",
+    "file": "v2-aurora-warm.png",
+    "params": { "density": 0.30, "fracture": 0.50, "luminosity": 0.35, "coherence": 1.00, "depth": 0.50 },
+    "palette": "warm-spectrum",
+    "seed": "sampler-1",
+    "nodes": 252,
+    "notes": "v2. Warm amber glow with aligned structure. Dark geometric silhouettes in foreground create depth. Coherence gives directional flow."
+  },
+  {
+    "name": "dark-crystal",
+    "file": "v2-dark-crystal.png",
+    "params": { "density": 0.20, "fracture": 0.70, "luminosity": 0.00, "coherence": 0.50, "depth": 0.50 },
+    "palette": "crystal-lattice",
+    "seed": "sampler-1",
+    "nodes": 200,
+    "notes": "v2. Near-monochrome/grayscale at dark params. Uniquely stark — geometric wireframe feel. The palette's narrow hue range becomes achromatic at low luminosity."
   }
 ]

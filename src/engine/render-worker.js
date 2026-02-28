@@ -6,7 +6,6 @@
  */
 
 import { createRenderer } from '../../lib/engine/create-renderer.js';
-import { updatePalette } from '../../lib/core/palettes.js';
 
 let renderer = null;
 let offscreenCanvas = null;
@@ -132,13 +131,6 @@ function doRender() {
     pendingRender = null;
 
     try {
-        // Sync palette state before rendering
-        if (req.paletteTweaks) {
-            for (const [key, tweaks] of Object.entries(req.paletteTweaks)) {
-                updatePalette(key, tweaks);
-            }
-        }
-
         // Resize if dimensions provided
         if (req.width && req.height) {
             renderer.resize(req.width, req.height);
@@ -213,17 +205,6 @@ self.onmessage = function (e) {
         case 'morph-prepare':
             if (renderer) {
                 try {
-                    // Sync palette state for both from and to
-                    if (msg.paletteTweaksA) {
-                        for (const [key, tweaks] of Object.entries(msg.paletteTweaksA)) {
-                            updatePalette(key, tweaks);
-                        }
-                    }
-                    if (msg.paletteTweaksB) {
-                        for (const [key, tweaks] of Object.entries(msg.paletteTweaksB)) {
-                            updatePalette(key, tweaks);
-                        }
-                    }
                     if (msg.width && msg.height) {
                         renderer.resize(msg.width, msg.height);
                     }
@@ -233,7 +214,6 @@ self.onmessage = function (e) {
                         type: 'render',
                         seed: msg.seedB,
                         controls: msg.controlsB,
-                        paletteTweaks: msg.paletteTweaksB,
                         width: msg.width,
                         height: msg.height,
                     };

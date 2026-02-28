@@ -82,7 +82,7 @@ export async function runTests(page, errors) {
         }
         await ensureConfigExpanded(page);
 
-        for (const id of ['density', 'luminosity', 'fracture', 'depth', 'coherence']) {
+        for (const id of ['density', 'luminosity', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow']) {
             await scrollToElement(page, `#${id}`);
             const visible = await page.$eval(`#${id}`, el => {
                 const r = el.getBoundingClientRect();

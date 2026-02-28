@@ -3,10 +3,9 @@
  * Supports locale-specific word tables and templates.
  */
 
-import { PALETTES, customPalette } from './palettes.js';
 import type { Controls } from '../types.js';
 
-/* ── English word tables ── */
+/* ── Word tables ── */
 
 const TOPOLOGY_WORDS: Record<string, Record<string, string[]>> = {
     en: {
@@ -23,27 +22,7 @@ const TOPOLOGY_WORDS: Record<string, Record<string, string[]>> = {
     },
 };
 
-const PALETTE_WORDS: Record<string, Record<string, string[]>> = {
-    en: {
-        'violet-depth': ['Violet', 'Amethyst', 'Deep Purple', 'Umbral'],
-        'warm-spectrum': ['Warm', 'Golden', 'Ember', 'Solar'],
-        'teal-volumetric': ['Teal', 'Oceanic', 'Cyan', 'Aqueous'],
-        'prismatic': ['Prismatic', 'Iridescent', 'Spectral', 'Chromatic'],
-        'crystal-lattice': ['Crystal', 'Silver', 'Frost', 'Glacial'],
-        'sapphire': ['Sapphire', 'Cobalt', 'Azure', 'Ultramarine'],
-        'amethyst': ['Amethyst', 'Magenta', 'Plum', 'Orchid'],
-    },
-    es: {
-        'violet-depth': ['Violeta', 'Amatista', 'Púrpura', 'Umbral'],
-        'warm-spectrum': ['Cálido', 'Dorado', 'Brasa', 'Solar'],
-        'teal-volumetric': ['Turquesa', 'Oceánico', 'Cian', 'Acuoso'],
-        'prismatic': ['Prismático', 'Iridiscente', 'Espectral', 'Cromático'],
-        'crystal-lattice': ['Cristal', 'Argénteo', 'Escarcha', 'Glacial'],
-        'sapphire': ['Zafiro', 'Cobalto', 'Azur', 'Ultramarino'],
-        'amethyst': ['Amatista', 'Magenta', 'Ciruela', 'Orquídea'],
-    },
-};
-
+/** Hue-based color words (replaces palette-based lookup). */
 const HUE_WORD_MAP: Record<string, Array<{ max: number; words: string[] }>> = {
     en: [
         { max: 30,  words: ['Ruby', 'Crimson', 'Carmine', 'Scarlet'] },
@@ -67,10 +46,10 @@ const HUE_WORD_MAP: Record<string, Array<{ max: number; words: string[] }>> = {
     ],
 };
 
-function getCustomPaletteWords(locale: string = 'en'): string[] {
-    const hue = ((customPalette.baseHue ?? 180) % 360 + 360) % 360;
+function getHueWords(hue01: number, locale: string = 'en'): string[] {
+    const hueDeg = ((hue01 * 360) % 360 + 360) % 360;
     const map = HUE_WORD_MAP[locale] || HUE_WORD_MAP.en;
-    return (map.find(e => hue < e.max) || map[0]).words;
+    return (map.find(e => hueDeg < e.max) || map[0]).words;
 }
 
 const DENSITY_WORDS: Record<string, Record<string, string[]>> = {
@@ -86,16 +65,16 @@ const DENSITY_WORDS: Record<string, Record<string, string[]>> = {
     },
 };
 
-const DEPTH_WORDS: Record<string, Record<string, string[]>> = {
+const SCALE_WORDS: Record<string, Record<string, string[]>> = {
     en: {
-        high: ['Cavernous', 'Infinite', 'Abyssal', 'Receding'],
-        mid: ['Spatial', 'Dimensional', 'Layered', 'Atmospheric'],
-        low: ['Flat', 'Near', 'Intimate', 'Surface'],
+        high: ['Atmospheric', 'Particulate', 'Granular', 'Scattered'],
+        mid: ['Spatial', 'Dimensional', 'Layered', 'Tempered'],
+        low: ['Monumental', 'Grand', 'Sweeping', 'Expansive'],
     },
     es: {
-        high: ['Cavernoso', 'Infinito', 'Abisal', 'Distante'],
-        mid: ['Espacial', 'Dimensional', 'Estratificado', 'Atmosférico'],
-        low: ['Plano', 'Cercano', 'Íntimo', 'Superficial'],
+        high: ['Atmosférico', 'Particulado', 'Granular', 'Disperso'],
+        mid: ['Espacial', 'Dimensional', 'Estratificado', 'Templado'],
+        low: ['Monumental', 'Grandioso', 'Amplio', 'Expansivo'],
     },
 };
 
@@ -126,30 +105,29 @@ export function generateTitle(controls: Controls, rng: () => number, locale: str
     const c = controls;
     const lang = TOPOLOGY_WORDS[locale] ? locale : 'en';
     const topoWords = (TOPOLOGY_WORDS[lang][c.topology] || TOPOLOGY_WORDS[lang]['flow-field']);
-    const palWords = c.palette === 'custom' ? getCustomPaletteWords(lang) : (PALETTE_WORDS[lang][c.palette] || PALETTE_WORDS[lang]['violet-depth']);
+    const hueWords = getHueWords(c.hue, lang);
     const lumWords = LUMINOSITY_WORDS[lang][tier(c.luminosity)];
-    const depWords = DEPTH_WORDS[lang][tier(c.depth)];
+    const scaleWords = SCALE_WORDS[lang][tier(c.scale)];
     const denWords = DENSITY_WORDS[lang][tier(c.density)];
 
-    // Spanish uses noun-adjective order: "Interior Fluido Luminoso"
     const templates = lang === 'es' ? [
-        () => `${pick(palWords, rng)} ${pick(topoWords, rng)} ${pick(depWords, rng)}`,
+        () => `${pick(hueWords, rng)} ${pick(topoWords, rng)} ${pick(scaleWords, rng)}`,
         () => `Interior ${pick(topoWords, rng)} ${pick(lumWords, rng)}`,
-        () => `Campo ${pick(denWords, rng)} ${pick(palWords, rng)}`,
-        () => `Geometría ${pick(topoWords, rng)} ${pick(depWords, rng)}`,
-        () => `Variedad ${pick(palWords, rng)} ${pick(lumWords, rng)}`,
+        () => `Campo ${pick(denWords, rng)} ${pick(hueWords, rng)}`,
+        () => `Geometría ${pick(topoWords, rng)} ${pick(scaleWords, rng)}`,
+        () => `Variedad ${pick(hueWords, rng)} ${pick(lumWords, rng)}`,
         () => `Plano ${pick(topoWords, rng)} ${pick(denWords, rng)}`,
-        () => `Estructura ${pick(lumWords, rng)} ${pick(palWords, rng)}`,
-        () => `Retícula ${pick(depWords, rng)} ${pick(palWords, rng)}`,
+        () => `Estructura ${pick(lumWords, rng)} ${pick(hueWords, rng)}`,
+        () => `Retícula ${pick(scaleWords, rng)} ${pick(hueWords, rng)}`,
     ] : [
-        () => `${pick(topoWords, rng)} ${pick(palWords, rng)} ${pick(depWords, rng)}`,
+        () => `${pick(topoWords, rng)} ${pick(hueWords, rng)} ${pick(scaleWords, rng)}`,
         () => `${pick(lumWords, rng)} ${pick(topoWords, rng)} Interior`,
-        () => `${pick(palWords, rng)} ${pick(denWords, rng)} Field`,
-        () => `${pick(depWords, rng)} ${pick(topoWords, rng)} Geometry`,
-        () => `${pick(lumWords, rng)} ${pick(palWords, rng)} Manifold`,
+        () => `${pick(hueWords, rng)} ${pick(denWords, rng)} Field`,
+        () => `${pick(scaleWords, rng)} ${pick(topoWords, rng)} Geometry`,
+        () => `${pick(lumWords, rng)} ${pick(hueWords, rng)} Manifold`,
         () => `${pick(topoWords, rng)} ${pick(denWords, rng)} Plane`,
-        () => `${pick(palWords, rng)} ${pick(lumWords, rng)} Structure`,
-        () => `${pick(depWords, rng)} ${pick(palWords, rng)} Lattice`,
+        () => `${pick(hueWords, rng)} ${pick(lumWords, rng)} Structure`,
+        () => `${pick(scaleWords, rng)} ${pick(hueWords, rng)} Lattice`,
     ];
 
     return (templates[Math.floor(rng() * templates.length)])();
@@ -158,9 +136,7 @@ export function generateTitle(controls: Controls, rng: () => number, locale: str
 export function generateAltText(controls: Controls, nodeCount: number, _title: string, locale: string = 'en'): string {
     const c = controls;
     const lang = locale === 'es' ? 'es' : 'en';
-    const palLabel = c.palette === 'custom'
-        ? (lang === 'es' ? 'Personalizado' : 'Custom')
-        : (PALETTES[c.palette]?.label || c.palette);
+    const hueLabel = getHueWords(c.hue, lang)[0];
 
     if (lang === 'es') {
         const densityPhrase = c.density > 0.66
@@ -169,11 +145,11 @@ export function generateAltText(controls: Controls, nodeCount: number, _title: s
             ? 'una disposición equilibrada de planos cristalinos'
             : 'fragmentos geométricos dispersos, cuidadosamente ubicados';
 
-        const depthPhrase = c.depth > 0.66
-            ? 'una profunda recesión espacial, planos desvaneciéndose en la niebla'
-            : c.depth > 0.33
+        const scalePhrase = c.scale > 0.66
+            ? 'partículas atmosféricas finas llenando el espacio'
+            : c.scale > 0.33
             ? 'profundidad moderada con bruma atmosférica'
-            : 'profundidad somera, formas mantenidas cerca del espectador';
+            : 'formas monumentales amplias dominando la composición';
 
         const luminosityPhrase = c.luminosity > 0.66
             ? 'un brillo emisivo intenso irradiando desde el interior de cada forma'
@@ -201,8 +177,8 @@ export function generateAltText(controls: Controls, nodeCount: number, _title: s
         };
 
         return [
-            `Un campo oscuro alberga ${densityPhrase}, organizados alrededor de ${topoName[c.topology] || 'una topología generativa'} en la paleta ${palLabel}.`,
-            `La composición muestra ${depthPhrase}, con ${luminosityPhrase}.`,
+            `Un campo oscuro alberga ${densityPhrase}, organizados alrededor de ${topoName[c.topology] || 'una topología generativa'} en tonos ${hueLabel.toLowerCase()}.`,
+            `La composición muestra ${scalePhrase}, con ${luminosityPhrase}.`,
             `Los planos exhiben ${fracturePhrase}, ${coherencePhrase}.`,
             `${nodeCount} nodos de energía anclan la estructura, creando puntos focales de luz concentrada.`,
             `Formas poligonales translúcidas se superponen con mezcla aditiva, bordes con brillo Fresnel capturando la luz en ángulos oblicuos.`,
@@ -215,11 +191,11 @@ export function generateAltText(controls: Controls, nodeCount: number, _title: s
         ? 'a balanced arrangement of crystalline planes'
         : 'sparse, carefully placed geometric shards';
 
-    const depthPhrase = c.depth > 0.66
-        ? 'deep spatial recession, planes disappearing into fog'
-        : c.depth > 0.33
+    const scalePhrase = c.scale > 0.66
+        ? 'fine atmospheric particles filling the space'
+        : c.scale > 0.33
         ? 'moderate depth with atmospheric haze'
-        : 'shallow depth, forms held close to the viewer';
+        : 'broad monumental forms dominating the composition';
 
     const luminosityPhrase = c.luminosity > 0.66
         ? 'bright emissive glow radiating from within each form'
@@ -247,8 +223,8 @@ export function generateAltText(controls: Controls, nodeCount: number, _title: s
     };
 
     return [
-        `A dark field carries ${densityPhrase}, organized around ${topoName[c.topology] || 'a generative topology'} in the ${palLabel} palette.`,
-        `The composition shows ${depthPhrase}, with ${luminosityPhrase}.`,
+        `A dark field carries ${densityPhrase}, organized around ${topoName[c.topology] || 'a generative topology'} in ${hueLabel.toLowerCase()} tones.`,
+        `The composition shows ${scalePhrase}, with ${luminosityPhrase}.`,
         `Planes exhibit ${fracturePhrase}, ${coherencePhrase}.`,
         `${nodeCount} energy nodes anchor the structure, creating focal points of concentrated light.`,
         `Translucent polygonal forms overlap with additive blending, Fresnel-brightened edges catching the light at oblique angles.`,
@@ -257,22 +233,28 @@ export function generateAltText(controls: Controls, nodeCount: number, _title: s
 
 /* ── Animation alt-text ── */
 
-const CONTROL_KEYS: (keyof Controls)[] = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
+const CONTROL_KEYS: (keyof Controls)[] = ['density', 'luminosity', 'fracture', 'coherence', 'scale', 'division', 'faceting'];
 
 const DYNAMIC_PHRASES: Record<string, Record<string, string>> = {
     en: {
         density: 'plane density shifts, the field filling and emptying',
         luminosity: 'light swells and dims, energy arriving and receding',
         fracture: 'edges sharpen and smooth, fragmentation breathing',
-        depth: 'space deepens and flattens, fog advancing and retreating',
         coherence: 'structure tightens and loosens, order questioning itself',
+        scale: 'forms shift between monumental and atmospheric',
+        division: 'the envelope splits and reunites, topology breathing',
+        faceting: 'crystal faces broaden and sharpen, geometry reshaping',
+        flow: 'the directional field shifts between radial, turbulent, and orbital patterns',
     },
     es: {
         density: 'la densidad de planos cambia, el campo llenándose y vaciándose',
         luminosity: 'la luz crece y mengua, la energía llegando y retrocediendo',
         fracture: 'los bordes se afilan y suavizan, la fragmentación respirando',
-        depth: 'el espacio se profundiza y aplana, la niebla avanzando y retrocediendo',
         coherence: 'la estructura se tensa y relaja, el orden cuestionándose a sí mismo',
+        scale: 'las formas oscilan entre lo monumental y lo atmosférico',
+        division: 'la envolvente se divide y reúne, la topología respirando',
+        faceting: 'las caras cristalinas se amplían y agudizan, la geometría reformándose',
+        flow: 'el campo direccional cambia entre patrones radiales, turbulentos y orbitales',
     },
 };
 
@@ -281,15 +263,21 @@ const STABLE_PHRASES: Record<string, Record<string, string>> = {
         density: 'structural density holds steady',
         luminosity: 'luminosity persists unchanged',
         fracture: 'edge complexity stays constant',
-        depth: 'spatial depth remains fixed',
         coherence: 'topological coherence is maintained',
+        scale: 'scale distribution remains fixed',
+        division: 'form topology holds steady',
+        faceting: 'crystal character stays constant',
+        flow: 'directional field pattern holds steady',
     },
     es: {
         density: 'la densidad estructural se mantiene estable',
         luminosity: 'la luminosidad persiste sin cambios',
         fracture: 'la complejidad de los bordes permanece constante',
-        depth: 'la profundidad espacial se mantiene fija',
         coherence: 'la coherencia topológica se preserva',
+        scale: 'la distribución de escala se mantiene fija',
+        division: 'la topología de forma se mantiene estable',
+        faceting: 'el carácter cristalino permanece constante',
+        flow: 'el patrón del campo direccional se mantiene estable',
     },
 };
 
@@ -298,15 +286,21 @@ const TRANSITION_VERBS: Record<string, Record<string, { rises: string; falls: st
         density: { rises: 'planes accumulating', falls: 'geometry thinning' },
         luminosity: { rises: 'light arriving', falls: 'glow receding' },
         fracture: { rises: 'edges shattering', falls: 'forms smoothing' },
-        depth: { rises: 'space deepening', falls: 'depth collapsing' },
         coherence: { rises: 'structure crystallizing', falls: 'order dissolving' },
+        scale: { rises: 'forms scattering', falls: 'forms consolidating' },
+        division: { rises: 'envelope splitting', falls: 'form reuniting' },
+        faceting: { rises: 'faces sharpening', falls: 'panels broadening' },
+        flow: { rises: 'field orbiting', falls: 'field radiating' },
     },
     es: {
         density: { rises: 'planos acumulándose', falls: 'geometría adelgazándose' },
         luminosity: { rises: 'luz llegando', falls: 'resplandor retrocediendo' },
         fracture: { rises: 'bordes fragmentándose', falls: 'formas suavizándose' },
-        depth: { rises: 'espacio profundizándose', falls: 'profundidad colapsando' },
         coherence: { rises: 'estructura cristalizándose', falls: 'orden disolviéndose' },
+        scale: { rises: 'formas dispersándose', falls: 'formas consolidándose' },
+        division: { rises: 'envolvente dividiéndose', falls: 'forma reuniéndose' },
+        faceting: { rises: 'caras afilándose', falls: 'paneles ensanchándose' },
+        flow: { rises: 'campo orbitando', falls: 'campo irradiando' },
     },
 };
 

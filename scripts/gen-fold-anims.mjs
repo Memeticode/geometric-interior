@@ -110,24 +110,33 @@ async function main() {
     console.log(`Found ${names.length} portraits.\n`);
 
     for (const name of names) {
-        process.stdout.write(`  ${slugify(name)}-fold.png ... `);
+        const slug = slugify(name);
+        process.stdout.write(`  ${slug}-fold.png ... `);
         try {
             const dataUrl = await page.evaluate((pName) => {
                 return window.__renderPortraitFold(pName);
             }, name);
 
-            const slug = slugify(name);
             const pngData = Buffer.from(dataUrl.split(',')[1], 'base64');
             const outPath = resolve(THUMB_DIR, `${slug}-fold.png`);
             writeFileSync(outPath, pngData);
-            console.log(`${(pngData.length / 1024).toFixed(1)} KB`);
+            process.stdout.write(`${(pngData.length / 1024).toFixed(1)} KB`);
+
+            // Also generate thumbnail (matches sprite's last frame: fold=1.0, time=3.0)
+            const thumbDataUrl = await page.evaluate((pName) => {
+                return window.__renderPortraitThumb(pName);
+            }, name);
+            const thumbPng = Buffer.from(thumbDataUrl.split(',')[1], 'base64');
+            const thumbPath = resolve(THUMB_DIR, `${slug}.png`);
+            writeFileSync(thumbPath, thumbPng);
+            console.log(` + thumb ${(thumbPng.length / 1024).toFixed(1)} KB`);
         } catch (err) {
             console.log(`FAILED: ${err.message}`);
         }
     }
 
     await browser.close();
-    console.log(`\nDone. Fold sprite strips saved to public/thumbs/`);
+    console.log(`\nDone. Fold sprites + thumbnails saved to public/thumbs/`);
 }
 
 main().catch(err => {

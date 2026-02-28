@@ -2,7 +2,7 @@
  * Smooth morph controller for transitioning between two visual states.
  *
  * Uses cosine easing on numeric slider values and circular interpolation
- * for hue. Palette preset snaps at the morph midpoint.
+ * for hue (period 1, since hue is 0-1).
  */
 
 import { cosineEase } from '../../lib/core/interpolation.js';
@@ -10,7 +10,7 @@ import { clamp01, lerp } from '../../lib/core/prng.js';
 
 export const MORPH_DURATION_MS = 1000;
 
-const NUMERIC_KEYS = ['density', 'luminosity', 'fracture', 'depth', 'coherence'];
+const NUMERIC_KEYS = ['density', 'luminosity', 'fracture', 'coherence', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
 
 /**
  * Shortest-path interpolation on a circular domain.
@@ -27,42 +27,30 @@ export function circularLerp(a, b, t, period = 360) {
 }
 
 /**
- * Linearly interpolate palette tweaks (circular for hue).
- */
-export function lerpPaletteTweaks(from, to, t) {
-    return {
-        baseHue: circularLerp(from.baseHue, to.baseHue, t),
-        hueRange: lerp(from.hueRange, to.hueRange, t),
-        saturation: lerp(from.saturation, to.saturation, t),
-    };
-}
-
-/**
  * Interpolate between two visual states.
  *
- * @param {{ seed: string, controls: object, paletteTweaks: object }} from
- * @param {{ seed: string, controls: object, paletteTweaks: object }} to
+ * @param {{ seed: string, controls: object }} from
+ * @param {{ seed: string, controls: object }} to
  * @param {number} tRaw - Raw time [0, 1] — cosine easing applied internally
- * @returns {{ seed: string, controls: object, paletteTweaks: object }}
+ * @returns {{ seed: string, controls: object }}
  */
 export function interpolateState(from, to, tRaw) {
     const t = cosineEase(clamp01(tRaw));
 
-    // Numeric slider keys: eased lerp
     const controls = {
         topology: to.controls.topology,
-        // Palette preset snaps at midpoint
-        palette: tRaw < 0.5 ? from.controls.palette : to.controls.palette,
     };
+
+    // Numeric slider keys: eased lerp
     for (const key of NUMERIC_KEYS) {
         controls[key] = lerp(from.controls[key], to.controls[key], t);
     }
 
-    // Palette tweaks: smooth lerp (circular for hue)
-    const paletteTweaks = lerpPaletteTweaks(from.paletteTweaks, to.paletteTweaks, t);
+    // Hue: circular lerp on [0, 1] domain
+    controls.hue = circularLerp(from.controls.hue, to.controls.hue, t, 1);
 
     // Seed: always target (geometry snaps once at start)
-    return { seed: to.seed, controls, paletteTweaks };
+    return { seed: to.seed, controls };
 }
 
 /**

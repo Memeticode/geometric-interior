@@ -1,10 +1,10 @@
 /**
- * Controls tests: sliders, palette selection, seed, custom palette, morph cancellation.
+ * Controls tests: sliders, seed, morph cancellation.
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { screenshotCanvas, ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
-import { setSlider, setSeed, setProfileName, selectPalette, setCustomPalette, readControlsFromPage } from './helpers/controls.mjs';
+import { setSlider, setSeed, setProfileName, readControlsFromPage } from './helpers/controls.mjs';
 import { waitForRender, waitForStillRendered, sleep } from './helpers/waits.mjs';
 import { assertScreenshotsDiffer, assertNoPageErrors } from './helpers/assertions.mjs';
 import { clickAnyProfileCard } from './helpers/profiles.mjs';
@@ -47,47 +47,6 @@ export async function runTests(page, errors) {
             await setSlider(page, key, 0.5);
             await waitForRender(page);
         }
-    });
-
-    // ── Test: Palette chip click updates hidden input ──
-    await test('Palette chip click updates hidden #palette input', async () => {
-        await scrollToElement(page, '#paletteSelector');
-        await selectPalette(page, 'sapphire');
-        await page.waitForTimeout(200);
-        const val = await page.$eval('#palette', el => el.value);
-        if (val !== 'sapphire') throw new Error(`Expected palette "sapphire", got "${val}"`);
-    });
-
-    // ── Test: Palette chip sets .active class correctly ──
-    await test('Palette chip click sets .active class correctly', async () => {
-        await scrollToElement(page, '#paletteSelector');
-        await selectPalette(page, 'warm-spectrum');
-        await page.waitForTimeout(200);
-
-        const activeChips = await page.$$eval('.pal-chip.active', els =>
-            els.map(el => el.dataset.value)
-        );
-        if (activeChips.length !== 1) {
-            throw new Error(`Expected exactly 1 active palette chip, got ${activeChips.length}`);
-        }
-        if (activeChips[0] !== 'warm-spectrum') {
-            throw new Error(`Expected active chip "warm-spectrum", got "${activeChips[0]}"`);
-        }
-    });
-
-    // ── Test: Custom palette slider labels update ──
-    await test('Custom palette slider labels update on change', async () => {
-        await scrollToElement(page, '#paletteSelector');
-        await selectPalette(page, 'custom');
-        await page.waitForTimeout(200);
-
-        await setCustomPalette(page, { hue: 200 });
-        const hueLabel = await page.$eval('#customHueLabel', el => el.textContent);
-        if (hueLabel !== '200') throw new Error(`Expected hue label "200", got "${hueLabel}"`);
-
-        await setCustomPalette(page, { sat: 0.65 });
-        const satLabel = await page.$eval('#customSatLabel', el => el.textContent);
-        if (satLabel !== '0.65') throw new Error(`Expected sat label "0.65", got "${satLabel}"`);
     });
 
     // ── Test: Seed change triggers re-render ──

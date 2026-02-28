@@ -126,8 +126,42 @@ Current state in `lib/engine/demo/flow-field.ts`:
 
 ### Open questions
 - Would SDF-gradient-derived flow produce more coherent results than random noise?
-- What does the flow field look like at different scales? (currently invisible)
 - Does the color field (scale 1.2) need to track the flow field, or is decorrelation good?
+
+### Flow field coherence by scale (measured)
+Neighbor vector dot product across 32x32 sample grid in envelope range:
+```
+scale=0.30  coh=0.9997  (nearly uniform — all chains same direction)
+scale=0.50  coh=0.9923
+scale=0.75  coh=0.9889
+scale=1.00  coh=0.9738
+scale=1.50  coh=0.9614  ← current hardcoded value
+scale=2.00  coh=0.9090
+scale=3.00  coh=0.8405
+scale=5.00  coh=0.6414  (visible per-chain variation)
+scale=8.00  coh=0.3841  (chaotic)
+scale=12.0  coh=0.1320  (nearly random)
+```
+
+### Implementation (done)
+Two new derived params from coherence:
+- `flowScale = cl(coherence, 5.0, 1.5, 0.5)` — high coherence → low scale (large aligned regions)
+- `flowInfluence = cl(coherence, 0.0, 0.15, 0.35)` — high coherence → stronger flow bias on curve chains
+
+Flow field now influences both:
+1. **Atmospheric scatter chains** — already used flow field, now uses `params.flowScale` instead of hardcoded 1.5
+2. **Curve-based chains** — draping direction lerped toward flow field by `flowInfluence`
+
+Key insight: `flowInfluence=0` at low coherence preserves backward compatibility.
+At midpoint (`coherence=0.5`), influence is 0.15 — very subtle.
+At max (`coherence=1.0`), influence is 0.35 with scale 0.5 — visible directional alignment.
+
+### Observations
+- Effect most visible at **low density + high fracture** (ghost params) where individual faces are large
+- At high density, additive blending still washes out directional structure
+- Prismatic palette reveals the effect well: aligned chains sample similar hue-field positions → color patches become coherent
+- Max influence of 0.35 is conservative; could push to 0.5+ for more drama
+- The effect gives coherence a genuine visual meaning it previously lacked
 
 ---
 
@@ -145,10 +179,146 @@ See `_notable_configs.json` for machine-readable versions.
 
 ---
 
+## Session 1 Summary (2026-02-27)
+
+### What was done
+1. Built `sampler.html` — standalone 8x8 parameter grid renderer for visual exploration
+2. Rendered 4 grid slices (density×fracture, coherence×density, luminosity×fracture, coherence×fracture)
+3. Rendered ~40 full-size captures at interesting parameter combinations and across palettes
+4. Measured flow field coherence across scales (0.3–12.0)
+5. Implemented flow field control: `flowScale` + `flowInfluence` derived from coherence
+6. Verified flow field effect via coherence sweep renders at ghost/prismatic/midpoint params
+
+### Key insight
+The parameter space has a "legibility frontier" — a boundary in (density, fracture, luminosity) space below which individual geometric elements are distinguishable and above which additive blending washes them into indistinct glow. The most aesthetically interesting renders live near this frontier: dense enough for richness, sparse enough for structure. The current parameter ranges allow too much travel into the "washed out" zone.
+
+### Files created
+- `sampler.html` — parameter space exploration tool
+- `sampler-captures/` — ~50 PNG renders + `_notable_configs.json` + this notes file
+
+### Files modified
+- `lib/types.ts` — added `flowScale`, `flowInfluence` to DerivedParams
+- `lib/core/params.ts` — derived from coherence
+- `lib/engine/demo/build-scene.ts` — flow field blended into curve chain orientation
+
+---
+
+## Session 2: v2 Parameter Adjustments (2026-02-27)
+
+### Changes Applied (by separate session)
+
+Three adjustments were applied to `lib/core/params.ts` and `lib/engine/demo/folding-chains.ts`:
+
+1. **Luminosity tightening**: `lumScale = cl(c.luminosity, 0.65, 1.0, 1.5)` — narrower range, midpoint preserved.
+2. **Density-aware opacity**:
+   - `faceDensityAtten = cl(c.density, 0.90, 1.0, 2.5)` — divides backLightFactor, illuminationCap, frontLightFactor
+   - `faceOpacityScale = cl(c.density, 1.0, 1.0, 0.45)` — applied in folding-chains.ts to face+edge opacity
+   - `bloomDensityAtten = cl(c.density, 1.0, 1.0, 1.8)` — divides bloomStrength
+3. **Stronger flow influence**: `flowInfluence = cl(c.coherence, 0.0, 0.18, 0.50)` (was 0.35 max)
+4. **Wider tendril opacity**: `primary: cl(c.coherence, 0.01, 0.06, 0.14)`, `other: cl(c.coherence, 0.005, 0.03, 0.08)`
+
+### v2 Verification Results
+
+**Luminosity extremes** (d=0.5, f=0.5, c=0.5):
+- `lum=0.0`: Structure clearly visible. lumScale=0.65 means 35% dimmer, not invisible. Rich, saturated colors.
+- `lum=1.0`: Bright but NOT blown out. Face edges and structure visible around the core. lumScale=1.5 is restrained.
+- **Assessment**: Usable range expanded from ~40% to ~80% of slider travel. The entire dark region (lum < 0.2) is now a viable creative space.
+
+**Density opacity compensation** (l=0.5, f=0.5, c=0.5):
+- `d=0.65 ("medium-readable")`: Face edges and sparkle dots visible through moderate density.
+- `d=0.86 ("nebula-v2")`: Dual-lobe form with visible face structure despite 912 nodes. Major improvement.
+- `d=1.0, l=1.0 ("worst-case")`: Was a solid white rectangle. Now shows visible structure with bright core and surrounding detail.
+- `all-max`: Still bright with dual lobes but not a solid white rectangle. sparkle dots visible.
+- **Assessment**: The legibility frontier has shifted significantly upward. Densities 0.5–0.8 that were previously indistinct glow now show readable structure.
+
+**Coherence effect at 0.50 influence** (d=0.35, f=0.65, l=0.40):
+- 5-step sweep (c=0.00, 0.25, 0.50, 0.75, 1.00) shows clear progressive change:
+  - c=0.00: Sharp angular faces pointing all directions, scattered
+  - c=0.25: Slightly more organized, faces beginning to align
+  - c=0.50: More unified mass, smoother haze
+  - c=0.75: Distinctly cohesive, rounded overall form
+  - c=1.00: Most unified — blobby, chains aligned, coherent mass
+- Biggest visual jumps at 0.0→0.25 and 0.50→0.75
+- **Assessment**: Coherence now has genuine perceptual impact across its full range. No longer the "invisible" axis.
+
+**Coherence × fracture interaction** (prismatic palette):
+- At f=0.90 (high fracture), coherence c=0→1 creates dramatic change: scattered multi-directional shards → aligned color regions
+- The aligned chains sample similar hue-field positions, creating coherent color patches
+- At f=0.30 (low fracture), coherence effect is subtler (compact form, less room for alignment to manifest)
+- **Assessment**: Coherence × fracture is now the most interesting interaction axis (was density × fracture before v2).
+
+### v2 Grid Comparisons
+
+Four 8×8 grids rendered with v2 params:
+
+1. **coherence × density**: Coherence axis now shows visible shape change (left=scattered, right=unified). Previous grid showed < 10% variation. High density cells not blown out.
+2. **density × fracture**: Top-right corner (high density, low fracture) no longer a white blob. Structure preserved throughout.
+3. **coherence × fracture**: More variation across the grid than v1. Coherence effect visible at all fracture levels. High fracture + high coherence = aligned directional shards.
+4. **luminosity × density**: Left column (lum=0) visible at all density levels. Right column (lum=1) not blown out. The full 2D space is now usable.
+
+### New Parameter Regions Discovered
+
+**"Dark mode" (lum=0)**:
+The params `d=0.20, f=0.70, l=0.0, c=0.50` are universally flattering across ALL palettes:
+- `dark-jewel` (prismatic): Rich saturated magenta/green/gold/purple. Individual faces and sparkle dots readable.
+- `dark-warm` (warm-spectrum): Amber/gold, like looking into warm amber.
+- `dark-teal` (teal-volumetric): Cool, icy, architectural. Face edges clearly visible.
+- `dark-sapphire` (sapphire): Deep blue with purple undertones. Elegant.
+- `dark-amethyst` (amethyst): Purple/rose tones. Classical.
+- `dark-crystal` (crystal-lattice): Near-monochrome/grayscale. Uniquely stark wireframe feel.
+
+Pre-v2, lum=0 was nearly invisible. The tightened range (lumScale=0.65 at min) creates enough light for rich, saturated rendering.
+
+**"Stained glass" (d=0.10, f=1.0, l=0.10, c=0.60, prismatic)**:
+Extreme fracture + minimal density + low lum = maximum color separation. Two distinct color centers (magenta left, gold right) with individually readable faces between them. The most color-separated render in the entire exploration.
+
+**"Aurora" (d=0.30, f=0.50, l=0.35, c=1.0)**:
+High coherence at medium params creates directional flow with dark geometric silhouettes in the foreground. Works beautifully on warm-spectrum (amber aurora) and teal-volumetric (icy aurora).
+
+**"Pure coherence" (d=0.0, f=0.0, l=0.50, c=1.0)**:
+Minimal geometry + maximum coherence = atmospheric nebula with visible tendrils. Sparkle dots scattered around a soft compact core. The flow influence gives structure to what would otherwise be an amorphous glow.
+
+### Updated Control Assessment
+
+| Control | v1 assessment | v2 assessment |
+|---------|--------------|---------------|
+| **density** | Dominant axis, blows out above 0.5 | Still dominant but usable across full range. faceOpacityScale preserves structure at high values. |
+| **fracture** | Most coherently designed | Unchanged — still the most coherent axis. |
+| **coherence** | Nearly invisible (~second-order) | **Genuinely visible** at 0.50 influence. Progressive change across full range. Creates color regionalization on prismatic. |
+| **luminosity** | Useful range ~40% of slider | Useful range ~80%. lum=0 is viable ("dark mode"). lum=1 doesn't blow out. |
+| **depth** | Pure camera/post-fx, no scene effect | Unchanged. |
+
+### Remaining Observations
+
+- Coherence effect strongest at low-to-medium density (d < 0.5). At high density, additive blending still dominates over alignment.
+- The flow influence could potentially be pushed further (0.60–0.70) — the effect at 0.50 is clearly visible but not overwhelming.
+- The color field (hue noise, scale=1.2) is still decorrelated from the flow field (scale=variable). Tracking them might strengthen the coherence→color regionalization effect.
+- Crystal-lattice palette becomes achromatic at low luminosity — intentional? Creates a unique monochrome aesthetic.
+- The "legibility frontier" has shifted upward by roughly +0.2 on the density axis and +0.3 on the luminosity axis.
+
+### Files Created (Session 2)
+- `sampler-captures/v2-grid-{coherence-density,density-fracture,coherence-fracture,luminosity-density}.png` — v2 comparison grids
+- `sampler-captures/v2-{prism-aligned,prism-ghost-aligned,medium-readable,nebula-v2,allmax-v2}.png` — v2 full-size renders
+- `sampler-captures/v2-frontier-{violet,prismatic,warm,teal,sapphire}.png` — legibility frontier across palettes
+- `sampler-captures/v2-{sweet-coh0,sweet-coh1,dark-jewel,bright-structured,pure-coherence}.png` — extremes
+- `sampler-captures/v2-{prism-chaos,prism-order,dense-chaotic,dense-aligned}.png` — coherence contrasts
+- `sampler-captures/v2-dark-{warm,teal,sapphire,violet,amethyst,crystal}.png` — dark mode palette sweep
+- `sampler-captures/v2-{stained-glass,aurora-warm,aurora-teal,constellation,constellation-aligned}.png` — new regions
+- `sampler-captures/v2-coh-sweep-{0.00,0.25,0.50,0.75,1.00}.png` — 5-step coherence progression
+
+---
+
 ## Ideas / Next Directions
 
-1. **Flow field as a control** — Expose scale, strength, and possibly type as user parameters
-2. **Retune parameter ranges** — Tighten luminosity, give coherence more perceptual range
-3. **Density-aware opacity** — Scale per-element opacity more aggressively with density to preserve legibility
-4. **SDF-coupled flow** — Derive chain orientation from envelope gradient for more geometric coherence
-5. **Sampler enhancements** — Add brightness histogram per cell, auto-find "interesting" parameter regions
+### Done (from Session 1 list)
+- ~~Retune parameter ranges~~ → Applied: luminosity tightened, density-aware opacity
+- ~~Push flow influence harder~~ → Applied: 0.35 → 0.50
+- ~~Density-aware opacity~~ → Applied: faceOpacityScale + faceDensityAtten + bloomDensityAtten
+
+### Open
+1. **Push flow influence to 0.60–0.70** — Current 0.50 is clearly visible but not overwhelming. More influence could create stronger directional "currents" in the geometry.
+2. **Color field tracking** — Link hue noise scale to flowScale so aligned chains also produce coherent color patches. Currently decorrelated (flow=variable, hue=fixed 1.2). Would strengthen the coherence→color regionalization effect observed on prismatic.
+3. **SDF-coupled flow** — Derive chain orientation from envelope gradient for geometric coherence (instead of random noise). Would create radial/tangential flow patterns tied to the form rather than arbitrary noise directions.
+4. **Coherence × density compensation** — Coherence effect fades at high density due to additive blending. Could scale flow influence up with density to compensate.
+5. **Sampler enhancements** — Brightness histogram per cell, auto-detect "interesting" regions, A/B comparison mode, animation preview (morph between cells)
+6. **Explore depth axis** — Currently unexplored in this session. Camera distance + FOV + vignette change the framing significantly. Worth a dedicated depth sweep.

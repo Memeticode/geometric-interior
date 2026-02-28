@@ -8,7 +8,7 @@ import { envelopeSDF } from './envelope.js';
 import { generateAllGuideCurves, sampleAlongCurve, drapingDirection } from './guide-curves.js';
 import { createAccumulators, createFoldingChain } from './folding-chains.js';
 import { generateDots, createGlowTexture } from './dots.js';
-import { flowFieldNormal, colorFieldHue } from './flow-field.js';
+import { compositeFlowField, colorFieldHue } from './flow-field.js';
 import {
     createDemoFaceMaterial,
     createDemoEdgeMaterial,
@@ -18,9 +18,10 @@ import type { DerivedParams, SceneBuildResult } from '../../types.js';
 
 export function buildDemoScene(params: DerivedParams, rng: () => number, scene: THREE.Scene, glowTexture?: THREE.Texture): SceneBuildResult {
     const envelopeRadii = new THREE.Vector3(...params.envelopeRadii);
+    const div = params.divisionParams;
 
     // 1. Generate guide curves
-    const guideCurves = generateAllGuideCurves(params.curveConfig, rng, envelopeRadii);
+    const guideCurves = generateAllGuideCurves(params.curveConfig, rng, envelopeRadii, div);
 
     // 2. Generate dots
     const dotResult = generateDots(params.dotConfig, guideCurves, envelopeRadii, rng);
@@ -93,6 +94,12 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
         edgeOpacityBase: params.edgeOpacityBase,
         edgeOpacityFadeScale: params.edgeOpacityFadeScale,
         crackExtendScale: params.crackExtendScale,
+        faceOpacityScale: params.faceOpacityScale,
+        quadProbability: params.facetingParams.quadProbability,
+        dihedralBase: params.facetingParams.dihedralBase,
+        dihedralRange: params.facetingParams.dihedralRange,
+        contractionBase: params.facetingParams.contractionBase,
+        contractionRange: params.facetingParams.contractionRange,
     };
 
     const tierChainConfig: Record<string, { chainLen: () => number; scale: () => number; spread: number; dualProb: number; spacing: number }> = {};
@@ -109,15 +116,15 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
     for (const curve of guideCurves) {
         const config = tierChainConfig[curve.tier];
         if (!config) continue;
-        const samples = sampleAlongCurve(curve, config.spacing, envelopeRadii);
+        const samples = sampleAlongCurve(curve, config.spacing, envelopeRadii, div);
 
         for (const sample of samples) {
             let dir1 = drapingDirection(sample, config.spread, rng);
             if (params.flowInfluence > 0) {
-                const flow = flowFieldNormal(sample.pos, params.flowScale);
+                const flow = compositeFlowField(sample.pos, params.flowScale, params.flowType);
                 dir1.lerp(flow, params.flowInfluence).normalize();
             }
-            const familyHue = colorFieldHue(sample.pos, 1.2, params.baseHue, params.hueRange)
+            const familyHue = colorFieldHue(sample.pos, params.colorFieldScale, params.baseHue, params.hueRange)
                 + (rng() - 0.5) * 30;
             const chainLen = config.chainLen();
             const planeScale = config.scale();
@@ -131,7 +138,7 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
                 const flippedSample = { ...sample, binormal: flippedBinormal };
                 let dir2 = drapingDirection(flippedSample, config.spread, rng);
                 if (params.flowInfluence > 0) {
-                    const flow = flowFieldNormal(sample.pos, params.flowScale);
+                    const flow = compositeFlowField(sample.pos, params.flowScale, params.flowType);
                     dir2.lerp(flow, params.flowInfluence).normalize();
                 }
                 createFoldingChain(accum, sample.pos, chainLen, planeScale,
@@ -152,9 +159,9 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
                 gaussianRandom(rng, 0, 0.5)
             );
             attempts++;
-        } while (envelopeSDF(pos, envelopeRadii) > -0.1 && attempts < 50);
-        const flowNorm = flowFieldNormal(pos, params.flowScale);
-        const familyHue = colorFieldHue(pos, 1.2, params.baseHue, params.hueRange)
+        } while (envelopeSDF(pos, envelopeRadii, div) > -0.1 && attempts < 50);
+        const flowNorm = compositeFlowField(pos, params.flowScale, params.flowType);
+        const familyHue = colorFieldHue(pos, params.colorFieldScale, params.baseHue, params.hueRange)
             + (rng() - 0.5) * 40;
         const planeScale = 0.5 + rng() * 0.3;
         const chainLen = 3 + Math.floor(rng() * 2);

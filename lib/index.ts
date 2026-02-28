@@ -1,8 +1,6 @@
 // Types
 export type {
     Controls,
-    PaletteTweaks,
-    PaletteKey,
     PaletteData,
     StillConfig,
     RenderMeta,
@@ -33,7 +31,7 @@ export { validateStillConfig, configToProfile, profileToConfig } from './core/co
 export { deriveParams } from './core/params.js';
 
 // Palettes
-export { PALETTE_KEYS, PALETTES, PALETTE_DEFAULTS, getPalette, getPaletteDefaults, resetPalette, updatePalette, updateCustomPalette, customPalette, deriveCustomColors } from './core/palettes.js';
+export { PALETTES, PRESETS, hslToRgb01 } from './core/palettes.js';
 
 // Text generation
 export { generateTitle, generateAltText, generateAnimAltText } from './core/text.js';
