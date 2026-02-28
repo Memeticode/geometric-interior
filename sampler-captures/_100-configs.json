@@ -1,0 +1,1012 @@
+[
+  {
+    "name": "Violet Sanctum",
+    "category": "profile",
+    "notes": "Classic anchor — the familiar violet dual-lobe, all new dims at defaults",
+    "controls": {
+      "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75,
+      "hue": 0.744, "spectrum": 0.316, "chroma": 0.458,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Amber Starburst",
+    "category": "profile",
+    "notes": "Warm golden radial emanation. Showcases flow=0 (radial) + high coherence",
+    "controls": {
+      "density": 0.07, "luminosity": 0.48, "fracture": 0.55, "coherence": 0.88,
+      "hue": 0.06, "spectrum": 0.22, "chroma": 0.90,
+      "scale": 0.45, "division": 0.45, "faceting": 0.5, "flow": 0.0
+    }
+  },
+  {
+    "name": "Teal Orbital",
+    "category": "profile",
+    "notes": "Cool teal with wrapping orbital flow. Showcases flow=1",
+    "controls": {
+      "density": 0.08, "luminosity": 0.42, "fracture": 0.42, "coherence": 0.80,
+      "hue": 0.51, "spectrum": 0.21, "chroma": 0.58,
+      "scale": 0.55, "division": 0.5, "faceting": 0.5, "flow": 1.0
+    }
+  },
+  {
+    "name": "Sapphire Shards",
+    "category": "profile",
+    "notes": "Blue-violet angular geometry with orbital flow. Showcases faceting=0.8 + flow=0.8",
+    "controls": {
+      "density": 0.07, "luminosity": 0.50, "fracture": 0.55, "coherence": 0.80,
+      "hue": 0.625, "spectrum": 0.28, "chroma": 0.82,
+      "scale": 0.5, "division": 0.5, "faceting": 0.80, "flow": 0.80
+    }
+  },
+  {
+    "name": "Emerald Radiance",
+    "category": "profile",
+    "notes": "Green with subtle radial quality. Showcases green hue + gentle flow=0.18",
+    "controls": {
+      "density": 0.06, "luminosity": 0.48, "fracture": 0.52, "coherence": 0.82,
+      "hue": 0.375, "spectrum": 0.28, "chroma": 0.70,
+      "scale": 0.42, "division": 0.45, "faceting": 0.5, "flow": 0.18
+    }
+  },
+  {
+    "name": "Prismatic Scatter",
+    "category": "profile",
+    "notes": "Full-spectrum scattered shards — stained glass effect. Showcases spectrum + fracture",
+    "controls": {
+      "density": 0.07, "luminosity": 0.45, "fracture": 0.85, "coherence": 0.50,
+      "hue": 0.85, "spectrum": 0.70, "chroma": 0.55,
+      "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5
+    }
+  },
+  {
+    "name": "Prismatic Trifold",
+    "category": "profile",
+    "notes": "Multi-color triple-lobe structure. Showcases division=0.9 + spectrum=0.85",
+    "controls": {
+      "density": 0.08, "luminosity": 0.42, "fracture": 0.60, "coherence": 0.60,
+      "hue": 0.5, "spectrum": 0.85, "chroma": 0.70,
+      "scale": 0.55, "division": 0.90, "faceting": 0.55, "flow": 0.5
+    }
+  },
+  {
+    "name": "Dark Ruby Divide",
+    "category": "profile",
+    "notes": "Deep warm ruby with triple-lobe topology. Showcases division=0.85 + dark mood",
+    "controls": {
+      "density": 0.15, "luminosity": 0.30, "fracture": 0.60, "coherence": 0.55,
+      "hue": 0.986, "spectrum": 0.30, "chroma": 0.60,
+      "scale": 0.5, "division": 0.85, "faceting": 0.6, "flow": 0.5
+    }
+  },
+  {
+    "name": "Rose Nebula",
+    "category": "profile",
+    "notes": "Pink atmospheric with many small particles. Showcases scale=0.75 (atmospheric)",
+    "controls": {
+      "density": 0.12, "luminosity": 0.55, "fracture": 0.50, "coherence": 0.72,
+      "hue": 0.94, "spectrum": 0.30, "chroma": 0.50,
+      "scale": 0.75, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Ice Crystal",
+    "category": "profile",
+    "notes": "Achromatic sharp geometry — pure structure, no color. Showcases chroma~0 + faceting=0.85",
+    "controls": {
+      "density": 0.05, "luminosity": 0.55, "fracture": 0.25, "coherence": 0.85,
+      "hue": 0.55, "spectrum": 0.05, "chroma": 0.08,
+      "scale": 0.35, "division": 0.50, "faceting": 0.85, "flow": 0.5
+    }
+  },
+
+  {
+    "name": "Ember Drift",
+    "category": "exploration",
+    "notes": "Warm atmospheric with orbital flow — sunset quality. Warm+orbital is rare combo",
+    "controls": {
+      "density": 0.14, "luminosity": 0.38, "fracture": 0.60, "coherence": 0.62,
+      "hue": 0.04, "spectrum": 0.30, "chroma": 0.80,
+      "scale": 0.72, "division": 0.50, "faceting": 0.55, "flow": 0.80
+    }
+  },
+  {
+    "name": "Stardust",
+    "category": "exploration",
+    "notes": "Dark amethyst atmospheric scatter — many tiny particles, moody",
+    "controls": {
+      "density": 0.10, "luminosity": 0.45, "fracture": 0.65, "coherence": 0.55,
+      "hue": 0.867, "spectrum": 0.35, "chroma": 0.45,
+      "scale": 0.85, "division": 0.50, "faceting": 0.50, "flow": 0.5
+    }
+  },
+  {
+    "name": "Midnight Trifold",
+    "category": "exploration",
+    "notes": "Dark triple-lobe with atmospheric scale — moodier alternative to Prismatic Trifold",
+    "controls": {
+      "density": 0.14, "luminosity": 0.35, "fracture": 0.55, "coherence": 0.65,
+      "hue": 0.70, "spectrum": 0.35, "chroma": 0.40,
+      "scale": 0.70, "division": 0.95, "faceting": 0.55, "flow": 0.5
+    }
+  },
+  {
+    "name": "Monolith",
+    "category": "exploration",
+    "notes": "Concentrated single-lobe, monumental, radial — a glowing gemstone",
+    "controls": {
+      "density": 0.05, "luminosity": 0.35, "fracture": 0.30, "coherence": 0.85,
+      "hue": 0.783, "spectrum": 0.15, "chroma": 0.40,
+      "scale": 0.15, "division": 0.10, "faceting": 0.30, "flow": 0.0
+    }
+  },
+  {
+    "name": "Solar Forge",
+    "category": "exploration",
+    "notes": "Warm monumental single-lobe with radial flow — concentrated golden energy",
+    "controls": {
+      "density": 0.08, "luminosity": 0.40, "fracture": 0.42, "coherence": 0.80,
+      "hue": 0.08, "spectrum": 0.25, "chroma": 0.88,
+      "scale": 0.20, "division": 0.20, "faceting": 0.25, "flow": 0.05
+    }
+  },
+  {
+    "name": "Amethyst Spirals",
+    "category": "exploration",
+    "notes": "Purple with high faceting and near-orbital flow — angular wrapping shards",
+    "controls": {
+      "density": 0.08, "luminosity": 0.52, "fracture": 0.45, "coherence": 0.82,
+      "hue": 0.867, "spectrum": 0.27, "chroma": 0.50,
+      "scale": 0.55, "division": 0.5, "faceting": 0.75, "flow": 0.85
+    }
+  },
+  {
+    "name": "Crystal Constellation",
+    "category": "exploration",
+    "notes": "Achromatic, very sparse, very fractured, sharp — scattered geometric stars",
+    "controls": {
+      "density": 0.04, "luminosity": 0.50, "fracture": 0.90, "coherence": 0.30,
+      "hue": 0.586, "spectrum": 0.0, "chroma": 0.0,
+      "scale": 0.5, "division": 0.5, "faceting": 1.0, "flow": 0.5
+    }
+  },
+  {
+    "name": "Nebular Rings",
+    "category": "exploration",
+    "notes": "Teal atmospheric triple-lobe with orbital flow — banded nebula",
+    "controls": {
+      "density": 0.18, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.80,
+      "hue": 0.51, "spectrum": 0.25, "chroma": 0.58,
+      "scale": 1.0, "division": 1.0, "faceting": 0.55, "flow": 1.0
+    }
+  },
+  {
+    "name": "Crystal Bands",
+    "category": "exploration",
+    "notes": "Sapphire angular shards with strong orbital flow — blue directional crystal",
+    "controls": {
+      "density": 0.10, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.90,
+      "hue": 0.625, "spectrum": 0.24, "chroma": 0.86,
+      "scale": 0.5, "division": 0.5, "faceting": 0.85, "flow": 1.0
+    }
+  },
+  {
+    "name": "Warm Divide",
+    "category": "exploration",
+    "notes": "Warm amber triple-lobe — golden trifurcation",
+    "controls": {
+      "density": 0.09, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.68,
+      "hue": 0.06, "spectrum": 0.25, "chroma": 0.85,
+      "scale": 0.50, "division": 0.85, "faceting": 0.55, "flow": 0.5
+    }
+  },
+
+  {
+    "name": "Radial Bloom",
+    "category": "exploration",
+    "notes": "High coherence + radial flow + moderate density — starburst with visible rays",
+    "controls": {
+      "density": 0.12, "luminosity": 0.50, "fracture": 0.50, "coherence": 0.95,
+      "hue": 0.783, "spectrum": 0.24, "chroma": 0.50,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0
+    }
+  },
+  {
+    "name": "Orbital Veil",
+    "category": "exploration",
+    "notes": "High coherence + orbital + broad panels — smooth wrapping veils of light",
+    "controls": {
+      "density": 0.10, "luminosity": 0.48, "fracture": 0.40, "coherence": 0.90,
+      "hue": 0.744, "spectrum": 0.20, "chroma": 0.45,
+      "scale": 0.5, "division": 0.5, "faceting": 0.15, "flow": 1.0
+    }
+  },
+  {
+    "name": "Teal Cathedral",
+    "category": "exploration",
+    "notes": "Classic structure in teal — counterpart to Violet Sanctum",
+    "controls": {
+      "density": 0.07, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.78,
+      "hue": 0.51, "spectrum": 0.25, "chroma": 0.60,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Citrine Glow",
+    "category": "exploration",
+    "notes": "Yellow-amber, moderate everything — warm midpoint",
+    "controls": {
+      "density": 0.07, "luminosity": 0.52, "fracture": 0.50, "coherence": 0.72,
+      "hue": 0.12, "spectrum": 0.28, "chroma": 0.75,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Deep Violet",
+    "category": "exploration",
+    "notes": "The violet depth palette recreated — dark, compact, rich saturation",
+    "controls": {
+      "density": 0.06, "luminosity": 0.35, "fracture": 0.35, "coherence": 0.80,
+      "hue": 0.783, "spectrum": 0.24, "chroma": 0.53,
+      "scale": 0.45, "division": 0.5, "faceting": 0.45, "flow": 0.5
+    }
+  },
+  {
+    "name": "Magenta Fracture",
+    "category": "exploration",
+    "notes": "Vivid magenta, high fracture — scattered hot pink shards",
+    "controls": {
+      "density": 0.08, "luminosity": 0.45, "fracture": 0.90, "coherence": 0.40,
+      "hue": 0.92, "spectrum": 0.20, "chroma": 0.88,
+      "scale": 0.5, "division": 0.5, "faceting": 0.65, "flow": 0.5
+    }
+  },
+  {
+    "name": "Verdant Stream",
+    "category": "exploration",
+    "notes": "Green with high coherence — flowing emerald river (from original profiles)",
+    "controls": {
+      "density": 0.05, "luminosity": 0.70, "fracture": 0.61, "coherence": 0.87,
+      "hue": 0.375, "spectrum": 0.351, "chroma": 0.686,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Coral Breath",
+    "category": "exploration",
+    "notes": "Warm coral/salmon with moderate coherence (from original profiles)",
+    "controls": {
+      "density": 0.05, "luminosity": 0.65, "fracture": 0.50, "coherence": 0.75,
+      "hue": 0.042, "spectrum": 0.338, "chroma": 0.600,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Sapphire Lattice",
+    "category": "exploration",
+    "notes": "Deep blue with very high coherence and low fracture (from original profiles)",
+    "controls": {
+      "density": 0.03, "luminosity": 0.80, "fracture": 0.20, "coherence": 0.95,
+      "hue": 0.556, "spectrum": 0.239, "chroma": 0.417,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Spectral Drift",
+    "category": "exploration",
+    "notes": "Warm prismatic with moderate everything (from original profiles)",
+    "controls": {
+      "density": 0.12, "luminosity": 0.50, "fracture": 0.60, "coherence": 0.55,
+      "hue": 0.083, "spectrum": 0.697, "chroma": 0.643,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+
+  {
+    "name": "Singularity",
+    "category": "exploration",
+    "notes": "Extreme concentration — single lobe, monumental, radial, sparse",
+    "controls": {
+      "density": 0.04, "luminosity": 0.32, "fracture": 0.20, "coherence": 0.90,
+      "hue": 0.783, "spectrum": 0.15, "chroma": 0.45,
+      "scale": 0.0, "division": 0.0, "faceting": 0.3, "flow": 0.0
+    }
+  },
+  {
+    "name": "Particle Cloud",
+    "category": "exploration",
+    "notes": "Maximum atmospheric — scale=1, high density, many tiny elements",
+    "controls": {
+      "density": 0.20, "luminosity": 0.42, "fracture": 0.55, "coherence": 0.60,
+      "hue": 0.70, "spectrum": 0.30, "chroma": 0.45,
+      "scale": 1.0, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Blade Garden",
+    "category": "exploration",
+    "notes": "Max faceting + moderate fracture — tight angular spirals everywhere",
+    "controls": {
+      "density": 0.08, "luminosity": 0.50, "fracture": 0.55, "coherence": 0.70,
+      "hue": 0.625, "spectrum": 0.25, "chroma": 0.75,
+      "scale": 0.5, "division": 0.5, "faceting": 1.0, "flow": 0.5
+    }
+  },
+  {
+    "name": "Silk Panels",
+    "category": "exploration",
+    "notes": "Min faceting — all broad quads, gentle folds. Smooth/architectural feel",
+    "controls": {
+      "density": 0.08, "luminosity": 0.52, "fracture": 0.45, "coherence": 0.75,
+      "hue": 0.867, "spectrum": 0.25, "chroma": 0.50,
+      "scale": 0.5, "division": 0.5, "faceting": 0.0, "flow": 0.5
+    }
+  },
+  {
+    "name": "Triple Crown",
+    "category": "exploration",
+    "notes": "Max division with high coherence — clean three-lobe separation",
+    "controls": {
+      "density": 0.10, "luminosity": 0.48, "fracture": 0.45, "coherence": 0.80,
+      "hue": 0.783, "spectrum": 0.24, "chroma": 0.50,
+      "scale": 0.5, "division": 1.0, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Unity",
+    "category": "exploration",
+    "notes": "Division=0, low fracture — single unified orb, no bifurcation at all",
+    "controls": {
+      "density": 0.07, "luminosity": 0.50, "fracture": 0.20, "coherence": 0.80,
+      "hue": 0.51, "spectrum": 0.20, "chroma": 0.55,
+      "scale": 0.5, "division": 0.0, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Emerald Orbit",
+    "category": "exploration",
+    "notes": "Green + orbital flow + high coherence — wrapping emerald bands",
+    "controls": {
+      "density": 0.08, "luminosity": 0.48, "fracture": 0.45, "coherence": 0.88,
+      "hue": 0.375, "spectrum": 0.25, "chroma": 0.72,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 1.0
+    }
+  },
+  {
+    "name": "Dark Prism",
+    "category": "exploration",
+    "notes": "Full prismatic at very low luminosity — dark rainbow",
+    "controls": {
+      "density": 0.10, "luminosity": 0.20, "fracture": 0.65, "coherence": 0.50,
+      "hue": 0.50, "spectrum": 1.0, "chroma": 0.80,
+      "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5
+    }
+  },
+  {
+    "name": "White Lotus",
+    "category": "exploration",
+    "notes": "Very low chroma + high luminosity — bright near-white glow, ethereal",
+    "controls": {
+      "density": 0.06, "luminosity": 0.72, "fracture": 0.35, "coherence": 0.78,
+      "hue": 0.55, "spectrum": 0.10, "chroma": 0.05,
+      "scale": 0.45, "division": 0.5, "faceting": 0.4, "flow": 0.5
+    }
+  },
+  {
+    "name": "Ruby Starburst",
+    "category": "exploration",
+    "notes": "Deep red + radial flow + high coherence — red star emanation",
+    "controls": {
+      "density": 0.08, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.90,
+      "hue": 0.0, "spectrum": 0.20, "chroma": 0.85,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0
+    }
+  },
+  {
+    "name": "Violet Drift",
+    "category": "exploration",
+    "notes": "Violet + atmospheric + orbital — purple particle flow",
+    "controls": {
+      "density": 0.12, "luminosity": 0.45, "fracture": 0.55, "coherence": 0.70,
+      "hue": 0.783, "spectrum": 0.28, "chroma": 0.50,
+      "scale": 0.80, "division": 0.5, "faceting": 0.5, "flow": 0.85
+    }
+  },
+  {
+    "name": "Teal Shards",
+    "category": "exploration",
+    "notes": "Teal + high faceting + moderate fracture — angular cool crystals",
+    "controls": {
+      "density": 0.07, "luminosity": 0.50, "fracture": 0.60, "coherence": 0.72,
+      "hue": 0.51, "spectrum": 0.22, "chroma": 0.62,
+      "scale": 0.5, "division": 0.5, "faceting": 0.90, "flow": 0.5
+    }
+  },
+  {
+    "name": "Golden Divide",
+    "category": "exploration",
+    "notes": "Warm amber with triple lobe — three golden cores",
+    "controls": {
+      "density": 0.10, "luminosity": 0.42, "fracture": 0.50, "coherence": 0.70,
+      "hue": 0.08, "spectrum": 0.22, "chroma": 0.88,
+      "scale": 0.5, "division": 0.90, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Frost Nebula",
+    "category": "exploration",
+    "notes": "Very low chroma, atmospheric, scattered — icy particle cloud",
+    "controls": {
+      "density": 0.15, "luminosity": 0.45, "fracture": 0.60, "coherence": 0.55,
+      "hue": 0.58, "spectrum": 0.08, "chroma": 0.10,
+      "scale": 0.80, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Radiant Emerald Divide",
+    "category": "exploration",
+    "notes": "Green + triple lobe + radial flow — three emanating green cores",
+    "controls": {
+      "density": 0.09, "luminosity": 0.45, "fracture": 0.48, "coherence": 0.82,
+      "hue": 0.375, "spectrum": 0.25, "chroma": 0.72,
+      "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.10
+    }
+  },
+  {
+    "name": "Compact Sapphire",
+    "category": "exploration",
+    "notes": "Sapphire + monumental scale + low fracture — bold concentrated blue",
+    "controls": {
+      "density": 0.06, "luminosity": 0.40, "fracture": 0.25, "coherence": 0.85,
+      "hue": 0.625, "spectrum": 0.20, "chroma": 0.85,
+      "scale": 0.20, "division": 0.5, "faceting": 0.40, "flow": 0.5
+    }
+  },
+  {
+    "name": "Chaos Field",
+    "category": "exploration",
+    "notes": "Max fracture + min coherence + prismatic — complete disorder",
+    "controls": {
+      "density": 0.10, "luminosity": 0.42, "fracture": 1.0, "coherence": 0.0,
+      "hue": 0.5, "spectrum": 0.80, "chroma": 0.65,
+      "scale": 0.5, "division": 0.5, "faceting": 0.65, "flow": 0.5
+    }
+  },
+  {
+    "name": "Perfect Order",
+    "category": "exploration",
+    "notes": "Min fracture + max coherence + monochrome — maximum crystalline organization",
+    "controls": {
+      "density": 0.08, "luminosity": 0.55, "fracture": 0.0, "coherence": 1.0,
+      "hue": 0.625, "spectrum": 0.10, "chroma": 0.70,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Dense Prismatic",
+    "category": "exploration",
+    "notes": "High density + full prismatic — maximum color and abundance",
+    "controls": {
+      "density": 0.25, "luminosity": 0.38, "fracture": 0.55, "coherence": 0.60,
+      "hue": 0.5, "spectrum": 1.0, "chroma": 1.0,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Sparse Ember",
+    "category": "exploration",
+    "notes": "Very sparse warm — just a few bold amber forms in darkness",
+    "controls": {
+      "density": 0.02, "luminosity": 0.50, "fracture": 0.40, "coherence": 0.75,
+      "hue": 0.06, "spectrum": 0.20, "chroma": 0.85,
+      "scale": 0.30, "division": 0.5, "faceting": 0.45, "flow": 0.5
+    }
+  },
+  {
+    "name": "Orbital Prism",
+    "category": "exploration",
+    "notes": "Prismatic + orbital flow + high coherence — rainbow bands wrapping the form",
+    "controls": {
+      "density": 0.10, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.88,
+      "hue": 0.5, "spectrum": 0.80, "chroma": 0.75,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 1.0
+    }
+  },
+
+  {
+    "name": "Daffodil Haze",
+    "category": "hue-fill",
+    "notes": "Pure yellow — entirely absent from existing palette. Moderate chroma to avoid green tinting.",
+    "controls": {
+      "density": 0.07, "luminosity": 0.50, "fracture": 0.50, "coherence": 0.75,
+      "hue": 0.17, "spectrum": 0.22, "chroma": 0.80,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Sunlit Fracture",
+    "category": "hue-fill",
+    "notes": "Yellow-gold with high fracture — scattered angular shards in warm yellow.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.45, "fracture": 0.80, "coherence": 0.55,
+      "hue": 0.19, "spectrum": 0.30, "chroma": 0.85,
+      "scale": 0.5, "division": 0.5, "faceting": 0.70, "flow": 0.5
+    }
+  },
+  {
+    "name": "Chartreuse Bloom",
+    "category": "hue-fill",
+    "notes": "Yellow-green chartreuse with radial flow — emanating lime rays.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.48, "fracture": 0.50, "coherence": 0.85,
+      "hue": 0.28, "spectrum": 0.24, "chroma": 0.75,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0
+    }
+  },
+  {
+    "name": "Lime Veil",
+    "category": "hue-fill",
+    "notes": "Spring green between chartreuse and emerald. Orbital flow for wrapping bands, atmospheric scale.",
+    "controls": {
+      "density": 0.10, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.78,
+      "hue": 0.33, "spectrum": 0.25, "chroma": 0.68,
+      "scale": 0.65, "division": 0.5, "faceting": 0.45, "flow": 0.85
+    }
+  },
+  {
+    "name": "Turquoise Depth",
+    "category": "hue-fill",
+    "notes": "True turquoise between emerald and teal. Darker mood, low density.",
+    "controls": {
+      "density": 0.06, "luminosity": 0.38, "fracture": 0.40, "coherence": 0.82,
+      "hue": 0.44, "spectrum": 0.20, "chroma": 0.70,
+      "scale": 0.45, "division": 0.5, "faceting": 0.50, "flow": 0.5
+    }
+  },
+  {
+    "name": "Aquamarine Scatter",
+    "category": "hue-fill",
+    "notes": "Bright aquamarine with high fracture — dispersed blue-green geometry.",
+    "controls": {
+      "density": 0.07, "luminosity": 0.55, "fracture": 0.75, "coherence": 0.60,
+      "hue": 0.47, "spectrum": 0.28, "chroma": 0.65,
+      "scale": 0.5, "division": 0.5, "faceting": 0.65, "flow": 0.5
+    }
+  },
+  {
+    "name": "Indigo Sanctum",
+    "category": "hue-fill",
+    "notes": "True indigo between sapphire and violet. Classic structure for direct hue comparison.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.78,
+      "hue": 0.66, "spectrum": 0.25, "chroma": 0.60,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Indigo Monolith",
+    "category": "hue-fill",
+    "notes": "Deep indigo at monumental scale — compact, concentrated. Low lum for monumental safety.",
+    "controls": {
+      "density": 0.06, "luminosity": 0.38, "fracture": 0.30, "coherence": 0.88,
+      "hue": 0.68, "spectrum": 0.18, "chroma": 0.72,
+      "scale": 0.15, "division": 0.3, "faceting": 0.35, "flow": 0.5
+    }
+  },
+
+  {
+    "name": "Amber Crosswind",
+    "category": "flow-midrange",
+    "notes": "Flow=0.30: mostly radial with noise perturbation. Warm amber rays with turbulence.",
+    "controls": {
+      "density": 0.07, "luminosity": 0.48, "fracture": 0.55, "coherence": 0.85,
+      "hue": 0.06, "spectrum": 0.22, "chroma": 0.88,
+      "scale": 0.45, "division": 0.45, "faceting": 0.5, "flow": 0.30
+    }
+  },
+  {
+    "name": "Violet Turbulence",
+    "category": "flow-midrange",
+    "notes": "Flow=0.35: radial structure breaking into noise. Compare to Radial Bloom (0.0) and Violet Sanctum (0.5).",
+    "controls": {
+      "density": 0.10, "luminosity": 0.50, "fracture": 0.50, "coherence": 0.80,
+      "hue": 0.783, "spectrum": 0.24, "chroma": 0.50,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.35
+    }
+  },
+  {
+    "name": "Teal Eddy",
+    "category": "flow-midrange",
+    "notes": "Flow=0.40: nearly equal radial and noise. Teal hue for comparison series.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.78,
+      "hue": 0.51, "spectrum": 0.22, "chroma": 0.60,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.40
+    }
+  },
+  {
+    "name": "Emerald Breeze",
+    "category": "flow-midrange",
+    "notes": "Flow=0.35 + atmospheric scale. Tests flow mid-range at non-default scale.",
+    "controls": {
+      "density": 0.12, "luminosity": 0.48, "fracture": 0.50, "coherence": 0.72,
+      "hue": 0.375, "spectrum": 0.28, "chroma": 0.68,
+      "scale": 0.75, "division": 0.5, "faceting": 0.5, "flow": 0.35
+    }
+  },
+  {
+    "name": "Rose Updraft",
+    "category": "flow-midrange",
+    "notes": "Flow=0.28: mostly radial with gentle noise perturbation. Rose pink.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.82,
+      "hue": 0.94, "spectrum": 0.25, "chroma": 0.55,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.28
+    }
+  },
+  {
+    "name": "Sapphire Gust",
+    "category": "flow-midrange",
+    "notes": "Flow=0.42 + faceting=0.85. Sharp shards in mixed radial-noise flow.",
+    "controls": {
+      "density": 0.07, "luminosity": 0.50, "fracture": 0.55, "coherence": 0.80,
+      "hue": 0.625, "spectrum": 0.25, "chroma": 0.82,
+      "scale": 0.5, "division": 0.5, "faceting": 0.85, "flow": 0.42
+    }
+  },
+  {
+    "name": "Prismatic Gale",
+    "category": "flow-midrange",
+    "notes": "Flow=0.38 + spectrum=0.75. Radial-noise blend with rainbow colors.",
+    "controls": {
+      "density": 0.09, "luminosity": 0.45, "fracture": 0.60, "coherence": 0.65,
+      "hue": 0.50, "spectrum": 0.75, "chroma": 0.70,
+      "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.38
+    }
+  },
+
+  {
+    "name": "Monumental Trifold",
+    "category": "three-way",
+    "notes": "Concentrated monumental form with three lobes. Broad panels, teal hue. Low lum for monumental.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.28, "fracture": 0.50, "coherence": 0.82,
+      "hue": 0.51, "spectrum": 0.22, "chroma": 0.60,
+      "scale": 0.10, "division": 0.85, "faceting": 0.30, "flow": 0.5
+    }
+  },
+  {
+    "name": "Atmospheric Blades",
+    "category": "three-way",
+    "notes": "Many tiny sharp shards — atmospheric scale + extreme faceting. A crystalline particle field.",
+    "controls": {
+      "density": 0.14, "luminosity": 0.45, "fracture": 0.55, "coherence": 0.65,
+      "hue": 0.783, "spectrum": 0.28, "chroma": 0.50,
+      "scale": 0.90, "division": 0.5, "faceting": 0.95, "flow": 0.5
+    }
+  },
+  {
+    "name": "Grand Bifurcation",
+    "category": "three-way",
+    "notes": "Division=0.35: onset of lobe separation at monumental scale. Two nascent fat lobes. Fills division 0.25-0.45 gap.",
+    "controls": {
+      "density": 0.07, "luminosity": 0.30, "fracture": 0.50, "coherence": 0.80,
+      "hue": 0.867, "spectrum": 0.25, "chroma": 0.50,
+      "scale": 0.15, "division": 0.35, "faceting": 0.50, "flow": 0.5
+    }
+  },
+  {
+    "name": "Split Nebula",
+    "category": "three-way",
+    "notes": "Atmospheric cloud just beginning to split into two lobes with radial-noise flow. Three underexplored dims.",
+    "controls": {
+      "density": 0.14, "luminosity": 0.42, "fracture": 0.55, "coherence": 0.65,
+      "hue": 0.70, "spectrum": 0.30, "chroma": 0.45,
+      "scale": 0.85, "division": 0.40, "faceting": 0.50, "flow": 0.35
+    }
+  },
+  {
+    "name": "Silk Triptych",
+    "category": "three-way",
+    "notes": "Three smooth lobes of broad quad panels — faceting=0 + division=0.9. Elegant draped forms.",
+    "controls": {
+      "density": 0.09, "luminosity": 0.48, "fracture": 0.45, "coherence": 0.78,
+      "hue": 0.94, "spectrum": 0.25, "chroma": 0.50,
+      "scale": 0.60, "division": 0.90, "faceting": 0.0, "flow": 0.5
+    }
+  },
+  {
+    "name": "Orbital Blades Trifold",
+    "category": "three-way",
+    "notes": "Sharp angular shards wrapping in orbital bands across three lobes. Most extreme three-way structural combo.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.48, "fracture": 0.50, "coherence": 0.85,
+      "hue": 0.625, "spectrum": 0.24, "chroma": 0.80,
+      "scale": 0.5, "division": 0.85, "faceting": 0.90, "flow": 1.0
+    }
+  },
+  {
+    "name": "Compact Crystal Garden",
+    "category": "three-way",
+    "notes": "Concentrated monumental + max sharpness + radial emanation. Like a geode viewed from inside.",
+    "controls": {
+      "density": 0.06, "luminosity": 0.38, "fracture": 0.45, "coherence": 0.88,
+      "hue": 0.867, "spectrum": 0.20, "chroma": 0.55,
+      "scale": 0.20, "division": 0.5, "faceting": 1.0, "flow": 0.0
+    }
+  },
+
+  {
+    "name": "Dense Amber",
+    "category": "density-extreme",
+    "notes": "Density=0.35 — well above current max of 0.25. Lower luminosity to compensate.",
+    "controls": {
+      "density": 0.35, "luminosity": 0.38, "fracture": 0.50, "coherence": 0.70,
+      "hue": 0.06, "spectrum": 0.22, "chroma": 0.85,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Dense Atmospheric Violet",
+    "category": "density-extreme",
+    "notes": "Density=0.40 + atmospheric scale. Many tiny violet particles forming a dense cloud.",
+    "controls": {
+      "density": 0.40, "luminosity": 0.35, "fracture": 0.55, "coherence": 0.65,
+      "hue": 0.783, "spectrum": 0.28, "chroma": 0.50,
+      "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Dense Trifold",
+    "category": "density-extreme",
+    "notes": "Density=0.30 + trifold division. High density distributed across three lobes.",
+    "controls": {
+      "density": 0.30, "luminosity": 0.22, "fracture": 0.50, "coherence": 0.72,
+      "hue": 0.51, "spectrum": 0.25, "chroma": 0.60,
+      "scale": 0.5, "division": 0.90, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Bright Ethereal",
+    "category": "luminosity-extreme",
+    "notes": "Luminosity=0.88 + chroma=0.08. Ghostly white-blue glow. Very low density essential.",
+    "controls": {
+      "density": 0.04, "luminosity": 0.72, "fracture": 0.50, "coherence": 0.80,
+      "hue": 0.58, "spectrum": 0.08, "chroma": 0.08,
+      "scale": 0.45, "division": 0.5, "faceting": 0.40, "flow": 0.5
+    }
+  },
+  {
+    "name": "Bright Emerald",
+    "category": "luminosity-extreme",
+    "notes": "Luminosity=0.85 with vivid green. Tests whether color survives high luminosity.",
+    "controls": {
+      "density": 0.04, "luminosity": 0.85, "fracture": 0.40, "coherence": 0.82,
+      "hue": 0.375, "spectrum": 0.25, "chroma": 0.72,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Supernova",
+    "category": "density-extreme",
+    "notes": "Density=0.50 — double current max. Very low lum + high fracture. Stress test for opacity compensation.",
+    "controls": {
+      "density": 0.50, "luminosity": 0.15, "fracture": 0.85, "coherence": 0.55,
+      "hue": 0.50, "spectrum": 0.65, "chroma": 0.70,
+      "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5
+    }
+  },
+
+  {
+    "name": "Monochrome Amber",
+    "category": "interaction",
+    "notes": "Spectrum=0 at warm hue. Single-hue amber — how does monochrome warm read?",
+    "controls": {
+      "density": 0.07, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.78,
+      "hue": 0.06, "spectrum": 0.0, "chroma": 0.85,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Monochrome Rose",
+    "category": "interaction",
+    "notes": "Spectrum=0 at rose hue. Uniform pink glow, no color variation.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.52, "fracture": 0.40, "coherence": 0.75,
+      "hue": 0.94, "spectrum": 0.0, "chroma": 0.60,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Mid-Spectrum Teal",
+    "category": "interaction",
+    "notes": "Spectrum=0.50 — the empty mid-range. Moderate but non-prismatic color variation.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.48, "fracture": 0.50, "coherence": 0.75,
+      "hue": 0.51, "spectrum": 0.50, "chroma": 0.60,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Stained Glass Trifold",
+    "category": "interaction",
+    "notes": "Three lobes + high fracture + high spectrum. Each lobe a different color.",
+    "controls": {
+      "density": 0.09, "luminosity": 0.40, "fracture": 0.90, "coherence": 0.60,
+      "hue": 0.50, "spectrum": 0.80, "chroma": 0.70,
+      "scale": 0.5, "division": 0.90, "faceting": 0.60, "flow": 0.5
+    }
+  },
+  {
+    "name": "Coherent Radial Prism",
+    "category": "interaction",
+    "notes": "Radial starburst + max coherence + prismatic. Color-banded radial emanation.",
+    "controls": {
+      "density": 0.10, "luminosity": 0.45, "fracture": 0.55, "coherence": 0.95,
+      "hue": 0.50, "spectrum": 0.70, "chroma": 0.65,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0
+    }
+  },
+  {
+    "name": "Low Coherence Scatter",
+    "category": "interaction",
+    "notes": "Coherence=0.15 — lower than any config except Chaos Field. Maximum directional chaos.",
+    "controls": {
+      "density": 0.10, "luminosity": 0.48, "fracture": 0.60, "coherence": 0.15,
+      "hue": 0.625, "spectrum": 0.30, "chroma": 0.70,
+      "scale": 0.5, "division": 0.5, "faceting": 0.60, "flow": 0.5
+    }
+  },
+  {
+    "name": "Bright Dense Atmospheric",
+    "category": "interaction",
+    "notes": "High lum + high density + atmospheric. Extreme stress test — three blowout risks combined.",
+    "controls": {
+      "density": 0.30, "luminosity": 0.75, "fracture": 0.50, "coherence": 0.65,
+      "hue": 0.55, "spectrum": 0.15, "chroma": 0.35,
+      "scale": 0.90, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+
+  {
+    "name": "Moonstone",
+    "category": "mood",
+    "notes": "Bright ethereal with faint blue-white. Monumental-leaning for concentration.",
+    "controls": {
+      "density": 0.05, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.88,
+      "hue": 0.60, "spectrum": 0.06, "chroma": 0.10,
+      "scale": 0.50, "division": 0.5, "faceting": 0.35, "flow": 0.5
+    }
+  },
+  {
+    "name": "Dark Jade",
+    "category": "mood",
+    "notes": "Deep dark green jewel — dark mode at emerald hue, never explored before.",
+    "controls": {
+      "density": 0.10, "luminosity": 0.20, "fracture": 0.55, "coherence": 0.65,
+      "hue": 0.375, "spectrum": 0.22, "chroma": 0.70,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Dark Chartreuse",
+    "category": "mood",
+    "notes": "Dark mode at chartreuse hue — double gap fill: missing hue + dark region. Acidic yellow-green.",
+    "controls": {
+      "density": 0.10, "luminosity": 0.22, "fracture": 0.60, "coherence": 0.60,
+      "hue": 0.28, "spectrum": 0.25, "chroma": 0.75,
+      "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5
+    }
+  },
+  {
+    "name": "Obsidian Prism",
+    "category": "mood",
+    "notes": "Very dark prismatic — lum=0.15, near minimum. Jewel-dark rainbow fragments barely glowing.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.15, "fracture": 0.75, "coherence": 0.55,
+      "hue": 0.50, "spectrum": 0.85, "chroma": 0.75,
+      "scale": 0.5, "division": 0.5, "faceting": 0.60, "flow": 0.5
+    }
+  },
+  {
+    "name": "Glacier",
+    "category": "mood",
+    "notes": "Cold achromatic with orbital wrapping bands. Frozen icy quality, smooth broad panels.",
+    "controls": {
+      "density": 0.06, "luminosity": 0.40, "fracture": 0.20, "coherence": 0.90,
+      "hue": 0.56, "spectrum": 0.05, "chroma": 0.12,
+      "scale": 0.55, "division": 0.5, "faceting": 0.20, "flow": 1.0
+    }
+  },
+  {
+    "name": "Volcanic",
+    "category": "mood",
+    "notes": "Hot, dense, fractured deep red-orange. Like a volcanic fissure.",
+    "controls": {
+      "density": 0.20, "luminosity": 0.35, "fracture": 0.75, "coherence": 0.50,
+      "hue": 0.02, "spectrum": 0.35, "chroma": 0.90,
+      "scale": 0.5, "division": 0.5, "faceting": 0.65, "flow": 0.5
+    }
+  },
+  {
+    "name": "Smoke Signal",
+    "category": "mood",
+    "notes": "Achromatic atmospheric with near-radial flow. Smoke-like turbulent rising.",
+    "controls": {
+      "density": 0.12, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.70,
+      "hue": 0.10, "spectrum": 0.05, "chroma": 0.05,
+      "scale": 0.80, "division": 0.5, "faceting": 0.45, "flow": 0.30
+    }
+  },
+
+  {
+    "name": "Violet Sanctum Radial",
+    "category": "variant",
+    "notes": "The classic Violet Sanctum with radial flow. Direct A/B comparison.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75,
+      "hue": 0.744, "spectrum": 0.316, "chroma": 0.458,
+      "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0
+    }
+  },
+  {
+    "name": "Violet Sanctum Trifold",
+    "category": "variant",
+    "notes": "The classic anchor split into three lobes.",
+    "controls": {
+      "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75,
+      "hue": 0.744, "spectrum": 0.316, "chroma": 0.458,
+      "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5
+    }
+  },
+  {
+    "name": "Prismatic Scatter Dark",
+    "category": "variant",
+    "notes": "Stained-glass profile pushed very dark. Each shard more vivid with less additive washout.",
+    "controls": {
+      "density": 0.07, "luminosity": 0.22, "fracture": 0.85, "coherence": 0.50,
+      "hue": 0.85, "spectrum": 0.70, "chroma": 0.55,
+      "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5
+    }
+  },
+  {
+    "name": "Emerald Radiance Compact",
+    "category": "variant",
+    "notes": "Emerald Radiance concentrated to monumental scale. Glowing emerald core.",
+    "controls": {
+      "density": 0.06, "luminosity": 0.38, "fracture": 0.52, "coherence": 0.82,
+      "hue": 0.375, "spectrum": 0.28, "chroma": 0.70,
+      "scale": 0.10, "division": 0.45, "faceting": 0.5, "flow": 0.18
+    }
+  },
+  {
+    "name": "Sapphire Shards Atmospheric",
+    "category": "variant",
+    "notes": "Sapphire Shards at atmospheric scale — many tiny angular blue particles sweeping in bands.",
+    "controls": {
+      "density": 0.07, "luminosity": 0.50, "fracture": 0.55, "coherence": 0.80,
+      "hue": 0.625, "spectrum": 0.28, "chroma": 0.82,
+      "scale": 0.90, "division": 0.5, "faceting": 0.80, "flow": 0.80
+    }
+  },
+  {
+    "name": "Ice Crystal Orbital",
+    "category": "variant",
+    "notes": "Ice Crystal with orbital wrapping. Near-achromatic makes orbital banding highly visible.",
+    "controls": {
+      "density": 0.05, "luminosity": 0.55, "fracture": 0.25, "coherence": 0.85,
+      "hue": 0.55, "spectrum": 0.05, "chroma": 0.08,
+      "scale": 0.50, "division": 0.50, "faceting": 0.85, "flow": 1.0
+    }
+  },
+  {
+    "name": "Spectral Drift Trifold",
+    "category": "variant",
+    "notes": "Warm prismatic Spectral Drift split into three orbital lobes. Color-separated wrapping lobes.",
+    "controls": {
+      "density": 0.12, "luminosity": 0.50, "fracture": 0.60, "coherence": 0.55,
+      "hue": 0.083, "spectrum": 0.697, "chroma": 0.643,
+      "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.90
+    }
+  }
+]

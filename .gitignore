@@ -30,6 +30,7 @@ package-lock.json
 exploration/
 explore-*.mjs
 thumbnail.png
+
 *.env
 /nul
 /output
