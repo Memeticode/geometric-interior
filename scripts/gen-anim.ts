@@ -166,7 +166,7 @@ function createAnimAPI(): AnimAPI {
     const journey = SWEEP_ALL;
 
     const renderer = createRenderer(canvas, { dpr: 1 });
-    renderer.resize(journey.width, journey.height);
+    renderer.setTargetResolution(journey.width, journey.height);
     log(`Renderer created (${journey.width}x${journey.height}, dpr:1)`);
 
     const totalFrames = journey.durationS * journey.fps;

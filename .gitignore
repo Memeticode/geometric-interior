@@ -35,5 +35,5 @@ thumbnail.png
 /nul
 /output
 
-sampler-captures/*.png
-sampler-captures/**/*.png
+sampler-captures/
+notes.txt

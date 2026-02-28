@@ -3,7 +3,7 @@
  */
 import { chromium } from 'playwright';
 
-export const BASE_URL = 'http://localhost:5204/';
+export const BASE_URL = 'http://localhost:5204/image.html';
 const VIEWPORT = { width: 1400, height: 900 };
 const GOTO_RETRIES = 3;
 const APP_READY_TIMEOUT = 30000;
