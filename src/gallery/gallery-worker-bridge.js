@@ -65,6 +65,12 @@ export function initGalleryWorker(canvas) {
                 case 'generate-animation-failed':
                     if (messageHandlers['generate-animation-failed']) messageHandlers['generate-animation-failed'](msg);
                     break;
+                case 'snapshot-complete':
+                    if (messageHandlers['snapshot-complete']) messageHandlers['snapshot-complete'](msg);
+                    break;
+                case 'snapshot-failed':
+                    if (messageHandlers['snapshot-failed']) messageHandlers['snapshot-failed'](msg);
+                    break;
                 case 'error':
                     console.error('[gallery-worker] Worker error:', msg.error);
                     break;
@@ -183,6 +189,22 @@ export function initGalleryWorker(canvas) {
             sendGenerateAnimation({ requestId, animation }) {
                 if (!ready) return;
                 worker.postMessage({ type: 'generate-animation', requestId, animation });
+            },
+
+            /**
+             * Request a one-shot render at a specific resolution, returned as a blob.
+             */
+            sendSnapshot({ requestId, seed, controls, locale, width, height }) {
+                if (!ready) return;
+                worker.postMessage({
+                    type: 'snapshot',
+                    requestId,
+                    seed,
+                    controls,
+                    locale: locale || 'en',
+                    width,
+                    height,
+                });
             },
 
             /**

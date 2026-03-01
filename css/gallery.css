@@ -695,6 +695,17 @@
     align-items: center;
     justify-content: center;
     min-height: 160px;
+    transition: min-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.4s ease;
+}
+
+/* Flattened state when view-all grid is expanded */
+.carousel-strip.carousel-flattened .carousel-track {
+    min-height: 40px;
+    opacity: 0.3;
+}
+.carousel-strip.carousel-flattened .carousel-card-label {
+    opacity: 0;
 }
 
 .carousel-card {
@@ -748,51 +759,33 @@
 }
 
 .carousel-card-label {
-    margin-top: 0.3rem;
-    font-size: 0.6rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-    text-align: center;
-    opacity: 0;
-    transition: opacity 0.2s;
+    display: none;
 }
 
-.carousel-card:hover .carousel-card-label,
-.carousel-card.active .carousel-card-label {
-    opacity: 1;
-}
-
-/* ── Carousel "View All" button ── */
-.carousel-view-all-btn {
-    font-size: 0.625rem;
-    font-family: inherit;
-    padding: 0.125rem 0.5rem;
-    background: var(--surface);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    cursor: pointer;
-    margin-left: auto;
-    margin-right: 0.5rem;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
-}
-
-.carousel-view-all-btn:hover {
-    background: var(--surface-hover);
-    color: var(--text);
-    border-color: var(--border-strong);
-}
-
-/* ── View All modal ── */
-.view-all-box {
-    max-width: 90vw;
+/* ── View All toggle (below carousel) ── */
+.view-all-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
+    padding: 0.125rem 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.2s, transform 0.3s ease;
+}
+.view-all-toggle:hover {
+    color: var(--text);
+}
+.view-all-toggle.active {
+    color: var(--accent-text);
+    transform: rotate(180deg);
 }
 
+/* ── View All inline grid ── */
 .view-all-grid {
+    padding: 0.75rem 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     gap: 0.75rem;
@@ -984,8 +977,11 @@
     color: var(--text);
 }
 .menu-nav-link.active {
-    color: var(--accent);
+    color: var(--accent-text);
     font-weight: 600;
+    background: var(--accent-bg);
+    border-left: 2px solid var(--accent-text);
+    padding-left: calc(1.25rem - 2px);
 }
 .menu-nav-link.active:hover {
     background: var(--accent-bg);

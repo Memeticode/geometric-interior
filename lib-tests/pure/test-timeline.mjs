@@ -379,6 +379,135 @@ test('evaluateTimeline: param track spans event boundaries', () => {
     assertClose(evaluateTimeline(paramAnim, 2.0).twinkle, 0.5, 0.01);
 });
 
+/* ── evaluateTimeline: per-config camera (Phase E) ── */
+
+test('evaluateTimeline: expand with config camera uses config zoom/rotation', () => {
+    const anim = {
+        settings: { fps: 30, width: 640, height: 480 },
+        events: [
+            { type: 'expand', duration: 1, easing: 'linear', config: makeControls(), seed: 'a', camera: { zoom: 1.5, rotation: 30 } },
+            { type: 'pause', duration: 2, easing: 'linear' },
+        ],
+        cameraMoves: [],
+        paramTracks: [],
+    };
+    // During expand
+    const s1 = evaluateTimeline(anim, 0.5);
+    assertClose(s1.cameraZoom, 1.5);
+    assertClose(s1.cameraOrbitY, 30);
+    // During pause (inherits from expand)
+    const s2 = evaluateTimeline(anim, 1.5);
+    assertClose(s2.cameraZoom, 1.5);
+    assertClose(s2.cameraOrbitY, 30);
+});
+
+test('evaluateTimeline: config camera defaults when no camera field', () => {
+    // basicAnim has no camera field on events — should use default 1.0, 0
+    const state = evaluateTimeline(basicAnim, 2.0);
+    assertClose(state.cameraZoom, 1.0);
+    assertClose(state.cameraOrbitY, 0);
+});
+
+test('evaluateTimeline: transition interpolates between config cameras', () => {
+    const anim = {
+        settings: { fps: 30, width: 640, height: 480 },
+        events: [
+            { type: 'expand', duration: 1, easing: 'linear', config: makeControls(), seed: 'a', camera: { zoom: 1.0, rotation: 0 } },
+            { type: 'transition', duration: 2, easing: 'linear', config: makeControls(), seed: 'b', camera: { zoom: 2.0, rotation: 60 } },
+            { type: 'pause', duration: 1, easing: 'linear' },
+        ],
+        cameraMoves: [],
+        paramTracks: [],
+    };
+    // Transition midpoint: lerp(1.0, 2.0, 0.5)=1.5, lerp(0, 60, 0.5)=30
+    const mid = evaluateTimeline(anim, 2.0);
+    assert(mid.eventType === 'transition', `expected transition, got ${mid.eventType}`);
+    assertClose(mid.cameraZoom, 1.5, 0.01);
+    assertClose(mid.cameraOrbitY, 30, 0.1);
+    // After transition: uses target camera
+    const after = evaluateTimeline(anim, 3.5);
+    assertClose(after.cameraZoom, 2.0, 0.01);
+    assertClose(after.cameraOrbitY, 60, 0.1);
+});
+
+test('evaluateTimeline: transition without camera inherits from-config camera', () => {
+    const anim = {
+        settings: { fps: 30, width: 640, height: 480 },
+        events: [
+            { type: 'expand', duration: 1, easing: 'linear', config: makeControls(), seed: 'a', camera: { zoom: 1.3, rotation: 20 } },
+            { type: 'transition', duration: 2, easing: 'linear', config: makeControls(), seed: 'b' },
+            // transition has no camera — should stay at from-config camera
+            { type: 'pause', duration: 1, easing: 'linear' },
+        ],
+        cameraMoves: [],
+        paramTracks: [],
+    };
+    // Midpoint of transition: no camera change, stays at from-config
+    const mid = evaluateTimeline(anim, 2.0);
+    assertClose(mid.cameraZoom, 1.3, 0.01);
+    assertClose(mid.cameraOrbitY, 20, 0.1);
+});
+
+test('evaluateTimeline: camera move overrides config camera', () => {
+    const anim = {
+        settings: { fps: 30, width: 640, height: 480 },
+        events: [
+            { type: 'expand', duration: 1, easing: 'linear', config: makeControls(), seed: 'a', camera: { zoom: 1.5, rotation: 10 } },
+            { type: 'pause', duration: 3, easing: 'linear' },
+        ],
+        cameraMoves: [
+            { type: 'zoom', startTime: 1.0, endTime: 3.0, easing: 'linear', from: { zoom: 1.0 }, to: { zoom: 0.5 } },
+        ],
+        paramTracks: [],
+    };
+    // Before camera move: config camera only
+    assertClose(evaluateTimeline(anim, 0.5).cameraZoom, 1.5);
+    // During camera move: config zoom * move zoom = 1.5 * lerp(1.0, 0.5, 0.5) = 1.5 * 0.75 = 1.125
+    assertClose(evaluateTimeline(anim, 2.0).cameraZoom, 1.125, 0.01);
+    // orbitY from config stays (camera move only affects zoom)
+    assertClose(evaluateTimeline(anim, 2.0).cameraOrbitY, 10, 0.1);
+    // After camera move: back to config camera only
+    assertClose(evaluateTimeline(anim, 3.5).cameraZoom, 1.5);
+});
+
+test('evaluateTimeline: partial config camera (zoom only)', () => {
+    const anim = {
+        settings: { fps: 30, width: 640, height: 480 },
+        events: [
+            { type: 'expand', duration: 1, easing: 'linear', config: makeControls(), seed: 'a', camera: { zoom: 0.8 } },
+            { type: 'pause', duration: 1, easing: 'linear' },
+        ],
+        cameraMoves: [],
+        paramTracks: [],
+    };
+    const state = evaluateTimeline(anim, 1.0);
+    assertClose(state.cameraZoom, 0.8);
+    assertClose(state.cameraOrbitY, 0); // rotation defaults to 0
+});
+
+test('evaluateTimeline: config camera across multiple expand/transition events', () => {
+    const anim = {
+        settings: { fps: 30, width: 640, height: 480 },
+        events: [
+            { type: 'expand', duration: 1, easing: 'linear', config: makeControls(), seed: 'a', camera: { zoom: 1.2, rotation: 15 } },
+            { type: 'pause', duration: 1, easing: 'linear' },
+            { type: 'transition', duration: 1, easing: 'linear', config: makeControls(), seed: 'b', camera: { zoom: 0.8, rotation: -10 } },
+            { type: 'pause', duration: 1, easing: 'linear' },
+            { type: 'collapse', duration: 1, easing: 'linear' },
+        ],
+        cameraMoves: [],
+        paramTracks: [],
+    };
+    // First pause: inherits from expand camera
+    assertClose(evaluateTimeline(anim, 1.5).cameraZoom, 1.2, 0.01);
+    assertClose(evaluateTimeline(anim, 1.5).cameraOrbitY, 15, 0.1);
+    // Second pause: inherits from transition camera
+    assertClose(evaluateTimeline(anim, 3.5).cameraZoom, 0.8, 0.01);
+    assertClose(evaluateTimeline(anim, 3.5).cameraOrbitY, -10, 0.1);
+    // Collapse: inherits from transition camera
+    assertClose(evaluateTimeline(anim, 4.5).cameraZoom, 0.8, 0.01);
+});
+
 /* ── Edge cases ── */
 
 test('evaluateTimeline: clamped to start', () => {

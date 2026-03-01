@@ -149,8 +149,8 @@ export function seedTagToLabel(tag: SeedTag, locale: string = 'en'): string {
     const a = arr[tag[0]] || arr[0];
     const s = str[tag[1]] || str[0];
     const d = det[tag[2]] || det[0];
-    // Capitalize first word
-    return a.charAt(0).toUpperCase() + a.slice(1) + ', ' + s + ', ' + d;
+    // Sentence-case: capitalize first word, lowercase the rest
+    return a.charAt(0).toUpperCase() + a.slice(1) + ', ' + s.toLowerCase() + ', ' + d.toLowerCase();
 }
 
 /** Serialize a SeedTag for URL/storage: [3, 12, 8] → "3.12.8" */

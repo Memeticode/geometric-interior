@@ -1794,7 +1794,8 @@ el.exportBtn.addEventListener('click', () => {
         const controls = readControlsFromUI();
         const name = el.profileNameField.value.trim() || 'Untitled';
 
-        const config = profileToConfig(name, { seed, controls });
+        const camera = readCameraFromUI();
+        const config = profileToConfig(name, { seed, controls, camera });
         const json = JSON.stringify(config, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const ts = toIsoLocalish();

@@ -23,6 +23,7 @@ export interface ContentEvent {
     easing: EasingType;
     config?: Controls;         // required for expand, transition
     seed?: Seed;               // required for expand, transition
+    camera?: { zoom?: number; rotation?: number };  // per-config camera state
 }
 
 export interface CameraState {
@@ -170,6 +171,21 @@ function resolveFromConfig(events: ContentEvent[], transitionIndex: number): { c
     throw new Error('No config found before transition at event ' + transitionIndex);
 }
 
+/**
+ * Walk events backward from eventIndex to find the most recent
+ * expand or transition event that has a camera field.
+ * Returns the config camera values (zoom, rotation), defaulting to identity.
+ */
+function resolveConfigCamera(events: ContentEvent[], eventIndex: number): { zoom: number; rotation: number } {
+    for (let i = eventIndex; i >= 0; i--) {
+        const ev = events[i];
+        if ((ev.type === 'expand' || ev.type === 'transition') && ev.camera) {
+            return { zoom: ev.camera.zoom ?? 1.0, rotation: ev.camera.rotation ?? 0 };
+        }
+    }
+    return { zoom: 1.0, rotation: 0 };
+}
+
 /** Interpolate a single value linearly. */
 function lerpVal(a: number, b: number, t: number): number {
     return a + (b - a) * t;
@@ -241,9 +257,24 @@ export function evaluateTimeline(animation: Animation, timeSeconds: number): Fra
         morphT = eventProgress;
     }
 
-    // Evaluate camera moves (Phase 3)
-    let cameraZoom = 1.0;
-    let cameraOrbitY = 0;
+    // Evaluate camera: start from per-config camera, then apply overlay moves
+    let baseCamZoom: number;
+    let baseCamRotation: number;
+
+    if (event.type === 'transition') {
+        // Interpolate between from-config and to-config camera during transition
+        const fromCam = resolveConfigCamera(events, eventIndex - 1);
+        const toCam = resolveConfigCamera(events, eventIndex);
+        baseCamZoom = lerpVal(fromCam.zoom, toCam.zoom, eventProgress);
+        baseCamRotation = lerpVal(fromCam.rotation, toCam.rotation, eventProgress);
+    } else {
+        const configCam = resolveConfigCamera(events, eventIndex);
+        baseCamZoom = configCam.zoom;
+        baseCamRotation = configCam.rotation;
+    }
+
+    let cameraZoom = baseCamZoom;
+    let cameraOrbitY = baseCamRotation;
     let cameraOrbitX = 0;
 
     for (const move of cameraMoves) {

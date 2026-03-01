@@ -326,6 +326,10 @@ self.onmessage = function (e) {
         case 'generate-animation-cancel':
             generateCancelled = true;
             break;
+
+        case 'snapshot':
+            doSnapshot(msg);
+            break;
     }
 };
 
@@ -336,6 +340,33 @@ async function doExport(requestId) {
         self.postMessage({ type: 'exported', requestId, blob });
     } catch (err) {
         self.postMessage({ type: 'export-error', requestId, error: err.message });
+    }
+}
+
+/* ── One-shot snapshot at specific resolution ── */
+
+async function doSnapshot(msg) {
+    if (!renderer || !offscreenCanvas) {
+        self.postMessage({ type: 'snapshot-failed', requestId: msg.requestId, error: 'Renderer not initialized' });
+        return;
+    }
+    if (generateActive) {
+        self.postMessage({ type: 'snapshot-failed', requestId: msg.requestId, error: 'Generation in progress' });
+        return;
+    }
+
+    try {
+        renderer.resize(msg.width, msg.height);
+        renderer.renderWith(msg.seed, msg.controls, msg.locale || 'en');
+        renderer.setFoldImmediate(1.0);
+        renderer.updateTime(3.0);
+        renderer.renderFrame();
+
+        const blob = await offscreenCanvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
+        self.postMessage({ type: 'snapshot-complete', requestId: msg.requestId, blob });
+    } catch (err) {
+        console.error('[render-worker] snapshot error:', err);
+        self.postMessage({ type: 'snapshot-failed', requestId: msg.requestId, error: err.message });
     }
 }
 

@@ -49,6 +49,7 @@
     <link rel="stylesheet" href="/css/base.css" />
     <link rel="stylesheet" href="/css/header.css" />
     <link rel="stylesheet" href="/css/gallery.css" />
+    <link rel="stylesheet" href="/css/buttons.css" />
     <link rel="stylesheet" href="/css/generate.css" />
     <link rel="stylesheet" href="/css/modals.css" />
     <link rel="stylesheet" href="/css/footer.css" />
@@ -74,6 +75,82 @@
                     <button id="developerStatement" class="header-link" data-i18n="header.developerStatement">Developer Statement</button>
                     <span class="header-sep">&middot;</span>
                     <button id="governanceStatement" class="header-link" data-i18n="header.governanceFramework">Governance Framework</button>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="share-btn-wrap">
+                    <button id="shareBtn" class="header-link" data-tooltip="Share" data-i18n-tooltip="stage.share">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                            <circle cx="12" cy="3" r="2"/>
+                            <circle cx="4" cy="8" r="2"/>
+                            <circle cx="12" cy="13" r="2"/>
+                            <path d="M5.7 9.2l4.6 2.6M10.3 4.2L5.7 6.8"/>
+                        </svg>
+                    </button>
+                    <div id="sharePopover" class="share-popover hidden">
+                        <button class="share-option" id="shareCopyLink">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <path d="M6.5 9.5a3 3 0 0 0 4.24 0l2-2a3 3 0 0 0-4.24-4.24l-1 1"/>
+                                <path d="M9.5 6.5a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24l1-1"/>
+                            </svg>
+                            <span data-i18n="share.copyLink">Copy Link</span>
+                        </button>
+                        <button class="share-option" id="shareDownloadPng">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <path d="M8 2v9M4.5 8L8 11.5 11.5 8"/>
+                                <path d="M2.5 13.5h11"/>
+                            </svg>
+                            <span data-i18n="share.downloadVisual">Download Visual</span>
+                        </button>
+                        <div class="share-sep"></div>
+                        <button class="share-option" id="shareBluesky">
+                            <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+                                <path d="M3.47 2.34c1.58 1.19 3.28 3.6 3.98 4.89.7-1.3 2.4-3.7 3.98-4.89C12.52 1.52 15 .57 15 3.23c0 .53-.3 4.45-.48 5.08-.62 2.2-2.89 2.76-4.88 2.42 3.49.6 4.37 2.58 2.46 4.56-3.63 3.77-5.22-.95-5.63-2.16a3.3 3.3 0 0 1-.12-.39c-.02.12-.06.25-.12.4-.4 1.2-2 5.92-5.63 2.15-1.91-1.98-1.03-3.96 2.46-4.56-2-.34-4.26-.22-4.88-2.42C3.01 7.68 2.7 3.76 2.7 3.23c0-2.66 2.48-1.71 3.58-.89z"/>
+                            </svg>
+                            <span data-i18n="share.bluesky">Bluesky</span>
+                        </button>
+                        <button class="share-option" id="shareFacebook">
+                            <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+                                <path d="M14 8a6 6 0 1 0-6.94 5.93v-4.2H5.56V8h1.5V6.56c0-1.48.88-2.3 2.23-2.3.65 0 1.32.11 1.32.11V5.8h-.74c-.73 0-.96.46-.96.92V8h1.64l-.26 1.73h-1.38v4.2A6 6 0 0 0 14 8z"/>
+                            </svg>
+                            <span data-i18n="share.facebook">Facebook</span>
+                        </button>
+                        <button class="share-option" id="shareGoogle">
+                            <svg viewBox="0 0 48 48" fill="currentColor" width="14" height="14">
+                                <path d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                                <path d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                                <path d="M10.53 28.59a14.5 14.5 0 0 1 0-9.18l-7.98-6.19a24.04 24.04 0 0 0 0 21.56l7.98-6.19z"/>
+                                <path d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                            </svg>
+                            <span>Google</span>
+                        </button>
+                        <button class="share-option" id="shareLinkedIn">
+                            <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+                                <path d="M3.6 13.5H1.1V5.6h2.5v7.9zM2.35 4.55a1.45 1.45 0 1 1 0-2.9 1.45 1.45 0 0 1 0 2.9zM14.5 13.5H12v-3.85c0-.92-.02-2.1-1.28-2.1-1.28 0-1.48 1-1.48 2.03v3.92H6.76V5.6h2.38v1.08h.03c.33-.63 1.14-1.3 2.35-1.3 2.52 0 2.98 1.66 2.98 3.81v4.31z"/>
+                            </svg>
+                            <span data-i18n="share.linkedin">LinkedIn</span>
+                        </button>
+                        <button class="share-option" id="shareReddit">
+                            <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+                                <path d="M14.5 8a1.5 1.5 0 0 0-2.53-1.09 7.37 7.37 0 0 0-3.45-1.08l.7-2.48 1.92.43a1.07 1.07 0 1 0 .13-.63l-2.18-.49a.36.36 0 0 0-.42.25l-.8 2.85a7.52 7.52 0 0 0-3.6 1.08A1.5 1.5 0 1 0 2.17 9.1a2.7 2.7 0 0 0-.04.46c0 2.22 2.76 4.03 6.16 4.03s6.16-1.8 6.16-4.03c0-.15-.01-.3-.04-.45A1.5 1.5 0 0 0 14.5 8zM5.14 9.36a.93.93 0 1 1 1.86 0 .93.93 0 0 1-1.86 0zm5.37 2.52c-.67.47-1.55.7-2.51.7s-1.84-.23-2.51-.7a.36.36 0 0 1 .41-.58c.52.37 1.26.57 2.1.57s1.58-.2 2.1-.57a.36.36 0 0 1 .41.58zm-.22-1.6a.93.93 0 1 1 0-1.85.93.93 0 0 1 0 1.86z"/>
+                            </svg>
+                            <span data-i18n="share.reddit">Reddit</span>
+                        </button>
+                        <button class="share-option" id="shareTwitter">
+                            <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14">
+                                <path d="M9.33 6.93L14.15 1.5h-1.14L8.83 6.18 5.47 1.5H1.5l5.06 7.37L1.5 14.5h1.14l4.42-5.14 3.53 5.14h3.97L9.33 6.93zm-1.57 1.82l-.51-.73L3.1 2.38h1.75l3.29 4.7.51.73 4.27 6.11h-1.75L7.76 8.75z"/>
+                            </svg>
+                            <span>X</span>
+                        </button>
+                        <div class="share-sep"></div>
+                        <button class="share-option" id="shareEmail">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
+                                <rect x="1.5" y="3" width="13" height="10" rx="2"/>
+                                <path d="M1.5 5l6.5 4 6.5-4"/>
+                            </svg>
+                            <span data-i18n="share.email">Email</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </header>
@@ -187,14 +264,18 @@
             <div class="gallery-content" id="galleryContent">
                 <!-- Single carousel for all profiles -->
                 <div class="carousel-strip">
-                    <button class="carousel-view-all-btn" id="viewAllBtn"
-                            data-tooltip="View all" data-tooltip-pos="above"
-                            style="display:none">View All</button>
                     <div class="carousel-container">
                         <div class="carousel-viewport">
                             <div class="carousel-track" id="carouselTrack"></div>
                         </div>
                     </div>
+                    <button class="view-all-toggle" id="viewAllToggle" data-tooltip="View all" data-tooltip-pos="above" style="display:none" aria-label="View all">
+                        <svg viewBox="0 0 20 6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="6"><path d="M2 1l8 4 8-4"/></svg>
+                    </button>
+                </div>
+                <!-- Inline view-all grid -->
+                <div class="view-all-inline" id="viewAllInline">
+                    <div class="view-all-grid" id="viewAllGrid"></div>
                 </div>
                 <!-- Animations -->
                 <div class="gallery-section" id="animSection" style="display:none">
@@ -205,24 +286,6 @@
                     <div id="animGallery" class="gallery-grid"></div>
                 </div>
             </div>
-            </div>
-            <!-- View All modal -->
-            <div id="viewAllModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
-                <div class="modal-box view-all-box">
-                    <div class="modal-header">
-                        <span class="modal-title" id="viewAllTitle">All Portraits</span>
-                        <button id="viewAllModalClose" class="modal-close" aria-label="Close">
-                            <div class="panel-toggle-icon">
-                                <span class="bar bar-top"></span>
-                                <span class="bar bar-mid"></span>
-                                <span class="bar bar-bot"></span>
-                            </div>
-                        </button>
-                    </div>
-                    <div class="modal-body view-all-body">
-                        <div class="view-all-grid" id="viewAllGrid"></div>
-                    </div>
-                </div>
             </div>
             <!-- Generate panel (hidden by default, shown when "Generate" mode active) -->
             <div class="generate-panel hidden" id="generatePanel">

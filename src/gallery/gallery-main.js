@@ -29,7 +29,7 @@ import { showConfirm } from '../shared/modals.js';
 import { initStatementModal } from '../shared/statement.js';
 import { slugify } from '../shared/slugify.js';
 import { TRASH_SVG } from '../shared/icons.js';
-import { initTooltips, refreshTooltip } from '../shared/tooltips.js';
+import { initTooltips, refreshTooltip, hideTooltip } from '../shared/tooltips.js';
 import { initGalleryWorker } from './gallery-worker-bridge.js';
 import { createRenderQueue } from './render-queue.js';
 import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
@@ -108,13 +108,6 @@ document.querySelectorAll('.gallery-section-header').forEach(header => {
     });
 });
 
-/* ── Generated text toggle ── */
-selectedGenToggle.addEventListener('click', () => {
-    const expanded = selectedGenToggle.getAttribute('aria-expanded') === 'true';
-    selectedGenToggle.setAttribute('aria-expanded', String(!expanded));
-    selectedGenAlt.classList.toggle('expanded', !expanded);
-});
-
 /* ── Settings group collapsible toggles ── */
 document.querySelectorAll('.settings-group-header').forEach(header => {
     header.addEventListener('click', (e) => {
@@ -156,11 +149,10 @@ const selectedVideo = document.getElementById('selectedVideo');
 
 /* ── Carousel DOM refs ── */
 const carouselTrack = document.getElementById('carouselTrack');
-const viewAllBtn = document.getElementById('viewAllBtn');
-const viewAllModal = document.getElementById('viewAllModal');
+const viewAllToggle = document.getElementById('viewAllToggle');
+const viewAllInline = document.getElementById('viewAllInline');
 const viewAllGrid = document.getElementById('viewAllGrid');
-const viewAllTitle = document.getElementById('viewAllTitle');
-const viewAllModalClose = document.getElementById('viewAllModalClose');
+const carouselStrip = document.querySelector('.carousel-strip');
 
 /* ── Generate panel DOM refs ── */
 const generatePanelEl = document.getElementById('generatePanel');
@@ -178,6 +170,13 @@ const genQueueEl = document.getElementById('genQueue');
 const animSectionEl = document.getElementById('animSection');
 const animGalleryEl = document.getElementById('animGallery');
 const carouselStripEl = carouselTrack.closest('.carousel-strip');
+
+/* ── Generated text toggle ── */
+selectedGenToggle.addEventListener('click', () => {
+    const expanded = selectedGenToggle.getAttribute('aria-expanded') === 'true';
+    selectedGenToggle.setAttribute('aria-expanded', String(!expanded));
+    selectedGenAlt.classList.toggle('expanded', !expanded);
+});
 
 window.addEventListener('resize', () => {
     if (carouselCards.length) positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
@@ -341,10 +340,8 @@ function buildCarouselCards(list, trackEl, onCardClick) {
         imgWrap.appendChild(img);
         card.appendChild(imgWrap);
 
-        const label = document.createElement('div');
-        label.className = 'carousel-card-label';
-        label.textContent = entry.name;
-        card.appendChild(label);
+        card.dataset.tooltip = entry.name;
+        card.dataset.tooltipPos = 'above';
 
         card.addEventListener('click', () => onCardClick(i, entry));
         trackEl.appendChild(card);
@@ -501,8 +498,23 @@ function findProfileBySlug(slug, source) {
 window.addEventListener('popstate', applyRoute);
 
 /* ── Resolution change ── */
-document.addEventListener('resolutionchange', () => {
-    // Resolution setting only affects render worker output, not pre-cached thumbnails
+document.addEventListener('resolutionchange', (e) => {
+    if (!workerBridge || !workerBridge.ready) return;
+    if (currentIndex < 0 || currentIndex >= navigableList.length) return;
+    if (activeMode !== 'gallery' || activeType !== 'image') return;
+
+    const { profile } = navigableList[currentIndex];
+    if (!profile || !profile.seed || !profile.controls) return;
+
+    const { w, h } = e.detail;
+    workerBridge.sendSnapshot({
+        requestId: 'snap-' + Date.now(),
+        seed: profile.seed,
+        controls: profile.controls,
+        locale: getLocale(),
+        width: w,
+        height: h,
+    });
 });
 
 /* ── Text generation ── */
@@ -561,6 +573,7 @@ function applySelection(name, profile, isPortrait, assetId) {
 
     // Display full-resolution image
     if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
+    if (snapshotUrl) { URL.revokeObjectURL(snapshotUrl); snapshotUrl = null; }
     if (assetId) {
         // Generated profiles: load full-res staticBlob from IndexedDB
         const asset = generatedAssets.find(a => a.id === assetId);
@@ -668,11 +681,26 @@ function navigateToEditor() {
 /* ── View All modal ── */
 
 function isViewAllOpen() {
-    return !viewAllModal.classList.contains('hidden');
+    return viewAllInline.classList.contains('expanded');
 }
 
-function openViewAllModal(title, list) {
-    viewAllTitle.textContent = title;
+function flattenCards() {
+    for (const { element } of carouselCards) {
+        element.style.setProperty('--ry', '0deg');
+        element.style.setProperty('--tz', '0px');
+        element.style.setProperty('--sc', '0.45');
+        element.style.setProperty('--card-opacity', '0');
+        element.style.pointerEvents = 'none';
+    }
+    carouselStrip.classList.add('carousel-flattened');
+}
+
+function unflattenCards() {
+    carouselStrip.classList.remove('carousel-flattened');
+    positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
+}
+
+function expandViewAll(list) {
     viewAllGrid.innerHTML = '';
 
     for (let i = 0; i < list.length; i++) {
@@ -741,7 +769,7 @@ function openViewAllModal(title, list) {
                                     const order = loadProfileOrder();
                                     if (order) saveProfileOrder(order.filter(n => n !== deleteName));
                                 }
-                                closeViewAllModal();
+                                collapseViewAll();
                                 refreshGallery();
                             }
                         }
@@ -753,48 +781,43 @@ function openViewAllModal(title, list) {
         }
 
         card.addEventListener('click', () => {
-            closeViewAllModal();
             const idx = carouselList.findIndex(e =>
                 entry.assetId ? e.assetId === entry.assetId : e.name === entry.name);
             if (idx >= 0) {
                 carouselCenterIdx = idx;
-                positionCards(carouselTrack, carouselCards, idx, carouselList.length);
             }
+            collapseViewAll();
             selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
         });
 
         viewAllGrid.appendChild(card);
     }
 
-    viewAllModal.classList.remove('hidden');
-    viewAllModal.classList.add('modal-entering');
-    const box = viewAllModal.querySelector('.modal-box');
-    box.addEventListener('animationend', () => {
-        viewAllModal.classList.remove('modal-entering');
+    flattenCards();
+    viewAllInline.classList.add('expanded');
+    viewAllToggle.classList.add('active');
+    viewAllInline.addEventListener('transitionend', () => {
+        viewAllInline.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, { once: true });
 }
 
-function closeViewAllModal() {
-    if (viewAllModal.classList.contains('hidden')) return;
-    viewAllModal.classList.add('modal-leaving');
-    const box = viewAllModal.querySelector('.modal-box');
-    box.addEventListener('animationend', () => {
-        viewAllModal.classList.add('hidden');
-        viewAllModal.classList.remove('modal-leaving');
-    }, { once: true });
+function collapseViewAll() {
+    if (!isViewAllOpen()) return;
+    viewAllInline.classList.remove('expanded');
+    viewAllToggle.classList.remove('active');
+    unflattenCards();
 }
 
-viewAllBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    openViewAllModal('All Profiles', carouselList);
-});
-
-viewAllModalClose.addEventListener('click', closeViewAllModal);
-viewAllModal.addEventListener('click', (e) => {
-    if (e.target === viewAllModal) closeViewAllModal();
+viewAllToggle.addEventListener('click', () => {
+    if (isViewAllOpen()) {
+        collapseViewAll();
+    } else {
+        expandViewAll(carouselList);
+    }
 });
 
 function refreshGallery() {
+    if (isViewAllOpen()) collapseViewAll();
     if (activeType === 'image') {
         clearVideoPlayback();
         showImageGallery();
@@ -845,7 +868,7 @@ function showImageGallery() {
     });
 
     // Show/hide View All button
-    viewAllBtn.style.display = carouselList.length > getVisibleCount() ? '' : 'none';
+    viewAllToggle.style.display = carouselList.length > getVisibleCount() ? '' : 'none';
 
     // Auto-select first entry if nothing selected
     if (!selected.name && carouselList.length > 0) {
@@ -1073,8 +1096,8 @@ function handleMenuNav(type, mode) {
         refreshGallery();
     }
 
-    // Close menu on mobile
-    closeSiteMenu();
+    // Close menu on mobile only (desktop uses content-push, keep it open)
+    if (window.innerWidth < 768) closeSiteMenu();
 }
 
 menuNavLinks.forEach(link => {
@@ -1082,8 +1105,6 @@ menuNavLinks.forEach(link => {
         handleMenuNav(link.dataset.navType, link.dataset.navMode);
     });
 });
-
-selectedImageWrap.addEventListener('click', navigateToEditor);
 
 /* ── Generate mode ── */
 
@@ -1105,11 +1126,21 @@ function buildSimpleAnimation(seed, controls) {
     };
 }
 
+// Eagerly init worker bridge so snapshots work in gallery mode
+workerBridge = initGalleryWorker(genPreviewCanvas);
+if (workerBridge) {
+    workerBridge.on('snapshot-complete', (msg) => {
+        if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
+        snapshotUrl = URL.createObjectURL(msg.blob);
+        selectedImage.src = snapshotUrl;
+    });
+}
+let snapshotUrl = null;
+
 function initGenerate() {
     if (generateInitialized) return;
     generateInitialized = true;
 
-    workerBridge = initGalleryWorker(genPreviewCanvas);
     if (!workerBridge) {
         toast('WebGL worker not available');
         return;
@@ -1231,7 +1262,7 @@ function hideGenerateMode() {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (isViewAllOpen()) {
-            closeViewAllModal();
+            collapseViewAll();
             return;
         }
         if (isSiteMenuOpen()) {
@@ -1328,4 +1359,116 @@ getAllAnimAssets().then(assets => {
     if (activeType === 'animation' && assets.length > 0) refreshGallery();
 }).catch(err => {
     console.warn('[gallery] IndexedDB animation store unavailable:', err);
+});
+
+/* ── Share ── */
+
+const shareBtn = document.getElementById('shareBtn');
+const sharePopover = document.getElementById('sharePopover');
+
+function getShareURL() {
+    return window.location.origin + window.location.pathname;
+}
+
+function getShareTitle() {
+    const name = selectedName.textContent.trim();
+    return name ? `${name} — Geometric Interior` : 'Geometric Interior';
+}
+
+shareBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    hideTooltip();
+    sharePopover.classList.toggle('hidden');
+});
+
+document.addEventListener('click', (e) => {
+    if (!sharePopover.contains(e.target) && e.target !== shareBtn) {
+        sharePopover.classList.add('hidden');
+    }
+});
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !sharePopover.classList.contains('hidden')) {
+        sharePopover.classList.add('hidden');
+        shareBtn.focus();
+    }
+});
+
+document.getElementById('shareCopyLink').addEventListener('click', async () => {
+    const url = getShareURL();
+    try {
+        await navigator.clipboard.writeText(url);
+        toast(t('toast.linkCopied') || 'Link copied');
+    } catch {
+        const ta = document.createElement('textarea');
+        ta.value = url;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        toast(t('toast.linkCopiedShort') || 'Copied');
+    }
+    sharePopover.classList.add('hidden');
+});
+
+document.getElementById('shareDownloadPng').addEventListener('click', () => {
+    const img = selectedImage;
+    if (!img || !img.src) { toast('No image selected'); return; }
+    const a = document.createElement('a');
+    a.href = img.src;
+    a.download = `${selectedName.textContent.trim() || 'image'}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast(t('toast.visualExported') || 'Image downloaded');
+    sharePopover.classList.add('hidden');
+});
+
+document.getElementById('shareTwitter').addEventListener('click', () => {
+    const url = getShareURL();
+    const title = getShareTitle();
+    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank', 'noopener,width=550,height=420');
+    sharePopover.classList.add('hidden');
+});
+
+document.getElementById('shareFacebook').addEventListener('click', () => {
+    const url = getShareURL();
+    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'noopener,width=555,height=525');
+    sharePopover.classList.add('hidden');
+});
+
+document.getElementById('shareBluesky').addEventListener('click', () => {
+    const url = getShareURL();
+    const title = getShareTitle();
+    window.open(`https://bsky.app/intent/compose?text=${encodeURIComponent(`${title}\n${url}`)}`, '_blank', 'noopener,width=600,height=500');
+    sharePopover.classList.add('hidden');
+});
+
+document.getElementById('shareReddit').addEventListener('click', () => {
+    const url = getShareURL();
+    const title = getShareTitle();
+    window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank', 'noopener,width=700,height=600');
+    sharePopover.classList.add('hidden');
+});
+
+document.getElementById('shareGoogle').addEventListener('click', () => {
+    const url = getShareURL();
+    window.open(`https://plus.google.com/share?url=${encodeURIComponent(url)}`, '_blank', 'noopener,width=600,height=500');
+    sharePopover.classList.add('hidden');
+});
+
+document.getElementById('shareLinkedIn').addEventListener('click', () => {
+    const url = getShareURL();
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'noopener,width=600,height=550');
+    sharePopover.classList.add('hidden');
+});
+
+document.getElementById('shareEmail').addEventListener('click', () => {
+    const url = getShareURL();
+    const title = getShareTitle();
+    const body = `Check out this generative artwork:\n\n${url}`;
+    window.open(`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`);
+    sharePopover.classList.add('hidden');
 });

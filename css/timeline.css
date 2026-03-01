@@ -1,0 +1,317 @@
+/* ── Timeline Visualization ── */
+
+.timeline-area {
+    border-top: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.timeline-area:empty {
+    display: none;
+}
+
+/* ── Time Ruler ── */
+.timeline-ruler {
+    position: relative;
+    height: 16px;
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    user-select: none;
+    margin-left: 60px;
+}
+
+.timeline-ruler-tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+/* ── Playhead ── */
+.timeline-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--accent-text);
+    pointer-events: none;
+    z-index: 10;
+    transition: left 0.05s linear;
+}
+
+.timeline-playhead-handle {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--accent-text);
+    pointer-events: auto;
+    cursor: grab;
+}
+
+.timeline-playhead-handle:active {
+    cursor: grabbing;
+}
+
+/* ── Event Track ── */
+.timeline-event-track {
+    display: flex;
+    height: 28px;
+    margin-left: 60px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.timeline-event-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.5625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 0 4px;
+    user-select: none;
+}
+
+.timeline-event-block:last-child {
+    border-right: none;
+}
+
+.timeline-event-block[data-type="expand"] {
+    background: var(--accent-bg);
+    color: var(--accent-text);
+}
+
+.timeline-event-block[data-type="pause"] {
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-muted);
+}
+
+.timeline-event-block[data-type="transition"] {
+    background: rgba(255, 190, 100, 0.08);
+    color: rgb(255, 190, 100);
+}
+
+.timeline-event-block[data-type="collapse"] {
+    background: rgba(130, 200, 255, 0.06);
+    color: rgba(130, 200, 255, 0.85);
+}
+
+.timeline-event-block-type {
+    font-size: 0.5rem;
+    line-height: 1;
+}
+
+.timeline-event-block-dur {
+    font-size: 0.4375rem;
+    opacity: 0.7;
+    line-height: 1;
+    margin-top: 1px;
+}
+
+/* ── Lane Container ── */
+.timeline-lanes {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* ── Lane Row ── */
+.timeline-lane-row {
+    display: flex;
+    align-items: stretch;
+    min-height: 20px;
+}
+
+.timeline-lane-header {
+    width: 60px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 0.375rem;
+    font-size: 0.5625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--text-muted);
+    user-select: none;
+}
+
+.timeline-lane-add-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    opacity: 0.6;
+    transition: opacity 0.15s, color 0.15s;
+}
+
+.timeline-lane-add-btn:hover {
+    opacity: 1;
+    color: var(--accent-text);
+}
+
+/* ── Lane Body (span container) ── */
+.timeline-lane-body {
+    flex: 1;
+    position: relative;
+    min-height: 20px;
+    background: rgba(255, 255, 255, 0.015);
+    border-radius: 3px;
+}
+
+/* ── Timeline Span ── */
+.timeline-span {
+    position: absolute;
+    top: 2px;
+    height: 16px;
+    border-radius: 4px;
+    background: var(--accent-bg);
+    border-top: 1px solid var(--accent);
+    border-bottom: 1px solid var(--accent);
+    cursor: pointer;
+    transition: background-color 0.15s;
+    font-size: 0.5rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    padding: 0 0.375rem;
+    overflow: hidden;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.timeline-span:hover {
+    background: var(--accent);
+    color: var(--text);
+}
+
+.timeline-span.selected {
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    color: var(--text);
+    z-index: 2;
+}
+
+/* Resize handles */
+.timeline-span .span-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 6px;
+    cursor: ew-resize;
+    z-index: 3;
+}
+
+.timeline-span .span-handle-left {
+    left: 0;
+}
+
+.timeline-span .span-handle-right {
+    right: 0;
+}
+
+/* ── Span Properties Popover ── */
+.span-popover {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    padding: 0.625rem;
+    margin-top: 0.375rem;
+    margin-left: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    max-width: 20rem;
+}
+
+.span-popover-title {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    margin-bottom: 0.125rem;
+}
+
+.span-popover-row {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.span-popover-label {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    min-width: 3.5rem;
+}
+
+.span-popover-input {
+    width: 4rem;
+    padding: 0.1875rem 0.25rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.6875rem;
+    font-family: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.span-popover-input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.span-popover-arrow {
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+}
+
+.span-popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.375rem;
+    margin-top: 0.25rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.375rem;
+}
+
+.span-popover-actions button {
+    padding: 0.25rem 0.625rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.6875rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.span-popover-actions button:hover {
+    border-color: var(--border-strong);
+    background: var(--surface-hover);
+}
+
+.span-popover-actions .delete-span-btn:hover {
+    color: #ff6b6b;
+    border-color: rgba(255, 90, 90, 0.3);
+    background: rgba(255, 90, 90, 0.08);
+}
