@@ -3,12 +3,13 @@
  * multi-event animations from saved image profiles.
  */
 
+import { createHeader } from '../shared/create-header.js';
+import { createFooter } from '../shared/create-footer.js';
+import { initApp } from '../shared/app-init.js';
 import { initPanel } from '../shared/panel.js';
-import { initTooltips } from '../shared/tooltips.js';
-import { toast, initToastClose } from '../shared/toast.js';
-import { initStatementModal } from '../shared/statement.js';
+import { toast } from '../shared/toast.js';
 import { initPageSettings } from '../ui/page-settings.js';
-import { initLocale, t, getLocale } from '../i18n/locale.js';
+import { t, getLocale } from '../i18n/locale.js';
 import { loadPortraits, loadProfiles, ensureStarterProfiles } from '../ui/profiles.js';
 import { initGalleryWorker } from '../gallery/gallery-worker-bridge.js';
 import { createEventList } from './event-list.js';
@@ -56,29 +57,14 @@ const canvasOverlay = document.getElementById('canvasOverlay');
 const canvasOverlayText = document.getElementById('canvasOverlayText');
 const timelineArea = document.getElementById('timelineArea');
 
+// ── Build header & footer DOM ──
+createHeader(document.querySelector('.app-header'), { page: 'animation' });
+const footerRefs = createFooter(document.querySelector('.app-footer'), { page: 'animation' });
+
 // ── Init shared UI ──
-initLocale();
+initApp({ page: 'animation' });
 initPanel();
-initTooltips();
-initToastClose();
-
-initStatementModal({
-    statementModal: document.getElementById('statementModal'),
-    statementModalClose: document.getElementById('statementModalClose'),
-    statementTabSelect: document.getElementById('statementTabSelect'),
-    statementTitle: document.getElementById('statementTitle'),
-    developerBody: document.getElementById('developerBody'),
-    artistBody: document.getElementById('artistBody'),
-    governanceBody: document.getElementById('governanceBody'),
-    developerStatement: document.getElementById('developerStatement'),
-    artistStatement: document.getElementById('artistStatement'),
-    governanceStatement: document.getElementById('governanceStatement'),
-});
-
-initPageSettings(
-    document.getElementById('pageSettingsBtn'),
-    document.getElementById('pageSettingsPopover'),
-);
+initPageSettings(footerRefs.pageSettingsBtn, footerRefs.pageSettingsPopover);
 
 // ── Worker ──
 const workerBridge = initGalleryWorker(canvas);

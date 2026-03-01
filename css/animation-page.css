@@ -1,0 +1,11 @@
+/* Animation editor page — single CSS entry point for animation.html */
+@import './base.css';
+@import './header.css';
+@import './panel.css';
+@import './stage.css';
+@import './buttons.css';
+@import './modals.css';
+@import './footer.css';
+@import './responsive.css';
+@import './animation-editor.css';
+@import './timeline.css';

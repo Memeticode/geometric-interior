@@ -22,55 +22,9 @@
 
     <link id="favicon" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='9' width='18' height='18' rx='2' fill='%23b482ff' opacity='.35' transform='rotate(-12 12 18)'/%3E%3Crect x='11' y='5' width='18' height='18' rx='2' fill='%23b482ff' opacity='.55' transform='rotate(8 20 14)'/%3E%3Crect x='7' y='7' width='16' height='16' rx='2' fill='%23b482ff' opacity='.9' transform='rotate(-3 15 15)'/%3E%3C/svg%3E" />
 
-    <!-- Prevent flash: detect theme before first paint -->
-    <script>
-        (function () {
-            try {
-                var stored = localStorage.getItem('geo-self-portrait-theme');
-                var pref = stored || 'system';
-                var theme;
-                if (pref === 'system') {
-                    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                } else {
-                    theme = pref;
-                }
-                document.documentElement.setAttribute('data-theme', theme);
-            } catch (e) { }
-        })();
-    </script>
-    <script>
-        (function () {
-            try {
-                var S = ['en', 'es'];
-                var s = localStorage.getItem('geo-self-portrait-locale');
-                if (s && S.indexOf(s) !== -1) {
-                    document.documentElement.lang = s;
-                } else {
-                    var langs = navigator.languages || [navigator.language || ''];
-                    for (var i = 0; i < langs.length; i++) {
-                        var code = langs[i].split('-')[0].toLowerCase();
-                        if (S.indexOf(code) !== -1) {
-                            document.documentElement.lang = code;
-                            break;
-                        }
-                    }
-                }
-            } catch (e) { }
-        })();
-    </script>
+    <script src="/src/shared/early-detect.js"></script>
 
-    <link rel="stylesheet" href="/css/base.css" />
-    <link rel="stylesheet" href="/css/header.css" />
-    <link rel="stylesheet" href="/css/panel.css" />
-    <link rel="stylesheet" href="/css/controls.css" />
-    <link rel="stylesheet" href="/css/gallery.css" />
-    <link rel="stylesheet" href="/css/active-card.css" />
-    <link rel="stylesheet" href="/css/stage.css" />
-    <link rel="stylesheet" href="/css/buttons.css" />
-    <link rel="stylesheet" href="/css/anim-config.css" />
-    <link rel="stylesheet" href="/css/modals.css" />
-    <link rel="stylesheet" href="/css/footer.css" />
-    <link rel="stylesheet" href="/css/responsive.css" />
+    <link rel="stylesheet" href="/css/image-page.css" />
 
     <!-- JSZip for ZIP exports -->
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" async></script>
@@ -78,29 +32,7 @@
 
 <body>
     <div class="app-container">
-    <header class="app-header">
-        <button id="panelToggle" class="panel-toggle-btn" aria-label="Open menu" data-tooltip="Open menu" data-i18n-aria="panel.openMenu" data-i18n-tooltip="panel.openMenu" data-tooltip-pos="right">
-            <div class="panel-toggle-icon">
-                <span class="bar bar-top"></span>
-                <span class="bar bar-mid"></span>
-                <span class="bar bar-bot"></span>
-            </div>
-        </button>
-        <div class="header-brand">
-            <h1 data-i18n="header.title">Geometric Interior: Self-Portraits of a Predictive Model</h1>
-            <div class="header-links">
-                <a href="/" class="header-link" data-i18n="nav.gallery">Gallery</a>
-                <span class="header-sep">&middot;</span>
-                <a href="/animation.html" class="header-link" data-i18n="nav.animationEditor">Animation Editor</a>
-                <span class="header-sep">&middot;</span>
-                <button id="artistStatement" class="header-link" data-i18n="header.artistStatement">Artist Statement</button>
-                <span class="header-sep">&middot;</span>
-                <button id="developerStatement" class="header-link" data-i18n="header.developerStatement">Developer Statement</button>
-                <span class="header-sep">&middot;</span>
-                <button id="governanceStatement" class="header-link" data-i18n="header.governanceFramework">Governance Framework</button>
-            </div>
-        </div>
-    </header>
+    <header class="app-header"></header>
 
     <div class="app-body">
         <script>
@@ -504,118 +436,12 @@
                 </div>
             </div>
 
-        <footer class="app-footer">
-            <div class="footer-content">
-                <div class="settings-btn-wrap">
-                    <button id="pageSettingsBtn" class="footer-link" data-tooltip="Settings" data-i18n-tooltip="footer.settings">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                            <circle cx="8" cy="8" r="2"/>
-                            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M13.07 2.93l-1.41 1.41M4.34 11.66l-1.41 1.41"/>
-                        </svg>
-                    </button>
-                    <div id="pageSettingsPopover" class="settings-popover hidden">
-                        <div class="settings-section">
-                            <span class="settings-section-label" data-i18n="footer.theme">Theme</span>
-                            <div class="theme-switcher" id="themeSwitcher">
-                                <div class="theme-slider" id="themeSlider"></div>
-                                <button class="theme-option" data-theme="system" data-i18n="theme.system">System</button>
-                                <button class="theme-option" data-theme="light" data-i18n="theme.light">Light</button>
-                                <button class="theme-option" data-theme="dark" data-i18n="theme.dark">Dark</button>
-                            </div>
-                        </div>
-                        <div class="settings-section">
-                            <span class="settings-section-label" data-i18n="footer.language">Language</span>
-                            <select id="langSelect" class="lang-select" aria-label="Language" data-i18n-aria="footer.langLabel">
-                                <option value="en">English</option>
-                                <option value="es">Espa&#241;ol</option>
-                            </select>
-                        </div>
-                        <div class="settings-section">
-                            <span class="settings-section-label" data-i18n="footer.resolution">Resolution</span>
-                            <select id="resolutionSelect" class="lang-select" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel">
-                                <option value="sd">SD (840&#215;540)</option>
-                                <option value="hd" selected>HD (1400&#215;900)</option>
-                                <option value="fhd">FHD (1680&#215;1080)</option>
-                                <option value="qhd">QHD (2520&#215;1620)</option>
-                                <option value="4k">4K (3360&#215;2160)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <a href="https://github.com/Memeticode/symmetrical-barnacle" target="_blank" rel="noopener"
-                    class="footer-link footer-github">
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
-                    </svg>
-                    <span data-i18n="footer.github">GitHub</span>
-                </a>
-            </div>
-        </footer>
+        <footer class="app-footer"></footer>
         </main>
     </div>
     </div>
 
-    <div id="statementModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
-        <div class="modal-box">
-            <div class="modal-header">
-                <div class="modal-tabs">
-                    <button class="modal-tab active" data-tab="artist" data-i18n="statement.artist">Artist Statement</button>
-                    <button class="modal-tab" data-tab="developer" data-i18n="statement.developer">Developer Statement</button>
-                    <button class="modal-tab" data-tab="governance" data-i18n="statement.governance">Governance Framework</button>
-                </div>
-                <div id="statementTabSelect" class="modal-tab-select" aria-label="Select section">
-                    <button class="modal-tab-select-trigger" type="button">
-                        <span class="modal-tab-select-label" data-i18n="statement.artist">Artist Statement</span>
-                        <span class="modal-tab-select-chevron">&#9662;</span>
-                    </button>
-                    <div class="modal-tab-select-menu hidden">
-                        <button class="modal-tab-select-item active" data-tab="artist" data-i18n="statement.artist">Artist Statement</button>
-                        <button class="modal-tab-select-item" data-tab="developer" data-i18n="statement.developer">Developer Statement</button>
-                        <button class="modal-tab-select-item" data-tab="governance" data-i18n="statement.governance">Governance Framework</button>
-                    </div>
-                </div>
-                <button id="statementModalClose" class="modal-close" aria-label="Close" data-i18n-aria="aria.close">
-                    <div class="panel-toggle-icon">
-                        <span class="bar bar-top"></span>
-                        <span class="bar bar-mid"></span>
-                        <span class="bar bar-bot"></span>
-                    </div>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="modal-tab-title" id="statementTitle"></div>
-                <div id="developerBody" class="modal-tab-content">
-                    <pre class="manifesto"></pre>
-                </div>
-                <div id="artistBody" class="modal-tab-content hidden">
-                    <pre class="manifesto"></pre>
-                    <div class="manifesto-note"></div>
-                </div>
-                <div id="governanceBody" class="modal-tab-content hidden">
-                    <div class="manifesto"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="confirmModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
-        <div class="modal-box" style="max-width: 24rem;">
-            <div class="modal-header">
-                <span class="modal-title" id="confirmTitle"></span>
-            </div>
-            <div class="modal-body" id="confirmBody" style="text-align: center; padding: 1.25rem;"></div>
-            <div class="confirm-actions" id="confirmActions"></div>
-        </div>
-    </div>
-
-    <div id="infoModal" class="info-modal-overlay hidden" role="dialog" aria-modal="true">
-        <div class="info-modal-box">
-            <div class="info-modal-title" id="infoModalTitle"></div>
-            <div class="info-modal-body" id="infoModalBody"></div>
-            <button id="infoModalClose" class="info-modal-close">&times;</button>
-        </div>
-    </div>
-
+    <!-- Import modal (page-specific) -->
     <div id="importModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
         <div class="modal-box" style="max-width: 30rem;">
             <div class="modal-header">
@@ -656,15 +482,7 @@
         </div>
     </div>
 
-    <div id="paramTooltip"></div>
-    <div class="toast" id="toast">
-        <span id="toastMsg"></span>
-        <button class="toast-close" id="toastClose" aria-label="Close">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" width="12" height="12">
-                <path d="M4 4l8 8M12 4l-8 8"/>
-            </svg>
-        </button>
-    </div>
+    <!-- Shared modals, toast, tooltip created by JS (src/shared/create-shared-dom.js) -->
     <script type="module" src="/src/image/image-main.js"></script>
 </body>
 

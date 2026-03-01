@@ -1,0 +1,9 @@
+/* Gallery page — single CSS entry point for index.html */
+@import './base.css';
+@import './header.css';
+@import './gallery.css';
+@import './buttons.css';
+@import './generate.css';
+@import './modals.css';
+@import './footer.css';
+@import './responsive.css';

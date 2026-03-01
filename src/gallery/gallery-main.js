@@ -12,11 +12,13 @@
  *   /gallery/animations                      — animation gallery (placeholder)
  */
 
+import { createHeader } from '../shared/create-header.js';
+import { createFooter } from '../shared/create-footer.js';
+import { initApp } from '../shared/app-init.js';
 import { initTheme } from '../ui/theme.js';
 import { initLangSelector } from '../i18n/lang-selector.js';
 import { initResolutionSelector } from '../ui/resolution.js';
-import { initLocale, t, getLocale } from '../i18n/locale.js';
-import { createFaviconAnimation } from '../ui/animated-favicon.js';
+import { t, getLocale } from '../i18n/locale.js';
 import { loadProfiles, loadPortraits, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder } from '../ui/profiles.js';
 import { getAllThumbs, deleteThumb } from '../ui/thumb-cache.js';
 import { getAllAssets, getAsset, deleteAsset, getAllAnimAssets, deleteAnimAsset } from '../ui/asset-store.js';
@@ -24,25 +26,27 @@ import { getResolution } from '../ui/resolution.js';
 import { generateTitle, generateAltText } from '../../lib/core/text.js';
 import { xmur3, mulberry32 } from '../../lib/core/prng.js';
 import { seedTagToLabel } from '../../lib/core/seed-tags.js';
-import { initToastClose, toast } from '../shared/toast.js';
+import { toast } from '../shared/toast.js';
 import { showConfirm } from '../shared/modals.js';
-import { initStatementModal } from '../shared/statement.js';
 import { slugify } from '../shared/slugify.js';
 import { TRASH_SVG } from '../shared/icons.js';
-import { initTooltips, refreshTooltip, hideTooltip } from '../shared/tooltips.js';
+import { refreshTooltip, hideTooltip } from '../shared/tooltips.js';
 import { initGalleryWorker } from './gallery-worker-bridge.js';
 import { createRenderQueue } from './render-queue.js';
 import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
 import { initRenderQueueMenu } from './render-queue-menu.js';
 
-/* ── Theme + Locale + Favicon ── */
-initLocale();
-initTheme(document.getElementById('themeSwitcher'));
-initLangSelector(document.getElementById('langSelect'));
+/* ── Build header & footer DOM ── */
+createHeader(document.querySelector('.app-header'), { page: 'gallery' });
+const footerRefs = createFooter(document.querySelector('.app-footer'), { page: 'gallery' });
+
+/* ── Shared init (locale, tooltips, toast, statement modal, favicon) ── */
+const { statement } = initApp({ page: 'gallery' });
+
+/* ── Gallery-specific init ── */
+initTheme(footerRefs.themeSwitcher);
+initLangSelector(footerRefs.langSelect);
 initResolutionSelector(document.getElementById('resolutionSelect'));
-createFaviconAnimation();
-initToastClose();
-initTooltips();
 
 /* ── Site menu toggle ── */
 const siteMenuToggle = document.getElementById('siteMenuToggle');
@@ -81,19 +85,8 @@ siteMenuToggle.addEventListener('click', () => {
 
 siteMenuBackdrop.addEventListener('click', closeSiteMenu);
 
-/* ── Statement modal ── */
-const { loadContent: loadStatementContent, closeStatementModal } = initStatementModal({
-    statementModal: document.getElementById('statementModal'),
-    statementModalClose: document.getElementById('statementModalClose'),
-    statementTitle: document.getElementById('statementTitle'),
-    statementTabSelect: document.getElementById('statementTabSelect'),
-    developerBody: document.getElementById('developerBody'),
-    artistBody: document.getElementById('artistBody'),
-    governanceBody: document.getElementById('governanceBody'),
-    developerStatement: document.getElementById('developerStatement'),
-    artistStatement: document.getElementById('artistStatement'),
-    governanceStatement: document.getElementById('governanceStatement'),
-});
+/* ── Statement modal (initialized by initApp) ── */
+const { loadContent: loadStatementContent, closeStatementModal } = statement;
 
 /* ── Gallery section toggles ── */
 document.querySelectorAll('.gallery-section-header').forEach(header => {
@@ -180,6 +173,7 @@ selectedGenToggle.addEventListener('click', () => {
 
 window.addEventListener('resize', () => {
     if (carouselCards.length) positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
+    positionMenuSlider(false);
 });
 
 /* ── State ── */
@@ -1065,12 +1059,32 @@ function clearVideoPlayback() {
 /* ── Menu navigation links ── */
 
 const menuNavLinks = document.querySelectorAll('.menu-nav-link');
+const menuNavSlider = document.getElementById('menuNavSlider');
+
+function positionMenuSlider(animate) {
+    const activeLink = siteMenu.querySelector('.menu-nav-link.active');
+    if (!activeLink || !menuNavSlider) return;
+    const menuRect = siteMenu.getBoundingClientRect();
+    const linkRect = activeLink.getBoundingClientRect();
+    const top = linkRect.top - menuRect.top + siteMenu.scrollTop;
+    if (!animate) {
+        menuNavSlider.style.transition = 'none';
+    }
+    menuNavSlider.style.transform = `translateY(${top}px)`;
+    menuNavSlider.style.height = `${linkRect.height}px`;
+    menuNavSlider.classList.add('visible');
+    if (!animate) {
+        menuNavSlider.offsetHeight; // force reflow
+        menuNavSlider.style.transition = '';
+    }
+}
 
 function updateMenuNavLinks() {
     menuNavLinks.forEach(link => {
         const matches = link.dataset.navType === activeType && link.dataset.navMode === activeMode;
         link.classList.toggle('active', matches);
     });
+    positionMenuSlider(true);
 }
 
 function handleMenuNav(type, mode) {
@@ -1300,6 +1314,8 @@ document.addEventListener('keydown', (e) => {
 const route = parseRoute();
 activeType = route.type;
 updateMenuNavLinks();
+// Position slider without animation on initial load
+requestAnimationFrame(() => positionMenuSlider(false));
 
 if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
     history.replaceState({ type: 'image', profile: null }, '', '/gallery/images');
