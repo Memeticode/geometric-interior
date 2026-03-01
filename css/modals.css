@@ -492,10 +492,14 @@
 
 .coin-flip-out {
     animation: coinFlipOut 0.3s ease-in forwards;
+    background: var(--modal-bg);
+    backface-visibility: hidden;
 }
 
 .coin-flip-in {
     animation: coinFlipIn 0.3s ease-out forwards;
+    background: var(--modal-bg);
+    backface-visibility: hidden;
 }
 
 .modal-tab-content {

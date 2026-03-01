@@ -9,7 +9,6 @@ import {
     createRenderer, deriveParams as _deriveParams,
     resetPalette as _resetPalette, updatePalette as _updatePalette,
     getPalette as _getPalette, PALETTE_KEYS,
-    xmur3, mulberry32,
 } from '../lib/index.js';
 import type { Controls, PaletteKey, PaletteTweaks, RenderMeta, DerivedParams } from '../lib/types.js';
 import starterProfiles from '../src/core/starter-profiles.json';
@@ -118,9 +117,8 @@ const testLib = {
 
     /* ── Params ── */
 
-    deriveParams(controls: Controls, seed: string): DerivedParams {
-        const rng = mulberry32(xmur3(seed)());
-        return _deriveParams(controls, rng);
+    deriveParams(controls: Controls): DerivedParams {
+        return _deriveParams(controls);
     },
 
     /* ── Morph ── */

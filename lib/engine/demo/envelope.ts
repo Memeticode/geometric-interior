@@ -66,13 +66,13 @@ export function projectToEnvelope(p: Vector3, radii: Vector3, div: DivisionParam
     return result;
 }
 
-export function generateSeedPoints(count: number, radii: Vector3, div: DivisionParams = DEFAULT_DIV): Vector3[] {
+export function generateSeedPoints(count: number, radii: Vector3, div: DivisionParams = DEFAULT_DIV, thetaOffset: number = 0): Vector3[] {
     const seeds: Vector3[] = [];
     const goldenAngle = Math.PI * (3 - Math.sqrt(5));
     for (let i = 0; i < count; i++) {
         const y = 1 - (i / (count - 1)) * 2;
         const radius = Math.sqrt(1 - y * y);
-        const theta = goldenAngle * i;
+        const theta = goldenAngle * i + thetaOffset;
         const raw = new Vector3(
             Math.cos(theta) * radius * radii.x,
             y * radii.y,

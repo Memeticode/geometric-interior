@@ -1,39 +1,85 @@
 /**
  * Gallery page entry point.
- * Lightweight — no Three.js, no render worker, no canvas.
  * Shows pre-cached profile thumbnails with selection + navigation to editor pages.
  * Fold animations play via pre-rendered sprite strip PNGs on a canvas overlay.
+ * "Generate" mode activates an in-gallery config panel with live preview + render queue.
  *
  * Routes (client-side, history.pushState):
  *   /gallery/images                          — image gallery (default)
  *   /gallery/images/portraits/{slug}         — portrait selected
  *   /gallery/images/local/{slug}             — user profile selected
+ *   /gallery/images/generated/{id}           — generated profile selected
  *   /gallery/animations                      — animation gallery (placeholder)
- *   /generate/image                          — navigates to image.html
- *   /generate/animation                      — navigates to animation.html
  */
 
-import { initPageSettings } from '../ui/page-settings.js';
+import { initTheme } from '../ui/theme.js';
+import { initLangSelector } from '../i18n/lang-selector.js';
+import { initResolutionSelector } from '../ui/resolution.js';
 import { initLocale, t, getLocale } from '../i18n/locale.js';
 import { createFaviconAnimation } from '../ui/animated-favicon.js';
 import { loadProfiles, loadPortraits, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder } from '../ui/profiles.js';
 import { getAllThumbs, deleteThumb } from '../ui/thumb-cache.js';
+import { getAllAssets, getAsset, deleteAsset, getAllAnimAssets, deleteAnimAsset } from '../ui/asset-store.js';
+import { getResolution } from '../ui/resolution.js';
 import { generateTitle, generateAltText } from '../../lib/core/text.js';
 import { xmur3, mulberry32 } from '../../lib/core/prng.js';
+import { seedTagToLabel } from '../../lib/core/seed-tags.js';
 import { initToastClose, toast } from '../shared/toast.js';
 import { showConfirm } from '../shared/modals.js';
 import { initStatementModal } from '../shared/statement.js';
 import { slugify } from '../shared/slugify.js';
-import { TRASH_SVG, ARROW_UP_SVG, ARROW_DOWN_SVG } from '../shared/icons.js';
+import { TRASH_SVG } from '../shared/icons.js';
+import { initTooltips, refreshTooltip } from '../shared/tooltips.js';
+import { initGalleryWorker } from './gallery-worker-bridge.js';
+import { createRenderQueue } from './render-queue.js';
+import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
+import { initRenderQueueMenu } from './render-queue-menu.js';
 
 /* ── Theme + Locale + Favicon ── */
 initLocale();
-initPageSettings(
-    document.getElementById('pageSettingsBtn'),
-    document.getElementById('pageSettingsPopover'),
-);
+initTheme(document.getElementById('themeSwitcher'));
+initLangSelector(document.getElementById('langSelect'));
+initResolutionSelector(document.getElementById('resolutionSelect'));
 createFaviconAnimation();
 initToastClose();
+initTooltips();
+
+/* ── Site menu toggle ── */
+const siteMenuToggle = document.getElementById('siteMenuToggle');
+const siteMenu = document.getElementById('siteMenu');
+const siteMenuBackdrop = document.getElementById('siteMenuBackdrop');
+const appContainer = document.querySelector('.app-container');
+
+function openSiteMenu() {
+    const header = document.querySelector('.app-header');
+    if (header) {
+        document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
+    }
+    siteMenu.classList.remove('site-menu-closed');
+    siteMenu.setAttribute('aria-hidden', 'false');
+    siteMenuBackdrop.classList.remove('hidden');
+    siteMenuToggle.classList.add('menu-open');
+    appContainer.classList.add('menu-push');
+}
+
+function closeSiteMenu() {
+    siteMenu.classList.add('site-menu-closed');
+    siteMenu.setAttribute('aria-hidden', 'true');
+    siteMenuBackdrop.classList.add('hidden');
+    siteMenuToggle.classList.remove('menu-open');
+    appContainer.classList.remove('menu-push');
+}
+
+function isSiteMenuOpen() {
+    return !siteMenu.classList.contains('site-menu-closed');
+}
+
+siteMenuToggle.addEventListener('click', () => {
+    if (isSiteMenuOpen()) closeSiteMenu();
+    else openSiteMenu();
+});
+
+siteMenuBackdrop.addEventListener('click', closeSiteMenu);
 
 /* ── Statement modal ── */
 const { loadContent: loadStatementContent, closeStatementModal } = initStatementModal({
@@ -62,6 +108,29 @@ document.querySelectorAll('.gallery-section-header').forEach(header => {
     });
 });
 
+/* ── Generated text toggle ── */
+selectedGenToggle.addEventListener('click', () => {
+    const expanded = selectedGenToggle.getAttribute('aria-expanded') === 'true';
+    selectedGenToggle.setAttribute('aria-expanded', String(!expanded));
+    selectedGenAlt.classList.toggle('expanded', !expanded);
+});
+
+/* ── Settings group collapsible toggles ── */
+document.querySelectorAll('.settings-group-header').forEach(header => {
+    header.addEventListener('click', (e) => {
+        // Don't toggle when clicking action buttons inside the header
+        if (e.target.closest('button')) return;
+        // Skip non-collapsible nav headers
+        if (header.classList.contains('menu-nav-header')) return;
+        const expanded = header.getAttribute('aria-expanded') === 'true';
+        header.setAttribute('aria-expanded', String(!expanded));
+        const body = header.nextElementSibling;
+        if (body && body.classList.contains('settings-group-body')) {
+            body.classList.toggle('collapsed', expanded);
+        }
+    });
+});
+
 /* ── SVG icons (imported from shared/icons.js) ── */
 
 /* ── Thumbnail cache ── */
@@ -72,55 +141,280 @@ function thumbCacheKey(seed, controls) {
 }
 
 /* ── DOM refs ── */
-const portraitGalleryEl = document.getElementById('portraitGallery');
-const userGalleryEl = document.getElementById('userGallery');
 const selectedImage = document.getElementById('selectedImage');
 const selectedImageWrap = document.getElementById('selectedImageWrap');
-const selectedCanvas = document.getElementById('selectedCanvas');
-const canvasCtx = selectedCanvas.getContext('2d');
 const selectedName = document.getElementById('selectedName');
 const selectedSeed = document.getElementById('selectedSeed');
 const selectedDisplay = document.getElementById('selectedDisplay');
 const galleryContentEl = document.getElementById('galleryContent');
-const modeGroup = document.getElementById('modeGroup');
-const typeGroup = document.getElementById('typeGroup');
+const selectedGenToggle = document.getElementById('selectedGenToggle');
 const selectedGenTitle = document.getElementById('selectedGenTitle');
 const selectedGenAlt = document.getElementById('selectedGenAlt');
 const galleryArrowLeft = document.getElementById('galleryArrowLeft');
 const galleryArrowRight = document.getElementById('galleryArrowRight');
+const selectedVideo = document.getElementById('selectedVideo');
 
-/* ── Sliding underline ── */
+/* ── Carousel DOM refs ── */
+const carouselTrack = document.getElementById('carouselTrack');
+const viewAllBtn = document.getElementById('viewAllBtn');
+const viewAllModal = document.getElementById('viewAllModal');
+const viewAllGrid = document.getElementById('viewAllGrid');
+const viewAllTitle = document.getElementById('viewAllTitle');
+const viewAllModalClose = document.getElementById('viewAllModalClose');
 
-function updateUnderline(group) {
-    const active = group.querySelector('.nav-item.active');
-    const underline = group.querySelector('.nav-underline');
-    if (!active || !underline) return;
-    const groupRect = group.getBoundingClientRect();
-    const activeRect = active.getBoundingClientRect();
-    underline.style.left = (activeRect.left - groupRect.left) + 'px';
-    underline.style.width = activeRect.width + 'px';
-}
+/* ── Generate panel DOM refs ── */
+const generatePanelEl = document.getElementById('generatePanel');
+const genSlidersEl = document.getElementById('genSliders');
+const genTagArrEl = document.getElementById('genTagArr');
+const genTagStrEl = document.getElementById('genTagStr');
+const genTagDetEl = document.getElementById('genTagDet');
+const genRandomizeBtn = document.getElementById('genRandomizeBtn');
+const genGenerateBtn = document.getElementById('genGenerateBtn');
+const genPreviewCanvas = document.getElementById('genPreviewCanvas');
+const genProgressOverlay = document.getElementById('genProgressOverlay');
+const genProgressFill = document.getElementById('genProgressFill');
+const genProgressLabel = document.getElementById('genProgressLabel');
+const genQueueEl = document.getElementById('genQueue');
+const animSectionEl = document.getElementById('animSection');
+const animGalleryEl = document.getElementById('animGallery');
+const carouselStripEl = carouselTrack.closest('.carousel-strip');
 
-function updateAllUnderlines() {
-    updateUnderline(modeGroup);
-    updateUnderline(typeGroup);
-}
-
-window.addEventListener('resize', updateAllUnderlines);
+window.addEventListener('resize', () => {
+    if (carouselCards.length) positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
+});
 
 /* ── State ── */
 let selected = { name: null, isPortrait: false };
 let activeType = 'image'; // 'image' | 'animation'
-let portraitList = [];   // [{name, profile}] sorted alphabetically
+let activeMode = 'gallery'; // 'gallery' | 'generate'
+let navigableList = [];  // [{name, profile, isPortrait, assetId}] — all profiles in display order
 let currentIndex = -1;
+
+/* ── Carousel state ── */
+let carouselList = [];       // [{name, profile, isPortrait, assetId?}] — portraits first, then local
+let carouselCenterIdx = 0;
+let carouselCards = [];      // [{element, index}]
+
+/* ── Slideshow ── */
+const slideshowBtn = document.getElementById('slideshowBtn');
+const slideshowDuration = document.getElementById('slideshowDuration');
+let slideshowTimer = null;
+let slideshowPlaying = false;
+
+const PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M5 3l8 5-8 5z"/></svg>';
+const PAUSE_SVG = '<svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><rect x="3" y="3" width="4" height="10" rx="1"/><rect x="9" y="3" width="4" height="10" rx="1"/></svg>';
+
+function startSlideshow() {
+    if (navigableList.length <= 1) return;
+    slideshowPlaying = true;
+    slideshowBtn.classList.add('slideshow-active');
+    slideshowBtn.innerHTML = PAUSE_SVG;
+    slideshowBtn.setAttribute('data-tooltip', 'Pause slideshow');
+    slideshowBtn.setAttribute('aria-label', 'Pause slideshow');
+    refreshTooltip(slideshowBtn);
+    scheduleNextSlide();
+}
+
+function stopSlideshow() {
+    slideshowPlaying = false;
+    slideshowBtn.classList.remove('slideshow-active');
+    slideshowBtn.innerHTML = PLAY_SVG;
+    slideshowBtn.setAttribute('data-tooltip', 'Start slideshow');
+    slideshowBtn.setAttribute('aria-label', 'Start slideshow');
+    refreshTooltip(slideshowBtn);
+    if (slideshowTimer) { clearTimeout(slideshowTimer); slideshowTimer = null; }
+}
+
+function scheduleNextSlide() {
+    if (!slideshowPlaying) return;
+    if (slideshowTimer) clearTimeout(slideshowTimer);
+    const ms = parseInt(slideshowDuration.value, 10) * 1000;
+    slideshowTimer = setTimeout(() => {
+        slideshowTimer = null;
+        if (!slideshowPlaying) return;
+        navigateArrow(1);
+        scheduleNextSlide();
+    }, ms);
+}
+
+slideshowBtn.addEventListener('click', () => {
+    if (slideshowPlaying) stopSlideshow();
+    else startSlideshow();
+});
+
+/* ── Carousel engine ── */
+
+function getVisibleCount() {
+    const viewport = carouselTrack.parentElement;
+    const cardW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w')) || 180;
+    const spacing = cardW * 0.6;
+    const w = viewport ? viewport.clientWidth : window.innerWidth;
+    const half = Math.floor((w - cardW) / (2 * spacing));
+    return Math.max(3, 2 * Math.max(1, half) + 1);
+}
+
+/**
+ * Position carousel cards with coverflow 3D transforms.
+ * Centers the card at `centerIdx`, tilts neighbors, hides far-offscreen cards.
+ */
+function positionCards(trackEl, cards, centerIdx, total) {
+    const visible = getVisibleCount();
+    const half = Math.floor(visible / 2);
+    trackEl.style.setProperty('--carousel-speed', '0.6s');
+
+    const cardW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w')) || 180;
+
+    for (const { element, index } of cards) {
+        let offset = index - centerIdx;
+        // Wrap for circular navigation
+        if (total > 1) {
+            if (offset > total / 2) offset -= total;
+            if (offset < -total / 2) offset += total;
+        }
+        const abs = Math.abs(offset);
+
+        element.classList.remove('active');
+
+        if (abs > half + 1) {
+            element.style.setProperty('--card-opacity', '0');
+            element.style.pointerEvents = 'none';
+            element.style.zIndex = '0';
+        } else if (offset === 0) {
+            element.style.setProperty('--cx', '0px');
+            element.style.setProperty('--ry', '0deg');
+            element.style.setProperty('--tz', '40px');
+            element.style.setProperty('--sc', '1');
+            element.style.setProperty('--card-opacity', '1');
+            element.style.zIndex = '10';
+            element.style.pointerEvents = '';
+            element.classList.add('active');
+        } else {
+            const cx = offset * (cardW * 0.6);
+            const ry = offset > 0 ? -25 : 25;
+            const tz = -abs * 20;
+            const sc = Math.max(0.65, 1 - abs * 0.08);
+            const opacity = abs <= half ? 1 : 0;
+
+            element.style.setProperty('--cx', cx + 'px');
+            element.style.setProperty('--ry', ry + 'deg');
+            element.style.setProperty('--tz', tz + 'px');
+            element.style.setProperty('--sc', String(sc));
+            element.style.setProperty('--card-opacity', String(opacity));
+            element.style.zIndex = String(Math.max(0, 10 - abs));
+            element.style.pointerEvents = abs <= half ? '' : 'none';
+        }
+    }
+}
+
+/**
+ * Build carousel card elements into a track element.
+ */
+function buildCarouselCards(list, trackEl, onCardClick) {
+    trackEl.innerHTML = '';
+    const cards = [];
+    for (let i = 0; i < list.length; i++) {
+        const entry = list[i];
+        const card = document.createElement('div');
+        card.className = 'carousel-card';
+        card.dataset.profileName = entry.name;
+        if (entry.assetId) card.dataset.assetId = entry.assetId;
+
+        const imgWrap = document.createElement('div');
+        imgWrap.className = 'carousel-card-img';
+        const img = document.createElement('img');
+        img.alt = entry.name;
+        if (entry.assetId) {
+            const asset = generatedAssets.find(a => a.id === entry.assetId);
+            if (asset && asset.thumbDataUrl) img.src = asset.thumbDataUrl;
+        } else {
+            const src = getCarouselThumbSrc(entry.name, entry.profile, entry.isPortrait);
+            if (src) img.src = src;
+        }
+        if (entry.isPortrait) {
+            img.onerror = () => {
+                if (entry.profile.seed && entry.profile.controls) {
+                    const key = thumbCacheKey(entry.profile.seed, entry.profile.controls);
+                    if (thumbCache.has(key)) img.src = thumbCache.get(key);
+                }
+            };
+        }
+        imgWrap.appendChild(img);
+        card.appendChild(imgWrap);
+
+        const label = document.createElement('div');
+        label.className = 'carousel-card-label';
+        label.textContent = entry.name;
+        card.appendChild(label);
+
+        card.addEventListener('click', () => onCardClick(i, entry));
+        trackEl.appendChild(card);
+        cards.push({ element: card, index: i });
+    }
+    return cards;
+}
+
+/**
+ * Sync carousel position to match a selected profile.
+ */
+function syncCarouselToSelection(name, isPortrait, assetId) {
+    const idx = carouselList.findIndex(e =>
+        assetId ? e.assetId === assetId : e.name === name);
+    if (idx >= 0) {
+        carouselCenterIdx = idx;
+        positionCards(carouselTrack, carouselCards, idx, carouselList.length);
+    }
+}
+
+/* ── Generated assets ── */
+let generatedAssets = []; // loaded from IndexedDB
+let animAssets = [];      // animation assets from IndexedDB
+let workerBridge = null;
+let renderQueue = null;
+let genPanel = null;
+let generateInitialized = false;
+let currentVideoUrl = null; // object URL for active video playback
+let currentStaticUrl = null; // object URL for generated profile staticBlob display
+
+/* ── Render queue site menu section ── */
+function viewJob(job) {
+    hideGenerateMode();
+    activeMode = 'gallery';
+    updateMenuNavLinks();
+    if (job.asset) {
+        if (job.jobType === 'animation') {
+            activeType = 'animation';
+            updateMenuNavLinks();
+            animAssets = animAssets.filter(a => a.id !== job.asset.id);
+            animAssets.unshift(job.asset);
+            refreshGallery();
+            applyAnimSelection(job.asset.id);
+        } else {
+            generatedAssets = generatedAssets.filter(a => a.id !== job.asset.id);
+            generatedAssets.unshift(job.asset);
+            refreshGallery();
+            const profile = { seed: job.asset.seed, controls: job.asset.controls };
+            selectProfile(job.asset.name, profile, false, job.asset.id);
+        }
+    }
+}
+
+const rqMenu = initRenderQueueMenu({
+    groupEl: document.getElementById('rqGroup'),
+    listEl: document.getElementById('rqJobList'),
+    badgeEl: document.getElementById('renderQueueBadge'),
+    clearBtn: document.getElementById('rqClearBtn'),
+    onCancel(jobId) { if (renderQueue) renderQueue.cancel(jobId); },
+    onClear() { if (renderQueue) renderQueue.clearFinished(); },
+    onView: viewJob,
+});
 
 /* ── URL routing ── */
 
 function parseRoute() {
     const path = window.location.pathname;
     if (path.startsWith('/gallery/animations')) return { type: 'animation', source: null, profileSlug: null };
-    // /gallery/images/portraits/{slug} or /gallery/images/local/{slug}
-    const match = path.match(/^\/gallery\/images\/(portraits|local)\/(.+)$/);
+    // /gallery/images/portraits/{slug} or /gallery/images/local/{slug} or /gallery/images/generated/{id}
+    const match = path.match(/^\/gallery\/images\/(portraits|local|generated)\/(.+)$/);
     if (match) return { type: 'image', source: match[1], profileSlug: match[2] };
     return { type: 'image', source: null, profileSlug: null };
 }
@@ -132,30 +426,34 @@ function pushRoute() {
     }
 }
 
-function pushProfileRoute(name, isPortrait) {
-    const slug = slugify(name);
-    const prefix = isPortrait ? 'portraits' : 'local';
-    const url = `/gallery/images/${prefix}/${slug}`;
-    if (window.location.pathname !== url) {
-        history.pushState({ type: 'image', profile: name, isPortrait }, '', url);
+function pushProfileRoute(name, isPortrait, assetId) {
+    if (assetId) {
+        const url = `/gallery/images/generated/${assetId}`;
+        if (window.location.pathname !== url) {
+            history.pushState({ type: 'image', profile: name, isPortrait: false, assetId }, '', url);
+        }
+    } else {
+        const slug = slugify(name);
+        const prefix = isPortrait ? 'portraits' : 'local';
+        const url = `/gallery/images/${prefix}/${slug}`;
+        if (window.location.pathname !== url) {
+            history.pushState({ type: 'image', profile: name, isPortrait }, '', url);
+        }
     }
 }
 
 function applyRoute() {
     const route = parseRoute();
     activeType = route.type;
-
-    typeGroup.querySelectorAll('.nav-item').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.type === activeType);
-    });
+    updateMenuNavLinks();
 
     if (activeType === 'image') {
         if (route.profileSlug) {
             const entry = findProfileBySlug(route.profileSlug, route.source);
             if (entry) {
-                selected = { name: entry.name, isPortrait: entry.isPortrait };
+                selected = { name: entry.name, isPortrait: entry.isPortrait, assetId: entry.assetId };
                 showImageGallery();
-                instantSelect(entry.name, entry.profile, entry.isPortrait);
+                instantSelect(entry.name, entry.profile, entry.isPortrait, entry.assetId);
             } else {
                 selected = { name: null, isPortrait: false };
                 showImageGallery();
@@ -166,29 +464,46 @@ function applyRoute() {
         }
     } else {
         selected = { name: null, isPortrait: false };
-        showAnimationPlaceholder();
+        showAnimationGallery();
     }
-
-    requestAnimationFrame(updateAllUnderlines);
 }
 
 function findProfileBySlug(slug, source) {
-    if (source !== 'local') {
+    if (source !== 'local' && source !== 'generated') {
         const portraits = loadPortraits();
         for (const name of Object.keys(portraits)) {
             if (slugify(name) === slug) return { name, profile: portraits[name], isPortrait: true };
         }
     }
-    if (source !== 'portraits') {
+    if (source !== 'portraits' && source !== 'generated') {
         const profiles = loadProfiles();
         for (const name of Object.keys(profiles)) {
             if (slugify(name) === slug) return { name, profile: profiles[name], isPortrait: false };
+        }
+    }
+    // Check generated assets by ID
+    if (source !== 'portraits' && source !== 'local') {
+        const asset = generatedAssets.find(a => a.id === slug);
+        if (asset) {
+            return {
+                name: asset.name,
+                profile: { seed: asset.seed, controls: asset.controls },
+                isPortrait: false,
+                isGenerated: true,
+                assetId: asset.id,
+                thumbDataUrl: asset.thumbDataUrl,
+            };
         }
     }
     return null;
 }
 
 window.addEventListener('popstate', applyRoute);
+
+/* ── Resolution change ── */
+document.addEventListener('resolutionchange', () => {
+    // Resolution setting only affects render worker output, not pre-cached thumbnails
+});
 
 /* ── Text generation ── */
 
@@ -209,7 +524,18 @@ function generateProfileText(profile) {
 
 /* ── Thumbnail helpers ── */
 
-function getThumbSrc(name, profile, isPortrait) {
+/** Carousel thumbnail (always 280×180 PNG for fast loading) */
+function getCarouselThumbSrc(name, profile, isPortrait) {
+    if (isPortrait) return `/thumbs/${slugify(name)}.png`;
+    if (profile.seed && profile.controls) {
+        const key = thumbCacheKey(profile.seed, profile.controls);
+        if (thumbCache.has(key)) return thumbCache.get(key);
+    }
+    return '';
+}
+
+/** Display image (PNG for portraits, ObjectURL for generated) */
+function getDisplaySrc(name, profile, isPortrait) {
     if (isPortrait) {
         return `/thumbs/${slugify(name)}.png`;
     }
@@ -220,189 +546,6 @@ function getThumbSrc(name, profile, isPortrait) {
     return '';
 }
 
-/* ── Fold animation sprite playback ── */
-
-const FOLD_FRAMES = 60;
-const FOLD_EXPAND_MS = 3000;
-const FOLD_COLLAPSE_MS = 3000;
-
-// Ease-out quadratic: fast start, decelerates to a stop
-function easeOutQuad(t) { return t * (2 - t); }
-// Ease-in quadratic: slow start, accelerates
-function easeInQuad(t) { return t * t; }
-const spriteCache = new Map(); // slug → Image
-
-let foldAnimating = false;
-let pendingSelect = null;
-let currentFoldSprite = null; // sprite for current profile (for collapse)
-let foldAnimId = 0; // monotonic ID to cancel stale animations
-
-function loadFoldSprite(slug) {
-    if (spriteCache.has(slug)) return Promise.resolve(spriteCache.get(slug));
-    return new Promise(resolve => {
-        const img = new Image();
-        img.onload = () => { spriteCache.set(slug, img); resolve(img); };
-        img.onerror = () => resolve(null);
-        img.src = `/thumbs/${slug}-fold.png`;
-    });
-}
-
-function syncCanvasSize() {
-    const rect = selectedImageWrap.getBoundingClientRect();
-    const w = Math.round(rect.width);
-    const h = Math.round(rect.height);
-    if (selectedCanvas.width !== w || selectedCanvas.height !== h) {
-        selectedCanvas.width = w;
-        selectedCanvas.height = h;
-    }
-}
-
-function showCanvas() { selectedCanvas.style.display = 'block'; }
-function hideCanvas() { selectedCanvas.style.display = 'none'; }
-
-/**
- * Play fold-expand: sprite frames 0→(N-1) with ease-out over 3s.
- * Starts fast, decelerates smoothly to the final state.
- */
-function playFoldExpand(sprite) {
-    return new Promise(resolve => {
-        const myId = ++foldAnimId;
-        const frameH = sprite.naturalHeight / FOLD_FRAMES;
-        const sw = sprite.naturalWidth;
-        const w = selectedCanvas.width;
-        const h = selectedCanvas.height;
-        let startTime = null;
-
-        function tick(timestamp) {
-            if (myId !== foldAnimId) { resolve(); return; }
-            if (!startTime) startTime = timestamp;
-            const elapsed = timestamp - startTime;
-            const rawT = Math.min(elapsed / FOLD_EXPAND_MS, 1);
-            const easedT = easeOutQuad(rawT);
-
-            const exactFrame = easedT * (FOLD_FRAMES - 1);
-            const frameA = Math.floor(exactFrame);
-            const frameB = Math.min(frameA + 1, FOLD_FRAMES - 1);
-            const blend = exactFrame - frameA;
-
-            canvasCtx.clearRect(0, 0, w, h);
-            canvasCtx.globalAlpha = 1;
-            canvasCtx.drawImage(sprite, 0, frameA * frameH, sw, frameH, 0, 0, w, h);
-            if (blend > 0.01 && frameA !== frameB) {
-                canvasCtx.globalAlpha = blend;
-                canvasCtx.drawImage(sprite, 0, frameB * frameH, sw, frameH, 0, 0, w, h);
-                canvasCtx.globalAlpha = 1;
-            }
-
-            if (rawT < 1) {
-                requestAnimationFrame(tick);
-            } else {
-                // Draw the thumbnail as final frame for seamless canvas→image transition
-                if (selectedImage.complete && selectedImage.naturalWidth > 0) {
-                    canvasCtx.clearRect(0, 0, w, h);
-                    canvasCtx.drawImage(selectedImage, 0, 0, w, h);
-                }
-                resolve();
-            }
-        }
-        requestAnimationFrame(tick);
-    });
-}
-
-/**
- * Play fold-collapse: sprite frames (N-1)→0 with ease-in over 3s.
- * Starts slow, accelerates into the folded state.
- */
-function playFoldCollapse(sprite) {
-    return new Promise(resolve => {
-        const myId = ++foldAnimId;
-        const frameH = sprite.naturalHeight / FOLD_FRAMES;
-        const sw = sprite.naturalWidth;
-        const w = selectedCanvas.width;
-        const h = selectedCanvas.height;
-        let startTime = null;
-
-        function tick(timestamp) {
-            if (myId !== foldAnimId) { resolve(); return; }
-            if (!startTime) startTime = timestamp;
-            const elapsed = timestamp - startTime;
-            const rawT = Math.min(elapsed / FOLD_COLLAPSE_MS, 1);
-            const easedT = easeInQuad(rawT);
-            // Collapse: fold goes 1→0, so frame index goes (N-1)→0
-            const exactFrame = (1 - easedT) * (FOLD_FRAMES - 1);
-            const frameA = Math.floor(exactFrame);
-            const frameB = Math.min(frameA + 1, FOLD_FRAMES - 1);
-            const blend = exactFrame - frameA;
-
-            canvasCtx.clearRect(0, 0, w, h);
-            canvasCtx.globalAlpha = 1;
-            canvasCtx.drawImage(sprite, 0, frameA * frameH, sw, frameH, 0, 0, w, h);
-            if (blend > 0.01 && frameA !== frameB) {
-                canvasCtx.globalAlpha = blend;
-                canvasCtx.drawImage(sprite, 0, frameB * frameH, sw, frameH, 0, 0, w, h);
-                canvasCtx.globalAlpha = 1;
-            }
-
-            if (rawT < 1) {
-                requestAnimationFrame(tick);
-            } else {
-                resolve();
-            }
-        }
-        requestAnimationFrame(tick);
-    });
-}
-
-/**
- * Animated profile transition with pre-rendered fold sprite playback.
- */
-async function animatedSelect(name, profile, isPortrait) {
-    if (foldAnimating) {
-        pendingSelect = { name, profile, isPortrait };
-        return;
-    }
-
-    foldAnimating = true;
-    const slug = slugify(name);
-    const newSprite = isPortrait ? await loadFoldSprite(slug) : null;
-
-    // Collapse current profile if one is displayed
-    if (selected.name !== null && currentFoldSprite) {
-        showCanvas();
-        syncCanvasSize();
-        await playFoldCollapse(currentFoldSprite);
-    }
-
-    // Check for newer pending selection
-    if (pendingSelect) {
-        const next = pendingSelect;
-        pendingSelect = null;
-        foldAnimating = false;
-        animatedSelect(next.name, next.profile, next.isPortrait);
-        return;
-    }
-
-    // Apply selection (sets img, text, highlights)
-    applySelection(name, profile, isPortrait);
-    currentFoldSprite = newSprite;
-
-    // Expand new profile
-    if (newSprite) {
-        showCanvas();
-        syncCanvasSize();
-        await playFoldExpand(newSprite);
-    }
-
-    hideCanvas();
-    foldAnimating = false;
-
-    // Process any pending selection queued during expand
-    if (pendingSelect) {
-        const next = pendingSelect;
-        pendingSelect = null;
-        animatedSelect(next.name, next.profile, next.isPortrait);
-    }
-}
 
 /* ── Selection ── */
 
@@ -410,90 +553,109 @@ async function animatedSelect(name, profile, isPortrait) {
  * Pure DOM update — sets image, name, seed, generated text, highlights card.
  * No animation, no history push.
  */
-function applySelection(name, profile, isPortrait) {
-    selected = { name, isPortrait };
+function applySelection(name, profile, isPortrait, assetId) {
+    selected = { name, isPortrait, assetId };
 
     selectedName.textContent = name;
-    selectedSeed.textContent = profile.seed || '';
+    selectedSeed.textContent = Array.isArray(profile.seed) ? seedTagToLabel(profile.seed) : (profile.seed || '');
 
-    const src = getThumbSrc(name, profile, isPortrait);
-    if (src) {
-        selectedImage.src = src;
+    // Display full-resolution image
+    if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
+    if (assetId) {
+        // Generated profiles: load full-res staticBlob from IndexedDB
+        const asset = generatedAssets.find(a => a.id === assetId);
+        if (asset && asset.thumbDataUrl) selectedImage.src = asset.thumbDataUrl; // placeholder
+        getAsset(assetId).then(full => {
+            if (full && full.staticBlob && selected.assetId === assetId) {
+                currentStaticUrl = URL.createObjectURL(full.staticBlob);
+                selectedImage.src = currentStaticUrl;
+            }
+        });
+    } else {
+        const src = getDisplaySrc(name, profile, isPortrait);
+        if (src) selectedImage.src = src;
     }
 
     if (isPortrait) {
         selectedImage.onerror = () => {
             selectedImage.onerror = null;
-            if (profile.seed && profile.controls) {
-                const key = thumbCacheKey(profile.seed, profile.controls);
-                if (thumbCache.has(key)) selectedImage.src = thumbCache.get(key);
-            }
+            // Fallback: try carousel PNG, then thumb cache
+            const pngSrc = `/thumbs/${slugify(name)}.png`;
+            selectedImage.src = pngSrc;
         };
     }
 
-    const { title, altText } = generateProfileText(profile);
-    selectedGenTitle.textContent = title;
-    selectedGenAlt.textContent = altText;
-    selectedImage.alt = title;
+    // Use stored meta for generated profiles, else compute text
+    if (assetId) {
+        const asset = generatedAssets.find(a => a.id === assetId);
+        if (asset && asset.meta) {
+            selectedGenTitle.textContent = asset.meta.title || '';
+            selectedGenAlt.textContent = asset.meta.altText || '';
+            selectedImage.alt = asset.meta.title || name;
+        }
+    } else {
+        const { title, altText } = generateProfileText(profile);
+        selectedGenTitle.textContent = title;
+        selectedGenAlt.textContent = altText;
+        selectedImage.alt = title;
+    }
 
-    currentIndex = portraitList.findIndex(p => p.name === name);
+    currentIndex = navigableList.findIndex(p =>
+        assetId ? p.assetId === assetId : p.name === name
+    );
     updateArrowStates();
 
-    document.querySelectorAll('.gallery-page .profile-card').forEach(card => {
-        card.classList.toggle('selected', card.dataset.profileName === name);
-    });
+    // Sync carousel to selected profile
+    syncCarouselToSelection(name, isPortrait, assetId);
 }
 
 /**
- * Public entry point — triggers fold animation + pushes browser history.
+ * Public entry point — applies selection + pushes browser history.
  */
-function selectProfile(name, profile, isPortrait) {
-    pushProfileRoute(name, isPortrait);
-    animatedSelect(name, profile, isPortrait);
+function selectProfile(name, profile, isPortrait, assetId) {
+    pushProfileRoute(name, isPortrait, assetId);
+    applySelection(name, profile, isPortrait, assetId);
 }
 
 /**
- * Instant selection (no animation) — used on popstate and initial load from URL.
+ * Instant selection — used on popstate and initial load from URL.
  */
-function instantSelect(name, profile, isPortrait) {
-    // Cancel any running fold animation
-    foldAnimId++;
-    foldAnimating = false;
-    pendingSelect = null;
-    hideCanvas();
-
-    applySelection(name, profile, isPortrait);
-
-    // Preload fold sprite for future collapse
-    if (isPortrait) {
-        loadFoldSprite(slugify(name)).then(sprite => { currentFoldSprite = sprite; });
-    } else {
-        currentFoldSprite = null;
-    }
+function instantSelect(name, profile, isPortrait, assetId) {
+    applySelection(name, profile, isPortrait, assetId);
 }
 
 /* ── Arrow navigation ── */
 
 function updateArrowStates() {
-    const disabled = portraitList.length <= 1;
+    const len = navigableList.length;
+    const disabled = len <= 1;
     galleryArrowLeft.disabled = disabled;
     galleryArrowRight.disabled = disabled;
+
+    if (!disabled && currentIndex >= 0) {
+        const prevEntry = navigableList[(currentIndex - 1 + len) % len];
+        const nextEntry = navigableList[(currentIndex + 1) % len];
+        galleryArrowLeft.setAttribute('data-tooltip', prevEntry.name);
+        galleryArrowRight.setAttribute('data-tooltip', nextEntry.name);
+    } else {
+        galleryArrowLeft.setAttribute('data-tooltip', '');
+        galleryArrowRight.setAttribute('data-tooltip', '');
+    }
 }
 
 function navigateArrow(direction) {
-    if (portraitList.length <= 1) return;
+    if (navigableList.length <= 1) return;
     let newIndex = currentIndex + direction;
-    if (newIndex < 0) newIndex = portraitList.length - 1;
-    if (newIndex >= portraitList.length) newIndex = 0;
-    const entry = portraitList[newIndex];
-    selectProfile(entry.name, entry.profile, true);
+    if (newIndex < 0) newIndex = navigableList.length - 1;
+    if (newIndex >= navigableList.length) newIndex = 0;
+    const entry = navigableList[newIndex];
+    selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
 }
 
-galleryArrowLeft.addEventListener('click', () => navigateArrow(-1));
-galleryArrowRight.addEventListener('click', () => navigateArrow(1));
+galleryArrowLeft.addEventListener('click', () => { if (slideshowPlaying) stopSlideshow(); navigateArrow(-1); });
+galleryArrowRight.addEventListener('click', () => { if (slideshowPlaying) stopSlideshow(); navigateArrow(1); });
 
 function navigateToEditor() {
-    if (foldAnimating) return;
     const params = new URLSearchParams();
     if (selected.name) {
         params.set('profile', selected.name);
@@ -503,14 +665,265 @@ function navigateToEditor() {
     window.location.href = `/${page}.html?${params}`;
 }
 
-/* ── Card building ── */
+/* ── View All modal ── */
 
-function buildCard(name, profile, { isPortrait = false, index = 0, total = 1 } = {}) {
+function isViewAllOpen() {
+    return !viewAllModal.classList.contains('hidden');
+}
+
+function openViewAllModal(title, list) {
+    viewAllTitle.textContent = title;
+    viewAllGrid.innerHTML = '';
+
+    for (let i = 0; i < list.length; i++) {
+        const entry = list[i];
+        const card = document.createElement('div');
+        card.className = 'view-all-card';
+        const isSelected = entry.assetId
+            ? selected.assetId === entry.assetId
+            : selected.name === entry.name;
+        if (isSelected) card.classList.add('selected');
+
+        const img = document.createElement('img');
+        img.alt = entry.name;
+        if (entry.assetId) {
+            const asset = generatedAssets.find(a => a.id === entry.assetId);
+            if (asset && asset.thumbDataUrl) img.src = asset.thumbDataUrl;
+        } else {
+            const src = getCarouselThumbSrc(entry.name, entry.profile, entry.isPortrait);
+            if (src) img.src = src;
+        }
+        if (entry.isPortrait) {
+            img.onerror = () => {
+                if (entry.profile.seed && entry.profile.controls) {
+                    const key = thumbCacheKey(entry.profile.seed, entry.profile.controls);
+                    if (thumbCache.has(key)) img.src = thumbCache.get(key);
+                }
+            };
+        }
+        card.appendChild(img);
+
+        const nameEl = document.createElement('div');
+        nameEl.className = 'view-all-card-name';
+        nameEl.textContent = entry.name;
+        card.appendChild(nameEl);
+
+        // Delete action for non-portrait (local) profiles
+        if (!entry.isPortrait) {
+            const actions = document.createElement('div');
+            actions.className = 'view-all-card-actions';
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'view-all-delete';
+            deleteBtn.innerHTML = TRASH_SVG;
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const deleteName = entry.name;
+                const deleteAssetId = entry.assetId;
+                showConfirm(
+                    deleteAssetId ? 'Delete generated image?' : t('confirm.deleteProfile'),
+                    deleteAssetId ? `Delete "${deleteName}"?` : t('confirm.deleteConfirm', { name: deleteName }),
+                    [
+                        { label: t('btn.cancel') },
+                        {
+                            label: t('btn.delete'), primary: true, callback: async () => {
+                                if (deleteAssetId) {
+                                    await deleteAsset(deleteAssetId);
+                                    generatedAssets = generatedAssets.filter(a => a.id !== deleteAssetId);
+                                } else {
+                                    const pd = loadProfiles()[deleteName];
+                                    if (pd && pd.seed && pd.controls) {
+                                        const cacheKey = thumbCacheKey(pd.seed, pd.controls);
+                                        thumbCache.delete(cacheKey);
+                                        deleteThumb(cacheKey);
+                                    }
+                                    deleteProfile(deleteName);
+                                    const order = loadProfileOrder();
+                                    if (order) saveProfileOrder(order.filter(n => n !== deleteName));
+                                }
+                                closeViewAllModal();
+                                refreshGallery();
+                            }
+                        }
+                    ]
+                );
+            });
+            actions.appendChild(deleteBtn);
+            card.appendChild(actions);
+        }
+
+        card.addEventListener('click', () => {
+            closeViewAllModal();
+            const idx = carouselList.findIndex(e =>
+                entry.assetId ? e.assetId === entry.assetId : e.name === entry.name);
+            if (idx >= 0) {
+                carouselCenterIdx = idx;
+                positionCards(carouselTrack, carouselCards, idx, carouselList.length);
+            }
+            selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
+        });
+
+        viewAllGrid.appendChild(card);
+    }
+
+    viewAllModal.classList.remove('hidden');
+    viewAllModal.classList.add('modal-entering');
+    const box = viewAllModal.querySelector('.modal-box');
+    box.addEventListener('animationend', () => {
+        viewAllModal.classList.remove('modal-entering');
+    }, { once: true });
+}
+
+function closeViewAllModal() {
+    if (viewAllModal.classList.contains('hidden')) return;
+    viewAllModal.classList.add('modal-leaving');
+    const box = viewAllModal.querySelector('.modal-box');
+    box.addEventListener('animationend', () => {
+        viewAllModal.classList.add('hidden');
+        viewAllModal.classList.remove('modal-leaving');
+    }, { once: true });
+}
+
+viewAllBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openViewAllModal('All Profiles', carouselList);
+});
+
+viewAllModalClose.addEventListener('click', closeViewAllModal);
+viewAllModal.addEventListener('click', (e) => {
+    if (e.target === viewAllModal) closeViewAllModal();
+});
+
+function refreshGallery() {
+    if (activeType === 'image') {
+        clearVideoPlayback();
+        showImageGallery();
+    } else {
+        showAnimationGallery();
+    }
+}
+
+function showImageGallery() {
+    // Hide animation section, show carousel
+    animSectionEl.style.display = 'none';
+    if (carouselStripEl) carouselStripEl.style.display = '';
+
+    // Build merged list: portraits first, then local
+    const portraits = loadPortraits();
+    const portraitNames = Object.keys(portraits).sort((a, b) => a.localeCompare(b));
+
+    carouselList = portraitNames.map(name => ({
+        name, profile: portraits[name], isPortrait: true
+    }));
+
+    // Append generated assets
+    for (const asset of generatedAssets) {
+        carouselList.push({
+            name: asset.name,
+            profile: { seed: asset.seed, controls: asset.controls },
+            isPortrait: false,
+            assetId: asset.id
+        });
+    }
+
+    // Append user-saved profiles
+    const profiles = loadProfiles();
+    const userNames = syncProfileOrder(profiles);
+    for (const name of userNames) {
+        carouselList.push({ name, profile: profiles[name], isPortrait: false });
+    }
+
+    navigableList = carouselList;
+
+    // Build single carousel
+    carouselCards = buildCarouselCards(carouselList, carouselTrack, (idx, entry) => {
+        if (idx === carouselCenterIdx) return;
+        if (slideshowPlaying) stopSlideshow();
+        carouselCenterIdx = idx;
+        positionCards(carouselTrack, carouselCards, idx, carouselList.length);
+        selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
+    });
+
+    // Show/hide View All button
+    viewAllBtn.style.display = carouselList.length > getVisibleCount() ? '' : 'none';
+
+    // Auto-select first entry if nothing selected
+    if (!selected.name && carouselList.length > 0) {
+        const first = carouselList[0];
+        carouselCenterIdx = 0;
+        applySelection(first.name, first.profile, first.isPortrait, first.assetId);
+
+        // Use replaceState so auto-select doesn't pollute history
+        if (first.assetId) {
+            history.replaceState({ type: 'image', profile: first.name }, '', `/gallery/images/generated/${first.assetId}`);
+        } else {
+            const slug = slugify(first.name);
+            const prefix = first.isPortrait ? 'portraits' : 'local';
+            history.replaceState({ type: 'image', profile: first.name }, '', `/gallery/images/${prefix}/${slug}`);
+        }
+    }
+
+    positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
+
+    galleryContentEl.style.display = '';
+    selectedDisplay.style.display = '';
+}
+
+/**
+ * Show animation gallery — displays animation assets with video playback.
+ */
+function showAnimationGallery() {
+    // Hide image carousel strip, show animation section
+    if (carouselStripEl) carouselStripEl.style.display = 'none';
+    carouselTrack.innerHTML = '';
+    carouselCards = [];
+
+    // Build animation cards
+    animGalleryEl.innerHTML = '';
+    if (animAssets.length > 0) {
+        animSectionEl.style.display = '';
+        for (const asset of animAssets) {
+            animGalleryEl.appendChild(buildAnimCard(asset));
+        }
+    } else {
+        animSectionEl.style.display = '';
+        const d = document.createElement('div');
+        d.className = 'small';
+        d.textContent = 'No animations yet. Switch to Generate mode to create one.';
+        animGalleryEl.appendChild(d);
+    }
+
+    // Build navigable list from animation assets
+    navigableList = [];
+    for (const asset of animAssets) {
+        navigableList.push({
+            name: asset.name,
+            profile: { seed: null, controls: null },
+            isPortrait: false,
+            isAnimation: true,
+            assetId: asset.id,
+        });
+    }
+
+    // Auto-select first
+    if (!selected.name && navigableList.length > 0) {
+        const first = navigableList[0];
+        applyAnimSelection(first.assetId);
+    }
+
+    galleryContentEl.style.display = '';
+    selectedDisplay.style.display = animAssets.length > 0 ? '' : 'none';
+}
+
+/**
+ * Build a gallery card for an animation asset.
+ */
+function buildAnimCard(asset) {
     const card = document.createElement('div');
-    card.className = 'profile-card';
-    if (isPortrait) card.classList.add('portrait-card');
-    if (selected.name === name) card.classList.add('selected');
-    card.dataset.profileName = name;
+    card.className = 'profile-card generated-card';
+    if (selected.assetId === asset.id) card.classList.add('selected');
+    card.dataset.profileName = asset.name;
+    card.dataset.assetId = asset.id;
 
     const header = document.createElement('div');
     header.className = 'profile-card-header';
@@ -519,227 +932,333 @@ function buildCard(name, profile, { isPortrait = false, index = 0, total = 1 } =
     thumbWrap.className = 'thumb-wrap';
     const thumbImg = document.createElement('img');
     thumbImg.className = 'profile-thumb';
+    if (asset.thumbDataUrl) thumbImg.src = asset.thumbDataUrl;
     thumbWrap.appendChild(thumbImg);
     header.appendChild(thumbWrap);
-
-    const src = getThumbSrc(name, profile, isPortrait);
-    if (src) thumbImg.src = src;
-    if (isPortrait) {
-        thumbImg.onerror = () => {
-            if (profile.seed && profile.controls) {
-                const key = thumbCacheKey(profile.seed, profile.controls);
-                if (thumbCache.has(key)) thumbImg.src = thumbCache.get(key);
-            }
-        };
-    }
 
     const body = document.createElement('div');
     body.className = 'profile-card-body';
     const nm = document.createElement('div');
     nm.className = 'profile-card-name';
-    nm.textContent = name;
+    nm.textContent = asset.name;
     body.appendChild(nm);
-    if (profile.seed) {
-        const seedEl = document.createElement('div');
-        seedEl.className = 'profile-card-seed';
-        seedEl.textContent = profile.seed;
-        body.appendChild(seedEl);
+    // Duration + fps label
+    const meta = asset.meta || {};
+    if (meta.durationS) {
+        const dur = document.createElement('div');
+        dur.className = 'profile-card-seed';
+        dur.textContent = `${meta.durationS.toFixed(1)}s • ${meta.fps || 30}fps`;
+        body.appendChild(dur);
     }
     header.appendChild(body);
     card.appendChild(header);
 
-    if (!isPortrait) {
-        const actions = document.createElement('div');
-        actions.className = 'profile-card-actions';
-
-        const upBtn = document.createElement('button');
-        upBtn.className = 'profile-card-move';
-        upBtn.title = t('gallery.moveUp');
-        upBtn.innerHTML = ARROW_UP_SVG;
-        upBtn.disabled = index === 0 || total <= 1;
-        upBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            moveProfile(name, -1);
-        });
-
-        const downBtn = document.createElement('button');
-        downBtn.className = 'profile-card-move';
-        downBtn.title = t('gallery.moveDown');
-        downBtn.innerHTML = ARROW_DOWN_SVG;
-        downBtn.disabled = index === total - 1 || total <= 1;
-        downBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            moveProfile(name, 1);
-        });
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.className = 'profile-card-delete';
-        deleteBtn.title = t('gallery.deleteProfile');
-        deleteBtn.innerHTML = TRASH_SVG;
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showConfirm(t('confirm.deleteProfile'), t('confirm.deleteConfirm', { name }), [
-                { label: t('btn.cancel') },
-                {
-                    label: t('btn.delete'), primary: true, callback: () => {
-                        const profiles = loadProfiles();
-                        const pd = profiles[name];
-                        if (pd && pd.seed && pd.controls) {
-                            const cacheKey = thumbCacheKey(pd.seed, pd.controls);
-                            thumbCache.delete(cacheKey);
-                            deleteThumb(cacheKey);
-                        }
-                        deleteProfile(name);
-                        const order = loadProfileOrder();
-                        if (order) saveProfileOrder(order.filter(n => n !== name));
-                        refreshGallery();
-                    }
+    // Actions: delete only
+    const actions = document.createElement('div');
+    actions.className = 'profile-card-actions';
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'profile-card-delete';
+    deleteBtn.title = 'Delete';
+    deleteBtn.innerHTML = TRASH_SVG;
+    deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showConfirm('Delete animation?', `Delete "${asset.name}"?`, [
+            { label: t('btn.cancel') },
+            {
+                label: t('btn.delete'), primary: true, callback: async () => {
+                    await deleteAnimAsset(asset.id);
+                    animAssets = animAssets.filter(a => a.id !== asset.id);
+                    refreshGallery();
                 }
-            ]);
-        });
-
-        actions.appendChild(upBtn);
-        actions.appendChild(downBtn);
-        actions.appendChild(deleteBtn);
-        card.appendChild(actions);
-    }
+            }
+        ]);
+    });
+    actions.appendChild(deleteBtn);
+    card.appendChild(actions);
 
     header.addEventListener('click', (e) => {
         if (e.target.closest('.profile-card-actions')) return;
-        selectProfile(name, profile, isPortrait);
+        if (slideshowPlaying) stopSlideshow();
+        applyAnimSelection(asset.id);
+        pushProfileRoute(asset.name, false, asset.id);
     });
 
     return card;
 }
 
-function moveProfile(name, direction) {
-    const order = loadProfileOrder() || [];
-    const idx = order.indexOf(name);
-    if (idx < 0) return;
-    const newIdx = idx + direction;
-    if (newIdx < 0 || newIdx >= order.length) return;
-    [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
-    saveProfileOrder(order);
-    refreshGallery();
-}
+/**
+ * Apply animation selection — shows video player for the selected animation.
+ */
+function applyAnimSelection(assetId) {
+    const asset = animAssets.find(a => a.id === assetId);
+    if (!asset) return;
 
-function refreshGallery() {
-    if (activeType === 'image') {
-        showImageGallery();
-    } else {
-        showAnimationPlaceholder();
-    }
-}
+    selected = { name: asset.name, isPortrait: false, assetId, isAnimation: true };
+    selectedName.textContent = asset.name;
+    selectedSeed.textContent = '';
 
-function showImageGallery() {
-    const portraits = loadPortraits();
-    const portraitNames = Object.keys(portraits).sort((a, b) => a.localeCompare(b));
+    const meta = asset.meta || {};
+    selectedGenTitle.textContent = meta.title || asset.name;
+    selectedGenAlt.textContent = meta.durationS
+        ? `${meta.durationS.toFixed(1)}s animation at ${meta.fps || 30}fps (${meta.width || '?'}×${meta.height || '?'})`
+        : '';
 
-    portraitList = portraitNames.map(name => ({ name, profile: portraits[name] }));
-
-    portraitGalleryEl.innerHTML = '';
-    for (const name of portraitNames) {
-        portraitGalleryEl.appendChild(buildCard(name, portraits[name], { isPortrait: true }));
-    }
-
-    const profiles = loadProfiles();
-    const userNames = syncProfileOrder(profiles);
-    userGalleryEl.innerHTML = '';
-
-    if (userNames.length === 0) {
-        const d = document.createElement('div');
-        d.className = 'small';
-        d.textContent = t('gallery.noSavedProfiles');
-        userGalleryEl.appendChild(d);
+    // Show video, hide image
+    if (asset.videoBlob) {
+        if (currentVideoUrl) URL.revokeObjectURL(currentVideoUrl);
+        currentVideoUrl = URL.createObjectURL(asset.videoBlob);
+        selectedVideo.src = currentVideoUrl;
+        selectedVideo.classList.remove('hidden');
+        selectedImage.style.display = 'none';
+    } else if (asset.thumbDataUrl) {
+        // No video — show thumbnail
+        selectedVideo.classList.add('hidden');
+        selectedImage.style.display = '';
+        selectedImage.src = asset.thumbDataUrl;
     }
 
-    for (let i = 0; i < userNames.length; i++) {
-        const name = userNames[i];
-        userGalleryEl.appendChild(buildCard(name, profiles[name], { index: i, total: userNames.length }));
-    }
-
-    // Auto-select first portrait if nothing selected
-    if (!selected.name && portraitList.length > 0) {
-        const first = portraitList[0];
-        applySelection(first.name, first.profile, true);
-
-        // Show canvas immediately to prevent thumbnail flash before sprite loads
-        showCanvas();
-        syncCanvasSize();
-        canvasCtx.fillStyle = '#000';
-        canvasCtx.fillRect(0, 0, selectedCanvas.width, selectedCanvas.height);
-
-        // Play fold-expand animation for initial portrait
-        const slug = slugify(first.name);
-        loadFoldSprite(slug).then(sprite => {
-            if (sprite) {
-                currentFoldSprite = sprite;
-                playFoldExpand(sprite).then(hideCanvas);
-            } else {
-                hideCanvas();
-            }
-        });
-
-        // Use replaceState so auto-select doesn't pollute history
-        const url = `/gallery/images/portraits/${slug}`;
-        history.replaceState({ type: 'image', profile: first.name }, '', url);
-    }
-
-    galleryContentEl.style.display = '';
-    selectedDisplay.style.display = '';
-}
-
-function showAnimationPlaceholder() {
-    portraitGalleryEl.innerHTML = '';
-    userGalleryEl.innerHTML = '';
-    const d = document.createElement('div');
-    d.className = 'small';
-    d.textContent = t('gallery.animComingSoon');
-    portraitGalleryEl.appendChild(d);
-
-    galleryContentEl.style.display = '';
-    selectedDisplay.style.display = 'none';
-}
-
-/* ── Nav toggle listeners ── */
-
-modeGroup.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const mode = btn.dataset.mode;
-        if (mode === 'generate') {
-            navigateToEditor();
-            return;
-        }
+    // Highlight card
+    document.querySelectorAll('.gallery-page .profile-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.assetId === assetId);
     });
-});
 
-typeGroup.querySelectorAll('.nav-item').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const type = btn.dataset.type;
-        if (type === activeType) return;
-        activeType = type;
-        typeGroup.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b === btn));
-        updateUnderline(typeGroup);
+    currentIndex = navigableList.findIndex(p => p.assetId === assetId);
+    updateArrowStates();
+}
+
+/**
+ * Clear video playback state when switching away from animation.
+ */
+function clearVideoPlayback() {
+    if (currentVideoUrl) {
+        URL.revokeObjectURL(currentVideoUrl);
+        currentVideoUrl = null;
+    }
+    selectedVideo.src = '';
+    selectedVideo.classList.add('hidden');
+    selectedImage.style.display = '';
+}
+
+/* ── Menu navigation links ── */
+
+const menuNavLinks = document.querySelectorAll('.menu-nav-link');
+
+function updateMenuNavLinks() {
+    menuNavLinks.forEach(link => {
+        const matches = link.dataset.navType === activeType && link.dataset.navMode === activeMode;
+        link.classList.toggle('active', matches);
+    });
+}
+
+function handleMenuNav(type, mode) {
+    const typeChanged = type !== activeType;
+    const modeChanged = mode !== activeMode;
+    if (!typeChanged && !modeChanged) return;
+
+    activeType = type;
+    activeMode = mode;
+    updateMenuNavLinks();
+
+    if (modeChanged) {
+        if (mode === 'generate') {
+            showGenerateMode();
+        } else {
+            hideGenerateMode();
+        }
+    }
+
+    if (typeChanged) {
         selected = { name: null, isPortrait: false };
         pushRoute();
         refreshGallery();
+    }
+
+    // Close menu on mobile
+    closeSiteMenu();
+}
+
+menuNavLinks.forEach(link => {
+    link.addEventListener('click', () => {
+        handleMenuNav(link.dataset.navType, link.dataset.navMode);
     });
 });
 
 selectedImageWrap.addEventListener('click', navigateToEditor);
 
+/* ── Generate mode ── */
+
+/**
+ * Build a simple "expand → pause → collapse" Animation from seed + controls.
+ * Used as the default animation when generating from the gallery panel.
+ */
+function buildSimpleAnimation(seed, controls) {
+    const res = getResolution();
+    return {
+        settings: { fps: 30, width: res.w, height: res.h },
+        events: [
+            { type: 'expand', duration: 1.5, easing: 'ease-out', config: { ...controls }, seed },
+            { type: 'pause', duration: 2.0, easing: 'linear' },
+            { type: 'collapse', duration: 1.5, easing: 'ease-in' },
+        ],
+        cameraMoves: [],
+        paramTracks: [],
+    };
+}
+
+function initGenerate() {
+    if (generateInitialized) return;
+    generateInitialized = true;
+
+    workerBridge = initGalleryWorker(genPreviewCanvas);
+    if (!workerBridge) {
+        toast('WebGL worker not available');
+        return;
+    }
+
+    genPanel = initGeneratePanel({
+        slidersEl: genSlidersEl,
+        tagArrEl: genTagArrEl,
+        tagStrEl: genTagStrEl,
+        tagDetEl: genTagDetEl,
+        randomizeBtn: genRandomizeBtn,
+        generateBtn: genGenerateBtn,
+        onControlChange(seed, controls) {
+            if (workerBridge && workerBridge.ready) {
+                workerBridge.sendRender(seed, controls, getLocale());
+            }
+        },
+        onGenerate(seed, controls) {
+            if (!renderQueue) return;
+            if (activeType === 'animation') {
+                // Build a simple animation from the current config
+                const animation = buildSimpleAnimation(seed, controls);
+                renderQueue.enqueueAnimation(animation);
+            } else {
+                renderQueue.enqueue(seed, controls);
+            }
+        },
+    });
+
+    workerBridge.onReady(() => {
+        renderQueue = createRenderQueue({
+            workerBridge,
+            onUpdate(jobs) {
+                renderQueueUI(genQueueEl, jobs, {
+                    onCancel(jobId) { renderQueue.cancel(jobId); },
+                    onView: viewJob,
+                });
+
+                // Update header render queue menu
+                if (rqMenu) rqMenu.update(jobs);
+
+                // Update progress overlay
+                const active = jobs.find(j => j.status === 'rendering');
+                if (active) {
+                    genProgressOverlay.classList.remove('hidden');
+                    genProgressFill.style.width = active.progress + '%';
+                    genProgressLabel.textContent = active.label || '';
+                } else {
+                    genProgressOverlay.classList.add('hidden');
+                }
+            },
+            locale: getLocale(),
+        });
+
+        // Send initial preview render
+        const seed = genPanel.readSeed();
+        const controls = genPanel.readControls();
+        workerBridge.sendRenderImmediate(seed, controls, getLocale());
+    });
+}
+
+let modeTransitioning = false;
+
+function showGenerateMode() {
+    if (slideshowPlaying) stopSlideshow();
+    if (modeTransitioning) return;
+    initGenerate();
+    modeTransitioning = true;
+
+    // Phase 1: fade out gallery views
+    selectedDisplay.classList.add('view-fade-out');
+    galleryContentEl.classList.add('view-fade-out');
+
+    setTimeout(() => {
+        // Phase 2: swap visibility
+        selectedDisplay.style.display = 'none';
+        galleryContentEl.style.display = 'none';
+        selectedDisplay.classList.remove('view-fade-out');
+        galleryContentEl.classList.remove('view-fade-out');
+
+        generatePanelEl.classList.remove('hidden');
+        generatePanelEl.classList.add('view-fade-in');
+        // force reflow
+        generatePanelEl.offsetHeight;     // eslint-disable-line no-unused-expressions
+
+        // Phase 3: fade in generate panel
+        generatePanelEl.classList.remove('view-fade-in');
+        modeTransitioning = false;
+    }, 250);
+}
+
+function hideGenerateMode() {
+    if (modeTransitioning) return;
+    modeTransitioning = true;
+
+    // Phase 1: fade out generate panel
+    generatePanelEl.classList.add('view-fade-out');
+
+    setTimeout(() => {
+        // Phase 2: swap visibility
+        generatePanelEl.classList.add('hidden');
+        generatePanelEl.classList.remove('view-fade-out');
+
+        selectedDisplay.style.display = '';
+        galleryContentEl.style.display = '';
+        selectedDisplay.classList.add('view-fade-in');
+        galleryContentEl.classList.add('view-fade-in');
+        // force reflow
+        selectedDisplay.offsetHeight;     // eslint-disable-line no-unused-expressions
+
+        // Phase 3: fade in gallery views
+        selectedDisplay.classList.remove('view-fade-in');
+        galleryContentEl.classList.remove('view-fade-in');
+        modeTransitioning = false;
+    }, 250);
+}
+
 /* ── Keyboard navigation ── */
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        if (isViewAllOpen()) {
+            closeViewAllModal();
+            return;
+        }
+        if (isSiteMenuOpen()) {
+            closeSiteMenu();
+            return;
+        }
+        if (slideshowPlaying) {
+            stopSlideshow();
+            return;
+        }
+        if (activeMode === 'generate') {
+            hideGenerateMode();
+            activeMode = 'gallery';
+            updateMenuNavLinks();
+            return;
+        }
         closeStatementModal();
         return;
     }
-    if (activeType === 'image' && portraitList.length > 1) {
+    if (activeType === 'image' && navigableList.length > 1) {
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
+            if (slideshowPlaying) stopSlideshow();
             navigateArrow(-1);
         } else if (e.key === 'ArrowRight') {
             e.preventDefault();
+            if (slideshowPlaying) stopSlideshow();
             navigateArrow(1);
         }
     }
@@ -749,9 +1268,7 @@ document.addEventListener('keydown', (e) => {
 
 const route = parseRoute();
 activeType = route.type;
-typeGroup.querySelectorAll('.nav-item').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.type === activeType);
-});
+updateMenuNavLinks();
 
 if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
     history.replaceState({ type: 'image', profile: null }, '', '/gallery/images');
@@ -764,32 +1281,12 @@ if (activeType === 'image' && route.profileSlug) {
         selected = { name: entry.name, isPortrait: entry.isPortrait };
         showImageGallery();
         applySelection(entry.name, entry.profile, entry.isPortrait);
-        // Play fold-expand for direct URL load
-        if (entry.isPortrait) {
-            // Show canvas immediately to prevent thumbnail flash before sprite loads
-            showCanvas();
-            syncCanvasSize();
-            canvasCtx.fillStyle = '#000';
-            canvasCtx.fillRect(0, 0, selectedCanvas.width, selectedCanvas.height);
-
-            const slug = slugify(entry.name);
-            loadFoldSprite(slug).then(sprite => {
-                if (sprite) {
-                    currentFoldSprite = sprite;
-                    playFoldExpand(sprite).then(hideCanvas);
-                } else {
-                    hideCanvas();
-                }
-            });
-        }
     } else {
         showImageGallery();
     }
 } else {
     refreshGallery();
 }
-
-requestAnimationFrame(updateAllUnderlines);
 
 loadStatementContent();
 
@@ -815,4 +1312,20 @@ getAllThumbs().then(persisted => {
     if (activeType === 'image') refreshGallery();
 }).catch(err => {
     console.warn('[gallery] IndexedDB thumb cache unavailable:', err);
+});
+
+// Load generated assets from IndexedDB
+getAllAssets().then(assets => {
+    generatedAssets = assets;
+    if (activeType === 'image' && assets.length > 0) refreshGallery();
+}).catch(err => {
+    console.warn('[gallery] IndexedDB asset store unavailable:', err);
+});
+
+// Load animation assets from IndexedDB
+getAllAnimAssets().then(assets => {
+    animAssets = assets;
+    if (activeType === 'animation' && assets.length > 0) refreshGallery();
+}).catch(err => {
+    console.warn('[gallery] IndexedDB animation store unavailable:', err);
 });

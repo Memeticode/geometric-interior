@@ -49,6 +49,7 @@
     <link rel="stylesheet" href="/css/base.css" />
     <link rel="stylesheet" href="/css/header.css" />
     <link rel="stylesheet" href="/css/gallery.css" />
+    <link rel="stylesheet" href="/css/generate.css" />
     <link rel="stylesheet" href="/css/modals.css" />
     <link rel="stylesheet" href="/css/footer.css" />
     <link rel="stylesheet" href="/css/responsive.css" />
@@ -57,6 +58,14 @@
 <body>
     <div class="app-container gallery-page">
         <header class="app-header">
+            <button id="siteMenuToggle" class="site-menu-toggle" aria-label="Open menu">
+                <div class="panel-toggle-icon">
+                    <span class="bar bar-top"></span>
+                    <span class="bar bar-mid"></span>
+                    <span class="bar bar-bot"></span>
+                </div>
+                <span class="rq-badge hidden" id="renderQueueBadge"></span>
+            </button>
             <div class="header-brand">
                 <h1 data-i18n="header.title">Geometric Interior: Self-Portraits of a Predictive Model</h1>
                 <div class="header-links">
@@ -69,105 +78,187 @@
             </div>
         </header>
 
-        <main class="gallery-main">
-            <div class="gallery-nav" id="galleryNav">
-                <div class="nav-group" id="modeGroup">
-                    <button class="nav-item active" data-mode="gallery" data-i18n="nav.gallery">Gallery</button>
-                    <span class="nav-sep">&middot;</span>
-                    <button class="nav-item" data-mode="generate" data-i18n="nav.generate">Generate</button>
-                    <span class="nav-underline"></span>
+        <!-- Site menu drawer -->
+        <div class="site-menu site-menu-closed" id="siteMenu" aria-hidden="true">
+            <div class="settings-group">
+                <div class="settings-group-header menu-nav-header" aria-expanded="true">
+                    <span class="settings-group-title" data-i18n="menu.gallery">Gallery</span>
                 </div>
-                <span class="nav-pipe">|</span>
-                <div class="nav-group" id="typeGroup">
-                    <button class="nav-item active" data-type="image" data-i18n="nav.image">Image</button>
-                    <span class="nav-sep">&middot;</span>
-                    <button class="nav-item" data-type="animation" data-i18n="nav.animation">Animation</button>
-                    <span class="nav-underline"></span>
+                <div class="settings-group-body">
+                    <button class="menu-nav-link active" id="menuGalleryImages" data-nav-type="image" data-nav-mode="gallery" data-i18n="menu.images">Images</button>
+                    <button class="menu-nav-link" id="menuGalleryAnimations" data-nav-type="animation" data-nav-mode="gallery" data-i18n="menu.animations">Animations</button>
                 </div>
             </div>
-            <div class="selected-display" id="selectedDisplay">
-                <!-- Profile info above image, left-aligned -->
-                <div class="selected-header">
-                    <div class="selected-name" id="selectedName"></div>
-                    <div class="selected-seed" id="selectedSeed"></div>
+            <div class="settings-group">
+                <div class="settings-group-header menu-nav-header" aria-expanded="true">
+                    <span class="settings-group-title" data-i18n="menu.generate">Generate</span>
                 </div>
-                <!-- Image area with prev/next arrows -->
-                <div class="selected-image-area">
-                    <button class="gallery-arrow gallery-arrow-left" id="galleryArrowLeft" aria-label="Previous portrait" data-i18n-aria="gallery.prevPortrait">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M10 3l-5 5 5 5"/></svg>
-                    </button>
-                    <div class="selected-image-wrap" id="selectedImageWrap">
-                        <img class="selected-image" id="selectedImage" alt="" />
-                        <canvas class="selected-canvas" id="selectedCanvas"></canvas>
+                <div class="settings-group-body">
+                    <button class="menu-nav-link" id="menuGenerateImages" data-nav-type="image" data-nav-mode="generate" data-i18n="menu.generateImages">Images</button>
+                    <button class="menu-nav-link" id="menuGenerateAnimations" data-nav-type="animation" data-nav-mode="generate" data-i18n="menu.generateAnimations">Animations</button>
+                </div>
+            </div>
+            <div class="settings-group" id="rqGroup">
+                <div class="settings-group-header" aria-expanded="true">
+                    <span class="settings-group-title" data-i18n="renderQueue.title">Render Jobs</span>
+                    <button class="rq-clear-btn" id="rqClearBtn" data-i18n="renderQueue.clear">Clear</button>
+                    <span class="settings-group-chevron">&#9662;</span>
+                </div>
+                <div class="settings-group-body">
+                    <div class="rq-job-list" id="rqJobList">
+                        <div class="rq-section" id="rqActive">
+                            <div class="rq-section-label">Active</div>
+                            <div class="rq-section-jobs" id="rqActiveJobs"></div>
+                        </div>
+                        <div class="rq-section rq-collapsible" id="rqQueued">
+                            <div class="rq-section-header" aria-expanded="false">
+                                <span class="rq-section-label">Queued (0)</span>
+                                <span class="rq-section-chevron">&#9662;</span>
+                            </div>
+                            <div class="rq-section-body" id="rqQueuedJobs"></div>
+                        </div>
+                        <div class="rq-section rq-collapsible" id="rqCompleted">
+                            <div class="rq-section-header" aria-expanded="false">
+                                <span class="rq-section-label">Completed (0)</span>
+                                <span class="rq-section-chevron">&#9662;</span>
+                            </div>
+                            <div class="rq-section-body" id="rqCompletedJobs"></div>
+                        </div>
                     </div>
-                    <button class="gallery-arrow gallery-arrow-right" id="galleryArrowRight" aria-label="Next portrait" data-i18n-aria="gallery.nextPortrait">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M6 3l5 5-5 5"/></svg>
-                    </button>
                 </div>
-                <!-- Generated text below image -->
-                <div class="selected-footer">
-                    <div class="selected-generated">
-                        <div class="selected-gen-title" id="selectedGenTitle"></div>
+            </div>
+        </div>
+        <div class="site-menu-backdrop hidden" id="siteMenuBackdrop"></div>
+
+        <main class="gallery-main">
+            <div class="gallery-column">
+            <div class="selected-display" id="selectedDisplay">
+                <!-- Profile info above image with nav arrows right-aligned -->
+                <div class="selected-header">
+                    <div class="selected-header-text">
+                        <div class="selected-name" id="selectedName"></div>
+                        <div class="selected-seed" id="selectedSeed"></div>
+                    </div>
+                    <div class="selected-header-nav">
+                        <button class="gallery-arrow gallery-arrow-left" id="galleryArrowLeft" aria-label="Previous portrait" data-i18n-aria="gallery.prevPortrait" data-tooltip="" data-tooltip-pos="above">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M10 3l-5 5 5 5"/></svg>
+                        </button>
+                        <button class="gallery-arrow gallery-arrow-right" id="galleryArrowRight" aria-label="Next portrait" data-i18n-aria="gallery.nextPortrait" data-tooltip="" data-tooltip-pos="above">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M6 3l5 5-5 5"/></svg>
+                        </button>
+                        <span class="header-nav-pipe">|</span>
+                        <button class="gallery-arrow" id="slideshowBtn" data-tooltip="Start slideshow" data-tooltip-pos="above" aria-label="Start slideshow">
+                            <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M5 3l8 5-8 5z"/></svg>
+                        </button>
+                        <select id="slideshowDuration" class="slideshow-duration" data-tooltip="Slideshow interval" data-tooltip-pos="above" aria-label="Slideshow interval">
+                            <option value="1">1s</option>
+                            <option value="2" selected>2s</option>
+                            <option value="3">3s</option>
+                            <option value="4">4s</option>
+                            <option value="5">5s</option>
+                        </select>
+                        <span class="header-nav-pipe">|</span>
+                        <select id="resolutionSelect" class="slideshow-duration" data-tooltip="Display resolution" data-tooltip-pos="above" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel">
+                            <option value="sd">SD</option>
+                            <option value="hd" selected>HD</option>
+                            <option value="fhd">FHD</option>
+                            <option value="qhd">QHD</option>
+                            <option value="4k">4K</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Image + text card -->
+                <div class="selected-card">
+                    <div class="selected-image-area">
+                        <div class="selected-image-wrap" id="selectedImageWrap">
+                            <img class="selected-image" id="selectedImage" alt="" />
+                            <video class="selected-video hidden" id="selectedVideo" controls loop playsinline></video>
+                        </div>
+                    </div>
+                    <div class="selected-footer">
+                        <button class="selected-gen-toggle" id="selectedGenToggle" aria-expanded="false">
+                            <span class="selected-gen-title" id="selectedGenTitle"></span>
+                            <span class="selected-gen-chevron">&#9662;</span>
+                        </button>
                         <div class="selected-gen-alt" id="selectedGenAlt"></div>
                     </div>
                 </div>
             </div>
             <div class="gallery-content" id="galleryContent">
-                <div class="gallery-section">
-                    <div class="gallery-section-header" data-target="portraitGallery" aria-expanded="true">
-                        <span class="gallery-section-label" data-i18n="gallery.portraits">Portraits</span>
+                <!-- Single carousel for all profiles -->
+                <div class="carousel-strip">
+                    <button class="carousel-view-all-btn" id="viewAllBtn"
+                            data-tooltip="View all" data-tooltip-pos="above"
+                            style="display:none">View All</button>
+                    <div class="carousel-container">
+                        <div class="carousel-viewport">
+                            <div class="carousel-track" id="carouselTrack"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Animations -->
+                <div class="gallery-section" id="animSection" style="display:none">
+                    <div class="gallery-section-header" data-target="animGallery" aria-expanded="true">
+                        <span class="gallery-section-label">Animations</span>
                         <span class="collapsible-chevron">&#9662;</span>
                     </div>
-                    <div id="portraitGallery" class="gallery-grid"></div>
+                    <div id="animGallery" class="gallery-grid"></div>
                 </div>
-                <div class="gallery-section">
-                    <div class="gallery-section-header" data-target="userGallery" aria-expanded="true">
-                        <span class="gallery-section-label" data-i18n="gallery.saved">Saved</span>
-                        <span class="collapsible-chevron">&#9662;</span>
+            </div>
+            </div>
+            <!-- View All modal -->
+            <div id="viewAllModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+                <div class="modal-box view-all-box">
+                    <div class="modal-header">
+                        <span class="modal-title" id="viewAllTitle">All Portraits</span>
+                        <button id="viewAllModalClose" class="modal-close" aria-label="Close">
+                            <div class="panel-toggle-icon">
+                                <span class="bar bar-top"></span>
+                                <span class="bar bar-mid"></span>
+                                <span class="bar bar-bot"></span>
+                            </div>
+                        </button>
                     </div>
-                    <div id="userGallery" class="gallery-grid"></div>
+                    <div class="modal-body view-all-body">
+                        <div class="view-all-grid" id="viewAllGrid"></div>
+                    </div>
                 </div>
+            </div>
+            <!-- Generate panel (hidden by default, shown when "Generate" mode active) -->
+            <div class="generate-panel hidden" id="generatePanel">
+                <div class="generate-config" id="generateConfig">
+                    <div class="gen-heading">
+                        <span class="label-info" data-tooltip="" data-i18n="generate.seed" data-i18n-tooltip="generate.seed.tooltip">Seed<span class="info-icon">i</span></span>
+                    </div>
+                    <div class="gen-seed-row" id="genSeedRow">
+                        <select id="genTagArr" class="seed-tag-select"></select>
+                        <span class="seed-tag-sep">&middot;</span>
+                        <select id="genTagStr" class="seed-tag-select"></select>
+                        <span class="seed-tag-sep">&middot;</span>
+                        <select id="genTagDet" class="seed-tag-select"></select>
+                    </div>
+                    <div class="gen-heading">
+                        <span class="label-info" data-tooltip="" data-i18n="generate.parameters" data-i18n-tooltip="generate.parameters.tooltip">Parameters<span class="info-icon">i</span></span>
+                    </div>
+                    <div class="gen-sliders" id="genSliders"></div>
+                    <div class="gen-actions">
+                        <button id="genRandomizeBtn" class="gen-btn">Randomize</button>
+                        <button id="genGenerateBtn" class="gen-btn gen-btn-primary">Generate</button>
+                    </div>
+                </div>
+                <div class="gen-preview-wrap" id="genPreviewWrap">
+                    <canvas id="genPreviewCanvas" width="420" height="270"></canvas>
+                    <div class="gen-progress-overlay hidden" id="genProgressOverlay">
+                        <div class="gen-progress-bar"><div class="gen-progress-fill" id="genProgressFill"></div></div>
+                        <div class="gen-progress-label" id="genProgressLabel"></div>
+                    </div>
+                </div>
+                <div class="gen-queue" id="genQueue"></div>
             </div>
         </main>
 
         <footer class="app-footer">
             <div class="footer-content">
-                <div class="settings-btn-wrap">
-                    <button id="pageSettingsBtn" class="footer-link" data-tooltip="Settings" data-i18n-tooltip="footer.settings">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                            <circle cx="8" cy="8" r="2"/>
-                            <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M13.07 2.93l-1.41 1.41M4.34 11.66l-1.41 1.41"/>
-                        </svg>
-                    </button>
-                    <div id="pageSettingsPopover" class="settings-popover hidden">
-                        <div class="settings-section">
-                            <span class="settings-section-label" data-i18n="footer.theme">Theme</span>
-                            <div class="theme-switcher" id="themeSwitcher">
-                                <div class="theme-slider" id="themeSlider"></div>
-                                <button class="theme-option" data-theme="system" data-i18n="theme.system">System</button>
-                                <button class="theme-option" data-theme="light" data-i18n="theme.light">Light</button>
-                                <button class="theme-option" data-theme="dark" data-i18n="theme.dark">Dark</button>
-                            </div>
-                        </div>
-                        <div class="settings-section">
-                            <span class="settings-section-label" data-i18n="footer.language">Language</span>
-                            <select id="langSelect" class="lang-select" aria-label="Language" data-i18n-aria="footer.langLabel">
-                                <option value="en">English</option>
-                                <option value="es">Espa&#241;ol</option>
-                            </select>
-                        </div>
-                        <div class="settings-section">
-                            <span class="settings-section-label" data-i18n="footer.resolution">Resolution</span>
-                            <select id="resolutionSelect" class="lang-select" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel">
-                                <option value="sd">SD (840&#215;540)</option>
-                                <option value="hd" selected>HD (1400&#215;900)</option>
-                                <option value="fhd">FHD (1680&#215;1080)</option>
-                                <option value="qhd">QHD (2520&#215;1620)</option>
-                                <option value="4k">4K (3360&#215;2160)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
                 <a href="https://github.com/Memeticode/symmetrical-barnacle" target="_blank" rel="noopener"
                     class="footer-link footer-github">
                     <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -175,6 +266,18 @@
                     </svg>
                     <span data-i18n="footer.github">GitHub</span>
                 </a>
+                <div class="footer-controls">
+                    <select id="langSelect" class="lang-select" aria-label="Language" data-i18n-aria="footer.langLabel">
+                        <option value="en">English</option>
+                        <option value="es">Espa&#241;ol</option>
+                    </select>
+                    <div class="theme-switcher" id="themeSwitcher">
+                        <div class="theme-slider" id="themeSlider"></div>
+                        <button class="theme-option" data-theme="system" data-i18n="theme.system">System</button>
+                        <button class="theme-option" data-theme="light" data-i18n="theme.light">Light</button>
+                        <button class="theme-option" data-theme="dark" data-i18n="theme.dark">Dark</button>
+                    </div>
+                </div>
             </div>
         </footer>
     </div>

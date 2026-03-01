@@ -89,44 +89,61 @@ export function refreshTooltip(el) {
 }
 
 /**
- * Attach tooltip listeners to all [data-tooltip] elements on the page.
+ * Attach tooltip listeners via event delegation on the document.
+ * Works for both static and dynamically-created [data-tooltip] elements.
  * Uses #paramTooltip element for display.
  */
 export function initTooltips() {
     paramTooltip = document.getElementById('paramTooltip');
 
     let recentTouch = false;
-    document.querySelectorAll('[data-tooltip]').forEach(el => {
-        el.addEventListener('mouseenter', (e) => {
-            if (recentTouch) return;
-            showTooltip(el, e.clientX, e.clientY);
-        });
-        el.addEventListener('mouseleave', hideTooltip);
+    let pressTimer = null;
+    let didLongPress = false;
+    let pressTarget = null;
 
-        // Touch handling: long-press shows tooltip, regular tap suppresses it
-        let pressTimer = null;
-        let didLongPress = false;
+    function findTooltip(target) {
+        return target && target.closest ? target.closest('[data-tooltip]') : null;
+    }
 
-        el.addEventListener('touchstart', () => {
-            didLongPress = false;
-            pressTimer = setTimeout(() => {
-                didLongPress = true;
-                showTooltip(el);
-            }, 400);
-        }, { passive: true });
-
-        el.addEventListener('touchend', (e) => {
-            clearTimeout(pressTimer);
-            recentTouch = true;
-            setTimeout(() => { recentTouch = false; }, 500);
-            if (didLongPress) {
-                e.preventDefault();
-                setTimeout(hideTooltip, 1500);
-            }
-        });
-
-        el.addEventListener('touchmove', () => {
-            clearTimeout(pressTimer);
-        }, { passive: true });
+    document.addEventListener('mouseover', (e) => {
+        if (recentTouch) return;
+        const el = findTooltip(e.target);
+        if (el) showTooltip(el, e.clientX, e.clientY);
     });
+
+    document.addEventListener('mouseout', (e) => {
+        const el = findTooltip(e.target);
+        if (!el) return;
+        // Only hide if we're actually leaving the tooltip element
+        const related = e.relatedTarget;
+        if (related && el.contains(related)) return;
+        hideTooltip();
+    });
+
+    document.addEventListener('touchstart', (e) => {
+        const el = findTooltip(e.target);
+        if (!el) return;
+        pressTarget = el;
+        didLongPress = false;
+        pressTimer = setTimeout(() => {
+            didLongPress = true;
+            showTooltip(el);
+        }, 400);
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+        clearTimeout(pressTimer);
+        recentTouch = true;
+        setTimeout(() => { recentTouch = false; }, 500);
+        if (didLongPress) {
+            e.preventDefault();
+            setTimeout(hideTooltip, 1500);
+        }
+        pressTarget = null;
+    });
+
+    document.addEventListener('touchmove', () => {
+        clearTimeout(pressTimer);
+        pressTarget = null;
+    }, { passive: true });
 }

@@ -109,6 +109,7 @@ export function generateAllGuideCurves(
     rng: () => number,
     radii: Vector3,
     div?: DivisionParams,
+    thetaOffset: number = 0,
 ): GuideCurve[] {
     const allCurves: GuideCurve[] = [];
 
@@ -119,7 +120,7 @@ export function generateAllGuideCurves(
     ];
 
     for (const { tier, seedCount, maxCount, maxSteps, stepSize, curvature, minLength } of tiers) {
-        const seeds = generateSeedPoints(seedCount, radii, div);
+        const seeds = generateSeedPoints(seedCount, radii, div, thetaOffset);
         for (const seed of seeds) {
             const steps = maxSteps + Math.floor(rng() * (maxSteps * 0.5));
             const curve = generateGuideCurve(seed, allCurves, steps, stepSize, curvature, rng, radii, div) as GuideCurve;

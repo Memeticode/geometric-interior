@@ -1,42 +1,402 @@
 {
+  "Violet Sanctum": {
+    "seed": [7, 6, 7],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Amber Starburst": {
+    "seed": [0, 7, 14],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.48, "fracture": 0.55, "coherence": 0.88, "hue": 0.06, "spectrum": 0.22, "chroma": 0.90, "scale": 0.45, "division": 0.45, "faceting": 0.5, "flow": 0.0 }
+  },
+  "Teal Orbital": {
+    "seed": [12, 5, 3],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.42, "fracture": 0.42, "coherence": 0.80, "hue": 0.51, "spectrum": 0.21, "chroma": 0.58, "scale": 0.55, "division": 0.5, "faceting": 0.5, "flow": 1.0 }
+  },
+  "Sapphire Shards": {
+    "seed": [11, 9, 5],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.50, "fracture": 0.55, "coherence": 0.80, "hue": 0.625, "spectrum": 0.28, "chroma": 0.82, "scale": 0.5, "division": 0.5, "faceting": 0.80, "flow": 0.80 }
+  },
+  "Emerald Radiance": {
+    "seed": [3, 6, 10],
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.48, "fracture": 0.52, "coherence": 0.82, "hue": 0.375, "spectrum": 0.28, "chroma": 0.70, "scale": 0.42, "division": 0.45, "faceting": 0.5, "flow": 0.18 }
+  },
+  "Prismatic Scatter": {
+    "seed": [14, 12, 6],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.45, "fracture": 0.85, "coherence": 0.50, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5 }
+  },
+  "Prismatic Trifold": {
+    "seed": [8, 8, 8],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.42, "fracture": 0.60, "coherence": 0.60, "hue": 0.5, "spectrum": 0.85, "chroma": 0.70, "scale": 0.55, "division": 0.90, "faceting": 0.55, "flow": 0.5 }
+  },
+  "Dark Ruby Divide": {
+    "seed": [9, 9, 14],
+    "controls": { "topology": "flow-field", "density": 0.15, "luminosity": 0.30, "fracture": 0.60, "coherence": 0.55, "hue": 0.986, "spectrum": 0.30, "chroma": 0.60, "scale": 0.5, "division": 0.85, "faceting": 0.6, "flow": 0.5 }
+  },
+  "Rose Nebula": {
+    "seed": [6, 4, 9],
+    "controls": { "topology": "flow-field", "density": 0.12, "luminosity": 0.55, "fracture": 0.50, "coherence": 0.72, "hue": 0.94, "spectrum": 0.30, "chroma": 0.50, "scale": 0.75, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Ice Crystal": {
+    "seed": [1, 14, 1],
+    "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.55, "fracture": 0.25, "coherence": 0.85, "hue": 0.55, "spectrum": 0.05, "chroma": 0.08, "scale": 0.35, "division": 0.50, "faceting": 0.85, "flow": 0.5 }
+  },
+  "Ember Drift": {
+    "seed": [12, 7, 15],
+    "controls": { "topology": "flow-field", "density": 0.14, "luminosity": 0.38, "fracture": 0.60, "coherence": 0.62, "hue": 0.04, "spectrum": 0.30, "chroma": 0.80, "scale": 0.72, "division": 0.50, "faceting": 0.55, "flow": 0.80 }
+  },
+  "Stardust": {
+    "seed": [14, 11, 5],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.45, "fracture": 0.65, "coherence": 0.55, "hue": 0.867, "spectrum": 0.35, "chroma": 0.45, "scale": 0.85, "division": 0.50, "faceting": 0.50, "flow": 0.5 }
+  },
+  "Midnight Trifold": {
+    "seed": [8, 7, 5],
+    "controls": { "topology": "flow-field", "density": 0.14, "luminosity": 0.35, "fracture": 0.55, "coherence": 0.65, "hue": 0.70, "spectrum": 0.35, "chroma": 0.40, "scale": 0.70, "division": 0.95, "faceting": 0.55, "flow": 0.5 }
+  },
+  "Monolith": {
+    "seed": [0, 3, 6],
+    "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.35, "fracture": 0.30, "coherence": 0.85, "hue": 0.783, "spectrum": 0.15, "chroma": 0.40, "scale": 0.15, "division": 0.10, "faceting": 0.30, "flow": 0.0 }
+  },
+  "Solar Forge": {
+    "seed": [0, 5, 15],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.40, "fracture": 0.42, "coherence": 0.80, "hue": 0.08, "spectrum": 0.25, "chroma": 0.88, "scale": 0.20, "division": 0.20, "faceting": 0.25, "flow": 0.05 }
+  },
+  "Amethyst Spirals": {
+    "seed": [16, 9, 7],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.52, "fracture": 0.45, "coherence": 0.82, "hue": 0.867, "spectrum": 0.27, "chroma": 0.50, "scale": 0.55, "division": 0.5, "faceting": 0.75, "flow": 0.85 }
+  },
+  "Crystal Constellation": {
+    "seed": [15, 17, 2],
+    "controls": { "topology": "flow-field", "density": 0.04, "luminosity": 0.50, "fracture": 0.90, "coherence": 0.30, "hue": 0.586, "spectrum": 0.0, "chroma": 0.0, "scale": 0.5, "division": 0.5, "faceting": 1.0, "flow": 0.5 }
+  },
+  "Nebular Rings": {
+    "seed": [12, 4, 4],
+    "controls": { "topology": "flow-field", "density": 0.18, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.80, "hue": 0.51, "spectrum": 0.25, "chroma": 0.58, "scale": 1.0, "division": 1.0, "faceting": 0.55, "flow": 1.0 }
+  },
+  "Crystal Bands": {
+    "seed": [11, 14, 3],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.90, "hue": 0.625, "spectrum": 0.24, "chroma": 0.86, "scale": 0.5, "division": 0.5, "faceting": 0.85, "flow": 1.0 }
+  },
+  "Warm Divide": {
+    "seed": [8, 7, 14],
+    "controls": { "topology": "flow-field", "density": 0.09, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.68, "hue": 0.06, "spectrum": 0.25, "chroma": 0.85, "scale": 0.50, "division": 0.85, "faceting": 0.55, "flow": 0.5 }
+  },
+  "Radial Bloom": {
+    "seed": [0, 5, 7],
+    "controls": { "topology": "flow-field", "density": 0.12, "luminosity": 0.50, "fracture": 0.50, "coherence": 0.95, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0 }
+  },
+  "Orbital Veil": {
+    "seed": [9, 1, 6],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.48, "fracture": 0.40, "coherence": 0.90, "hue": 0.744, "spectrum": 0.20, "chroma": 0.45, "scale": 0.5, "division": 0.5, "faceting": 0.15, "flow": 1.0 }
+  },
+  "Teal Cathedral": {
+    "seed": [7, 6, 4],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.78, "hue": 0.51, "spectrum": 0.25, "chroma": 0.60, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Citrine Glow": {
+    "seed": [7, 5, 12],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.52, "fracture": 0.50, "coherence": 0.72, "hue": 0.12, "spectrum": 0.28, "chroma": 0.75, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Deep Violet": {
+    "seed": [3, 4, 5],
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.35, "fracture": 0.35, "coherence": 0.80, "hue": 0.783, "spectrum": 0.24, "chroma": 0.53, "scale": 0.45, "division": 0.5, "faceting": 0.45, "flow": 0.5 }
+  },
+  "Magenta Fracture": {
+    "seed": [14, 13, 12],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.45, "fracture": 0.90, "coherence": 0.40, "hue": 0.92, "spectrum": 0.20, "chroma": 0.88, "scale": 0.5, "division": 0.5, "faceting": 0.65, "flow": 0.5 }
+  },
   "Verdant Stream": {
-    "seed": "The color of infinite nearness finds its shape.",
+    "seed": [5, 3, 11],
     "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.70, "fracture": 0.61, "coherence": 0.87, "hue": 0.375, "spectrum": 0.351, "chroma": 0.686, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
-  "Prismatic Abyss": {
-    "seed": "What remains after luminous absence.",
-    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.43, "fracture": 0.90, "coherence": 0.50, "hue": 0.850, "spectrum": 0.619, "chroma": 0.450, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
-  },
-  "Rose Quartz": {
-    "seed": "The memory of soft collapse turns to light.",
-    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.65, "fracture": 0.35, "coherence": 0.78, "hue": 0.944, "spectrum": 0.293, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  "Coral Breath": {
+    "seed": [4, 7, 15],
+    "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.65, "fracture": 0.50, "coherence": 0.75, "hue": 0.042, "spectrum": 0.338, "chroma": 0.600, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Sapphire Lattice": {
-    "seed": "A window into bright silence touches the edge.",
+    "seed": [1, 2, 3],
     "controls": { "topology": "flow-field", "density": 0.03, "luminosity": 0.80, "fracture": 0.20, "coherence": 0.95, "hue": 0.556, "spectrum": 0.239, "chroma": 0.417, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
   "Spectral Drift": {
-    "seed": "The distance between warm void and infinite nearness.",
+    "seed": [10, 8, 14],
     "controls": { "topology": "flow-field", "density": 0.12, "luminosity": 0.50, "fracture": 0.60, "coherence": 0.55, "hue": 0.083, "spectrum": 0.697, "chroma": 0.643, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
-  "Violet Sanctum": {
-    "seed": "The space where radiant emptiness begins to sing.",
-    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  "Singularity": {
+    "seed": [0, 2, 5],
+    "controls": { "topology": "flow-field", "density": 0.04, "luminosity": 0.32, "fracture": 0.20, "coherence": 0.90, "hue": 0.783, "spectrum": 0.15, "chroma": 0.45, "scale": 0.0, "division": 0.0, "faceting": 0.3, "flow": 0.0 }
   },
-  "Citrine Whisper": {
-    "seed": "A geometry that dreams of warm void forgets itself.",
-    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.55, "fracture": 0.55, "coherence": 0.75, "hue": 0.139, "spectrum": 0.316, "chroma": 0.714, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  "Particle Cloud": {
+    "seed": [7, 4, 6],
+    "controls": { "topology": "flow-field", "density": 0.20, "luminosity": 0.42, "fracture": 0.55, "coherence": 0.60, "hue": 0.70, "spectrum": 0.30, "chroma": 0.45, "scale": 1.0, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
   },
-  "Coral Breath": {
-    "seed": "What light does to suspended breath folds inward.",
-    "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.65, "fracture": 0.50, "coherence": 0.75, "hue": 0.042, "spectrum": 0.338, "chroma": 0.600, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  "Blade Garden": {
+    "seed": [8, 17, 8],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.50, "fracture": 0.55, "coherence": 0.70, "hue": 0.625, "spectrum": 0.25, "chroma": 0.75, "scale": 0.5, "division": 0.5, "faceting": 1.0, "flow": 0.5 }
   },
-  "Teal Meridian": {
-    "seed": "The interior of liquid geometry becomes a door.",
-    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.62, "fracture": 0.25, "coherence": 0.92, "hue": 0.486, "spectrum": 0.207, "chroma": 0.571, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  "Silk Panels": {
+    "seed": [4, 0, 7],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.52, "fracture": 0.45, "coherence": 0.75, "hue": 0.867, "spectrum": 0.25, "chroma": 0.50, "scale": 0.5, "division": 0.5, "faceting": 0.0, "flow": 0.5 }
   },
-  "Dark Ruby": {
-    "seed": "What remains after burning fog forgets itself.",
-    "controls": { "topology": "flow-field", "density": 0.25, "luminosity": 0.30, "fracture": 0.60, "coherence": 0.55, "hue": 0.986, "spectrum": 0.293, "chroma": 0.571, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  "Triple Crown": {
+    "seed": [2, 6, 7],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.48, "fracture": 0.45, "coherence": 0.80, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 1.0, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Unity": {
+    "seed": [2, 2, 4],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.50, "fracture": 0.20, "coherence": 0.80, "hue": 0.51, "spectrum": 0.20, "chroma": 0.55, "scale": 0.5, "division": 0.0, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Emerald Orbit": {
+    "seed": [11, 5, 10],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.48, "fracture": 0.45, "coherence": 0.88, "hue": 0.375, "spectrum": 0.25, "chroma": 0.72, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 1.0 }
+  },
+  "Dark Prism": {
+    "seed": [8, 11, 5],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.20, "fracture": 0.65, "coherence": 0.50, "hue": 0.50, "spectrum": 1.0, "chroma": 0.80, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5 }
+  },
+  "White Lotus": {
+    "seed": [4, 3, 11],
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.72, "fracture": 0.35, "coherence": 0.78, "hue": 0.55, "spectrum": 0.10, "chroma": 0.05, "scale": 0.45, "division": 0.5, "faceting": 0.4, "flow": 0.5 }
+  },
+  "Ruby Starburst": {
+    "seed": [0, 7, 16],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.90, "hue": 0.0, "spectrum": 0.20, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0 }
+  },
+  "Violet Drift": {
+    "seed": [12, 4, 6],
+    "controls": { "topology": "flow-field", "density": 0.12, "luminosity": 0.45, "fracture": 0.55, "coherence": 0.70, "hue": 0.783, "spectrum": 0.28, "chroma": 0.50, "scale": 0.80, "division": 0.5, "faceting": 0.5, "flow": 0.85 }
+  },
+  "Teal Shards": {
+    "seed": [8, 14, 3],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.50, "fracture": 0.60, "coherence": 0.72, "hue": 0.51, "spectrum": 0.22, "chroma": 0.62, "scale": 0.5, "division": 0.5, "faceting": 0.90, "flow": 0.5 }
+  },
+  "Golden Divide": {
+    "seed": [9, 7, 15],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.42, "fracture": 0.50, "coherence": 0.70, "hue": 0.08, "spectrum": 0.22, "chroma": 0.88, "scale": 0.5, "division": 0.90, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Frost Nebula": {
+    "seed": [14, 4, 1],
+    "controls": { "topology": "flow-field", "density": 0.15, "luminosity": 0.45, "fracture": 0.60, "coherence": 0.55, "hue": 0.58, "spectrum": 0.08, "chroma": 0.10, "scale": 0.80, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Radiant Emerald Divide": {
+    "seed": [3, 5, 11],
+    "controls": { "topology": "flow-field", "density": 0.09, "luminosity": 0.45, "fracture": 0.48, "coherence": 0.82, "hue": 0.375, "spectrum": 0.25, "chroma": 0.72, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.10 }
+  },
+  "Compact Sapphire": {
+    "seed": [0, 3, 4],
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.40, "fracture": 0.25, "coherence": 0.85, "hue": 0.625, "spectrum": 0.20, "chroma": 0.85, "scale": 0.20, "division": 0.5, "faceting": 0.40, "flow": 0.5 }
+  },
+  "Chaos Field": {
+    "seed": [17, 13, 8],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.42, "fracture": 1.0, "coherence": 0.0, "hue": 0.5, "spectrum": 0.80, "chroma": 0.65, "scale": 0.5, "division": 0.5, "faceting": 0.65, "flow": 0.5 }
+  },
+  "Perfect Order": {
+    "seed": [0, 0, 8],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.55, "fracture": 0.0, "coherence": 1.0, "hue": 0.625, "spectrum": 0.10, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Dense Prismatic": {
+    "seed": [13, 11, 12],
+    "controls": { "topology": "flow-field", "density": 0.25, "luminosity": 0.38, "fracture": 0.55, "coherence": 0.60, "hue": 0.5, "spectrum": 1.0, "chroma": 1.0, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Sparse Ember": {
+    "seed": [4, 4, 13],
+    "controls": { "topology": "flow-field", "density": 0.02, "luminosity": 0.50, "fracture": 0.40, "coherence": 0.75, "hue": 0.06, "spectrum": 0.20, "chroma": 0.85, "scale": 0.30, "division": 0.5, "faceting": 0.45, "flow": 0.5 }
+  },
+  "Orbital Prism": {
+    "seed": [11, 6, 12],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.88, "hue": 0.5, "spectrum": 0.80, "chroma": 0.75, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 1.0 }
+  },
+  "Daffodil Haze": {
+    "seed": [6, 5, 11],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.50, "fracture": 0.50, "coherence": 0.75, "hue": 0.17, "spectrum": 0.22, "chroma": 0.80, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Sunlit Fracture": {
+    "seed": [14, 12, 14],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.45, "fracture": 0.80, "coherence": 0.55, "hue": 0.19, "spectrum": 0.30, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.70, "flow": 0.5 }
+  },
+  "Chartreuse Bloom": {
+    "seed": [1, 5, 11],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.48, "fracture": 0.50, "coherence": 0.85, "hue": 0.28, "spectrum": 0.24, "chroma": 0.75, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0 }
+  },
+  "Lime Veil": {
+    "seed": [11, 4, 8],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.78, "hue": 0.33, "spectrum": 0.25, "chroma": 0.68, "scale": 0.65, "division": 0.5, "faceting": 0.45, "flow": 0.85 }
+  },
+  "Turquoise Depth": {
+    "seed": [3, 4, 3],
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.38, "fracture": 0.40, "coherence": 0.82, "hue": 0.44, "spectrum": 0.20, "chroma": 0.70, "scale": 0.45, "division": 0.5, "faceting": 0.50, "flow": 0.5 }
+  },
+  "Aquamarine Scatter": {
+    "seed": [13, 11, 4],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.55, "fracture": 0.75, "coherence": 0.60, "hue": 0.47, "spectrum": 0.28, "chroma": 0.65, "scale": 0.5, "division": 0.5, "faceting": 0.65, "flow": 0.5 }
+  },
+  "Indigo Sanctum": {
+    "seed": [7, 7, 6],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.78, "hue": 0.66, "spectrum": 0.25, "chroma": 0.60, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Indigo Monolith": {
+    "seed": [1, 4, 5],
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.38, "fracture": 0.30, "coherence": 0.88, "hue": 0.68, "spectrum": 0.18, "chroma": 0.72, "scale": 0.15, "division": 0.3, "faceting": 0.35, "flow": 0.5 }
+  },
+  "Amber Crosswind": {
+    "seed": [5, 7, 14],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.48, "fracture": 0.55, "coherence": 0.85, "hue": 0.06, "spectrum": 0.22, "chroma": 0.88, "scale": 0.45, "division": 0.45, "faceting": 0.5, "flow": 0.30 }
+  },
+  "Violet Turbulence": {
+    "seed": [8, 5, 7],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.50, "fracture": 0.50, "coherence": 0.80, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.35 }
+  },
+  "Teal Eddy": {
+    "seed": [10, 6, 4],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.78, "hue": 0.51, "spectrum": 0.22, "chroma": 0.60, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.40 }
+  },
+  "Emerald Breeze": {
+    "seed": [6, 5, 8],
+    "controls": { "topology": "flow-field", "density": 0.12, "luminosity": 0.48, "fracture": 0.50, "coherence": 0.72, "hue": 0.375, "spectrum": 0.28, "chroma": 0.68, "scale": 0.75, "division": 0.5, "faceting": 0.5, "flow": 0.35 }
+  },
+  "Rose Updraft": {
+    "seed": [5, 5, 9],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.82, "hue": 0.94, "spectrum": 0.25, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.28 }
+  },
+  "Sapphire Gust": {
+    "seed": [8, 14, 5],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.50, "fracture": 0.55, "coherence": 0.80, "hue": 0.625, "spectrum": 0.25, "chroma": 0.82, "scale": 0.5, "division": 0.5, "faceting": 0.85, "flow": 0.42 }
+  },
+  "Prismatic Gale": {
+    "seed": [8, 8, 12],
+    "controls": { "topology": "flow-field", "density": 0.09, "luminosity": 0.45, "fracture": 0.60, "coherence": 0.65, "hue": 0.50, "spectrum": 0.75, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.38 }
+  },
+  "Monumental Trifold": {
+    "seed": [2, 3, 4],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.28, "fracture": 0.50, "coherence": 0.82, "hue": 0.51, "spectrum": 0.22, "chroma": 0.60, "scale": 0.10, "division": 0.85, "faceting": 0.30, "flow": 0.5 }
+  },
+  "Atmospheric Blades": {
+    "seed": [8, 16, 6],
+    "controls": { "topology": "flow-field", "density": 0.14, "luminosity": 0.45, "fracture": 0.55, "coherence": 0.65, "hue": 0.783, "spectrum": 0.28, "chroma": 0.50, "scale": 0.90, "division": 0.5, "faceting": 0.95, "flow": 0.5 }
+  },
+  "Grand Bifurcation": {
+    "seed": [3, 5, 5],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.30, "fracture": 0.50, "coherence": 0.80, "hue": 0.867, "spectrum": 0.25, "chroma": 0.50, "scale": 0.15, "division": 0.35, "faceting": 0.50, "flow": 0.5 }
+  },
+  "Split Nebula": {
+    "seed": [8, 4, 5],
+    "controls": { "topology": "flow-field", "density": 0.14, "luminosity": 0.42, "fracture": 0.55, "coherence": 0.65, "hue": 0.70, "spectrum": 0.30, "chroma": 0.45, "scale": 0.85, "division": 0.40, "faceting": 0.50, "flow": 0.35 }
+  },
+  "Silk Triptych": {
+    "seed": [5, 1, 9],
+    "controls": { "topology": "flow-field", "density": 0.09, "luminosity": 0.48, "fracture": 0.45, "coherence": 0.78, "hue": 0.94, "spectrum": 0.25, "chroma": 0.50, "scale": 0.60, "division": 0.90, "faceting": 0.0, "flow": 0.5 }
+  },
+  "Orbital Blades Trifold": {
+    "seed": [16, 15, 8],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.48, "fracture": 0.50, "coherence": 0.85, "hue": 0.625, "spectrum": 0.24, "chroma": 0.80, "scale": 0.5, "division": 0.85, "faceting": 0.90, "flow": 1.0 }
+  },
+  "Compact Crystal Garden": {
+    "seed": [0, 17, 5],
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.38, "fracture": 0.45, "coherence": 0.88, "hue": 0.867, "spectrum": 0.20, "chroma": 0.55, "scale": 0.20, "division": 0.5, "faceting": 1.0, "flow": 0.0 }
+  },
+  "Dense Amber": {
+    "seed": [13, 7, 14],
+    "controls": { "topology": "flow-field", "density": 0.35, "luminosity": 0.38, "fracture": 0.50, "coherence": 0.70, "hue": 0.06, "spectrum": 0.22, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Dense Atmospheric Violet": {
+    "seed": [13, 7, 6],
+    "controls": { "topology": "flow-field", "density": 0.40, "luminosity": 0.35, "fracture": 0.55, "coherence": 0.65, "hue": 0.783, "spectrum": 0.28, "chroma": 0.50, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Dense Trifold": {
+    "seed": [13, 6, 4],
+    "controls": { "topology": "flow-field", "density": 0.30, "luminosity": 0.22, "fracture": 0.50, "coherence": 0.72, "hue": 0.51, "spectrum": 0.25, "chroma": 0.60, "scale": 0.5, "division": 0.90, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Bright Ethereal": {
+    "seed": [4, 3, 2],
+    "controls": { "topology": "flow-field", "density": 0.04, "luminosity": 0.72, "fracture": 0.50, "coherence": 0.80, "hue": 0.58, "spectrum": 0.08, "chroma": 0.08, "scale": 0.45, "division": 0.5, "faceting": 0.40, "flow": 0.5 }
+  },
+  "Bright Emerald": {
+    "seed": [3, 4, 11],
+    "controls": { "topology": "flow-field", "density": 0.04, "luminosity": 0.85, "fracture": 0.40, "coherence": 0.82, "hue": 0.375, "spectrum": 0.25, "chroma": 0.72, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Supernova": {
+    "seed": [15, 13, 12],
+    "controls": { "topology": "flow-field", "density": 0.50, "luminosity": 0.15, "fracture": 0.85, "coherence": 0.55, "hue": 0.50, "spectrum": 0.65, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5 }
+  },
+  "Monochrome Amber": {
+    "seed": [7, 6, 13],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.78, "hue": 0.06, "spectrum": 0.0, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Monochrome Rose": {
+    "seed": [4, 4, 9],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.52, "fracture": 0.40, "coherence": 0.75, "hue": 0.94, "spectrum": 0.0, "chroma": 0.60, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Mid-Spectrum Teal": {
+    "seed": [7, 5, 4],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.48, "fracture": 0.50, "coherence": 0.75, "hue": 0.51, "spectrum": 0.50, "chroma": 0.60, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Stained Glass Trifold": {
+    "seed": [14, 13, 8],
+    "controls": { "topology": "flow-field", "density": 0.09, "luminosity": 0.40, "fracture": 0.90, "coherence": 0.60, "hue": 0.50, "spectrum": 0.80, "chroma": 0.70, "scale": 0.5, "division": 0.90, "faceting": 0.60, "flow": 0.5 }
+  },
+  "Coherent Radial Prism": {
+    "seed": [0, 5, 12],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.45, "fracture": 0.55, "coherence": 0.95, "hue": 0.50, "spectrum": 0.70, "chroma": 0.65, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0 }
+  },
+  "Low Coherence Scatter": {
+    "seed": [15, 10, 8],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.48, "fracture": 0.60, "coherence": 0.15, "hue": 0.625, "spectrum": 0.30, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.60, "flow": 0.5 }
+  },
+  "Bright Dense Atmospheric": {
+    "seed": [13, 4, 11],
+    "controls": { "topology": "flow-field", "density": 0.30, "luminosity": 0.75, "fracture": 0.50, "coherence": 0.65, "hue": 0.55, "spectrum": 0.15, "chroma": 0.35, "scale": 0.90, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Moonstone": {
+    "seed": [1, 3, 2],
+    "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.55, "fracture": 0.45, "coherence": 0.88, "hue": 0.60, "spectrum": 0.06, "chroma": 0.10, "scale": 0.50, "division": 0.5, "faceting": 0.35, "flow": 0.5 }
+  },
+  "Dark Jade": {
+    "seed": [7, 7, 5],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.20, "fracture": 0.55, "coherence": 0.65, "hue": 0.375, "spectrum": 0.22, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Dark Chartreuse": {
+    "seed": [8, 8, 5],
+    "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.22, "fracture": 0.60, "coherence": 0.60, "hue": 0.28, "spectrum": 0.25, "chroma": 0.75, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5 }
+  },
+  "Obsidian Prism": {
+    "seed": [8, 12, 5],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.15, "fracture": 0.75, "coherence": 0.55, "hue": 0.50, "spectrum": 0.85, "chroma": 0.75, "scale": 0.5, "division": 0.5, "faceting": 0.60, "flow": 0.5 }
+  },
+  "Glacier": {
+    "seed": [9, 1, 0],
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.40, "fracture": 0.20, "coherence": 0.90, "hue": 0.56, "spectrum": 0.05, "chroma": 0.12, "scale": 0.55, "division": 0.5, "faceting": 0.20, "flow": 1.0 }
+  },
+  "Volcanic": {
+    "seed": [13, 12, 17],
+    "controls": { "topology": "flow-field", "density": 0.20, "luminosity": 0.35, "fracture": 0.75, "coherence": 0.50, "hue": 0.02, "spectrum": 0.35, "chroma": 0.90, "scale": 0.5, "division": 0.5, "faceting": 0.65, "flow": 0.5 }
+  },
+  "Smoke Signal": {
+    "seed": [5, 3, 4],
+    "controls": { "topology": "flow-field", "density": 0.12, "luminosity": 0.45, "fracture": 0.50, "coherence": 0.70, "hue": 0.10, "spectrum": 0.05, "chroma": 0.05, "scale": 0.80, "division": 0.5, "faceting": 0.45, "flow": 0.30 }
+  },
+  "Violet Sanctum Radial": {
+    "seed": [1, 6, 7],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0 }
+  },
+  "Violet Sanctum Trifold": {
+    "seed": [8, 6, 7],
+    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5 }
+  },
+  "Prismatic Scatter Dark": {
+    "seed": [14, 12, 5],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.22, "fracture": 0.85, "coherence": 0.50, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5 }
+  },
+  "Emerald Radiance Compact": {
+    "seed": [0, 5, 10],
+    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.38, "fracture": 0.52, "coherence": 0.82, "hue": 0.375, "spectrum": 0.28, "chroma": 0.70, "scale": 0.10, "division": 0.45, "faceting": 0.5, "flow": 0.18 }
+  },
+  "Sapphire Shards Atmospheric": {
+    "seed": [12, 9, 5],
+    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.50, "fracture": 0.55, "coherence": 0.80, "hue": 0.625, "spectrum": 0.28, "chroma": 0.82, "scale": 0.90, "division": 0.5, "faceting": 0.80, "flow": 0.80 }
+  },
+  "Ice Crystal Orbital": {
+    "seed": [11, 14, 1],
+    "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.55, "fracture": 0.25, "coherence": 0.85, "hue": 0.55, "spectrum": 0.05, "chroma": 0.08, "scale": 0.50, "division": 0.50, "faceting": 0.85, "flow": 1.0 }
+  },
+  "Spectral Drift Trifold": {
+    "seed": [16, 8, 14],
+    "controls": { "topology": "flow-field", "density": 0.12, "luminosity": 0.50, "fracture": 0.60, "coherence": 0.55, "hue": 0.083, "spectrum": 0.697, "chroma": 0.643, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.90 }
   }
 }

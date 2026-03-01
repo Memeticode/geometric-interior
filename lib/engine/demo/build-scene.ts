@@ -14,17 +14,39 @@ import {
     createDemoEdgeMaterial,
     createDemoGlowMaterial,
 } from '../materials.js';
-import type { DerivedParams, SceneBuildResult } from '../../types.js';
+import type { DerivedParams, SceneBuildResult, SceneRngStreams } from '../../types.js';
 
-export function buildDemoScene(params: DerivedParams, rng: () => number, scene: THREE.Scene, glowTexture?: THREE.Texture): SceneBuildResult {
+export function buildDemoScene(
+    params: DerivedParams,
+    rngOrStreams: (() => number) | SceneRngStreams,
+    scene: THREE.Scene,
+    glowTexture?: THREE.Texture,
+): SceneBuildResult {
+    // Normalize: accept either a single rng (legacy) or three independent streams
+    const streams: SceneRngStreams = typeof rngOrStreams === 'function'
+        ? {
+            arrangementRng: rngOrStreams,
+            structureRng: rngOrStreams,
+            detailRng: rngOrStreams,
+            arrangementBias: 0.5,
+            structureBias: 0.5,
+            detailBias: 0.5,
+        }
+        : rngOrStreams;
+
+    const { arrangementRng, structureRng, detailRng } = streams;
+
     const envelopeRadii = new THREE.Vector3(...params.envelopeRadii);
     const div = params.divisionParams;
 
-    // 1. Generate guide curves
-    const guideCurves = generateAllGuideCurves(params.curveConfig, rng, envelopeRadii, div);
+    // Arrangement bias → rotation offset for seed point placement
+    const thetaOffset = streams.arrangementBias * Math.PI * 2;
 
-    // 2. Generate dots
-    const dotResult = generateDots(params.dotConfig, guideCurves, envelopeRadii, rng);
+    // 1. Generate guide curves (arrangement stream)
+    const guideCurves = generateAllGuideCurves(params.curveConfig, arrangementRng, envelopeRadii, div, thetaOffset);
+
+    // 2. Generate dots (arrangement stream — spatially tied to layout)
+    const dotResult = generateDots(params.dotConfig, guideCurves, envelopeRadii, arrangementRng);
     const { sphereInstData, glowPointData, allDotPositions, lightUniforms } = dotResult;
 
     // 3. Build light sphere InstancedMesh
@@ -74,29 +96,34 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
     // 5. Create folding chains along guide curves
     const accum = createAccumulators();
 
+    // Detail bias → hue warmth shift (−10° to +10°)
+    const warmthShift = (streams.detailBias - 0.5) * 20;
+
     function pickColor(distFromCenter: number, decayRate: number, lightnessBoost: number, familyHue: number | null): THREE.Color {
         const fade = Math.exp(-decayRate * distFromCenter * distFromCenter);
         let baseHue: number;
         if (familyHue !== null && familyHue !== undefined) {
-            baseHue = familyHue + (rng() - 0.5) * 35;
+            baseHue = familyHue + (detailRng() - 0.5) * 35 + warmthShift;
         } else {
-            const centerHue = params.baseHue + 25 + rng() * 40;
-            const edgeHue = params.baseHue - 50 + rng() * 40;
+            const centerHue = params.baseHue + 25 + detailRng() * 40 + warmthShift;
+            const edgeHue = params.baseHue - 50 + detailRng() * 40 + warmthShift;
             baseHue = edgeHue + fade * (centerHue - edgeHue);
         }
-        const saturation = Math.min(params.saturation * 0.75 + rng() * 0.25 + (1 - fade) * 0.05, 1.0);
-        const lightness = Math.min(0.06 + rng() * 0.08 + fade * (0.22 + rng() * 0.22) + lightnessBoost, 0.60);
+        const saturation = Math.min(params.saturation * 0.75 + detailRng() * 0.25 + (1 - fade) * 0.05, 1.0);
+        const lightness = Math.min(0.06 + detailRng() * 0.08 + fade * (0.22 + detailRng() * 0.22) + lightnessBoost, 0.60);
         return new THREE.Color().setHSL(baseHue / 360, saturation, lightness);
     }
 
+    // Structure bias → nudge chain geometry parameters
+    const structBias = streams.structureBias;
     const chainConfig = {
         edgeColorOffset: params.edgeColorOffset,
         edgeOpacityBase: params.edgeOpacityBase,
         edgeOpacityFadeScale: params.edgeOpacityFadeScale,
         crackExtendScale: params.crackExtendScale,
         faceOpacityScale: params.faceOpacityScale,
-        quadProbability: params.facetingParams.quadProbability,
-        dihedralBase: params.facetingParams.dihedralBase,
+        quadProbability: params.facetingParams.quadProbability + (structBias - 0.5) * 0.1,
+        dihedralBase: params.facetingParams.dihedralBase * (0.9 + structBias * 0.2),
         dihedralRange: params.facetingParams.dihedralRange,
         contractionBase: params.facetingParams.contractionBase,
         contractionRange: params.facetingParams.contractionRange,
@@ -105,8 +132,8 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
     const tierChainConfig: Record<string, { chainLen: () => number; scale: () => number; spread: number; dualProb: number; spacing: number }> = {};
     for (const [tier, c] of Object.entries(params.chains)) {
         tierChainConfig[tier] = {
-            chainLen: () => c.chainLenBase + Math.floor(rng() * c.chainLenRange),
-            scale: () => c.scaleBase + rng() * c.scaleRange,
+            chainLen: () => c.chainLenBase + Math.floor(structureRng() * c.chainLenRange),
+            scale: () => c.scaleBase + structureRng() * c.scaleRange,
             spread: c.spread,
             dualProb: c.dualProb,
             spacing: c.spacing,
@@ -119,31 +146,31 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
         const samples = sampleAlongCurve(curve, config.spacing, envelopeRadii, div);
 
         for (const sample of samples) {
-            let dir1 = drapingDirection(sample, config.spread, rng);
+            let dir1 = drapingDirection(sample, config.spread, structureRng);
             if (params.flowInfluence > 0) {
                 const flow = compositeFlowField(sample.pos, params.flowScale, params.flowType);
                 dir1.lerp(flow, params.flowInfluence).normalize();
             }
             const familyHue = colorFieldHue(sample.pos, params.colorFieldScale, params.baseHue, params.hueRange)
-                + (rng() - 0.5) * 30;
+                + (detailRng() - 0.5) * 30;
             const chainLen = config.chainLen();
             const planeScale = config.scale();
 
             createFoldingChain(accum, sample.pos, chainLen, planeScale,
-                sample.pos.length(), allDotPositions, chainConfig, rng, pickColor,
+                sample.pos.length(), allDotPositions, chainConfig, structureRng, pickColor,
                 familyHue, dir1);
 
-            if (rng() < config.dualProb) {
+            if (structureRng() < config.dualProb) {
                 const flippedBinormal = sample.binormal.clone().negate();
                 const flippedSample = { ...sample, binormal: flippedBinormal };
-                let dir2 = drapingDirection(flippedSample, config.spread, rng);
+                let dir2 = drapingDirection(flippedSample, config.spread, structureRng);
                 if (params.flowInfluence > 0) {
                     const flow = compositeFlowField(sample.pos, params.flowScale, params.flowType);
                     dir2.lerp(flow, params.flowInfluence).normalize();
                 }
                 createFoldingChain(accum, sample.pos, chainLen, planeScale,
-                    sample.pos.length(), allDotPositions, chainConfig, rng, pickColor,
-                    familyHue + (rng() - 0.5) * 15, dir2);
+                    sample.pos.length(), allDotPositions, chainConfig, structureRng, pickColor,
+                    familyHue + (detailRng() - 0.5) * 15, dir2);
             }
         }
     }
@@ -154,19 +181,19 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
         let attempts = 0;
         do {
             pos = new THREE.Vector3(
-                gaussianRandom(rng, 0, 0.6),
-                gaussianRandom(rng, 0, 0.4),
-                gaussianRandom(rng, 0, 0.5)
+                gaussianRandom(structureRng, 0, 0.6),
+                gaussianRandom(structureRng, 0, 0.4),
+                gaussianRandom(structureRng, 0, 0.5)
             );
             attempts++;
         } while (envelopeSDF(pos, envelopeRadii, div) > -0.1 && attempts < 50);
         const flowNorm = compositeFlowField(pos, params.flowScale, params.flowType);
         const familyHue = colorFieldHue(pos, params.colorFieldScale, params.baseHue, params.hueRange)
-            + (rng() - 0.5) * 40;
-        const planeScale = 0.5 + rng() * 0.3;
-        const chainLen = 3 + Math.floor(rng() * 2);
+            + (detailRng() - 0.5) * 40;
+        const planeScale = 0.5 + structureRng() * 0.3;
+        const chainLen = 3 + Math.floor(structureRng() * 2);
         createFoldingChain(accum, pos, chainLen, planeScale, pos.length(),
-            allDotPositions, chainConfig, rng, pickColor, familyHue, flowNorm);
+            allDotPositions, chainConfig, structureRng, pickColor, familyHue, flowNorm);
     }
 
     // 6. Build batched face mesh
@@ -218,7 +245,7 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
         scene.add(edgeLines);
     }
 
-    // 8. Build tendril curves
+    // 8. Build tendril curves (detail stream for color)
     const tendrilPos: number[] = [];
     const tendrilCol: number[] = [];
     for (const curve of guideCurves) {
@@ -226,8 +253,8 @@ export function buildDemoScene(params: DerivedParams, rng: () => number, scene: 
         const spline = new THREE.CatmullRomCurve3(curve);
         const pts = spline.getPoints(Math.max(16, curve.length * 2));
 
-        const hue = (params.tendrilHueBase + rng() * params.tendrilHueRange) / 360;
-        const sat = params.tendrilSatBase + rng() * params.tendrilSatRange;
+        const hue = (params.tendrilHueBase + detailRng() * params.tendrilHueRange) / 360;
+        const sat = params.tendrilSatBase + detailRng() * params.tendrilSatRange;
         const opacity = curve.tier === 'primary'
             ? params.tendrilOpacity.primary
             : params.tendrilOpacity.other;

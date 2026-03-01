@@ -1,0 +1,342 @@
+/* ── Generate panel ── */
+
+.generate-panel {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.5rem 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.generate-panel.hidden {
+    display: none;
+}
+
+/* ── Config column ── */
+
+.generate-config {
+    flex: 0 0 280px;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* ── Seed tag row ── */
+
+.gen-seed-row {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+.seed-tag-select {
+    flex: 1;
+    min-width: 0;
+    padding: 0.25rem 0.375rem;
+    font-size: 0.6875rem;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    outline: none;
+}
+.seed-tag-select:focus {
+    border-color: var(--accent);
+}
+.seed-tag-sep {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    user-select: none;
+}
+
+/* ── Headings (Seed, Parameters) ── */
+
+.gen-heading {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    padding: 0.375rem 0 0.125rem;
+}
+.gen-heading + .gen-heading {
+    margin-top: 0.375rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.5rem;
+}
+.gen-heading .label-info {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ── Section headers ── */
+
+.gen-section-header {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 0.375rem 0 0.125rem;
+    margin-top: 0.25rem;
+    border-top: 1px solid var(--border);
+}
+.gen-section-header:first-child {
+    border-top: none;
+    margin-top: 0;
+}
+.gen-section-header .label-info {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+/* ── Sliders ── */
+
+.gen-sliders {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+}
+.gen-slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+.gen-slider-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    cursor: default;
+}
+.gen-slider-name {
+    font-weight: 500;
+}
+.gen-slider-value {
+    font-size: 0.625rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.75;
+}
+.gen-slider-track {
+    position: relative;
+    height: 18px;
+    display: flex;
+    align-items: center;
+}
+.gen-slider-track input[type="range"] {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+}
+.gen-slider-track input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent-text);
+    border: none;
+    cursor: pointer;
+}
+.gen-slider-track input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent-text);
+    border: none;
+    cursor: pointer;
+}
+
+/* ── Action buttons ── */
+
+.gen-actions {
+    display: flex;
+    gap: 0.5rem;
+    padding-top: 0.25rem;
+}
+.gen-btn {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.gen-btn:hover {
+    background: var(--surface-hover);
+    border-color: var(--border-strong);
+}
+.gen-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+.gen-btn-primary {
+    background: var(--accent-bg);
+    border-color: var(--accent);
+    color: var(--accent-text);
+}
+.gen-btn-primary:hover {
+    background: var(--accent);
+}
+
+/* ── Preview ── */
+
+.gen-preview-wrap {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+}
+.gen-preview-wrap canvas {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #000;
+}
+
+/* ── Progress overlay ── */
+
+.gen-progress-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    z-index: 2;
+}
+.gen-progress-overlay.hidden {
+    display: none;
+}
+.gen-progress-bar {
+    width: 60%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.gen-progress-fill {
+    height: 100%;
+    background: var(--progress);
+    border-radius: 2px;
+    transition: width 0.2s ease;
+}
+.gen-progress-label {
+    font-size: 0.6875rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ── Queue list ── */
+
+.gen-queue {
+    flex: 0 0 280px;
+    max-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    overflow-y: auto;
+    max-height: 400px;
+}
+.gen-queue:empty {
+    display: none;
+}
+.gen-queue-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.6875rem;
+}
+.gen-queue-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+.gen-queue-name {
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.gen-queue-bar {
+    width: 100%;
+    height: 3px;
+    background: var(--border);
+    border-radius: 1.5px;
+    overflow: hidden;
+}
+.gen-queue-bar-fill {
+    height: 100%;
+    background: var(--progress);
+    border-radius: 1.5px;
+    transition: width 0.3s ease;
+}
+.gen-queue-label {
+    font-size: 0.625rem;
+    color: var(--text-muted);
+}
+.gen-queue-complete-label {
+    color: var(--accent-text);
+}
+.gen-queue-failed-label {
+    color: #ff6b6b;
+}
+.gen-queue-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+.gen-queue-btn {
+    padding: 0.125rem 0.375rem;
+    font-size: 0.625rem;
+    background: var(--surface);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.gen-queue-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+.gen-queue-view-btn {
+    color: var(--accent-text);
+}
+.gen-queue-view-btn:hover {
+    background: var(--accent-bg);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 900px) {
+    .generate-panel {
+        flex-direction: column;
+    }
+    .generate-config {
+        flex: none;
+        max-width: 100%;
+    }
+    .gen-queue {
+        flex: none;
+        max-width: 100%;
+    }
+}

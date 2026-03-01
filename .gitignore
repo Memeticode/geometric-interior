@@ -35,5 +35,6 @@ thumbnail.png
 /nul
 /output
 
+public\thumbs\**.png
 sampler-captures/
 notes.txt

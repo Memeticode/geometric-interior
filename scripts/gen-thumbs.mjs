@@ -1,9 +1,13 @@
 /**
- * Generate static portrait thumbnails (280×180 PNG) for all starter profiles.
+ * Generate carousel thumbnail PNGs for all starter profiles.
+ *
+ * Outputs per profile:
+ *   {slug}.png          280×180 carousel thumbnail (PNG)
  *
  * Usage:
  *   node scripts/gen-thumbs.mjs
- *   HEADED=1 node scripts/gen-thumbs.mjs   # watch it render
+ *   node scripts/gen-thumbs.mjs --profile="Violet Sanctum"
+ *   HEADED=1 node scripts/gen-thumbs.mjs
  *
  * Prerequisites:
  *   npx vite --port 5204  (dev server must be running)
@@ -17,8 +21,14 @@ import { slugify } from '../src/shared/slugify.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = 5204;
-const BASE_URL = `http://localhost:${PORT}/`;
+const BASE_URL = `http://localhost:${PORT}/image.html`;
 const THUMB_DIR = resolve(__dirname, '..', 'public', 'thumbs');
+
+function parseProfileFilter() {
+    const arg = process.argv.find(a => a.startsWith('--profile='));
+    if (!arg) return null;
+    return arg.split('=')[1];
+}
 
 async function main() {
     if (!existsSync(THUMB_DIR)) mkdirSync(THUMB_DIR, { recursive: true });
@@ -28,8 +38,8 @@ async function main() {
     console.log('='.repeat(50));
     console.log('  Portrait Thumbnail Generator');
     console.log('='.repeat(50));
-    console.log(`  Output dir: ${THUMB_DIR}`);
-    console.log(`  Dev URL:    ${BASE_URL}`);
+    console.log(`  Output dir:    ${THUMB_DIR}`);
+    console.log(`  Dev URL:       ${BASE_URL}`);
     console.log('');
 
     const browser = await chromium.launch({
@@ -42,16 +52,13 @@ async function main() {
         deviceScaleFactor: 1,
     });
 
-    // Block Vite HMR
     await page.routeWebSocket('**', _ws => {});
+    page.on('pageerror', err => console.error(`  [browser error] ${err.message}`));
 
-    page.on('pageerror', err => {
-        console.error(`  [browser error] ${err.message}`);
-    });
-
-    console.log('Navigating to app...');
+    console.log('Navigating to image editor...');
     try {
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.goto(BASE_URL, { waitUntil: 'load', timeout: 30000 });
+        await new Promise(r => setTimeout(r, 2000));
     } catch (err) {
         console.error(`Failed to load ${BASE_URL}`);
         console.error('Is the Vite dev server running?  npx vite --port 5204');
@@ -59,41 +66,42 @@ async function main() {
         process.exit(1);
     }
 
-    // Wait for the app to be ready (exportBtn is created late in init)
     await page.waitForFunction(
         () => typeof window.__renderPortraitThumb === 'function',
         { timeout: 30000 }
     );
     console.log('App ready.\n');
 
-    // Get portrait names from the gallery
-    const portraitNames = await page.evaluate(() => {
-        const cards = document.querySelectorAll('#portraitGallery .profile-card');
-        return Array.from(cards).map(c => c.querySelector('.profile-card-name')?.textContent).filter(Boolean);
-    });
+    // Get portrait names
+    const names = await page.evaluate(() =>
+        fetch('/src/core/starter-profiles.json').then(r => r.json()).then(p => Object.keys(p))
+    );
 
-    if (portraitNames.length === 0) {
-        console.error('No portrait cards found. Is the gallery rendered?');
+    if (!names || names.length === 0) {
+        console.error('No portrait names found.');
         await browser.close();
         process.exit(1);
     }
 
-    console.log(`Found ${portraitNames.length} portraits.\n`);
+    const profileFilter = parseProfileFilter();
+    const filtered = profileFilter ? names.filter(n => n === profileFilter) : names;
+    if (profileFilter && filtered.length === 0) {
+        console.error(`Profile "${profileFilter}" not found.`);
+        await browser.close();
+        process.exit(1);
+    }
+    console.log(`Processing ${filtered.length} of ${names.length} portraits.\n`);
 
-    for (const name of portraitNames) {
-        const dataUrl = await page.evaluate((pName) => {
-            return window.__renderPortraitThumb(pName);
-        }, name);
-
+    for (const name of filtered) {
         const slug = slugify(name);
-        const pngData = Buffer.from(dataUrl.split(',')[1], 'base64');
-        const outPath = resolve(THUMB_DIR, `${slug}.png`);
-        writeFileSync(outPath, pngData);
-        console.log(`  ${slug}.png  (${(pngData.length / 1024).toFixed(1)} KB)`);
+        const thumbUrl = await page.evaluate(pName => window.__renderPortraitThumb(pName), name);
+        const thumbPng = Buffer.from(thumbUrl.split(',')[1], 'base64');
+        writeFileSync(resolve(THUMB_DIR, `${slug}.png`), thumbPng);
+        console.log(`  ${slug}.png (${(thumbPng.length / 1024).toFixed(1)} KB)`);
     }
 
     await browser.close();
-    console.log(`\nDone. ${portraitNames.length} thumbnails saved to public/thumbs/`);
+    console.log(`\nDone. ${filtered.length} thumbnails saved.`);
 }
 
 main().catch(err => {

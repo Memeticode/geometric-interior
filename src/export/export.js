@@ -162,9 +162,7 @@ export function computeKeyframeText(seedForTitles, landmarks, locale = 'en') {
         const rng = mulberry32(seedFn());
         const title = generateTitle(k.controls, rng, locale);
 
-        const seedFn2 = xmur3(seedForTitles + '::alt::' + k.name);
-        const rng2 = mulberry32(seedFn2());
-        const derived = deriveParams(k.controls, rng2);
+        const derived = deriveParams(k.controls);
         const nodeCount = derived.nodeCount;
 
         const alt = generateAltText(k.controls, nodeCount, title, locale);

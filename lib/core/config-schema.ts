@@ -5,6 +5,8 @@
 
 import type { StillConfig, ValidationResult, Profile } from '../types.js';
 import { PRESETS } from './palettes.js';
+import { seedTagToLabel, isSeedTag, TAG_LIST_LENGTH } from './seed-tags.js';
+import type { SeedTag } from './seed-tags.js';
 
 const STRUCTURE_KEYS_V2 = ['density', 'luminosity', 'fracture', 'coherence', 'scale', 'division', 'faceting', 'flow'] as const;
 const COLOR_KEYS_V2 = ['hue', 'spectrum', 'chroma'] as const;
@@ -47,7 +49,18 @@ export function validateStillConfig(data: unknown): ValidationResult {
     }
 
     checkStr(errors, 'name', data, 40);
-    checkStr(errors, 'intent', data, 120);
+
+    // Seed: either intent string or seedTag array
+    const hasSeedTag = Array.isArray(data.seedTag);
+    if (hasSeedTag) {
+        const tag = data.seedTag as unknown[];
+        if (tag.length !== 3 || !tag.every(n => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n < TAG_LIST_LENGTH)) {
+            errors.push(`seedTag: must be an array of 3 integers in [0, ${TAG_LIST_LENGTH - 1}]`);
+        }
+    }
+    if (!hasSeedTag) {
+        checkStr(errors, 'intent', data, 120);
+    }
 
     if (kind === 'still') {
         // Legacy v1 format: palette section
@@ -83,6 +96,16 @@ export function validateStillConfig(data: unknown): ValidationResult {
         }
     }
 
+    // Optional camera validation
+    if (data.camera != null) {
+        if (!isObj(data.camera)) {
+            errors.push('camera: must be an object');
+        } else {
+            checkNum(errors, 'camera', data.camera, 'zoom', 0.3, 3.0);
+            checkNum(errors, 'camera', data.camera, 'rotation', 0, 360);
+        }
+    }
+
     return { ok: errors.length === 0, errors };
 }
 
@@ -107,13 +130,18 @@ function paletteToColor(palHue: number, palRange: number, palSat: number): { hue
 }
 
 export function configToProfile(config: StillConfig): { name: string; profile: Profile } {
+    // Determine seed: seedTag takes priority over intent string
+    const seed = config.seedTag
+        ? (config.seedTag as SeedTag)
+        : config.intent;
+
     if (config.kind === 'still' && config.palette) {
         // Legacy v1 → convert palette to color axes
         const color = paletteToColor(config.palette.hue, config.palette.range, config.palette.saturation);
         return {
             name: config.name,
             profile: {
-                seed: config.intent,
+                seed,
                 controls: {
                     topology: 'flow-field',
                     hue: color.hue,
@@ -137,7 +165,7 @@ export function configToProfile(config: StillConfig): { name: string; profile: P
     return {
         name: config.name,
         profile: {
-            seed: config.intent,
+            seed,
             controls: {
                 topology: 'flow-field',
                 hue: color.hue,
@@ -152,15 +180,18 @@ export function configToProfile(config: StillConfig): { name: string; profile: P
                 faceting: config.structure.faceting ?? 0.5,
                 flow: config.structure.flow ?? 0.5,
             },
+            ...(config.camera ? { camera: config.camera } : {}),
         },
     };
 }
 
 export function profileToConfig(name: string, profile: Profile): StillConfig {
+    const isTag = isSeedTag(profile.seed);
     return {
         kind: 'still-v2',
         name,
-        intent: profile.seed,
+        intent: isTag ? seedTagToLabel(profile.seed as SeedTag) : (profile.seed as string),
+        ...(isTag ? { seedTag: profile.seed as SeedTag } : {}),
         color: {
             hue: profile.controls.hue,
             spectrum: profile.controls.spectrum,
@@ -176,6 +207,7 @@ export function profileToConfig(name: string, profile: Profile): StillConfig {
             faceting: profile.controls.faceting,
             flow: profile.controls.flow,
         },
+        ...(profile.camera ? { camera: profile.camera } : {}),
     };
 }
 

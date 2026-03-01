@@ -17,6 +17,7 @@ import { getResolution } from '../ui/resolution.js';
 import { createFaviconAnimation } from '../ui/animated-favicon.js';
 import { generateTitle, generateAltText } from '../../lib/core/text.js';
 import { xmur3, mulberry32 } from '../../lib/core/prng.js';
+import { seedTagToLabel, isSeedTag, parseSeed, getLocalizedWords, TAG_LIST_LENGTH } from '../../lib/core/seed-tags.js';
 import { validateStillConfig, configToProfile, profileToConfig } from '../../lib/core/config-schema.js';
 import { getAllThumbs, putThumb, deleteThumb } from '../ui/thumb-cache.js';
 import { toast, initToastClose } from '../shared/toast.js';
@@ -27,7 +28,7 @@ import { initPanel, isPanelOpen, closePanel } from '../shared/panel.js';
 import { initStatementModal } from '../shared/statement.js';
 import { showConfirm, initModals, closeInfoModal } from '../shared/modals.js';
 import { slugify, validateProfileName } from '../shared/slugify.js';
-import { generateIntent } from '../shared/intent.js';
+// generateIntent no longer used — seed tags replace freeform intent
 import { initLocale, t, getLocale } from '../i18n/locale.js';
 import { TRASH_SVG, ARROW_UP_SVG, ARROW_DOWN_SVG } from '../shared/icons.js';
 
@@ -51,7 +52,16 @@ if (canvas.dataset.transferred) {
 }
 
 const el = {
-    seed: document.getElementById('profileName'),
+    // Seed tag selects (3 dropdowns replacing single textarea)
+    seedTagArr: document.getElementById('seedTagArr'),
+    seedTagStr: document.getElementById('seedTagStr'),
+    seedTagDet: document.getElementById('seedTagDet'),
+
+    // Camera controls
+    zoom: document.getElementById('zoom'),
+    rotation: document.getElementById('rotation'),
+    zoomLabel: document.getElementById('zoomLabel'),
+    rotationLabel: document.getElementById('rotationLabel'),
 
     // Discrete controls (hidden inputs driven by tile/swatch UI)
     topology: document.getElementById('topology'),
@@ -311,6 +321,87 @@ if (renderWorker) {
 }
 
 // Listen for resolution changes from the settings popover
+/* ---------------------------
+ * Seed tag helpers
+ * ---------------------------
+ */
+
+/** Read the current seed from UI — always returns a SeedTag array. */
+function getCurrentSeed() {
+    return [
+        parseInt(el.seedTagArr.value, 10),
+        parseInt(el.seedTagStr.value, 10),
+        parseInt(el.seedTagDet.value, 10),
+    ];
+}
+
+/** Set seed in UI — handles both SeedTag arrays and legacy strings. */
+function setSeedInUI(seed) {
+    const tag = Array.isArray(seed) ? seed : parseSeed(seed);
+    el.seedTagArr.value = String(tag[0]);
+    el.seedTagStr.value = String(tag[1]);
+    el.seedTagDet.value = String(tag[2]);
+}
+
+/** Populate seed tag selects with localized words. */
+function initSeedTagSelects() {
+    const locale = getLocale();
+    const words = getLocalizedWords(locale);
+    populateTagSelect(el.seedTagArr, words.arrangement);
+    populateTagSelect(el.seedTagStr, words.structure);
+    populateTagSelect(el.seedTagDet, words.detail);
+}
+
+function populateTagSelect(selectEl, words) {
+    const prev = selectEl.value;
+    selectEl.innerHTML = '';
+    for (let i = 0; i < words.length; i++) {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = words[i];
+        selectEl.appendChild(opt);
+    }
+    if (prev) selectEl.value = prev;
+}
+
+const CAMERA_DEFAULTS = { zoom: 1.0, rotation: 0 };
+
+function readCameraFromUI() {
+    return {
+        zoom: parseFloat(el.zoom.value),
+        rotation: parseFloat(el.rotation.value),
+    };
+}
+
+function setCameraInUI(camera) {
+    const cam = camera || CAMERA_DEFAULTS;
+    el.zoom.value = cam.zoom;
+    el.rotation.value = cam.rotation;
+    updateCameraLabels(cam);
+}
+
+function updateCameraLabels(camera) {
+    el.zoomLabel.textContent = camera.zoom.toFixed(2);
+    el.rotationLabel.textContent = Math.round(camera.rotation) + '\u00b0';
+}
+
+function sendCameraState(zoom, rotation) {
+    if (renderWorker && workerReady) {
+        renderWorker.postMessage({ type: 'set-camera', zoom, orbitY: rotation, orbitX: 0 });
+    } else if (fallbackRenderer) {
+        fallbackRenderer.setCameraState(zoom, rotation, 0);
+    }
+}
+
+function onCameraChange() {
+    if (!initComplete) return;
+    const cam = readCameraFromUI();
+    updateCameraLabels(cam);
+    sendCameraState(cam.zoom, cam.rotation);
+    setUserEdited(true);
+    setDirty(true);
+}
+
 document.addEventListener('resolutionchange', (e) => {
     const { w, h } = e.detail;
     canvas.width = w;
@@ -322,7 +413,7 @@ document.addEventListener('resolutionchange', (e) => {
         fallbackRenderer.setTargetResolution(w, h);
     }
     // Re-render current scene at new resolution
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     sendRenderRequest(seed, controls);
 });
@@ -333,13 +424,20 @@ document.addEventListener('resolutionchange', (e) => {
  */
 let thumbOffscreen = null;
 let thumbRenderer = null;
+let thumbW = 280, thumbH = 180;
 
-function getThumbRenderer() {
+function getThumbRenderer(w = 280, h = 180) {
     if (!thumbRenderer) {
         thumbOffscreen = document.createElement('canvas');
-        thumbOffscreen.width = 280;
-        thumbOffscreen.height = 180;
+        thumbOffscreen.width = w;
+        thumbOffscreen.height = h;
+        thumbW = w; thumbH = h;
         thumbRenderer = createRenderer(thumbOffscreen);
+    } else if (w !== thumbW || h !== thumbH) {
+        thumbOffscreen.width = w;
+        thumbOffscreen.height = h;
+        thumbW = w; thumbH = h;
+        thumbRenderer.resize(w, h);
     }
     return thumbRenderer;
 }
@@ -415,37 +513,6 @@ window.__renderPortraitThumb = function(profileName) {
     r.updateTime(3.0);
     r.renderFrame();
     return thumbOffscreen.toDataURL('image/png');
-};
-
-// Expose fold animation sprite strip generator (scripts/gen-fold-anims.mjs)
-window.__renderPortraitFold = function(profileName, frameCount = 60) {
-    const portraits = loadPortraits();
-    const p = portraits[profileName];
-    if (!p) throw new Error(`Portrait not found: ${profileName}`);
-
-    // Build scene (renders at current fold state)
-    const r = getThumbRenderer();
-    r.renderWith(p.seed, p.controls);
-
-    // Create sprite strip canvas
-    const W = thumbOffscreen.width, H = thumbOffscreen.height;
-    const spriteCanvas = document.createElement('canvas');
-    spriteCanvas.width = W;
-    spriteCanvas.height = H * frameCount;
-    const ctx = spriteCanvas.getContext('2d');
-
-    // Step through fold frames 0→1
-    for (let i = 0; i < frameCount; i++) {
-        const t = i / (frameCount - 1);
-        r.setFoldImmediate(t);
-        r.updateTime(t * 3.0);
-        r.renderFrame();
-        ctx.drawImage(thumbOffscreen, 0, i * H);
-    }
-
-    // Reset fold to fully expanded
-    r.setFoldImmediate(1.0);
-    return spriteCanvas.toDataURL('image/png');
 };
 
 /* ---------------------------
@@ -534,7 +601,7 @@ function scheduleRender() {
 function doRender() {
     renderPending = false;
     lastRenderTime = performance.now();
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     sendRenderRequest(seed, controls);
 }
@@ -588,9 +655,12 @@ function sendFoldImmediate(value) {
  * Used during fold transitions when the canvas is invisible.
  */
 function snapUIToState(state) {
-    el.seed.value = state.seed;
-    autoGrow(el.seed);
+    setSeedInUI(state.seed);
     setControlsInUI(state.controls);
+    if (state.camera) {
+        setCameraInUI(state.camera);
+        sendCameraState(state.camera.zoom, state.camera.rotation);
+    }
     syncDisplayFields();
 }
 
@@ -726,7 +796,7 @@ function sendMorphStart() {
         // Fallback: direct morph on main thread (no bitmap pre-rendering)
         fallbackRenderer.morphUpdate(1.0);
         fallbackRenderer.morphEnd();
-        const seed = el.seed.value.trim() || 'seed';
+        const seed = getCurrentSeed();
         const controls = readControlsFromUI();
         sendRenderRequest(seed, controls);
     }
@@ -750,7 +820,7 @@ const morphCtrl = {
 function startMorph(fromState, toState) {
     if (!animationEnabled) {
         // Instant render, no animation
-        const seed = el.seed.value.trim() || 'seed';
+        const seed = getCurrentSeed();
         const controls = readControlsFromUI();
         renderAndUpdate(seed, controls, { animate: true });
         setStillRendered(true);
@@ -831,18 +901,22 @@ initToastClose();
 
 function syncDisplayFields() {
     el.displayName.textContent = el.profileNameField.value.trim();
-    el.displayIntent.textContent = el.seed.value.trim();
+    el.displayIntent.textContent = seedTagToLabel(getCurrentSeed(), getLocale());
 }
 
 function loadProfileDataIntoUI(name, p) {
     if (!name || !p) return;
     el.profileNameField.value = name;
     autoGrow(el.profileNameField);
-    el.seed.value = p.seed || name;
-    autoGrow(el.seed);
+    setSeedInUI(p.seed || name);
     if (p.controls) {
         setControlsInUI(p.controls);
     }
+    setCameraInUI(p.camera);
+    sendCameraState(
+        (p.camera?.zoom ?? 1.0),
+        (p.camera?.rotation ?? 0)
+    );
     syncDisplayFields();
     setDirty(false);
     setUserEdited(false);
@@ -930,7 +1004,7 @@ let lastNodeCount = 0;
 let textRefreshTimer = null;
 
 function refreshGeneratedText(animate) {
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     const titleRng = mulberry32(xmur3(seed + ':title')());
     const title = generateTitle(controls, titleRng);
@@ -1083,7 +1157,7 @@ function renderAndUpdate(seed, controls, { animate = false } = {}) {
  * ---------------------------
  */
 function renderStillCanvas() {
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     updateSliderLabels(controls);
     sendRenderRequest(seed, controls);
@@ -1124,11 +1198,11 @@ function onControlChange() {
 for (const id of SLIDER_KEYS) {
     el[id].addEventListener('input', onControlChange);
 }
-el.seed.addEventListener('change', onControlChange);
-el.seed.addEventListener('input', () => {
-    syncDisplayFields();
-    scheduleTextRefresh();
-});
+el.seedTagArr.addEventListener('change', onControlChange);
+el.seedTagStr.addEventListener('change', onControlChange);
+el.seedTagDet.addEventListener('change', onControlChange);
+el.zoom.addEventListener('input', onCameraChange);
+el.rotation.addEventListener('input', onCameraChange);
 el.profileNameField.addEventListener('input', () => {
     setUserEdited(true);
     setDirty(true);
@@ -1151,12 +1225,12 @@ async function saveCurrentProfile() {
         const portraitNames = getPortraitNames();
         const portraits = loadPortraits();
         const controls = readControlsFromUI();
-        const currentSeed = el.seed.value.trim() || 'seed';
+        const currentSeed = getCurrentSeed();
 
         // Check if identical to an existing portrait
         const matchingPortrait = portraits[name];
         if (matchingPortrait &&
-            matchingPortrait.seed === currentSeed &&
+            JSON.stringify(matchingPortrait.seed) === JSON.stringify(currentSeed) &&
             JSON.stringify(matchingPortrait.controls) === JSON.stringify(controls)) {
             toast(t('toast.alreadyPortrait'));
             return;
@@ -1177,6 +1251,7 @@ async function saveCurrentProfile() {
         const profileData = {
             seed: currentSeed,
             controls,
+            camera: readCameraFromUI(),
         };
         profiles[name] = profileData;
         saveProfiles(profiles);
@@ -1231,9 +1306,10 @@ let historyIndex = -1;
 
 function captureSnapshot() {
     return {
-        seed: el.seed.value.trim(),
+        seed: getCurrentSeed(),
         name: el.profileNameField.value.trim(),
         controls: readControlsFromUI(),
+        camera: readCameraFromUI(),
         profileName: loadedProfileName || '',
         isPortrait: loadedFromPortrait,
         wasDirty: dirty,
@@ -1247,16 +1323,19 @@ function captureBaseline() {
 function restoreSnapshot(snap) {
     // Capture current visual state before restoring
     const fromState = {
-        seed: el.seed.value.trim() || 'seed',
+        seed: getCurrentSeed(),
         controls: readControlsFromUI(),
     };
 
-    el.seed.value = snap.seed;
-    autoGrow(el.seed);
+    setSeedInUI(snap.seed);
     el.profileNameField.value = snap.name;
     autoGrow(el.profileNameField);
     setControlsInUI(snap.controls);
     updateSliderLabels(snap.controls);
+    if (snap.camera) {
+        setCameraInUI(snap.camera);
+        sendCameraState(snap.camera.zoom, snap.camera.rotation);
+    }
     syncDisplayFields();
 
     // Restore profile context from snapshot
@@ -1286,7 +1365,7 @@ function restoreSnapshot(snap) {
 
     // Capture target state and morph
     const toState = {
-        seed: el.seed.value.trim() || 'seed',
+        seed: getCurrentSeed(),
         controls: readControlsFromUI(),
     };
     startProfileTransition(fromState, toState);
@@ -1327,7 +1406,7 @@ function pushToHistory() {
     // Deduplicate: skip if identical to current history entry
     if (historyIndex >= 0 && historyIndex < navHistory.length) {
         const cur = navHistory[historyIndex];
-        if (cur.seed === snap.seed
+        if (JSON.stringify(cur.seed) === JSON.stringify(snap.seed)
             && cur.profileName === snap.profileName
             && cur.isPortrait === snap.isPortrait
             && JSON.stringify(cur.controls) === JSON.stringify(snap.controls)) {
@@ -1348,8 +1427,17 @@ function pushToHistory() {
 
 /** Populate UI with random configuration (no confirmation dialog, no render). */
 function randomizeUI() {
-    el.seed.value = generateIntent();
-    autoGrow(el.seed);
+    // Generate random seed tag
+    const seedTag = [
+        Math.floor(Math.random() * TAG_LIST_LENGTH),
+        Math.floor(Math.random() * TAG_LIST_LENGTH),
+        Math.floor(Math.random() * TAG_LIST_LENGTH),
+    ];
+    setSeedInUI(seedTag);
+
+    // Reset camera to defaults
+    setCameraInUI(CAMERA_DEFAULTS);
+    sendCameraState(CAMERA_DEFAULTS.zoom, CAMERA_DEFAULTS.rotation);
 
     // Topology hidden — always flow-field
     setTopologyUI('flow-field');
@@ -1357,7 +1445,7 @@ function randomizeUI() {
         el[id].value = Math.random().toFixed(2);
     }
 
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     updateSliderLabels(controls);
 
@@ -1416,7 +1504,7 @@ async function randomize() {
 
     // Capture current visual state before randomizing
     const fromState = {
-        seed: el.seed.value.trim() || 'seed',
+        seed: getCurrentSeed(),
         controls: readControlsFromUI(),
     };
 
@@ -1428,7 +1516,7 @@ async function randomize() {
 
     // Capture target state and morph
     const toState = {
-        seed: el.seed.value.trim() || 'seed',
+        seed: getCurrentSeed(),
         controls: readControlsFromUI(),
     };
     startProfileTransition(fromState, toState);
@@ -1465,9 +1553,9 @@ function updateActiveSection() {
 
 function updateActivePreview() {
     const name = el.profileNameField.value.trim() || 'Untitled';
-    const seed = el.seed.value.trim() || '';
+    const seed = getCurrentSeed();
     el.activePreviewName.textContent = name;
-    el.activePreviewSeed.textContent = seed;
+    el.activePreviewSeed.textContent = seedTagToLabel(seed, getLocale());
 
     // Status label
     let status;
@@ -1507,7 +1595,7 @@ async function selectCard(cardEl) {
 
     // Capture current visual state BEFORE loading target
     const fromState = {
-        seed: el.seed.value.trim() || 'seed',
+        seed: getCurrentSeed(),
         controls: readControlsFromUI(),
     };
 
@@ -1529,7 +1617,7 @@ async function selectCard(cardEl) {
 
     // Capture target state (after loadProfileFromData set the UI)
     const toState = {
-        seed: el.seed.value.trim() || 'seed',
+        seed: getCurrentSeed(),
         controls: readControlsFromUI(),
     };
 
@@ -1575,7 +1663,7 @@ function buildProfileCard(name, p, { isPortrait = false, index = 0, total = 1 } 
     if (p.seed) {
         const seedEl = document.createElement('div');
         seedEl.className = 'profile-card-seed';
-        seedEl.textContent = p.seed;
+        seedEl.textContent = Array.isArray(p.seed) ? seedTagToLabel(p.seed) : p.seed;
         body.appendChild(seedEl);
     }
 
@@ -1702,7 +1790,7 @@ el.exportBtn.addEventListener('click', () => {
     if (!stillRendered) { toast(t('toast.renderFirst')); return; }
 
     try {
-        const seed = el.seed.value.trim() || 'seed';
+        const seed = getCurrentSeed();
         const controls = readControlsFromUI();
         const name = el.profileNameField.value.trim() || 'Untitled';
 
@@ -1726,8 +1814,9 @@ el.exportBtn.addEventListener('click', () => {
 // Build share URL from current state
 function buildShareURL() {
     return encodeStateToURL(window.location.origin, {
-        seed: el.seed.value.trim() || 'seed',
+        seed: getCurrentSeed(),
         controls: readControlsFromUI(),
+        camera: readCameraFromUI(),
         name: el.profileNameField.value.trim(),
     });
 }
@@ -1871,7 +1960,7 @@ document.getElementById('shareDownloadPng').addEventListener('click', async () =
     if (!window.JSZip) { toast(t('toast.jszipMissing')); return; }
     el.sharePopover.classList.add('hidden');
 
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     const name = el.profileNameField.value.trim() || 'Untitled';
 
@@ -1906,7 +1995,7 @@ document.getElementById('shareDownloadPng').addEventListener('click', async () =
 // Share on X/Twitter
 document.getElementById('shareTwitter').addEventListener('click', () => {
     const shareURL = buildShareURL();
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     const titleRng = mulberry32(xmur3(seed + ':title')());
     const title = generateTitle(controls, titleRng);
@@ -1928,7 +2017,7 @@ document.getElementById('shareFacebook').addEventListener('click', () => {
 // Share on Bluesky
 document.getElementById('shareBluesky').addEventListener('click', () => {
     const shareURL = buildShareURL();
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     const titleRng = mulberry32(xmur3(seed + ':title')());
     const title = generateTitle(controls, titleRng);
@@ -1942,7 +2031,7 @@ document.getElementById('shareBluesky').addEventListener('click', () => {
 // Share on Reddit
 document.getElementById('shareReddit').addEventListener('click', () => {
     const shareURL = buildShareURL();
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     const titleRng = mulberry32(xmur3(seed + ':title')());
     const title = generateTitle(controls, titleRng);
@@ -1963,7 +2052,7 @@ document.getElementById('shareLinkedIn').addEventListener('click', () => {
 // Share via Email
 document.getElementById('shareEmail').addEventListener('click', () => {
     const shareURL = buildShareURL();
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
     const titleRng = mulberry32(xmur3(seed + ':title')());
     const title = generateTitle(controls, titleRng);
@@ -2053,7 +2142,7 @@ function validateAndImportProfile(raw) {
     loadProfileIntoUI(lastName);
     pushToHistory();
     refreshProfileGallery();
-    renderAndUpdate(el.seed.value.trim() || 'seed', readControlsFromUI(), { animate: true });
+    renderAndUpdate(getCurrentSeed(), readControlsFromUI(), { animate: true });
     setStillRendered(true);
 
     closeImportModal();
@@ -2198,6 +2287,8 @@ document.getElementById('historyForwardBtn').addEventListener('click', () => {
  */
 initPanel();
 initTopologySelector();
+initSeedTagSelects();
+updateCameraLabels(CAMERA_DEFAULTS);
 initLocale();
 initPageSettings(
     document.getElementById('pageSettingsBtn'),
@@ -2216,13 +2307,15 @@ configControls.classList.add('collapsed');
 // Check for shared state in URL, otherwise randomize
 const sharedState = decodeStateFromURL(window.location.href);
 if (sharedState) {
-    el.seed.value = sharedState.seed;
-    autoGrow(el.seed);
+    setSeedInUI(sharedState.seed);
     if (sharedState.name) {
         el.profileNameField.value = sharedState.name;
         autoGrow(el.profileNameField);
     }
     setControlsInUI(sharedState.controls);
+    if (sharedState.camera) {
+        setCameraInUI(sharedState.camera);
+    }
     syncDisplayFields();
     // Generate display name if none provided
     if (!sharedState.name) {
@@ -2247,8 +2340,10 @@ updateHistoryButtons();
 showCanvasOverlay('');
 
 function doInitialRender() {
-    const seed = el.seed.value.trim() || 'seed';
+    const seed = getCurrentSeed();
     const controls = readControlsFromUI();
+    const camera = readCameraFromUI();
+    sendCameraState(camera.zoom, camera.rotation);
 
     // When animation is on, build scene collapsed and fold in
     if (animationEnabled) {
@@ -2285,6 +2380,11 @@ if (!renderWorker) {
 /* ── Locale change: re-render to regenerate title/alt text ── */
 document.addEventListener('localechange', () => {
     document.title = t(pageTitle);
+    // Re-populate seed tag selects with new locale words (preserves selection)
+    const currentSeed = getCurrentSeed();
+    initSeedTagSelects();
+    setSeedInUI(currentSeed);
+    syncDisplayFields();
     scheduleRender();
 });
 

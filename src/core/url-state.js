@@ -6,6 +6,7 @@
  */
 
 import { PRESETS } from '../../lib/core/palettes.js';
+import { serializeSeedTag, deserializeSeedTag, isSeedTag } from '../../lib/core/seed-tags.js';
 
 // New param keys (v2)
 const PARAM_SEED       = 's';
@@ -21,6 +22,8 @@ const PARAM_SCALE      = 'sc';
 const PARAM_DIVISION   = 'dv';
 const PARAM_FACETING   = 'ft';
 const PARAM_FLOW       = 'fl';
+const PARAM_ZOOM       = 'z';
+const PARAM_ROTATION   = 'r';
 
 // Legacy param keys (v1)
 const LEGACY_PALETTE    = 'p';
@@ -39,14 +42,14 @@ function clampFloat(s, min, max, fallback) {
 /**
  * Encode app state into a shareable URL.
  * @param {string} origin — e.g. window.location.origin
- * @param {{ seed: string, controls: object, name?: string }} state
+ * @param {{ seed: string, controls: object, camera?: object, name?: string }} state
  * @returns {string} full URL with search params
  */
-export function encodeStateToURL(origin, { seed, controls, name }) {
+export function encodeStateToURL(origin, { seed, controls, camera, name }) {
     const url = new URL(origin);
 
     if (name) url.searchParams.set(PARAM_NAME, name);
-    url.searchParams.set(PARAM_SEED, seed);
+    url.searchParams.set(PARAM_SEED, isSeedTag(seed) ? serializeSeedTag(seed) : seed);
     url.searchParams.set(PARAM_DENSITY, controls.density.toFixed(2));
     url.searchParams.set(PARAM_LUMINOSITY, controls.luminosity.toFixed(2));
     url.searchParams.set(PARAM_FRACTURE, controls.fracture.toFixed(2));
@@ -58,6 +61,12 @@ export function encodeStateToURL(origin, { seed, controls, name }) {
     url.searchParams.set(PARAM_DIVISION, controls.division.toFixed(2));
     url.searchParams.set(PARAM_FACETING, controls.faceting.toFixed(2));
     url.searchParams.set(PARAM_FLOW, controls.flow.toFixed(2));
+
+    // Camera (only include when non-default to keep URLs short)
+    if (camera) {
+        if (camera.zoom !== 1.0) url.searchParams.set(PARAM_ZOOM, camera.zoom.toFixed(2));
+        if (camera.rotation !== 0) url.searchParams.set(PARAM_ROTATION, camera.rotation.toFixed(0));
+    }
 
     return url.toString();
 }
@@ -78,8 +87,10 @@ export function decodeStateFromURL(href) {
         return decodeLegacyURL(p);
     }
 
+    const rawSeed = p.get(PARAM_SEED);
+    const parsedTag = deserializeSeedTag(rawSeed);
     return {
-        seed: p.get(PARAM_SEED),
+        seed: parsedTag || rawSeed,
         controls: {
             topology: 'flow-field',
             density:    clampFloat(p.get(PARAM_DENSITY),    0, 1, 0.5),
@@ -93,6 +104,10 @@ export function decodeStateFromURL(href) {
             division:   clampFloat(p.get(PARAM_DIVISION),    0, 1, 0.5),
             faceting:   clampFloat(p.get(PARAM_FACETING),    0, 1, 0.5),
             flow:       clampFloat(p.get(PARAM_FLOW),        0, 1, 0.5),
+        },
+        camera: {
+            zoom:     clampFloat(p.get(PARAM_ZOOM),     0.3, 3.0, 1.0),
+            rotation: clampFloat(p.get(PARAM_ROTATION), 0,   360, 0),
         },
         name: p.get(PARAM_NAME) || '',
     };

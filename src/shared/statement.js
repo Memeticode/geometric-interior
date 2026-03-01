@@ -11,12 +11,23 @@ const STATEMENT_TITLES = { developer: '', artist: '', governance: '' };
 
 function simpleMarkdownToHtml(md) {
     return md
+        .replace(/^### (.+)$/gm, '<h3>$1</h3>')
         .replace(/^## (.+)$/gm, '<h2>$1</h2>')
         .replace(/^---$/gm, '<hr>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
         .split(/\n\n+/)
         .map(block => {
             block = block.trim();
-            if (!block || block.startsWith('<h2>') || block === '<hr>') return block;
+            if (!block || block.startsWith('<h2>') || block.startsWith('<h3>') || block === '<hr>') return block;
+            // Convert consecutive list-item lines into a <ul>
+            if (/^- /.test(block)) {
+                const items = block.split('\n')
+                    .filter(l => l.startsWith('- '))
+                    .map(l => `<li>${l.slice(2)}</li>`)
+                    .join('\n');
+                return `<ul>${items}</ul>`;
+            }
             return `<p>${block}</p>`;
         })
         .join('\n');

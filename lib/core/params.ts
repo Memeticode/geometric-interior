@@ -6,7 +6,7 @@ import { controlLerp } from './prng.js';
 import { hslToRgb01 } from './palettes.js';
 import type { Controls, DerivedParams } from '../types.js';
 
-export function deriveParams(controls: Controls, _rng: () => number): DerivedParams {
+export function deriveParams(controls: Controls): DerivedParams {
     const c = controls;
     const cl = controlLerp;
     const frac = 1 - c.fracture;

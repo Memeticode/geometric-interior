@@ -20,8 +20,10 @@ function mkRng(seed = 'test') {
 }
 
 const MID = {
-    topology: 'flow-field', palette: 'violet-depth',
-    density: 0.5, luminosity: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5,
+    topology: 'flow-field',
+    density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5,
+    hue: 0.783, spectrum: 0.239, chroma: 0.417,
+    scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5,
 };
 
 console.log('\n=== Text Tests ===\n');
@@ -45,11 +47,11 @@ test('generateTitle produces different titles for different seeds', () => {
     assert(titles.size > 5, `too few unique titles: ${titles.size} out of 20`);
 });
 
-test('generateTitle works for all palette keys', () => {
-    const palettes = ['violet-depth', 'warm-spectrum', 'teal-volumetric', 'prismatic', 'crystal-lattice', 'sapphire', 'amethyst'];
-    for (const p of palettes) {
-        const title = generateTitle({ ...MID, palette: p }, mkRng());
-        assert(title.length > 0, `empty title for palette ${p}`);
+test('generateTitle works for various hue values', () => {
+    const hues = [0.0, 0.1, 0.25, 0.5, 0.75, 0.9, 1.0];
+    for (const h of hues) {
+        const title = generateTitle({ ...MID, hue: h }, mkRng());
+        assert(title.length > 0, `empty title for hue ${h}`);
     }
 });
 

@@ -1,9 +1,7 @@
 /**
- * Tests for palette functions.
+ * Tests for palette data and color utility functions.
  */
-import {
-    PALETTE_KEYS, getPalette, getPaletteDefaults, resetPalette, updatePalette,
-} from '../../dist/lib/geometric-interior.js';
+import { PALETTES, PRESETS, hslToRgb01 } from '../../dist/lib/geometric-interior.js';
 
 let passed = 0, failed = 0;
 
@@ -19,67 +17,94 @@ function assertClose(a, b, eps = 1e-6, msg) {
 
 console.log('\n=== Palette Tests ===\n');
 
-test('PALETTE_KEYS includes all 8 keys', () => {
-    assert(Array.isArray(PALETTE_KEYS), 'PALETTE_KEYS not an array');
-    assert(PALETTE_KEYS.length === 8, `expected 8 keys, got ${PALETTE_KEYS.length}`);
-    assert(PALETTE_KEYS.includes('violet-depth'));
-    assert(PALETTE_KEYS.includes('custom'));
+test('PALETTES is a non-empty object', () => {
+    assert(typeof PALETTES === 'object' && PALETTES !== null, 'PALETTES not an object');
+    const keys = Object.keys(PALETTES);
+    assert(keys.length > 0, 'PALETTES is empty');
 });
 
-test('getPalette returns data for each built-in key', () => {
-    for (const key of PALETTE_KEYS.filter(k => k !== 'custom')) {
-        const p = getPalette(key);
-        assert(p !== null && typeof p === 'object', `null palette for ${key}`);
-        assert(typeof p.label === 'string' && p.label.length > 0, `empty label for ${key}`);
-        assert(typeof p.baseHue === 'number', `missing baseHue for ${key}`);
-        assert(Array.isArray(p.fogColor) && p.fogColor.length === 3, `bad fogColor for ${key}`);
-        assert(Array.isArray(p.bgColor) && p.bgColor.length === 3, `bad bgColor for ${key}`);
-        assert(Array.isArray(p.edgeColor) && p.edgeColor.length === 3, `bad edgeColor for ${key}`);
+test('PALETTES entries have expected fields', () => {
+    for (const [key, pal] of Object.entries(PALETTES)) {
+        assert(typeof pal.label === 'string' && pal.label.length > 0, `${key}: empty label`);
+        assert(typeof pal.baseHue === 'number', `${key}: missing baseHue`);
+        assert(Array.isArray(pal.fogColor) && pal.fogColor.length === 3, `${key}: bad fogColor`);
+        assert(Array.isArray(pal.bgColor) && pal.bgColor.length === 3, `${key}: bad bgColor`);
+        assert(Array.isArray(pal.edgeColor) && pal.edgeColor.length === 3, `${key}: bad edgeColor`);
     }
 });
 
-test('getPalette returns data for custom key', () => {
-    const p = getPalette('custom');
-    assert(p !== null && typeof p === 'object', 'null custom palette');
-    assert(p.label === 'Custom', `expected label "Custom", got "${p.label}"`);
-});
-
-test('getPaletteDefaults returns original values', () => {
-    const d = getPaletteDefaults('violet-depth');
-    assert(d !== null && typeof d === 'object');
-    assert(typeof d.baseHue === 'number');
-});
-
-test('updatePalette changes palette values', () => {
-    resetPalette('violet-depth');
-    const before = getPalette('violet-depth').baseHue;
-    updatePalette('violet-depth', { baseHue: 120, hueRange: 40, saturation: 0.8 });
-    const after = getPalette('violet-depth').baseHue;
-    assert(after === 120, `expected baseHue=120 after update, got ${after}`);
-    // Cleanup
-    resetPalette('violet-depth');
-});
-
-test('resetPalette restores defaults after update', () => {
-    const defaults = getPaletteDefaults('violet-depth');
-    updatePalette('violet-depth', { baseHue: 999, hueRange: 999, saturation: 0.99 });
-    resetPalette('violet-depth');
-    const restored = getPalette('violet-depth');
-    assertClose(restored.baseHue, defaults.baseHue);
-    assertClose(restored.hueRange, defaults.hueRange);
-    assertClose(restored.saturation, defaults.saturation);
-});
-
-test('fogColor and bgColor are near-black for all palettes', () => {
-    for (const key of PALETTE_KEYS.filter(k => k !== 'custom')) {
-        resetPalette(key);
-        const p = getPalette(key);
-        for (const c of p.fogColor) {
+test('PALETTES fogColor and bgColor are near-black', () => {
+    for (const [key, pal] of Object.entries(PALETTES)) {
+        for (const c of pal.fogColor) {
             assert(c < 0.05, `${key} fogColor too bright: ${c}`);
         }
-        for (const c of p.bgColor) {
+        for (const c of pal.bgColor) {
             assert(c < 0.05, `${key} bgColor too bright: ${c}`);
         }
+    }
+});
+
+test('PRESETS is a non-empty object', () => {
+    assert(typeof PRESETS === 'object' && PRESETS !== null, 'PRESETS not an object');
+    const keys = Object.keys(PRESETS);
+    assert(keys.length > 0, 'PRESETS is empty');
+});
+
+test('PRESETS entries have hue, spectrum, chroma in [0, 1]', () => {
+    for (const [key, preset] of Object.entries(PRESETS)) {
+        assert(typeof preset.hue === 'number' && preset.hue >= 0 && preset.hue <= 1,
+            `${key}: hue out of range: ${preset.hue}`);
+        assert(typeof preset.spectrum === 'number' && preset.spectrum >= 0 && preset.spectrum <= 1,
+            `${key}: spectrum out of range: ${preset.spectrum}`);
+        assert(typeof preset.chroma === 'number' && preset.chroma >= 0 && preset.chroma <= 1,
+            `${key}: chroma out of range: ${preset.chroma}`);
+    }
+});
+
+test('hslToRgb01 pure red (0, 1, 0.5)', () => {
+    const [r, g, b] = hslToRgb01(0, 1, 0.5);
+    assertClose(r, 1.0, 0.01);
+    assertClose(g, 0.0, 0.01);
+    assertClose(b, 0.0, 0.01);
+});
+
+test('hslToRgb01 pure green (120, 1, 0.5)', () => {
+    const [r, g, b] = hslToRgb01(120, 1, 0.5);
+    assertClose(r, 0.0, 0.01);
+    assertClose(g, 1.0, 0.01);
+    assertClose(b, 0.0, 0.01);
+});
+
+test('hslToRgb01 pure blue (240, 1, 0.5)', () => {
+    const [r, g, b] = hslToRgb01(240, 1, 0.5);
+    assertClose(r, 0.0, 0.01);
+    assertClose(g, 0.0, 0.01);
+    assertClose(b, 1.0, 0.01);
+});
+
+test('hslToRgb01 white (0, 0, 1)', () => {
+    const [r, g, b] = hslToRgb01(0, 0, 1);
+    assertClose(r, 1.0, 0.01);
+    assertClose(g, 1.0, 0.01);
+    assertClose(b, 1.0, 0.01);
+});
+
+test('hslToRgb01 black (0, 0, 0)', () => {
+    const [r, g, b] = hslToRgb01(0, 0, 0);
+    assertClose(r, 0.0, 0.01);
+    assertClose(g, 0.0, 0.01);
+    assertClose(b, 0.0, 0.01);
+});
+
+test('hslToRgb01 returns values in [0, 1]', () => {
+    const testCases = [
+        [0, 1, 0.5], [120, 0.5, 0.3], [240, 0.8, 0.9], [300, 0, 0.5], [60, 1, 0.25],
+    ];
+    for (const [h, s, l] of testCases) {
+        const [r, g, b] = hslToRgb01(h, s, l);
+        assert(r >= 0 && r <= 1, `r out of range for (${h},${s},${l}): ${r}`);
+        assert(g >= 0 && g <= 1, `g out of range for (${h},${s},${l}): ${g}`);
+        assert(b >= 0 && b <= 1, `b out of range for (${h},${s},${l}): ${b}`);
     }
 });
 

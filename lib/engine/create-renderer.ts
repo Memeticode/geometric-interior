@@ -10,16 +10,18 @@ import {
     BloomEffect,
     ChromaticAberrationEffect,
     VignetteEffect,
+    DepthOfFieldEffect,
     BlendFunction,
 } from 'postprocessing';
 import { xmur3, mulberry32 } from '../core/prng.js';
 import { deriveParams } from '../core/params.js';
+import { parseSeed, createTagStreams, seedToString } from '../core/seed-tags.js';
 import { generateTitle, generateAltText } from '../core/text.js';
 import { buildDemoScene } from './demo/build-scene.js';
 import { matchDots, buildMorphGlowGeometry } from './demo/dot-matching.js';
 import { createDemoGlowMaterial } from './materials.js';
 import { createGlowTexture } from './demo/dots.js';
-import type { Controls, Renderer, RendererOptions, RenderMeta, SceneRefs, DerivedParams } from '../types.js';
+import type { Controls, Renderer, RendererOptions, RenderMeta, SceneRefs, DerivedParams, Seed } from '../types.js';
 
 export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts: RendererOptions = {}): Renderer {
     const renderer = new THREE.WebGLRenderer({
@@ -66,6 +68,14 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         darkness: 0.5,
     });
 
+    const dofEffect = new DepthOfFieldEffect(camera, {
+        focusDistance: 0.0,
+        focalLength: 0.05,
+        bokehScale: 2.0,
+    });
+    const dofPass = new EffectPass(camera, dofEffect);
+    dofPass.enabled = false; // disabled by default — zero overhead
+
     const effectPass = new EffectPass(
         camera,
         bloomEffect,
@@ -73,6 +83,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         vignetteEffect,
     );
 
+    composer.addPass(dofPass);  // DOF blur before bloom/CA/vignette
     composer.addPass(effectPass);
 
     // --- Cached reusable objects ---
@@ -176,12 +187,12 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
     const FOLD_OUT_SPEED = 1.67; // 1→0 in ~600ms
     let lastUpdateTime = 0;
 
-    function renderWith(seed: string, controls: Controls, locale: string = 'en'): RenderMeta {
+    function renderWith(seed: Seed, controls: Controls, locale: string = 'en'): RenderMeta {
         syncSize();
 
-        const hashFn = xmur3(seed);
-        const rng = mulberry32(hashFn());
-        const params = deriveParams(controls, rng);
+        const tag = parseSeed(seed);
+        const streams = createTagStreams(tag);
+        const params = deriveParams(controls);
 
         camera.fov = params.cameraFov;
         camera.aspect = getAspect();
@@ -201,8 +212,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         bgMaterial.uniforms.uOuterColor.value.setRGB(...params.bgOuterColor);
         scene.add(bgQuad);
 
-        const buildRng = mulberry32(xmur3(seed + ':build')());
-        const result = buildDemoScene(params, buildRng, scene, cachedGlowTexture);
+        const result = buildDemoScene(params, streams, scene, cachedGlowTexture);
 
         // Store refs for persistent render loop
         currentRefs = result.refs;
@@ -228,7 +238,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
         composer.render();
 
-        const titleRng = mulberry32(xmur3(seed + ':title')());
+        const titleRng = mulberry32(xmur3('title-' + tag[0] + '-' + tag[1] + '-' + tag[2])());
         const title = generateTitle(controls, titleRng, locale);
         const altText = generateAltText(controls, result.nodeCount, title, locale);
 
@@ -295,26 +305,23 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
     }
 
     function morphPrepare(
-        seedA: string, controlsA: Controls, seedB: string, controlsB: Controls,
+        seedA: Seed, controlsA: Controls, seedB: Seed, controlsB: Controls,
     ): void {
         syncSize();
         clearScene(scene);
 
-        const rngA = mulberry32(xmur3(seedA)());
-        const paramsA = deriveParams(controlsA, rngA);
-
-        const rngB = mulberry32(xmur3(seedB)());
-        const paramsB = deriveParams(controlsB, rngB);
+        const paramsA = deriveParams(controlsA);
+        const paramsB = deriveParams(controlsB);
 
         bgMaterial.uniforms.uInnerColor.value.setRGB(...paramsA.bgInnerColor);
         bgMaterial.uniforms.uOuterColor.value.setRGB(...paramsA.bgOuterColor);
         scene.add(bgQuad);
 
-        const buildRngA = mulberry32(xmur3(seedA + ':build')());
-        const resultA = buildDemoScene(paramsA, buildRngA, scene, cachedGlowTexture);
+        const streamsA = createTagStreams(parseSeed(seedA));
+        const resultA = buildDemoScene(paramsA, streamsA, scene, cachedGlowTexture);
 
-        const buildRngB = mulberry32(xmur3(seedB + ':build')());
-        const resultB = buildDemoScene(paramsB, buildRngB, scene, cachedGlowTexture);
+        const streamsB = createTagStreams(parseSeed(seedB));
+        const resultB = buildDemoScene(paramsB, streamsB, scene, cachedGlowTexture);
 
         prepareMorphRefs(resultA.refs);
         prepareMorphRefs(resultB.refs);
@@ -399,6 +406,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         chromaticAberrationEffect.offset.set(caVal, caVal);
         vignetteEffect.darkness = lerpVal(paramsA.vignetteStrength, paramsB.vignetteStrength, t);
 
+        applyCameraOverride();
         composer.render();
     }
 
@@ -432,6 +440,64 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         morphState = null;
     }
 
+    // --- Camera override (Phase 3: animation camera moves) ---
+    let cameraOverrideZoom = 1.0;
+    let cameraOverrideOrbitY = 0;  // degrees
+    let cameraOverrideOrbitX = 0;  // degrees
+
+    /**
+     * Apply camera zoom/orbit override to the current camera position.
+     * Call right before each render (after the base camera has been set by
+     * renderWith/morphUpdate). Modifies camera.position in place.
+     */
+    function applyCameraOverride(): void {
+        if (cameraOverrideZoom === 1 && cameraOverrideOrbitY === 0 && cameraOverrideOrbitX === 0) return;
+
+        const pos = camera.position;
+
+        // Zoom: scale camera distance from origin
+        if (cameraOverrideZoom !== 1) {
+            pos.multiplyScalar(cameraOverrideZoom);
+        }
+
+        // Y-axis orbit: rotate position around Y axis
+        if (cameraOverrideOrbitY !== 0) {
+            const yRad = cameraOverrideOrbitY * Math.PI / 180;
+            const cosY = Math.cos(yRad);
+            const sinY = Math.sin(yRad);
+            const x = pos.x;
+            const z = pos.z;
+            pos.x = x * cosY + z * sinY;
+            pos.z = -x * sinY + z * cosY;
+        }
+
+        // X-axis tilt: rotate position around X axis
+        if (cameraOverrideOrbitX !== 0) {
+            const xRad = cameraOverrideOrbitX * Math.PI / 180;
+            const cosX = Math.cos(xRad);
+            const sinX = Math.sin(xRad);
+            const y = pos.y;
+            const z = pos.z;
+            pos.y = y * cosX - z * sinX;
+            pos.z = y * sinX + z * cosX;
+        }
+
+        camera.lookAt(0, 0, 0);
+        camera.updateProjectionMatrix();
+    }
+
+    function setCameraState(zoom: number, orbitY: number, orbitX: number): void {
+        cameraOverrideZoom = zoom;
+        cameraOverrideOrbitY = orbitY;
+        cameraOverrideOrbitX = orbitX;
+    }
+
+    function clearCameraState(): void {
+        cameraOverrideZoom = 1.0;
+        cameraOverrideOrbitY = 0;
+        cameraOverrideOrbitX = 0;
+    }
+
     // --- Animation config ---
     let animConfig = { sparkle: 1.0, drift: 1.0, wobble: 1.0 };
 
@@ -450,6 +516,39 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         if (config.drift !== undefined) animConfig.drift = config.drift;
         if (config.wobble !== undefined) animConfig.wobble = config.wobble;
         applyAnimConfig();
+    }
+
+    /**
+     * Set live animatable parameters from the timeline system.
+     * twinkle → sparkle (face) + wobble (glow dot position/size oscillation)
+     * dynamism → drift (face micro-animation)
+     */
+    function setLiveParams(params: { twinkle?: number; dynamism?: number }): void {
+        if (params.twinkle !== undefined) {
+            animConfig.sparkle = params.twinkle;
+            animConfig.wobble = params.twinkle;
+        }
+        if (params.dynamism !== undefined) {
+            animConfig.drift = params.dynamism;
+        }
+        applyAnimConfig();
+    }
+
+    // --- Depth-of-field / focus control ---
+
+    function setFocusState(focalDepth: number, blurAmount: number): void {
+        if (blurAmount <= 0.001) {
+            dofPass.enabled = false;
+            return;
+        }
+        dofPass.enabled = true;
+        // focalDepth 0-1 maps to normalized focus distance (near → far)
+        dofEffect.cocMaterial.focusDistance = focalDepth;
+        dofEffect.bokehScale = blurAmount * 5; // scale 0-1 → 0-5 bokeh
+    }
+
+    function clearFocusState(): void {
+        dofPass.enabled = false;
     }
 
     // --- Render loop methods ---
@@ -511,6 +610,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
     }
 
     function renderFrame(): void {
+        applyCameraOverride();
         composer.render();
     }
 
@@ -532,6 +632,9 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         setTargetResolution, clearTargetResolution,
         morphPrepare, morphUpdate, morphEnd,
         updateTime, renderFrame, setAnimConfig,
+        setCameraState, clearCameraState,
+        setLiveParams,
+        setFocusState, clearFocusState,
         foldIn, foldOut, setFoldImmediate, isFoldComplete,
         getCanvas: () => canvas,
     };

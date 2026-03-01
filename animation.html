@@ -175,9 +175,21 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="A word that conjures this exact arrangement. Same whisper, same world. (Deterministic seed phrase.)" data-label="Intent (seed)" data-i18n="control.intentSeed" data-i18n-tooltip="control.intentSeed.tooltip" data-i18n-label="control.intentSeed">Intent (seed)<span class="info-icon">i</span></span></label>
-                    <textarea id="profileName" class="auto-grow" rows="1" maxlength="120"
-                        placeholder="e.g. light arriving through crystal" data-i18n-placeholder="control.intentSeed.placeholder"></textarea>
+                    <label><span class="label-info" data-tooltip="A three-word compositional seed. Each word controls an independent random stream and visual bias." data-label="Seed" data-i18n="control.seed" data-i18n-tooltip="control.seed.tooltip" data-i18n-label="control.seed">Seed<span class="info-icon">i</span></span></label>
+                    <div class="seed-tag-row" id="seedTagRow">
+                        <select id="seedTagArr" class="seed-tag-select"></select>
+                        <span class="seed-tag-sep">&middot;</span>
+                        <select id="seedTagStr" class="seed-tag-select"></select>
+                        <span class="seed-tag-sep">&middot;</span>
+                        <select id="seedTagDet" class="seed-tag-select"></select>
+                    </div>
+                </div>
+
+                <div class="param-heading" data-i18n="params.heading">Parameters</div>
+
+                <!-- ── Geometry ── -->
+                <div class="param-section-header">
+                    <span class="label-info" data-tooltip="The physical character of forms &mdash; their abundance, fragmentation, granularity, topology, and crystal quality." data-i18n="section.geometry" data-i18n-tooltip="section.geometry.tooltip">Geometry<span class="info-icon">i</span></span>
                 </div>
 
                 <div class="row">
@@ -189,50 +201,10 @@
                 </div>
 
                 <div class="row">
-                    <label><span class="label-info" data-tooltip="The inner radiance of the scene." data-label="Luminosity" data-i18n="control.luminosity" data-i18n-tooltip="control.luminosity.tooltip" data-i18n-label="control.luminosity">Luminosity<span class="info-icon">i</span></span> <span id="luminosityLabel" class="slider-value"></span></label>
-                    <div class="engine-slider">
-                        <div class="slider-track-bg" id="luminosityTrack"></div>
-                        <input id="luminosity" type="range" min="0" max="1" step="0.01" value="0.50" />
-                    </div>
-                </div>
-
-                <div class="row">
                     <label><span class="label-info" data-tooltip="How forms break and splinter through space." data-label="Fracture" data-i18n="control.fracture" data-i18n-tooltip="control.fracture.tooltip" data-i18n-label="control.fracture">Fracture<span class="info-icon">i</span></span> <span id="fractureLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="fractureTrack"></div>
                         <input id="fracture" type="range" min="0" max="1" step="0.01" value="0.50" />
-                    </div>
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="The discipline binding form to structure." data-label="Coherence" data-i18n="control.coherence" data-i18n-tooltip="control.coherence.tooltip" data-i18n-label="control.coherence">Coherence<span class="info-icon">i</span></span> <span id="coherenceLabel" class="slider-value"></span></label>
-                    <div class="engine-slider">
-                        <div class="slider-track-bg" id="coherenceTrack"></div>
-                        <input id="coherence" type="range" min="0" max="1" step="0.01" value="0.50" />
-                    </div>
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="Where on the spectrum the light begins." data-label="Hue" data-i18n="control.hue" data-i18n-tooltip="control.hue.tooltip" data-i18n-label="control.hue">Hue<span class="info-icon">i</span></span> <span id="hueLabel" class="slider-value"></span></label>
-                    <div class="engine-slider">
-                        <div class="slider-track-bg" style="background: linear-gradient(to right, hsl(0,70%,50%), hsl(60,70%,50%), hsl(120,70%,50%), hsl(180,70%,50%), hsl(240,70%,50%), hsl(300,70%,50%), hsl(360,70%,50%))"></div>
-                        <input id="hue" type="range" min="0" max="1" step="0.01" value="0.78" />
-                    </div>
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="How far color is allowed to wander from its origin." data-label="Spectrum" data-i18n="control.spectrum" data-i18n-tooltip="control.spectrum.tooltip" data-i18n-label="control.spectrum">Spectrum<span class="info-icon">i</span></span> <span id="spectrumLabel" class="slider-value"></span></label>
-                    <div class="engine-slider">
-                        <div class="slider-track-bg" id="spectrumTrack"></div>
-                        <input id="spectrum" type="range" min="0" max="1" step="0.01" value="0.24" />
-                    </div>
-                </div>
-
-                <div class="row">
-                    <label><span class="label-info" data-tooltip="The purity of pigment — dusty whisper to liquid jewel." data-label="Chroma" data-i18n="control.chroma" data-i18n-tooltip="control.chroma.tooltip" data-i18n-label="control.chroma">Chroma<span class="info-icon">i</span></span> <span id="chromaLabel" class="slider-value"></span></label>
-                    <div class="engine-slider">
-                        <div class="slider-track-bg" id="chromaTrack"></div>
-                        <input id="chroma" type="range" min="0" max="1" step="0.01" value="0.42" />
                     </div>
                 </div>
 
@@ -259,11 +231,88 @@
                         <input id="faceting" type="range" min="0" max="1" step="0.01" value="0.50" />
                     </div>
                 </div>
+
+                <!-- ── Light ── -->
+                <div class="param-section-header">
+                    <span class="label-info" data-tooltip="The energy and radiance of the scene." data-i18n="section.light" data-i18n-tooltip="section.light.tooltip">Light<span class="info-icon">i</span></span>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="The inner radiance of the scene." data-label="Luminosity" data-i18n="control.luminosity" data-i18n-tooltip="control.luminosity.tooltip" data-i18n-label="control.luminosity">Luminosity<span class="info-icon">i</span></span> <span id="luminosityLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="luminosityTrack"></div>
+                        <input id="luminosity" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    </div>
+                </div>
+
+                <!-- ── Color ── -->
+                <div class="param-section-header">
+                    <span class="label-info" data-tooltip="The chromatic identity of the emitted light &mdash; hue, spectral range, and intensity." data-i18n="section.color" data-i18n-tooltip="section.color.tooltip">Color<span class="info-icon">i</span></span>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="Where on the spectrum the light begins." data-label="Hue" data-i18n="control.hue" data-i18n-tooltip="control.hue.tooltip" data-i18n-label="control.hue">Hue<span class="info-icon">i</span></span> <span id="hueLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" style="background: linear-gradient(to right, hsl(0,70%,50%), hsl(60,70%,50%), hsl(120,70%,50%), hsl(180,70%,50%), hsl(240,70%,50%), hsl(300,70%,50%), hsl(360,70%,50%))"></div>
+                        <input id="hue" type="range" min="0" max="1" step="0.01" value="0.78" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="How far color is allowed to wander from its origin." data-label="Spectrum" data-i18n="control.spectrum" data-i18n-tooltip="control.spectrum.tooltip" data-i18n-label="control.spectrum">Spectrum<span class="info-icon">i</span></span> <span id="spectrumLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="spectrumTrack"></div>
+                        <input id="spectrum" type="range" min="0" max="1" step="0.01" value="0.24" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="The purity of pigment — dusty whisper to liquid jewel." data-label="Chroma" data-i18n="control.chroma" data-i18n-tooltip="control.chroma.tooltip" data-i18n-label="control.chroma">Chroma<span class="info-icon">i</span></span> <span id="chromaLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="chromaTrack"></div>
+                        <input id="chroma" type="range" min="0" max="1" step="0.01" value="0.42" />
+                    </div>
+                </div>
+
+                <!-- ── Space ── -->
+                <div class="param-section-header">
+                    <span class="label-info" data-tooltip="The directional organization of forms &mdash; flow patterns and structural coherence." data-i18n="section.space" data-i18n-tooltip="section.space.tooltip">Space<span class="info-icon">i</span></span>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="The discipline binding form to structure." data-label="Coherence" data-i18n="control.coherence" data-i18n-tooltip="control.coherence.tooltip" data-i18n-label="control.coherence">Coherence<span class="info-icon">i</span></span> <span id="coherenceLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="coherenceTrack"></div>
+                        <input id="coherence" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    </div>
+                </div>
+
                 <div class="row">
                     <label><span class="label-info" data-tooltip="The directional field pattern — radial starburst to noise to orbital bands." data-label="Flow" data-i18n="control.flow" data-i18n-tooltip="control.flow.tooltip" data-i18n-label="control.flow">Flow<span class="info-icon">i</span></span> <span id="flowLabel" class="slider-value"></span></label>
                     <div class="engine-slider">
                         <div class="slider-track-bg" id="flowTrack"></div>
                         <input id="flow" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    </div>
+                </div>
+
+                <!-- ── Camera ── -->
+                <div class="param-section-header">
+                    <span class="label-info" data-tooltip="Static framing of the scene — zoom level and orbital rotation angle." data-i18n="section.camera" data-i18n-tooltip="section.camera.tooltip">Camera<span class="info-icon">i</span></span>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="How close or far the viewpoint is. Below 1.0 moves closer to the forms, above 1.0 moves further away." data-label="Zoom" data-i18n="control.zoom" data-i18n-tooltip="control.zoom.tooltip" data-i18n-label="control.zoom">Zoom<span class="info-icon">i</span></span> <span id="zoomLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="zoomTrack"></div>
+                        <input id="zoom" type="range" min="0.3" max="3.0" step="0.01" value="1.00" />
+                    </div>
+                </div>
+
+                <div class="row">
+                    <label><span class="label-info" data-tooltip="Orbital rotation angle around the scene center, in degrees. 360° wraps back to 0°." data-label="Rotation" data-i18n="control.rotation" data-i18n-tooltip="control.rotation.tooltip" data-i18n-label="control.rotation">Rotation<span class="info-icon">i</span></span> <span id="rotationLabel" class="slider-value"></span></label>
+                    <div class="engine-slider">
+                        <div class="slider-track-bg" id="rotationTrack"></div>
+                        <input id="rotation" type="range" min="0" max="360" step="1" value="0" />
                     </div>
                 </div>
 

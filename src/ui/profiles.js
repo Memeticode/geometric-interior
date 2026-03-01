@@ -4,6 +4,7 @@
 
 import starterProfiles from '../core/starter-profiles.json';
 import { PRESETS } from '../../lib/core/palettes.js';
+import { parseSeed } from '../../lib/core/seed-tags.js';
 import { t } from '../i18n/locale.js';
 
 const LS_KEY = 'geo_self_portrait_profiles_v3';
@@ -89,6 +90,13 @@ export function loadProfiles() {
         for (const [name, p] of Object.entries(parsed)) {
             if (p.controls && ('palette' in p.controls || 'depth' in p.controls)) {
                 parsed[name] = migrateProfile(p);
+                migrated = true;
+            }
+        }
+        // Migrate: string seeds → seed tags
+        for (const [name, p] of Object.entries(parsed)) {
+            if (typeof p.seed === 'string') {
+                p.seed = parseSeed(p.seed);
                 migrated = true;
             }
         }
@@ -244,7 +252,7 @@ export function ensureStarterProfiles() {
         if (profiles[name]) {
             const p = profiles[name];
             const s = starterProfiles[name];
-            const identical = p.seed === s.seed &&
+            const identical = JSON.stringify(p.seed) === JSON.stringify(s.seed) &&
                 JSON.stringify(p.controls) === JSON.stringify(s.controls);
             if (identical) {
                 delete profiles[name];
@@ -258,9 +266,9 @@ export function ensureStarterProfiles() {
     if (Object.keys(animProfiles).length === 0) {
         saveAnimProfiles({
             'Chromatic Cycle': {
-                landmarks: ['Verdant Stream', 'Prismatic Abyss', 'Rose Quartz', 'Sapphire Lattice', 'Spectral Drift', 'Violet Sanctum'],
+                landmarks: ['Violet Sanctum', 'Amber Starburst', 'Teal Orbital', 'Emerald Radiance', 'Prismatic Scatter', 'Sapphire Lattice', 'Coral Breath', 'Spectral Drift'],
                 durationMs: 7000,
-                seed: 'The space where radiant emptiness begins to sing.',
+                seed: [7, 6, 7],
             }
         });
     }

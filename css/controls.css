@@ -202,6 +202,35 @@
     pointer-events: none;
 }
 
+/* ── Parameter heading & section headers ── */
+.param-heading {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    padding: 0.625rem 0.5rem 0;
+}
+
+.param-section-header {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 0.5rem 0.5rem 0;
+    margin-top: 0.125rem;
+    border-top: 1px solid var(--border);
+}
+
+.param-section-header:first-of-type {
+    border-top: none;
+    margin-top: 0;
+}
+
+.param-section-header .label-info {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
 /* ── Engine slider with gradient track ── */
 .engine-slider {
     position: relative;
@@ -235,6 +264,24 @@
 #fractureTrack { background: linear-gradient(to right, rgba(130, 200, 255, 0.15), rgba(255, 120, 180, 0.5)); }
 #depthTrack { background: linear-gradient(to right, rgba(200, 200, 255, 0.3), rgba(20, 15, 40, 0.7)); }
 #coherenceTrack { background: linear-gradient(to right, rgba(255, 160, 100, 0.3), rgba(130, 200, 255, 0.6)); }
+#zoomTrack { background: linear-gradient(to right, rgba(255, 200, 100, 0.15), rgba(130, 200, 255, 0.5)); }
+#rotationTrack { background: linear-gradient(to right, rgba(130, 200, 255, 0.2), rgba(200, 150, 255, 0.5), rgba(130, 200, 255, 0.2)); }
+
+/* ── Seed tag selector (image editor) ── */
+.seed-tag-row {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+.seed-tag-row .seed-tag-select {
+    flex: 1;
+    min-width: 0;
+}
+.seed-tag-row .seed-tag-sep {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    user-select: none;
+}
 
 /* ── Slider value label ── */
 .slider-value {

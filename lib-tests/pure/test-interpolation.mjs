@@ -76,8 +76,10 @@ test('TIME_WARP_STRENGTH is a positive number', () => {
 // evalControlsAt
 const mkLandmark = (density, luminosity = 0.5) => ({
     controls: {
-        topology: 'flow-field', palette: 'violet-depth',
-        density, luminosity, fracture: 0.5, depth: 0.5, coherence: 0.5,
+        topology: 'flow-field',
+        density, luminosity, fracture: 0.5, coherence: 0.5,
+        hue: 0.5, spectrum: 0.3, chroma: 0.4,
+        scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5,
     },
 });
 
@@ -102,14 +104,12 @@ test('evalControlsAt with 2 landmarks blends at t=0.25', () => {
 
 test('evalControlsAt preserves discrete keys', () => {
     const result = evalControlsAt(0.3, [
-        { controls: { topology: 'flow-field', palette: 'violet-depth', density: 0, luminosity: 0, fracture: 0, depth: 0, coherence: 0 } },
-        { controls: { topology: 'flow-field', palette: 'sapphire', density: 1, luminosity: 1, fracture: 1, depth: 1, coherence: 1 } },
+        { controls: { topology: 'flow-field', density: 0, luminosity: 0, fracture: 0, coherence: 0, hue: 0, spectrum: 0, chroma: 0, scale: 0, division: 0, faceting: 0, flow: 0 } },
+        { controls: { topology: 'flow-field', density: 1, luminosity: 1, fracture: 1, coherence: 1, hue: 1, spectrum: 1, chroma: 1, scale: 1, division: 1, faceting: 1, flow: 1 } },
     ]);
     assert(result !== null);
-    assert(result.topology === 'flow-field');
-    // palette snaps to nearest: at t=0.3, nearest is index 0 → violet-depth
-    assert(result.palette === 'violet-depth' || result.palette === 'sapphire',
-        `unexpected palette: ${result.palette}`);
+    assert(result.topology === 'flow-field',
+        `unexpected topology: ${result.topology}`);
 });
 
 test('evalControlsAt with 3+ landmarks produces values in [0,1]', () => {

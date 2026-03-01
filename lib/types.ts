@@ -1,5 +1,22 @@
 import type { Vector3, ShaderMaterial, LineBasicMaterial, Points, Mesh, LineSegments, InstancedMesh, MeshBasicMaterial } from 'three';
 
+// Re-export seed types from seed-tags module
+export type { SeedTag, Seed, SceneRngStreams } from './core/seed-tags.js';
+
+// Re-export animation timeline types
+export type {
+    EasingType,
+    ContentEvent,
+    CameraState,
+    CameraMove,
+    ParamTrack,
+    FocusState,
+    FocusTrack,
+    AnimationSettings,
+    Animation,
+    FrameState,
+} from './core/timeline.js';
+
 /** @deprecated — kept for profile migration only */
 export type PaletteKey =
     | 'violet-depth'
@@ -55,6 +72,8 @@ export interface StillConfig {
     kind: 'still' | 'still-v2';
     name: string;
     intent: string;
+    /** Compositional seed tag (3-element numeric array) — alternative to string intent */
+    seedTag?: [number, number, number];
     /** @deprecated v1 format — use `color` instead */
     palette?: {
         hue: number;
@@ -79,6 +98,7 @@ export interface StillConfig {
         faceting?: number;
         flow?: number;
     };
+    camera?: { zoom: number; rotation: number };
 }
 
 /** Render metadata returned by renderWith() */
@@ -90,13 +110,18 @@ export interface RenderMeta {
 
 /** Renderer instance returned by createRenderer() */
 export interface Renderer {
-    renderWith(seed: string, controls: Controls): RenderMeta;
-    morphPrepare(seedA: string, controlsA: Controls, seedB: string, controlsB: Controls): void;
+    renderWith(seed: import('./core/seed-tags.js').Seed, controls: Controls): RenderMeta;
+    morphPrepare(seedA: import('./core/seed-tags.js').Seed, controlsA: Controls, seedB: import('./core/seed-tags.js').Seed, controlsB: Controls): void;
     morphUpdate(t: number): void;
     morphEnd(): void;
     updateTime(seconds: number): void;
     renderFrame(): void;
     setAnimConfig(config: { sparkle?: number; drift?: number; wobble?: number }): void;
+    setCameraState(zoom: number, orbitY: number, orbitX: number): void;
+    clearCameraState(): void;
+    setLiveParams(params: { twinkle?: number; dynamism?: number }): void;
+    setFocusState(focalDepth: number, blurAmount: number): void;
+    clearFocusState(): void;
     foldIn(): void;
     foldOut(): void;
     setFoldImmediate(v: number): void;
@@ -116,8 +141,9 @@ export interface RendererOptions {
 
 /** Internal profile format used by the app for storage */
 export interface Profile {
-    seed: string;
+    seed: import('./core/seed-tags.js').Seed;
     controls: Controls;
+    camera?: { zoom: number; rotation: number };
 }
 
 /** Validation result */

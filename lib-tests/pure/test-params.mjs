@@ -1,7 +1,7 @@
 /**
  * Tests for deriveParams.
  */
-import { deriveParams, xmur3, mulberry32 } from '../../dist/lib/geometric-interior.js';
+import { deriveParams } from '../../dist/lib/geometric-interior.js';
 
 let passed = 0, failed = 0;
 
@@ -12,19 +12,17 @@ function test(name, fn) {
 
 function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
 
-function mkRng(seed = 'test') {
-    return mulberry32(xmur3(seed)());
-}
-
 const MID = {
-    topology: 'flow-field', palette: 'violet-depth',
-    density: 0.5, luminosity: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5,
+    topology: 'flow-field',
+    density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5,
+    hue: 0.783, spectrum: 0.239, chroma: 0.417,
+    scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5,
 };
 
 console.log('\n=== Params Tests ===\n');
 
 test('deriveParams returns an object with expected keys', () => {
-    const p = deriveParams(MID, mkRng());
+    const p = deriveParams(MID);
     const expectedKeys = [
         'density', 'cameraZ', 'cameraFov', 'cameraOffsetX', 'cameraOffsetY',
         'bgInnerColor', 'bgOuterColor', 'bloomStrength', 'bloomThreshold',
@@ -36,7 +34,7 @@ test('deriveParams returns an object with expected keys', () => {
 });
 
 test('deriveParams produces finite numbers', () => {
-    const p = deriveParams(MID, mkRng());
+    const p = deriveParams(MID);
     for (const [key, val] of Object.entries(p)) {
         if (typeof val === 'number') {
             assert(Number.isFinite(val), `${key} is not finite: ${val}`);
@@ -52,31 +50,31 @@ test('deriveParams produces finite numbers', () => {
 });
 
 test('bgInnerColor components are near-black', () => {
-    const p = deriveParams(MID, mkRng());
+    const p = deriveParams(MID);
     for (const c of p.bgInnerColor) {
         assert(c >= 0 && c < 0.05, `bgInnerColor component too bright: ${c}`);
     }
 });
 
 test('bgOuterColor components are near-black', () => {
-    const p = deriveParams(MID, mkRng());
+    const p = deriveParams(MID);
     for (const c of p.bgOuterColor) {
         assert(c >= 0 && c < 0.05, `bgOuterColor component too bright: ${c}`);
     }
 });
 
 test('cameraZ is positive (camera in front of scene)', () => {
-    const p = deriveParams(MID, mkRng());
+    const p = deriveParams(MID);
     assert(p.cameraZ > 0, `cameraZ should be positive: ${p.cameraZ}`);
 });
 
 test('cameraFov is in reasonable range (30-120)', () => {
-    const p = deriveParams(MID, mkRng());
+    const p = deriveParams(MID);
     assert(p.cameraFov >= 30 && p.cameraFov <= 120, `cameraFov out of range: ${p.cameraFov}`);
 });
 
 test('envelopeRadii are positive', () => {
-    const p = deriveParams(MID, mkRng());
+    const p = deriveParams(MID);
     assert(Array.isArray(p.envelopeRadii) || typeof p.envelopeRadii === 'object',
         'envelopeRadii not array-like');
     // envelopeRadii is a THREE.Vector3 or array
@@ -89,13 +87,13 @@ test('envelopeRadii are positive', () => {
 });
 
 test('bloomStrength is non-negative', () => {
-    const p = deriveParams(MID, mkRng());
+    const p = deriveParams(MID);
     assert(p.bloomStrength >= 0, `bloomStrength negative: ${p.bloomStrength}`);
 });
 
 test('different density values produce different dotConfig counts', () => {
-    const lo = deriveParams({ ...MID, density: 0 }, mkRng());
-    const hi = deriveParams({ ...MID, density: 1 }, mkRng('test2'));
+    const lo = deriveParams({ ...MID, density: 0 });
+    const hi = deriveParams({ ...MID, density: 1 });
     // Both should have dotConfig, but with different counts
     assert(lo.dotConfig !== undefined, 'missing dotConfig at density=0');
     assert(hi.dotConfig !== undefined, 'missing dotConfig at density=1');
@@ -106,8 +104,8 @@ test('different density values produce different dotConfig counts', () => {
 });
 
 test('deriveParams at extreme corners (all-zero, all-one) does not throw', () => {
-    deriveParams({ ...MID, density: 0, luminosity: 0, fracture: 0, depth: 0, coherence: 0 }, mkRng());
-    deriveParams({ ...MID, density: 1, luminosity: 1, fracture: 1, depth: 1, coherence: 1 }, mkRng());
+    deriveParams({ ...MID, density: 0, luminosity: 0, fracture: 0, depth: 0, coherence: 0 });
+    deriveParams({ ...MID, density: 1, luminosity: 1, fracture: 1, depth: 1, coherence: 1 });
 });
 
 export { passed, failed };

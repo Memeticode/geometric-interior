@@ -52,8 +52,8 @@ const SWEEP_ALL: AnimJourney = {
     label: 'sweep-all-0-to-1',
     durationS: 60,
     fps: 60,
-    width: 3840,
-    height: 2160,
+    width: 1920,
+    height: 1080,
     seed: 'geometric-anim-v1',
     segmentCount: 60,
     topology: 'flow-field',
@@ -199,7 +199,7 @@ function createAnimAPI(): AnimAPI {
         renderFrame(frameWithinSegment: number): string {
             const t = frameWithinSegment / framesPerSegment;  // linear, no easing
             renderer.morphUpdate(t);
-            return canvas.toDataURL('image/png');
+            return canvas.toDataURL('image/jpeg', 0.95);
         },
 
         endSegment() {
