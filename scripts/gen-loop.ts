@@ -12,8 +12,9 @@
 import {
     createRenderer, resetPalette,
     xmur3, mulberry32,
-} from '../lib/index.js';
-import type { Controls, PaletteKey, Renderer } from '../lib/types.js';
+} from '../geometric-interior/src/index.js';
+import type { Controls, PaletteKey } from '../geometric-interior/src/core/image-models.js';
+import type { Renderer } from '../geometric-interior/src/render-engine/interfaces.js';
 
 /* ── Constants ── */
 

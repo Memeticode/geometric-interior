@@ -17,12 +17,12 @@ import { chromium } from 'playwright';
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { slugify } from '../src/shared/slugify.js';
+import { slugify } from '../vite-app/src/shared/slugify.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = 5204;
 const BASE_URL = `http://localhost:${PORT}/image.html`;
-const THUMB_DIR = resolve(__dirname, '..', 'public', 'static', 'images', 'portraits');
+const THUMB_DIR = resolve(__dirname, '..', 'vite-app', 'public', 'static', 'images', 'portraits');
 
 function parseProfileFilter() {
     const arg = process.argv.find(a => a.startsWith('--profile='));

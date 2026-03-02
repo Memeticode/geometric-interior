@@ -1,0 +1,305 @@
+/**
+ * Export helpers: ZIP packaging, downloads, metadata generation.
+ */
+
+import { xmur3, mulberry32 } from '@geometric-interior/core/prng.js';
+import { deriveParams } from '@geometric-interior/core/params.js';
+import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
+import { generateAltText, generateAnimAltText } from '@geometric-interior/core/text-generation/alt-text.js';
+import { evalControlsAt } from '@geometric-interior/core/interpolation.js';
+import { ANIM_FPS, MOTION_BLUR_ENABLED, MB_DECAY, MB_ADD } from './animation.js';
+import { profileToConfig } from '@geometric-interior/core/config-schema.js';
+import { getLocale } from '../i18n/locale.js';
+
+export function downloadBlob(filename, blob) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+export function toIsoLocalish(d = new Date()) {
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+}
+
+export function canvasToPngBlob(canvas) {
+    return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
+}
+
+/* ── PNG tEXt chunk injection ── */
+
+function crc32Table() {
+    const t = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+        let c = n;
+        for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+        t[n] = c;
+    }
+    return t;
+}
+
+const CRC_TABLE = crc32Table();
+
+function crc32(buf) {
+    let crc = 0xFFFFFFFF;
+    for (let i = 0; i < buf.length; i++) crc = CRC_TABLE[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function escapeXml(str) {
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
+function buildXmpString(title, description) {
+    const t = escapeXml(title);
+    const d = escapeXml(description);
+    const a = escapeXml(title + '\n' + description);
+    return [
+        `<?xpacket begin='\xEF\xBB\xBF' id='W5M0MpCehiHzreSzNTczkc9d'?>`,
+        `<x:xmpmeta xmlns:x='adobe:ns:meta/'>`,
+        `  <rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>`,
+        `    <rdf:Description rdf:about=''`,
+        `      xmlns:dc='http://purl.org/dc/elements/1.1/'`,
+        `      xmlns:Iptc4xmpExt='http://iptc.org/std/Iptc4xmpExt/2008-02-29/'>`,
+        `      <dc:title><rdf:Alt><rdf:li xml:lang='x-default'>${t}</rdf:li></rdf:Alt></dc:title>`,
+        `      <dc:description><rdf:Alt><rdf:li xml:lang='x-default'>${d}</rdf:li></rdf:Alt></dc:description>`,
+        `      <Iptc4xmpExt:AltTextAccessibility><rdf:Alt><rdf:li xml:lang='en'>${a}</rdf:li></rdf:Alt></Iptc4xmpExt:AltTextAccessibility>`,
+        `    </rdf:Description>`,
+        `  </rdf:RDF>`,
+        `</x:xmpmeta>`,
+        `<?xpacket end='w'?>`,
+    ].join('\n');
+}
+
+function makePngTextChunk(keyword, text) {
+    const enc = new TextEncoder();
+    const kwBytes = enc.encode(keyword);
+    const txtBytes = enc.encode(text);
+    const dataLen = kwBytes.length + 1 + txtBytes.length; // keyword + null + text
+    const chunk = new Uint8Array(4 + 4 + dataLen + 4); // length + type + data + crc
+    const view = new DataView(chunk.buffer);
+    view.setUint32(0, dataLen);
+    chunk.set([0x74, 0x45, 0x58, 0x74], 4); // "tEXt"
+    chunk.set(kwBytes, 8);
+    chunk[8 + kwBytes.length] = 0; // null separator
+    chunk.set(txtBytes, 8 + kwBytes.length + 1);
+    const crcData = chunk.subarray(4, 4 + 4 + dataLen); // type + data
+    view.setUint32(4 + 4 + dataLen, crc32(crcData));
+    return chunk;
+}
+
+function makePngItxtChunk(keyword, text) {
+    const enc = new TextEncoder();
+    const kwBytes = enc.encode(keyword);
+    const txtBytes = enc.encode(text);
+    // iTXt: keyword + null + compressionFlag + compressionMethod + lang + null + transKeyword + null + text
+    const dataLen = kwBytes.length + 1 + 1 + 1 + 0 + 1 + 0 + 1 + txtBytes.length;
+    const chunk = new Uint8Array(4 + 4 + dataLen + 4);
+    const view = new DataView(chunk.buffer);
+    view.setUint32(0, dataLen);
+    chunk.set([0x69, 0x54, 0x58, 0x74], 4); // "iTXt"
+    let off = 8;
+    chunk.set(kwBytes, off); off += kwBytes.length;
+    chunk[off++] = 0; // null after keyword
+    chunk[off++] = 0; // compression flag (uncompressed)
+    chunk[off++] = 0; // compression method
+    chunk[off++] = 0; // null after empty language tag
+    chunk[off++] = 0; // null after empty translated keyword
+    chunk.set(txtBytes, off);
+    const crcData = chunk.subarray(4, 4 + 4 + dataLen);
+    view.setUint32(4 + 4 + dataLen, crc32(crcData));
+    return chunk;
+}
+
+/**
+ * Inject PNG tEXt metadata chunks (and optional XMP iTXt) into a PNG blob.
+ * @param {Blob} pngBlob
+ * @param {{ keyword: string, text: string }[]} entries
+ * @param {{ title: string, description: string }} [xmp] - optional XMP metadata
+ * @returns {Promise<Blob>}
+ */
+export async function injectPngTextChunks(pngBlob, entries, xmp) {
+    const buf = await pngBlob.arrayBuffer();
+    const src = new Uint8Array(buf);
+    // Find IEND chunk: scan for "IEND" (0x49454E44) from the end
+    let iendPos = -1;
+    for (let i = src.length - 12; i >= 8; i--) {
+        if (src[i + 4] === 0x49 && src[i + 5] === 0x45 && src[i + 6] === 0x4E && src[i + 7] === 0x44) {
+            iendPos = i;
+            break;
+        }
+    }
+    if (iendPos < 0) return pngBlob; // couldn't find IEND, return unchanged
+
+    const chunks = entries.map(e => makePngTextChunk(e.keyword, e.text));
+    if (xmp) {
+        chunks.push(makePngItxtChunk('XML:com.adobe.xmp', buildXmpString(xmp.title, xmp.description)));
+    }
+    const totalExtra = chunks.reduce((s, c) => s + c.length, 0);
+    const out = new Uint8Array(src.length + totalExtra);
+    out.set(src.subarray(0, iendPos), 0);
+    let offset = iendPos;
+    for (const c of chunks) { out.set(c, offset); offset += c.length; }
+    out.set(src.subarray(iendPos), offset);
+    return new Blob([out], { type: 'image/png' });
+}
+
+export function safeName(s) {
+    return (s || 'seed').replace(/[^a-z0-9_-]+/gi, '_').slice(0, 80);
+}
+
+export function computeKeyframeText(seedForTitles, landmarks, locale = 'en') {
+    const out = [];
+    for (const k of landmarks) {
+        const seedFn = xmur3(seedForTitles + '::' + k.name);
+        const rng = mulberry32(seedFn());
+        const title = generateTitle(k.controls, rng, locale);
+
+        const derived = deriveParams(k.controls);
+        const nodeCount = derived.nodeCount;
+
+        const alt = generateAltText(k.controls, nodeCount, title, locale);
+
+        out.push({
+            name: k.name,
+            controls: k.controls,
+            title,
+            altText: alt
+        });
+    }
+    return out;
+}
+
+export function computeLoopSummaryTitleAlt(seed, landmarks, durationSecs, locale = 'en') {
+    const a0 = evalControlsAt(0.0, landmarks);
+    const seedFn = xmur3(seed + '::bundle');
+    const rng = mulberry32(seedFn());
+    const title = generateTitle(a0, rng, locale);
+
+    const keyframeTexts = computeKeyframeText(seed, landmarks, locale);
+    const altText = generateAnimAltText(landmarks, durationSecs, keyframeTexts, locale);
+
+    return { title, altText };
+}
+
+/**
+ * Package and download a still image ZIP.
+ */
+export async function packageStillZip(canvas, { seed, controls, name, meta }) {
+    const JSZip = window.JSZip;
+    if (!JSZip) throw new Error('JSZip not loaded');
+
+    const rawPng = await canvasToPngBlob(canvas);
+    const pngBlob = await injectPngTextChunks(rawPng, [
+        { keyword: 'Title', text: meta.title },
+        { keyword: 'Description', text: meta.altText },
+    ], { title: meta.title, description: meta.altText });
+    const ts = toIsoLocalish(new Date());
+    const base = `still_${safeName(seed)}_${ts}`;
+
+    const zip = new JSZip();
+    zip.file(`${base}/image.png`, pngBlob);
+    zip.file(`${base}/title.txt`, meta.title + '\n');
+    zip.file(`${base}/alt-text.txt`, meta.altText + '\n');
+
+    const metadata = profileToConfig(name, { seed, controls });
+    zip.file(`${base}/metadata.json`, JSON.stringify(metadata, null, 2) + '\n');
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    downloadBlob(`${base}.zip`, zipBlob);
+}
+
+/**
+ * Package and download a still image ZIP from a pre-rendered PNG blob
+ * (used when canvas is owned by a Web Worker via OffscreenCanvas).
+ */
+export async function packageStillZipFromBlob(pngBlob, { seed, controls, name, meta, canvasWidth, canvasHeight }) {
+    const JSZip = window.JSZip;
+    if (!JSZip) throw new Error('JSZip not loaded');
+
+    const enrichedPng = await injectPngTextChunks(pngBlob, [
+        { keyword: 'Title', text: meta.title },
+        { keyword: 'Description', text: meta.altText },
+    ], { title: meta.title, description: meta.altText });
+    const ts = toIsoLocalish(new Date());
+    const base = `still_${safeName(seed)}_${ts}`;
+
+    const zip = new JSZip();
+    zip.file(`${base}/image.png`, enrichedPng);
+    zip.file(`${base}/title.txt`, meta.title + '\n');
+    zip.file(`${base}/alt-text.txt`, meta.altText + '\n');
+
+    const metadata = profileToConfig(name, { seed, controls });
+    zip.file(`${base}/metadata.json`, JSON.stringify(metadata, null, 2) + '\n');
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    downloadBlob(`${base}.zip`, zipBlob);
+}
+
+/**
+ * Package and download an animation ZIP.
+ */
+export async function packageAnimZip(rec, { landmarks, loopLandmarkNames, timeWarpStrength }) {
+    const JSZip = window.JSZip;
+    if (!JSZip) throw new Error('JSZip not loaded');
+
+    const ts = toIsoLocalish(new Date());
+    const base = `animation_${safeName(rec.seed)}_${ts}`;
+
+    const locale = getLocale();
+    const keyframes = computeKeyframeText(rec.seed, landmarks, locale);
+    const summary = computeLoopSummaryTitleAlt(rec.seed, landmarks, rec.durationMs / 1000, locale);
+
+    const zip = new JSZip();
+
+    if (rec.kind === 'video') {
+        zip.file(`${base}/animation.${rec.ext}`, rec.blob);
+    } else {
+        const framesDir = `${base}/frames`;
+        for (const fr of rec.frames) {
+            const name = String(fr.index).padStart(5, '0');
+            zip.file(`${framesDir}/frame_${name}.png`, fr.blob);
+        }
+        zip.file(`${base}/frames/README.txt`,
+            'This export contains a PNG frame sequence because video encoding was not supported on this browser.\n' +
+            'You can assemble frames into a video with ffmpeg, e.g.\n' +
+            `ffmpeg -framerate ${rec.fps} -i frame_%05d.png -c:v libx264 -pix_fmt yuv420p out.mp4\n`
+        );
+    }
+
+    zip.file(`${base}/title.txt`, summary.title + '\n');
+    zip.file(`${base}/alt-text.txt`, summary.altText + '\n');
+    zip.file(`${base}/keyframes.json`, JSON.stringify(keyframes, null, 2) + '\n');
+
+    const manifest = {
+        kind: 'animation',
+        export_kind: rec.kind,
+        seed: rec.seed,
+        fps: rec.fps,
+        duration_ms: rec.durationMs,
+        total_frames: rec.totalFrames,
+        time_warp_strength: timeWarpStrength,
+        motion_blur: {
+            enabled: MOTION_BLUR_ENABLED,
+            decay: MB_DECAY,
+            add: MB_ADD
+        },
+        landmarks: loopLandmarkNames.slice(),
+        generated_at: new Date().toISOString(),
+        files: rec.kind === 'video'
+            ? [`animation.${rec.ext}`, 'title.txt', 'alt-text.txt', 'keyframes.json', 'manifest.json']
+            : ['frames/*', 'title.txt', 'alt-text.txt', 'keyframes.json', 'manifest.json']
+    };
+    zip.file(`${base}/manifest.json`, JSON.stringify(manifest, null, 2) + '\n');
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    downloadBlob(`${base}.zip`, zipBlob);
+}

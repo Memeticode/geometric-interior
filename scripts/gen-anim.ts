@@ -9,8 +9,9 @@
  * Also works standalone via the "Generate" button (renders in-browser).
  */
 
-import { createRenderer, clamp01 } from '../lib/index.js';
-import type { Controls, Renderer } from '../lib/types.js';
+import { createRenderer, clamp01 } from '../geometric-interior/src/index.js';
+import type { Controls } from '../geometric-interior/src/core/image-models.js';
+import type { Renderer } from '../geometric-interior/src/render-engine/interfaces.js';
 
 /* ── Journey config types ── */
 

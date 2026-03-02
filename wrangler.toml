@@ -3,10 +3,10 @@ compatibility_date = "2025-01-01"
 
 # Cloudflare Pages static site deployment
 # Build command: npm run build
-# Output directory: dist
+# Output directory: vite-app/dist
 
 [site]
-bucket = "./dist"
+bucket = "./vite-app/dist"
 
 # Browser Rendering API for dynamic OG image generation
 [browser]

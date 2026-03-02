@@ -6,23 +6,23 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/lib/geometric-interior.d.ts",
-      "import": "./dist/lib/geometric-interior.js"
+      "types": "./geometric-interior/dist/index.d.ts",
+      "import": "./geometric-interior/dist/geometric-interior.js"
     }
   },
   "files": [
-    "dist/lib/"
+    "geometric-interior/dist/"
   ],
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "build:lib": "vite build --config vite.lib.config.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.lib.json",
-    "preview": "vite preview",
-    "test:lib:pure": "node lib-tests/pure/run-pure.mjs",
-    "test:lib:browser": "node lib-tests/browser/run-lib-browser.mjs",
-    "test:lib": "node lib-tests/run-lib-all.mjs",
-    "test:all": "node tests/run-all.mjs",
+    "dev": "cd vite-app && vite",
+    "build": "cd vite-app && vite build",
+    "build:lib": "cd geometric-interior && vite build --config vite.lib.config.ts",
+    "typecheck": "tsc --noEmit -p geometric-interior/tsconfig.lib.json",
+    "preview": "cd vite-app && vite preview",
+    "test:lib:pure": "node geometric-interior/__tests__/pure/run-pure.mjs",
+    "test:lib:browser": "node geometric-interior/__tests__/browser/run-lib-browser.mjs",
+    "test:lib": "node geometric-interior/__tests__/run-lib-all.mjs",
+    "test:all": "node vite-app/__tests__/run-all.mjs",
     "gen:starter-images": "node scripts/gen-starter-profile-images.mjs"
   },
   "peerDependencies": {

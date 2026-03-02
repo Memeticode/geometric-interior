@@ -4,6 +4,8 @@
 # Node
 node_modules/
 dist/
+geometric-interior/dist/
+vite-app/dist/
 package-lock.json
 exploration/
 explore-*.mjs
