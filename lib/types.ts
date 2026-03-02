@@ -1,4 +1,4 @@
-import type { Vector3, ShaderMaterial, LineBasicMaterial, Points, Mesh, LineSegments, InstancedMesh, MeshBasicMaterial } from 'three';
+import type { Vector3, ShaderMaterial, LineBasicMaterial, Mesh, LineSegments, InstancedMesh, MeshBasicMaterial } from 'three';
 
 // Re-export seed types from seed-tags module
 export type { SeedTag, Seed, SceneRngStreams } from './core/seed-tags.js';
@@ -285,7 +285,7 @@ export interface DerivedParams {
 
 /** Scene build result refs for morph transitions */
 export interface SceneRefs {
-    glowPoints: Points | null;
+    glowPoints: Mesh | null;
     glowMat: ShaderMaterial | null;
     sphereInst: InstancedMesh | null;
     sphereMat: MeshBasicMaterial | null;

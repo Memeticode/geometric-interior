@@ -1,12 +1,15 @@
 /**
- * Generate panel — configuration menu with sliders, seed tags, preview, and generate button.
+ * Generate panel — configuration menu with sliders, seed tags, name field,
+ * camera controls, preview, and render button.
  * Manages the UI state for the generation flow on the gallery page.
  */
 
 import { t, getLocale } from '../i18n/locale.js';
 import {
-    TAG_LIST_LENGTH, seedTagToLabel, getLocalizedWords,
+    TAG_LIST_LENGTH, getLocalizedWords, seedToString,
 } from '../../lib/core/seed-tags.js';
+import { generateTitle } from '../../lib/core/text.js';
+import { xmur3, mulberry32 } from '../../lib/core/prng.js';
 
 /** Slider grouping: matches the 4 parameter sections from docs/parameters.md */
 const SLIDER_GROUPS = [
@@ -19,6 +22,13 @@ const SLIDER_GROUPS = [
 /** Flat key list (derived from groups, used for readControls/setValues). */
 const SLIDER_KEYS = SLIDER_GROUPS.flatMap(g => g.sliders);
 
+/** Camera slider definitions with custom ranges. */
+const CAMERA_SLIDERS = [
+    { key: 'rotation',  min: 0,    max: 360,  step: 1,    defaultVal: 0,    format: 'deg' },
+    { key: 'elevation', min: -90,  max: 90,   step: 1,    defaultVal: 0,    format: 'deg' },
+    { key: 'zoom',      min: 0.3,  max: 3.0,  step: 0.01, defaultVal: 1.00, format: '' },
+];
+
 /**
  * Initialize the generate panel.
  * @param {Object} opts
@@ -26,19 +36,25 @@ const SLIDER_KEYS = SLIDER_GROUPS.flatMap(g => g.sliders);
  * @param {HTMLSelectElement} opts.tagArrEl  — arrangement word select
  * @param {HTMLSelectElement} opts.tagStrEl  — structure word select
  * @param {HTMLSelectElement} opts.tagDetEl  — detail word select
+ * @param {HTMLTextAreaElement} opts.nameField — name textarea
+ * @param {HTMLButtonElement} opts.saveBtn
+ * @param {HTMLButtonElement} opts.resetBtn
  * @param {HTMLButtonElement} opts.randomizeBtn
- * @param {HTMLButtonElement} opts.generateBtn
- * @param {Function} opts.onControlChange   — (seed, controls) => void
- * @param {Function} opts.onGenerate        — (seed, controls) => void
+ * @param {HTMLButtonElement} opts.renderBtn
+ * @param {Function} opts.onControlChange   — (seed, controls, camera) => void
+ * @param {Function} opts.onRender          — (seed, controls, camera, name) => void
+ * @param {Function} [opts.onSave]          — (seed, controls, camera, name) => void
  */
 export function initGeneratePanel(opts) {
     const {
         slidersEl, tagArrEl, tagStrEl, tagDetEl,
-        randomizeBtn, generateBtn,
-        onControlChange, onGenerate,
+        nameField, saveBtn, resetBtn, randomizeBtn, renderBtn,
+        onControlChange, onRender, onSave,
     } = opts;
 
     const sliderInputs = {};
+    const cameraInputs = {};
+    let userEditedName = false;
 
     // ── Build seed tag selects ──
 
@@ -63,7 +79,7 @@ export function initGeneratePanel(opts) {
     tagStrEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));
     tagDetEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));
 
-    // ── Build sliders (grouped by section) ──
+    // ── Build parameter sliders (grouped by section) ──
 
     slidersEl.innerHTML = '';
     for (const group of SLIDER_GROUPS) {
@@ -85,53 +101,86 @@ export function initGeneratePanel(opts) {
 
         // Slider rows within this section
         for (const key of group.sliders) {
-            const row = document.createElement('div');
-            row.className = 'gen-slider-row';
-
-            const labelWrap = document.createElement('label');
-            labelWrap.className = 'gen-slider-label';
-
-            const labelText = document.createElement('span');
-            labelText.className = 'gen-slider-name label-info';
-            labelText.textContent = t(`control.${key}`);
-            labelText.setAttribute('data-tooltip', t(`control.${key}.tooltip`));
-            labelText.setAttribute('data-i18n', `control.${key}`);
-            labelText.setAttribute('data-i18n-tooltip', `control.${key}.tooltip`);
-            const icon = document.createElement('span');
-            icon.className = 'info-icon';
-            icon.textContent = 'i';
-            labelText.appendChild(icon);
-
-            const valueSpan = document.createElement('span');
-            valueSpan.className = 'gen-slider-value';
-            valueSpan.textContent = '0.50';
-
-            labelWrap.appendChild(labelText);
-            labelWrap.appendChild(valueSpan);
-
-            const sliderWrap = document.createElement('div');
-            sliderWrap.className = 'gen-slider-track';
-
-            const input = document.createElement('input');
-            input.type = 'range';
-            input.min = '0';
-            input.max = '1';
-            input.step = '0.01';
-            input.value = '0.50';
-            input.id = 'gen-' + key;
-
-            input.addEventListener('input', () => {
-                valueSpan.textContent = parseFloat(input.value).toFixed(2);
-                fireControlChange();
-            });
-
-            sliderInputs[key] = input;
-
-            sliderWrap.appendChild(input);
-            row.appendChild(labelWrap);
-            row.appendChild(sliderWrap);
-            slidersEl.appendChild(row);
+            buildSliderRow(key, 0, 1, 0.01, 0.50, '', sliderInputs);
         }
+    }
+
+    // ── Build camera sliders ──
+
+    const cameraHeader = document.createElement('div');
+    cameraHeader.className = 'gen-section-header';
+    const cameraLabel = document.createElement('span');
+    cameraLabel.className = 'label-info';
+    cameraLabel.setAttribute('data-tooltip', t('section.camera.tooltip'));
+    cameraLabel.setAttribute('data-i18n', 'section.camera');
+    cameraLabel.setAttribute('data-i18n-tooltip', 'section.camera.tooltip');
+    cameraLabel.textContent = t('section.camera');
+    const cameraIcon = document.createElement('span');
+    cameraIcon.className = 'info-icon';
+    cameraIcon.textContent = 'i';
+    cameraLabel.appendChild(cameraIcon);
+    cameraHeader.appendChild(cameraLabel);
+    slidersEl.appendChild(cameraHeader);
+
+    for (const cam of CAMERA_SLIDERS) {
+        buildSliderRow(cam.key, cam.min, cam.max, cam.step, cam.defaultVal, cam.format, cameraInputs);
+    }
+
+    /**
+     * Build a single slider row and append it to slidersEl.
+     */
+    function buildSliderRow(key, min, max, step, defaultVal, format, targetMap) {
+        const row = document.createElement('div');
+        row.className = 'gen-slider-row';
+
+        const labelWrap = document.createElement('label');
+        labelWrap.className = 'gen-slider-label';
+
+        const labelText = document.createElement('span');
+        labelText.className = 'gen-slider-name label-info';
+        labelText.textContent = t(`control.${key}`);
+        labelText.setAttribute('data-tooltip', t(`control.${key}.tooltip`));
+        labelText.setAttribute('data-i18n', `control.${key}`);
+        labelText.setAttribute('data-i18n-tooltip', `control.${key}.tooltip`);
+        const icon = document.createElement('span');
+        icon.className = 'info-icon';
+        icon.textContent = 'i';
+        labelText.appendChild(icon);
+
+        const valueSpan = document.createElement('span');
+        valueSpan.className = 'gen-slider-value';
+        valueSpan.textContent = formatValue(defaultVal, format, step);
+
+        labelWrap.appendChild(labelText);
+        labelWrap.appendChild(valueSpan);
+
+        const sliderWrap = document.createElement('div');
+        sliderWrap.className = 'gen-slider-track';
+
+        const input = document.createElement('input');
+        input.type = 'range';
+        input.min = String(min);
+        input.max = String(max);
+        input.step = String(step);
+        input.value = String(defaultVal);
+        input.id = 'gen-' + key;
+
+        input.addEventListener('input', () => {
+            valueSpan.textContent = formatValue(parseFloat(input.value), format, step);
+            fireControlChange();
+        });
+
+        targetMap[key] = input;
+
+        sliderWrap.appendChild(input);
+        row.appendChild(labelWrap);
+        row.appendChild(sliderWrap);
+        slidersEl.appendChild(row);
+    }
+
+    function formatValue(val, format, step) {
+        if (format === 'deg') return Math.round(val) + '\u00b0';
+        return val.toFixed(2);
     }
 
     // ── Event handlers ──
@@ -152,13 +201,43 @@ export function initGeneratePanel(opts) {
         return controls;
     }
 
+    function readCamera() {
+        return {
+            rotation: parseFloat(cameraInputs.rotation.value),
+            elevation: parseFloat(cameraInputs.elevation.value),
+            zoom: parseFloat(cameraInputs.zoom.value),
+        };
+    }
+
+    function readName() {
+        return nameField.value.trim() || autoName(readSeed(), readControls());
+    }
+
+    function autoName(seed, controls) {
+        const seedStr = seedToString(seed);
+        const rng = mulberry32(xmur3(seedStr + ':title')());
+        return generateTitle(controls, rng, locale);
+    }
+
+    function updateAutoName() {
+        if (userEditedName) return;
+        const seed = readSeed();
+        const controls = readControls();
+        nameField.value = autoName(seed, controls);
+    }
+
     function fireControlChange() {
-        if (onControlChange) onControlChange(readSeed(), readControls());
+        updateAutoName();
+        if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
     }
 
     tagArrEl.addEventListener('change', fireControlChange);
     tagStrEl.addEventListener('change', fireControlChange);
     tagDetEl.addEventListener('change', fireControlChange);
+
+    nameField.addEventListener('input', () => {
+        userEditedName = nameField.value.trim().length > 0;
+    });
 
     // ── Randomize ──
 
@@ -174,26 +253,56 @@ export function initGeneratePanel(opts) {
             if (valueSpan) valueSpan.textContent = val.toFixed(2);
         }
 
+        // Reset camera to defaults
+        for (const cam of CAMERA_SLIDERS) {
+            cameraInputs[cam.key].value = String(cam.defaultVal);
+            const valueSpan = cameraInputs[cam.key].closest('.gen-slider-row').querySelector('.gen-slider-value');
+            if (valueSpan) valueSpan.textContent = formatValue(cam.defaultVal, cam.format, cam.step);
+        }
+
+        // Reset name to auto-generated
+        userEditedName = false;
         fireControlChange();
     }
 
     randomizeBtn.addEventListener('click', randomize);
 
-    // ── Generate ──
+    // ── Render ──
 
-    generateBtn.addEventListener('click', () => {
-        if (onGenerate) onGenerate(readSeed(), readControls());
+    renderBtn.addEventListener('click', () => {
+        if (onRender) onRender(readSeed(), readControls(), readCamera(), readName());
     });
+
+    // ── Save ──
+
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            if (onSave) onSave(readSeed(), readControls(), readCamera(), readName());
+        });
+    }
+
+    // ── Reset ──
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            randomize();
+        });
+    }
+
+    // ── Generate initial auto-name ──
+    updateAutoName();
 
     // ── Public API ──
 
     return {
         readSeed,
         readControls,
+        readCamera,
+        readName,
         randomize,
 
-        /** Set all controls + seed from external data. */
-        setValues(seed, controls) {
+        /** Set all controls + seed + camera + name from external data. */
+        setValues(seed, controls, camera, name) {
             if (seed && Array.isArray(seed)) {
                 tagArrEl.value = String(seed[0]);
                 tagStrEl.value = String(seed[1]);
@@ -208,11 +317,27 @@ export function initGeneratePanel(opts) {
                     }
                 }
             }
+            if (camera) {
+                for (const cam of CAMERA_SLIDERS) {
+                    if (camera[cam.key] !== undefined && cameraInputs[cam.key]) {
+                        cameraInputs[cam.key].value = String(camera[cam.key]);
+                        const valueSpan = cameraInputs[cam.key].closest('.gen-slider-row').querySelector('.gen-slider-value');
+                        if (valueSpan) valueSpan.textContent = formatValue(parseFloat(String(camera[cam.key])), cam.format, cam.step);
+                    }
+                }
+            }
+            if (name) {
+                nameField.value = name;
+                userEditedName = true;
+            } else {
+                userEditedName = false;
+                updateAutoName();
+            }
         },
 
-        /** Enable or disable the generate button. */
-        setGenerateEnabled(enabled) {
-            generateBtn.disabled = !enabled;
+        /** Enable or disable the render button. */
+        setRenderEnabled(enabled) {
+            renderBtn.disabled = !enabled;
         },
     };
 }

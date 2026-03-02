@@ -6,9 +6,10 @@ uniform float uFoldProgress;
 uniform float uWobbleAmp;
 
 varying float vFadeDir;
+varying vec2 vUv;
 
 void main() {
-    vec4 glow = texture2D(uGlowMap, gl_PointCoord);
+    vec4 glow = texture2D(uGlowMap, vUv);   // was: gl_PointCoord
     float fade = uMorphFade;
     if (vFadeDir < -0.5) fade *= (1.0 - uMorphT);   // dying: fade out
     else if (vFadeDir > 0.5) fade *= uMorphT;        // spawning: fade in

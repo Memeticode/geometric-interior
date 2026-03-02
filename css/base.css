@@ -47,6 +47,9 @@ html[data-theme="light"] {
 /* ── Universal box-sizing ── */
 *, *::before, *::after { box-sizing: border-box; }
 
+/* ── Suppress browser focus ring on mouse/touch clicks, keep for keyboard ── */
+:focus:not(:focus-visible) { outline: none; }
+
 /* ── Smooth theme transitions ── */
 body, .app-header, .app-footer, .panel, button, select, input, textarea,
 .modal-box, .profile-card, .theme-switcher, .theme-slider {
@@ -116,7 +119,7 @@ body {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23b482ff' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
 }
-.select-base:focus {
+.select-base:focus-visible {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-bg), 0 1px 4px rgba(0, 0, 0, 0.18);
 }

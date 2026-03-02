@@ -185,8 +185,11 @@ const genSlidersEl = document.getElementById('genSliders');
 const genTagArrEl = document.getElementById('genTagArr');
 const genTagStrEl = document.getElementById('genTagStr');
 const genTagDetEl = document.getElementById('genTagDet');
+const genNameField = document.getElementById('genNameField');
+const genSaveBtn = document.getElementById('genSaveBtn');
+const genResetBtn = document.getElementById('genResetBtn');
 const genRandomizeBtn = document.getElementById('genRandomizeBtn');
-const genGenerateBtn = document.getElementById('genGenerateBtn');
+const genRenderBtn = document.getElementById('genRenderBtn');
 const genPreviewCanvas = document.getElementById('genPreviewCanvas');
 const genProgressOverlay = document.getElementById('genProgressOverlay');
 const genProgressFill = document.getElementById('genProgressFill');
@@ -1189,21 +1192,25 @@ function initGenerate() {
         tagArrEl: genTagArrEl,
         tagStrEl: genTagStrEl,
         tagDetEl: genTagDetEl,
+        nameField: genNameField,
+        saveBtn: genSaveBtn,
+        resetBtn: genResetBtn,
         randomizeBtn: genRandomizeBtn,
-        generateBtn: genGenerateBtn,
-        onControlChange(seed, controls) {
+        renderBtn: genRenderBtn,
+        onControlChange(seed, controls, camera) {
             if (workerBridge && workerBridge.ready) {
                 workerBridge.sendRender(seed, controls, getLocale());
+                workerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
             }
         },
-        onGenerate(seed, controls) {
+        onRender(seed, controls, camera, name) {
             if (!renderQueue) return;
             if (activeType === 'animation') {
                 // Build a simple animation from the current config
                 const animation = buildSimpleAnimation(seed, controls);
                 renderQueue.enqueueAnimation(animation);
             } else {
-                renderQueue.enqueue(seed, controls);
+                renderQueue.enqueue(seed, controls, name);
             }
         },
     });
@@ -1233,10 +1240,12 @@ function initGenerate() {
             locale: getLocale(),
         });
 
-        // Send initial preview render
+        // Send initial preview render + camera state
         const seed = genPanel.readSeed();
         const controls = genPanel.readControls();
+        const camera = genPanel.readCamera();
         workerBridge.sendRenderImmediate(seed, controls, getLocale());
+        workerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
     });
 }
 

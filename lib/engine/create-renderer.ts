@@ -160,7 +160,6 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
             if (_sizeVec.x !== displayW || _sizeVec.y !== displayH) {
                 renderer.setSize(displayW, displayH, false);
                 composer.setSize(displayW, displayH);
-                updateGlowViewportHeight(displayH);
             }
         }
     }
@@ -224,8 +223,6 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         if (currentRefs.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = foldProgress;
         if (currentRefs.glowMat) {
             currentRefs.glowMat.uniforms.uFoldProgress.value = foldProgress;
-            renderer.getSize(_sizeVec);
-            currentRefs.glowMat.uniforms.uViewportHeight.value = _sizeVec.y * renderer.getPixelRatio();
         }
         if (currentRefs.tendrilMat) { currentRefs.tendrilMat.opacity = foldProgress; currentRefs.tendrilMat.transparent = true; }
         if (currentRefs.sphereMat) { currentRefs.sphereMat.opacity = foldProgress; currentRefs.sphereMat.transparent = true; }
@@ -264,26 +261,10 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         composer.setSize(width, height);
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
-        updateGlowViewportHeight(height);
-    }
-
-    /** Push current framebuffer height into all active glow materials for resolution-independent point sizing. */
-    function updateGlowViewportHeight(height: number): void {
-        const fbHeight = height * renderer.getPixelRatio();
-        if (currentRefs?.glowMat) {
-            currentRefs.glowMat.uniforms.uViewportHeight.value = fbHeight;
-        }
-        if (morphState) {
-            if (morphState.refsA.glowMat) morphState.refsA.glowMat.uniforms.uViewportHeight.value = fbHeight;
-            if (morphState.refsB.glowMat) morphState.refsB.glowMat.uniforms.uViewportHeight.value = fbHeight;
-            if (morphState.morphGlowMat) morphState.morphGlowMat.uniforms.uViewportHeight.value = fbHeight;
-        }
     }
 
     function setDPR(newDpr: number): void {
         renderer.setPixelRatio(Math.min(newDpr, 2));
-        renderer.getSize(_sizeVec);
-        updateGlowViewportHeight(_sizeVec.y);
     }
 
     // --- Morph transition support ---
@@ -293,7 +274,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         refsB: SceneRefs;
         paramsA: ReturnType<typeof deriveParams>;
         paramsB: ReturnType<typeof deriveParams>;
-        morphGlow: THREE.Points | null;
+        morphGlow: THREE.Mesh | null;
         morphGlowMat: THREE.ShaderMaterial | null;
     } | null = null;
 
@@ -351,25 +332,18 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
         const glowDataA = resultA.refs.glowPointData || [];
         const glowDataB = resultB.refs.glowPointData || [];
-        let morphGlow: THREE.Points | null = null;
+        let morphGlow: THREE.Mesh | null = null;
         let morphGlowMat: THREE.ShaderMaterial | null = null;
 
         if (glowDataA.length > 0 || glowDataB.length > 0) {
             const matching = matchDots(glowDataA, glowDataB);
             const morphGlowGeom = buildMorphGlowGeometry(glowDataA, glowDataB, matching);
             morphGlowMat = createDemoGlowMaterial(cachedGlowTexture);
-            morphGlow = new THREE.Points(morphGlowGeom, morphGlowMat);
+            morphGlow = new THREE.Mesh(morphGlowGeom, morphGlowMat);
             morphGlow.frustumCulled = false;
             morphGlow.renderOrder = 0;
             scene.add(morphGlow);
         }
-
-        // Set viewport height on all morph glow materials
-        renderer.getSize(_sizeVec);
-        const fbH = _sizeVec.y * renderer.getPixelRatio();
-        if (resultA.refs.glowMat) resultA.refs.glowMat.uniforms.uViewportHeight.value = fbH;
-        if (resultB.refs.glowMat) resultB.refs.glowMat.uniforms.uViewportHeight.value = fbH;
-        if (morphGlowMat) morphGlowMat.uniforms.uViewportHeight.value = fbH;
 
         if (resultA.refs.glowPoints) resultA.refs.glowPoints.visible = false;
         if (resultB.refs.glowPoints) resultB.refs.glowPoints.visible = false;

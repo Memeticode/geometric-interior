@@ -172,7 +172,76 @@ All tooltip text is localized via `data-i18n-tooltip` keys. English defaults:
 
 ---
 
-## Part 2: Animation Editor
+## Part 2: Gallery Generate Panel
+
+### Current State
+
+The gallery generate panel (`/gallery/images/generate`) provides a dedicated configuration and rendering interface for creating new images. It uses the composable control group pattern from the image editor panel.
+
+**Key files**: `index.html` (generate panel HTML), `src/gallery/generate-panel.js`, `src/gallery/gallery-main.js`, `src/gallery/gallery-worker-bridge.js`, `css/generate.css`
+
+### Layout
+
+The panel has two layers: a full-width header bar and a 3-column body.
+
+```
+Name + Seed Header (full-width)
+┌──────────────────────────────────────────────────────────┐
+│ NAME                     SEED                            │
+│ [Auto-generated title ]  [Swirling▾] · [Crystal▾] ·     │
+│                          [Radiant▾]                      │
+└──────────────────────────────────────────────────────────┘
+
+┌──── Config (280px) ──┬──── Preview (flex:1) ──┬── Queue (280px) ──┐
+│                      │                        │                   │
+│  Config Utility      │   ┌──────────────┐     │   job items...    │
+│  [Save][Reset][Rand] │   │  canvas      │     │                   │
+│                      │   │  420 × 270   │     │                   │
+│  PARAMETERS          │   └──────────────┘     │                   │
+│  GEOMETRY            │                        │                   │
+│   Density   ░░░▓░░   │                        │                   │
+│   Fracture  ░░▓░░░   │                        │                   │
+│   Scale     ░░░▓░░   │                        │                   │
+│   Division  ░░░▓░░   │                        │                   │
+│   Faceting  ░░░▓░░   │                        │                   │
+│  LIGHT               │                        │                   │
+│   Luminosity ░░▓░░   │                        │                   │
+│   Bloom      ░░▓░░   │                        │                   │
+│  COLOR               │                        │                   │
+│   Hue       🌈▓🌈    │                        │                   │
+│   Spectrum  ░░▓░░    │                        │                   │
+│   Chroma    ░░▓░░    │                        │                   │
+│  SPACE               │                        │                   │
+│   Coherence ░░▓░░    │                        │                   │
+│   Flow      ░░▓░░    │                        │                   │
+│  CAMERA              │                        │                   │
+│   Rotation  ▓░░░░    │                        │                   │
+│   Elevation ░░▓░░    │                        │                   │
+│   Zoom      ░░░▓░    │                        │                   │
+│                      │                        │                   │
+│  [     Render     ]  │                        │                   │
+└──────────────────────┴────────────────────────┴───────────────────┘
+```
+
+### Components
+
+**Name + Seed Header**: Full-width bar above the 3-column body, mirroring the gallery browse mode's `selected-header` pattern. Name is an editable textarea that auto-populates via `generateTitle()` when seed/controls change. User edits override auto-generation. Seed is the standard 3-dropdown row.
+
+**Config Utility**: Reuses the `.control-group-utility` pattern from the image editor. Save persists as a user profile, Reset randomizes, Randomize randomizes seed + all sliders + resets camera to defaults.
+
+**Parameter Sliders**: Same 4 grouped sections (Geometry, Light, Color, Space) with 11 total sliders, built dynamically by `generate-panel.js`.
+
+**Camera Sliders**: Rotation (0–360°), Elevation (-90–90°), Zoom (0.30–3.00). Camera state is sent to the worker via `sendCameraState()`.
+
+**Render Button**: Dispatches the current configuration (seed + controls + camera + name) to the render queue. The name from the Name field is passed through to the render job.
+
+**Preview Canvas**: 420×270 live preview, updated on every control change via debounced `sendRender` + `sendCameraState`.
+
+**Render Queue**: Right column showing queued/active/completed render jobs.
+
+---
+
+## Part 3: Animation Editor
 
 ### Current State
 
@@ -372,7 +441,7 @@ The animation editor is functional but has refinement opportunities:
 
 ---
 
-## Part 3: Component Specifications
+## Part 4: Component Specifications
 
 ### Label Info — Implemented
 
@@ -576,7 +645,7 @@ Compact inline select for easing type.
 
 ---
 
-## Part 4: Interaction Patterns
+## Part 5: Interaction Patterns
 
 ### Image Editor — Implemented
 

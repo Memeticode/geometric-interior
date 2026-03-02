@@ -92,7 +92,7 @@ export function createDemoEdgeMaterial(): THREE.ShaderMaterial {
 }
 
 /**
- * Glow point material for dot halos (uses Points with gl_PointSize).
+ * Glow material for dot halos (instanced billboard quads).
  */
 export function createDemoGlowMaterial(glowTexture: THREE.Texture): THREE.ShaderMaterial {
     return new THREE.ShaderMaterial({
@@ -103,7 +103,6 @@ export function createDemoGlowMaterial(glowTexture: THREE.Texture): THREE.Shader
             uTime: { value: 0.0 },
             uFoldProgress: { value: 1.0 },
             uWobbleAmp: { value: 1.0 },
-            uViewportHeight: { value: 700.0 },
         },
         vertexShader: demoGlowVertSrc,
         fragmentShader: demoGlowFragSrc,

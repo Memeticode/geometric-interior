@@ -1,7 +1,0 @@
-Meditation — contemplative stillness (sparse, achromatic, scattered starpoints)
-Shadow Lattice — wide web of silvery lines against darkness
-Dark Crystal — vertical crystalline monolith from darkness (same params as Shadow Lattice, different seed)
-Night Sapphire — deep blue-purple gem in darkness
-Night Bloom — rose bloom in moonlit darkness
-Chartreuse Current — breakthrough vivid lime green (the one vivid, bright piece)
-Tempest — turbulent teal storm (maximum kinetic energy)

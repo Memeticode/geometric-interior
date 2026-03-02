@@ -70,24 +70,48 @@ export function buildDemoScene(
         scene.add(sphereInst);
     }
 
-    // 4. Build glow points
+    // 4. Build glow billboards (instanced quads — resolution-independent)
     if (!glowTexture) glowTexture = createGlowTexture();
-    let glowPoints: THREE.Points | null = null;
+    let glowPoints: THREE.Mesh | null = null;
     let glowMat: THREE.ShaderMaterial | null = null;
     if (glowPointData.length > 0) {
-        const positions = new Float32Array(glowPointData.length * 3);
-        const sizes = new Float32Array(glowPointData.length);
-        for (let i = 0; i < glowPointData.length; i++) {
-            positions[i * 3] = glowPointData[i].position.x;
-            positions[i * 3 + 1] = glowPointData[i].position.y;
-            positions[i * 3 + 2] = glowPointData[i].position.z;
-            sizes[i] = glowPointData[i].size;
+        const count = glowPointData.length;
+        const centers = new Float32Array(count * 3);
+        const sizes = new Float32Array(count);
+        for (let i = 0; i < count; i++) {
+            centers[i * 3]     = glowPointData[i].position.x;
+            centers[i * 3 + 1] = glowPointData[i].position.y;
+            centers[i * 3 + 2] = glowPointData[i].position.z;
+            sizes[i]           = glowPointData[i].size;
         }
-        const glowGeom = new THREE.BufferGeometry();
-        glowGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        glowGeom.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+
+        const glowGeom = new THREE.InstancedBufferGeometry();
+
+        // Per-vertex: quad corner offsets
+        glowGeom.setAttribute('aQuadOffset',
+            new THREE.BufferAttribute(new Float32Array([
+                -0.5, -0.5,  0.5, -0.5,  0.5, 0.5,  -0.5, 0.5,
+            ]), 2));
+        glowGeom.setIndex(new THREE.BufferAttribute(new Uint16Array([0, 1, 2, 0, 2, 3]), 1));
+
+        // Per-instance: dot data
+        glowGeom.setAttribute('aCenter',
+            new THREE.InstancedBufferAttribute(centers, 3));
+        glowGeom.setAttribute('aSize',
+            new THREE.InstancedBufferAttribute(sizes, 1));
+
+        // Morph attributes (defaults for static rendering — shader handles aMatchFlag < 0.5)
+        glowGeom.setAttribute('aCenterTo',
+            new THREE.InstancedBufferAttribute(new Float32Array(count * 3), 3));
+        glowGeom.setAttribute('aSizeTo',
+            new THREE.InstancedBufferAttribute(new Float32Array(count), 1));
+        glowGeom.setAttribute('aMatchFlag',
+            new THREE.InstancedBufferAttribute(new Float32Array(count), 1));  // all 0
+        glowGeom.setAttribute('aFadeDir',
+            new THREE.InstancedBufferAttribute(new Float32Array(count), 1));  // all 0
+
         glowMat = createDemoGlowMaterial(glowTexture);
-        glowPoints = new THREE.Points(glowGeom, glowMat);
+        glowPoints = new THREE.Mesh(glowGeom, glowMat);
         glowPoints.frustumCulled = false;
         glowPoints.renderOrder = 0;
         scene.add(glowPoints);

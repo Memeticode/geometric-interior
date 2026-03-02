@@ -156,6 +156,14 @@ export function initGalleryWorker(canvas) {
             },
 
             /**
+             * Send a camera state update to the worker.
+             */
+            sendCameraState(zoom, rotation, elevation) {
+                if (!ready) return;
+                worker.postMessage({ type: 'set-camera', zoom, orbitY: rotation, orbitX: elevation });
+            },
+
+            /**
              * Dispatch a full generation job to the worker.
              */
             sendGenerate({ requestId, seed, controls, locale, staticWidth, staticHeight, spriteWidth, spriteHeight, frameCount }) {

@@ -158,34 +158,61 @@
             </div>
             <!-- Generate panel (hidden by default, shown when "Generate" mode active) -->
             <div class="generate-panel hidden" id="generatePanel">
-                <div class="generate-config" id="generateConfig">
-                    <div class="gen-heading">
-                        <span class="label-info" data-tooltip="" data-i18n="generate.seed" data-i18n-tooltip="generate.seed.tooltip">Seed<span class="info-icon">i</span></span>
+                <!-- Full-width header bar: Name + Seed -->
+                <div class="gen-header" id="genHeader">
+                    <div class="gen-header-name">
+                        <label class="gen-header-label"><span class="label-info" data-tooltip="A name for this arrangement of light and form." data-i18n="control.name" data-i18n-tooltip="control.name.tooltip">Name<span class="info-icon">i</span></span></label>
+                        <textarea id="genNameField" class="auto-grow gen-name-field" rows="1" maxlength="40"
+                            placeholder="Auto-generated title" data-i18n-placeholder="control.name.placeholder"></textarea>
                     </div>
-                    <div class="gen-seed-row" id="genSeedRow">
-                        <select id="genTagArr" class="select-base seed-tag-select"></select>
-                        <span class="seed-tag-sep">&middot;</span>
-                        <select id="genTagStr" class="select-base seed-tag-select"></select>
-                        <span class="seed-tag-sep">&middot;</span>
-                        <select id="genTagDet" class="select-base seed-tag-select"></select>
-                    </div>
-                    <div class="gen-heading">
-                        <span class="label-info" data-tooltip="" data-i18n="generate.parameters" data-i18n-tooltip="generate.parameters.tooltip">Parameters<span class="info-icon">i</span></span>
-                    </div>
-                    <div class="gen-sliders" id="genSliders"></div>
-                    <div class="gen-actions">
-                        <button id="genRandomizeBtn" class="gen-btn">Randomize</button>
-                        <button id="genGenerateBtn" class="gen-btn gen-btn-primary">Generate</button>
+                    <div class="gen-header-seed">
+                        <label class="gen-header-label"><span class="label-info" data-tooltip="A three-word compositional seed. Each word controls an independent random stream and visual bias." data-i18n="control.seed" data-i18n-tooltip="control.seed.tooltip">Seed<span class="info-icon">i</span></span></label>
+                        <div class="gen-seed-row" id="genSeedRow">
+                            <select id="genTagArr" class="select-base seed-tag-select"></select>
+                            <span class="seed-tag-sep">&middot;</span>
+                            <select id="genTagStr" class="select-base seed-tag-select"></select>
+                            <span class="seed-tag-sep">&middot;</span>
+                            <select id="genTagDet" class="select-base seed-tag-select"></select>
+                        </div>
                     </div>
                 </div>
-                <div class="gen-preview-wrap" id="genPreviewWrap">
-                    <canvas id="genPreviewCanvas" width="420" height="270"></canvas>
-                    <div class="gen-progress-overlay hidden" id="genProgressOverlay">
-                        <div class="gen-progress-bar"><div class="gen-progress-fill" id="genProgressFill"></div></div>
-                        <div class="gen-progress-label" id="genProgressLabel"></div>
+                <!-- 3-column body: config | preview | queue -->
+                <div class="gen-body">
+                    <div class="generate-config" id="generateConfig">
+                        <!-- Config Utility: Save / Reset / Randomize -->
+                        <div class="control-group control-group-utility">
+                            <button id="genSaveBtn" disabled data-tooltip="Save as user profile (local storage)" data-i18n-tooltip="profile.save.tooltip">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/><path d="M5 1v4h6V1"/><rect x="4" y="9" width="8" height="4"/></svg>
+                                <span data-i18n="config.save">Save</span>
+                            </button>
+                            <button id="genResetBtn" disabled data-tooltip="Reset changes" data-i18n-tooltip="profile.reset.tooltip">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 3v4h4"/><path d="M2.5 10.5a6 6 0 1 0 1.5-6.5L1 7"/></svg>
+                                <span data-i18n="config.reset">Reset</span>
+                            </button>
+                            <button id="genRandomizeBtn" data-tooltip="Randomize image" data-i18n-tooltip="stage.randomize">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M13.5 2.5v3.5h-3.5"/><path d="M2.5 8a5.5 5.5 0 0 1 9.37-3.9l1.63 1.9"/><path d="M2.5 13.5V10h3.5"/><path d="M13.5 8a5.5 5.5 0 0 1-9.37 3.9L2.5 10"/></svg>
+                                <span data-i18n="config.randomize">Randomize</span>
+                            </button>
+                        </div>
+                        <!-- Parameters -->
+                        <div class="gen-heading">
+                            <span class="label-info" data-tooltip="" data-i18n="generate.parameters" data-i18n-tooltip="generate.parameters.tooltip">Parameters<span class="info-icon">i</span></span>
+                        </div>
+                        <div class="gen-sliders" id="genSliders"></div>
+                        <!-- Render button -->
+                        <div class="gen-render-action">
+                            <button id="genRenderBtn" class="gen-render-btn" data-i18n="generate.render">Render</button>
+                        </div>
                     </div>
+                    <div class="gen-preview-wrap" id="genPreviewWrap">
+                        <canvas id="genPreviewCanvas" width="420" height="270"></canvas>
+                        <div class="gen-progress-overlay hidden" id="genProgressOverlay">
+                            <div class="gen-progress-bar"><div class="gen-progress-fill" id="genProgressFill"></div></div>
+                            <div class="gen-progress-label" id="genProgressLabel"></div>
+                        </div>
+                    </div>
+                    <div class="gen-queue" id="genQueue"></div>
                 </div>
-                <div class="gen-queue" id="genQueue"></div>
             </div>
         </main>
 
