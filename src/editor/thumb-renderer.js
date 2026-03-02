@@ -95,7 +95,7 @@ export function createThumbRenderer() {
         deleteThumb(key);
     }
 
-    // Expose for build-time portrait generation (scripts/gen-thumbs.mjs)
+    // Expose for build-time portrait generation (scripts/gen-starter-profile-images.mjs)
     window.__renderPortraitThumb = function(profileName) {
         const portraits = loadPortraits();
         const p = portraits[profileName];

@@ -103,6 +103,9 @@ export function validateStillConfig(data: unknown): ValidationResult {
         } else {
             checkNum(errors, 'camera', data.camera, 'zoom', 0.3, 3.0);
             checkNum(errors, 'camera', data.camera, 'rotation', 0, 360);
+            if (data.camera.elevation != null) {
+                checkNum(errors, 'camera', data.camera, 'elevation', -90, 90);
+            }
         }
     }
 

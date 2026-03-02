@@ -27,6 +27,7 @@ const SUITES = [
     'test-palettes.mjs',
     'test-seed-tags.mjs',
     'test-timeline.mjs',
+    'test-portrait-assets.mjs',
 ];
 
 let totalPassed = 0, totalFailed = 0;

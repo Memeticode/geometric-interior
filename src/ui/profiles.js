@@ -235,11 +235,12 @@ export function removeImageFromAnimProfiles(imageName) {
  */
 
 export function loadPortraits() {
-    return structuredClone(starterProfiles);
+    const { order, ...profiles } = starterProfiles;
+    return structuredClone(profiles);
 }
 
 export function getPortraitNames() {
-    return Object.keys(starterProfiles);
+    return starterProfiles.order ?? Object.keys(starterProfiles);
 }
 
 export function ensureStarterProfiles() {

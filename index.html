@@ -89,8 +89,28 @@
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M6 3l5 5-5 5"/></svg>
                         </button>
                         <span class="header-nav-pipe">|</span>
-                        <div class="custom-dropdown" id="resolutionDropdown" data-tooltip="Display resolution" data-tooltip-pos="above">
-                            <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox" aria-expanded="false" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel">
+                        <button class="gallery-arrow" id="slideshowBtn" data-tooltip="Start slideshow" data-tooltip-pos="above" aria-label="Start slideshow">
+                            <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M5 3l8 5-8 5z"/></svg>
+                        </button>
+                        <div class="custom-dropdown" id="slideshowDropdown">
+                            <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox" aria-expanded="false" aria-label="Slideshow interval" data-tooltip="Slideshow interval" data-tooltip-pos="above">
+                                <span class="custom-dropdown-label">2s</span>
+                            </button>
+                            <div class="custom-dropdown-menu dropdown-down hidden" role="listbox">
+                                <button class="custom-dropdown-item" role="option" data-value="1" aria-selected="false">1s</button>
+                                <button class="custom-dropdown-item active" role="option" data-value="2" aria-selected="true">2s</button>
+                                <button class="custom-dropdown-item" role="option" data-value="3" aria-selected="false">3s</button>
+                                <button class="custom-dropdown-item" role="option" data-value="5" aria-selected="false">5s</button>
+                                <button class="custom-dropdown-item" role="option" data-value="10" aria-selected="false">10s</button>
+                                <button class="custom-dropdown-item" role="option" data-value="30" aria-selected="false">30s</button>
+                                <button class="custom-dropdown-item" role="option" data-value="60" aria-selected="false">1m</button>
+                                <button class="custom-dropdown-item" role="option" data-value="120" aria-selected="false">2m</button>
+                                <button class="custom-dropdown-item" role="option" data-value="300" aria-selected="false">5m</button>
+                            </div>
+                        </div>
+                        <span class="header-nav-pipe">|</span>
+                        <div class="custom-dropdown" id="resolutionDropdown">
+                            <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox" aria-expanded="false" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel" data-tooltip="Display resolution" data-tooltip-pos="above">
                                 <span class="custom-dropdown-label">HD</span>
                             </button>
                             <div class="custom-dropdown-menu dropdown-down hidden" role="listbox">
@@ -99,22 +119,6 @@
                                 <button class="custom-dropdown-item" role="option" data-value="fhd" aria-selected="false">FHD</button>
                                 <button class="custom-dropdown-item" role="option" data-value="qhd" aria-selected="false">QHD</button>
                                 <button class="custom-dropdown-item" role="option" data-value="4k" aria-selected="false">4K</button>
-                            </div>
-                        </div>
-                        <span class="header-nav-pipe">|</span>
-                        <button class="gallery-arrow" id="slideshowBtn" data-tooltip="Start slideshow" data-tooltip-pos="above" aria-label="Start slideshow">
-                            <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M5 3l8 5-8 5z"/></svg>
-                        </button>
-                        <div class="custom-dropdown" id="slideshowDropdown" data-tooltip="Slideshow interval" data-tooltip-pos="above">
-                            <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox" aria-expanded="false" aria-label="Slideshow interval">
-                                <span class="custom-dropdown-label">2s</span>
-                            </button>
-                            <div class="custom-dropdown-menu dropdown-down hidden" role="listbox">
-                                <button class="custom-dropdown-item" role="option" data-value="1" aria-selected="false">1s</button>
-                                <button class="custom-dropdown-item active" role="option" data-value="2" aria-selected="true">2s</button>
-                                <button class="custom-dropdown-item" role="option" data-value="3" aria-selected="false">3s</button>
-                                <button class="custom-dropdown-item" role="option" data-value="4" aria-selected="false">4s</button>
-                                <button class="custom-dropdown-item" role="option" data-value="5" aria-selected="false">5s</button>
                             </div>
                         </div>
                         <span class="header-nav-pipe">|</span>
@@ -141,27 +145,7 @@
                 </div>
             </div>
             <div class="gallery-content" id="galleryContent">
-                <!-- Single carousel for all profiles -->
-                <div class="carousel-strip">
-                    <div class="carousel-container">
-                        <button class="gallery-arrow carousel-nav-arrow carousel-nav-left" id="carouselNavLeft" aria-label="Previous">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M10 3l-5 5 5 5"/></svg>
-                        </button>
-                        <div class="carousel-viewport">
-                            <div class="carousel-track" id="carouselTrack"></div>
-                        </div>
-                        <button class="gallery-arrow carousel-nav-arrow carousel-nav-right" id="carouselNavRight" aria-label="Next">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 3l5 5-5 5"/></svg>
-                        </button>
-                    </div>
-                    <button class="view-all-toggle" id="viewAllToggle" data-tooltip="View all" data-tooltip-pos="above" style="display:none" aria-label="View all">
-                        <span class="chevron-icon"><span class="chevron-bar chevron-l"></span><span class="chevron-bar chevron-r"></span></span>
-                    </button>
-                </div>
-                <!-- Inline view-all grid -->
-                <div class="view-all-inline" id="viewAllInline">
-                    <div class="view-all-grid" id="viewAllGrid"></div>
-                </div>
+                <carousel-dropdown-browser id="carouselBrowser"></carousel-dropdown-browser>
                 <!-- Animations -->
                 <div class="gallery-section" id="animSection" style="display:none">
                     <div class="gallery-section-header" data-target="animGallery" aria-expanded="true">

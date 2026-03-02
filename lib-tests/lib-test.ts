@@ -239,12 +239,14 @@ interface ProfileEntry {
 }
 
 function loadAllProfiles(): { starters: ProfileEntry[]; saved: ProfileEntry[] } {
-    const starters: ProfileEntry[] = Object.entries(starterProfiles).map(([name, p]) => ({
-        name,
-        seed: p.seed,
-        controls: p.controls as Controls,
-        paletteTweaks: p.paletteTweaks,
-    }));
+    const starters: ProfileEntry[] = Object.entries(starterProfiles)
+        .filter(([name]) => name !== 'order')
+        .map(([name, p]) => ({
+            name,
+            seed: (p as any).seed,
+            controls: (p as any).controls as Controls,
+            paletteTweaks: (p as any).paletteTweaks,
+        }));
 
     const saved: ProfileEntry[] = [];
     try {

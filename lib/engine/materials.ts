@@ -103,6 +103,7 @@ export function createDemoGlowMaterial(glowTexture: THREE.Texture): THREE.Shader
             uTime: { value: 0.0 },
             uFoldProgress: { value: 1.0 },
             uWobbleAmp: { value: 1.0 },
+            uViewportHeight: { value: 700.0 },
         },
         vertexShader: demoGlowVertSrc,
         fragmentShader: demoGlowFragSrc,

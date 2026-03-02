@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Constellation — Dev Exploration</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #050608;
+            overflow: hidden;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        .tooltip {
+            position: fixed;
+            pointer-events: none;
+            color: rgba(233, 238, 252, 0.85);
+            font-size: 0.75rem;
+            letter-spacing: 0.04em;
+            padding: 0.35rem 0.6rem;
+            background: rgba(11, 13, 18, 0.85);
+            border: 1px solid rgba(180, 130, 255, 0.2);
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            transform: translate(-50%, -140%);
+            white-space: nowrap;
+        }
+        .tooltip.visible { opacity: 1; }
+        .back {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            color: rgba(233, 238, 252, 0.3);
+            text-decoration: none;
+            font-size: 0.75rem;
+            transition: color 0.2s;
+            z-index: 10;
+        }
+        .back:hover { color: rgb(180, 130, 255); }
+    </style>
+</head>
+<body>
+    <a class="back" href="/dev-exploration/">&larr; Experiments</a>
+    <canvas id="canvas"></canvas>
+    <div class="tooltip" id="tooltip"></div>
+
+    <script type="module">
+        // ── Load starter profiles ──
+        const profileData = await fetch('/src/core/starter-profiles.json').then(r => r.json());
+        const names = profileData.order;
+        const profiles = names.map(name => ({
+            name,
+            controls: profileData[name].controls,
+            seed: profileData[name].seed,
+        }));
+
+        // ── Derive 2D positions from parameter space ──
+        // Use two composite axes:
+        //   X: coherence (order) vs fracture+flow (chaos)
+        //   Y: luminosity+bloom (brightness) vs density (weight)
+        function project(c) {
+            const chaos = (c.fracture + c.flow) / 2;
+            const order = c.coherence;
+            const x = order - chaos;                    // [-1, 1] order → chaos
+            const light = (c.luminosity + c.bloom) / 2;
+            const y = light - c.density;                // [-1, 1] bright → dense
+            return [x, y];
+        }
+
+        const projected = profiles.map(p => project(p.controls));
+
+        // Normalize to [0,1]
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (const [x, y] of projected) {
+            minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+        }
+        const rangeX = maxX - minX || 1;
+        const rangeY = maxY - minY || 1;
+        const normalized = projected.map(([x, y]) => [
+            (x - minX) / rangeX,
+            (y - minY) / rangeY,
+        ]);
+
+        // ── HSL to RGB for dot colors ──
+        function hslToRgb(h, s, l) {
+            const a = s * Math.min(l, 1 - l);
+            const f = n => {
+                const k = (n + h / 30) % 12;
+                return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+            };
+            return [f(0), f(8), f(4)];
+        }
+
+        // ── Canvas setup ──
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
+        const dpr = window.devicePixelRatio || 1;
+
+        function resize() {
+            canvas.width = window.innerWidth * dpr;
+            canvas.height = window.innerHeight * dpr;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // ── Node data ──
+        const padding = 0.15; // fraction of canvas reserved as margin
+        const nodes = profiles.map((p, i) => {
+            const baseHue = p.controls.hue * 360;
+            const sat = 0.6 + p.controls.chroma * 0.3;
+            const [r, g, b] = hslToRgb(baseHue, sat, 0.6);
+            return {
+                name: p.name,
+                nx: normalized[i][0],
+                ny: normalized[i][1],
+                r: Math.round(r * 255),
+                g: Math.round(g * 255),
+                b: Math.round(b * 255),
+                baseRadius: 4 + p.controls.density * 12,
+                phase: Math.random() * Math.PI * 2,
+                selected: false,
+            };
+        });
+
+        function getNodePos(node) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const px = w * padding;
+            const py = h * padding;
+            return [
+                px + node.nx * (w - 2 * px),
+                py + (1 - node.ny) * (h - 2 * py),  // invert Y so bright = top
+            ];
+        }
+
+        // ── Interaction ──
+        let hoveredIdx = -1;
+        let selectedIdx = -1;
+
+        canvas.addEventListener('mousemove', (e) => {
+            const mx = e.clientX * dpr;
+            const my = e.clientY * dpr;
+            let closest = -1;
+            let closestDist = 40 * dpr;
+            for (let i = 0; i < nodes.length; i++) {
+                const [x, y] = getNodePos(nodes[i]);
+                const d = Math.hypot(mx - x, my - y);
+                if (d < closestDist) {
+                    closest = i;
+                    closestDist = d;
+                }
+            }
+            hoveredIdx = closest;
+            if (closest >= 0) {
+                tooltip.textContent = nodes[closest].name;
+                tooltip.style.left = e.clientX + 'px';
+                tooltip.style.top = e.clientY + 'px';
+                tooltip.classList.add('visible');
+                canvas.style.cursor = 'pointer';
+            } else {
+                tooltip.classList.remove('visible');
+                canvas.style.cursor = 'default';
+            }
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (hoveredIdx >= 0) {
+                selectedIdx = selectedIdx === hoveredIdx ? -1 : hoveredIdx;
+            } else {
+                selectedIdx = -1;
+            }
+        });
+
+        // ── Render loop ──
+        let time = 0;
+        function draw() {
+            time += 0.016;
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw faint connecting lines between nearby nodes
+            ctx.lineWidth = 1;
+            for (let i = 0; i < nodes.length; i++) {
+                const [x1, y1] = getNodePos(nodes[i]);
+                for (let j = i + 1; j < nodes.length; j++) {
+                    const [x2, y2] = getNodePos(nodes[j]);
+                    const d = Math.hypot(x2 - x1, y2 - y1);
+                    const maxDist = Math.min(w, h) * 0.35;
+                    if (d < maxDist) {
+                        const alpha = (1 - d / maxDist) * 0.08;
+                        ctx.strokeStyle = `rgba(180, 130, 255, ${alpha})`;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw nodes
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
+                const [x, y] = getNodePos(node);
+                const breathe = 1 + 0.15 * Math.sin(time * 1.5 + node.phase);
+                const isHovered = i === hoveredIdx;
+                const isSelected = i === selectedIdx;
+                const scale = isHovered ? 1.6 : isSelected ? 1.4 : 1.0;
+                const radius = node.baseRadius * dpr * breathe * scale;
+
+                // Outer glow
+                const glowRadius = radius * 4;
+                const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+                const glowAlpha = isHovered ? 0.25 : isSelected ? 0.2 : 0.1;
+                glow.addColorStop(0, `rgba(${node.r}, ${node.g}, ${node.b}, ${glowAlpha})`);
+                glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core dot
+                const core = ctx.createRadialGradient(x, y, 0, x, y, radius);
+                core.addColorStop(0, `rgba(${node.r}, ${node.g}, ${node.b}, 0.9)`);
+                core.addColorStop(0.6, `rgba(${node.r}, ${node.g}, ${node.b}, 0.4)`);
+                core.addColorStop(1, `rgba(${node.r}, ${node.g}, ${node.b}, 0)`);
+                ctx.fillStyle = core;
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Name label for selected node
+                if (isSelected) {
+                    ctx.fillStyle = `rgba(${node.r}, ${node.g}, ${node.b}, 0.7)`;
+                    ctx.font = `${11 * dpr}px system-ui, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.fillText(node.name, x, y + radius + 16 * dpr);
+                }
+            }
+
+            // Axis labels (very subtle)
+            ctx.fillStyle = 'rgba(233, 238, 252, 0.12)';
+            ctx.font = `${9 * dpr}px system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('order', w * padding, h - 12 * dpr);
+            ctx.fillText('chaos', w * (1 - padding), h - 12 * dpr);
+            ctx.save();
+            ctx.translate(16 * dpr, h / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('luminous', 0.3 * h * (1 - 2 * padding), 0);
+            ctx.fillText('dense', -0.3 * h * (1 - 2 * padding), 0);
+            ctx.restore();
+
+            requestAnimationFrame(draw);
+        }
+        requestAnimationFrame(draw);
+    </script>
+</body>
+</html>

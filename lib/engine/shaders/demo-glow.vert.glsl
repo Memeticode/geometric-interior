@@ -7,6 +7,7 @@ attribute float aFadeDir;
 uniform float uMorphT;
 uniform float uTime;
 uniform float uWobbleAmp;
+uniform float uViewportHeight;
 
 varying float vFadeDir;
 
@@ -28,6 +29,6 @@ void main() {
     sz *= sizePulse;
 
     vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
-    gl_PointSize = sz * (350.0 / -mvPos.z);
+    gl_PointSize = sz * (uViewportHeight * 0.5 / -mvPos.z);
     gl_Position = projectionMatrix * mvPos;
 }

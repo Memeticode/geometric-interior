@@ -89,7 +89,7 @@ export default {
     'section.space': 'Espacio',
     'section.space.tooltip': 'La organizaci\u00f3n direccional de las formas \u2014 patrones de flujo y coherencia estructural.',
     'section.camera': 'C\u00e1mara',
-    'section.camera.tooltip': 'Encuadre est\u00e1tico de la escena \u2014 nivel de zoom y \u00e1ngulo de rotaci\u00f3n orbital.',
+    'section.camera.tooltip': 'El ojo quieto de la escena \u2014 distancia, \u00f3rbita y elevaci\u00f3n.',
 
     /* ── Seed tag ── */
     'control.seed': 'Semilla',
@@ -99,7 +99,9 @@ export default {
     'control.zoom': 'Zoom',
     'control.zoom.tooltip': 'Qu\u00e9 tan cerca o lejos est\u00e1 el punto de vista. Por debajo de 1.0 se acerca, por encima de 1.0 se aleja.',
     'control.rotation': 'Rotaci\u00f3n',
-    'control.rotation.tooltip': '\u00c1ngulo de rotaci\u00f3n orbital alrededor del centro de la escena, en grados. 360\u00b0 vuelve a 0\u00b0.',
+    'control.rotation.tooltip': 'La \u00f3rbita horizontal \u2014 una lenta revoluci\u00f3n alrededor de las formas.',
+    'control.elevation': 'Elevaci\u00f3n',
+    'control.elevation.tooltip': 'Cu\u00e1nto asciende o desciende la mirada \u2014 desde debajo de las formas hasta sobre su b\u00f3veda.',
 
     /* ── Palette names ── */
     'palette.violet': 'Violeta',

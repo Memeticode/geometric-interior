@@ -6,6 +6,7 @@
 import { t } from '../i18n/locale.js';
 import { isSeedTag, seedTagToLabel } from '../../lib/core/seed-tags.js';
 import { safeName } from '../export/export.js';
+import { getPortraitNames } from '../ui/profiles.js';
 
 /**
  * Create a profile picker.
@@ -46,7 +47,7 @@ export function createProfilePicker({ portraits, getUserProfiles, getThumbUrl, l
         bodyEl.innerHTML = '';
 
         // Portraits section
-        const portraitNames = Object.keys(portraits);
+        const portraitNames = getPortraitNames();
         if (portraitNames.length > 0) {
             const label = document.createElement('div');
             label.className = 'profile-picker-section-label';
@@ -90,7 +91,7 @@ export function createProfilePicker({ portraits, getUserProfiles, getThumbUrl, l
         // Determine thumbnail URL
         if (isPortrait) {
             const slug = safeName(name.toLowerCase().replace(/\s+/g, '_'));
-            thumb.src = `/thumbs/${slug}.png`;
+            thumb.src = `/static/images/portraits/${slug}-thumb.png`;
         } else {
             const url = getThumbUrl(name);
             if (url) {

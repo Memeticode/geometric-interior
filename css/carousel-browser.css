@@ -1,0 +1,322 @@
+/* ── <carousel-dropdown-browser> component styles ── */
+
+:root {
+    --card-w: 180px;
+}
+
+/* ── Strip layout ── */
+
+.cdb-strip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.25rem 0;
+    margin-top: 0.5rem;
+}
+
+.cdb-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cdb-container {
+    position: relative;
+    width: 100%;
+    padding: 0.5rem 0;
+    max-height: 300px;
+    transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.3s ease;
+}
+
+.cdb-viewport {
+    overflow: hidden;
+}
+
+.cdb-track {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 160px;
+    transition: min-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.4s ease;
+}
+
+/* Flattened state when grid is expanded */
+.cdb-strip.cdb-flattened .cdb-container {
+    max-height: 0;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.3s ease;
+}
+.cdb-strip.cdb-flattened .cdb-arrow {
+    display: none;
+}
+
+/* ── Nav arrows ── */
+.cdb-arrow {
+    opacity: 0.6;
+    transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+}
+.cdb-arrow:hover {
+    opacity: 1;
+}
+
+/* ── Carousel cards ── */
+
+.cdb-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--card-w, 180px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transform: translate(-50%, -50%) translateX(var(--cx, 0px)) translateY(var(--cy, 0px));
+    transition: transform var(--carousel-speed, 0.85s) cubic-bezier(0.25, 0.1, 0.25, 1),
+                opacity var(--carousel-speed, 0.85s) ease;
+    opacity: var(--card-opacity, 1);
+    will-change: transform, opacity;
+    user-select: none;
+}
+
+.cdb-card-img {
+    width: 100%;
+    aspect-ratio: 14 / 9;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    background: var(--surface);
+    transform: perspective(1200px)
+               rotateY(var(--ry, 0deg))
+               translateZ(var(--tz, 0px))
+               scale(var(--sc, 1));
+    transition: transform 0.28s ease,
+                border-color 0.4s ease,
+                border-top-color 0.4s ease,
+                border-bottom-color 0.4s ease,
+                box-shadow 0.4s ease;
+    transform-style: preserve-3d;
+}
+
+.cdb-card.active .cdb-card-img {
+    border-top-color: rgba(180, 130, 255, 0.6);
+    border-bottom-color: rgba(180, 130, 255, 0.6);
+}
+
+.cdb-track:not(.cdb-dragging) .cdb-card:hover:not(.active) {
+    z-index: 20 !important;
+    transform: translate(-50%, calc(-50% - 10px)) translateX(var(--cx, 0px));
+}
+
+.cdb-track:not(.cdb-dragging) .cdb-card:hover:not(.active) .cdb-card-img {
+    border-color: var(--border-strong);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    transform: perspective(1200px)
+               rotateY(var(--ry, 0deg))
+               translateZ(calc(var(--tz, 0px) + 25px))
+               scale(calc(var(--sc, 1) + 0.08));
+}
+
+.cdb-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+}
+
+/* ── View All toggle ── */
+.cdb-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 28px;
+    padding: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+}
+.cdb-toggle:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+}
+.cdb-toggle.active {
+    color: var(--accent-text);
+    border-color: var(--accent);
+}
+
+/* Chevron icon — two bars that morph between ∨ and ∧ */
+.cdb-chevron {
+    position: relative;
+    width: 18px;
+    height: 8px;
+}
+.cdb-chevron-bar {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 1.5px;
+    margin-top: -0.75px;
+    background: currentColor;
+    border-radius: 0.75px;
+    transition: transform 0.3s ease;
+}
+.cdb-chevron-l {
+    left: 0;
+    transform-origin: right center;
+    transform: rotate(25deg);
+}
+.cdb-chevron-r {
+    right: 0;
+    transform-origin: left center;
+    transform: rotate(-25deg);
+}
+/* Active: flip to up-chevron */
+.cdb-toggle.active .cdb-chevron-l {
+    transform: rotate(-25deg);
+}
+.cdb-toggle.active .cdb-chevron-r {
+    transform: rotate(25deg);
+}
+
+/* ── Dropdown (grid) ── */
+.cdb-dropdown {
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.4s ease;
+    opacity: 0;
+}
+.cdb-dropdown.expanded {
+    max-height: 80vh;
+    overflow-y: auto;
+    opacity: 1;
+}
+/* Skip transitions during FLIP measurement */
+.cdb-dropdown.cdb-measuring {
+    transition: none !important;
+}
+
+.cdb-grid {
+    padding: 0.75rem 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.75rem;
+}
+
+.cdb-grid-card {
+    aspect-ratio: 14 / 9;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    cursor: pointer;
+    position: relative;
+    transition: border-color 0.15s, transform 0.15s;
+}
+
+.cdb-grid-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+}
+
+.cdb-grid-card.selected {
+    border-color: var(--accent-text);
+    box-shadow: 0 0 0 1px var(--accent-text);
+}
+
+.cdb-grid-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.cdb-grid-card-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.25rem 0.5rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+    color: #fff;
+    font-size: 0.625rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cdb-grid-card-actions {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    display: flex;
+    gap: 0.125rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.cdb-grid-card:hover .cdb-grid-card-actions {
+    opacity: 1;
+}
+
+.cdb-grid-card-actions button {
+    background: rgba(0, 0, 0, 0.6);
+    border: none;
+    border-radius: 4px;
+    padding: 0.125rem 0.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.cdb-grid-card-actions button:hover {
+    color: #fff;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.cdb-grid-card-actions button svg {
+    width: 12px;
+    height: 12px;
+}
+
+.cdb-grid-card-actions .cdb-delete:hover {
+    color: #ff6666;
+}
+
+/* ── Responsive ── */
+@media (min-width: 1440px) {
+    :root { --card-w: 210px; }
+    .cdb-track { min-height: 180px; }
+}
+@media (min-width: 1920px) {
+    :root { --card-w: 240px; }
+    .cdb-track { min-height: 200px; }
+}
+@media (min-width: 2560px) {
+    :root { --card-w: 280px; }
+    .cdb-track { min-height: 220px; }
+}
+
+@media (max-width: 1023px) {
+    :root { --card-w: 160px; }
+    .cdb-track { min-height: 140px; }
+}
+
+@media (max-width: 767px) {
+    :root { --card-w: 110px; }
+    .cdb-track { min-height: 100px; }
+}

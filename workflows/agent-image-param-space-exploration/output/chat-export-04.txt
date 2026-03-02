@@ -1,0 +1,797 @@
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\session-log.md
+Modified
+Session log updated. Now let me prepare and run Batch 12: chaos-theory configs + Ember Scatter.
+
+Update Todos
+
+Review Batch 11 seed sweep images (25 variants already rendered)
+
+Pick winners and update configs.json + re-render changed configs
+
+Update session-log.md with Batch 11 results
+
+Batch 12: Sweep chaos-theory + Ember Scatter (#38, #41, #43, #44, #45)
+
+Batches 13-17: Sweep remaining 25 configs
+
+Update notable.json and write final deliverables
+Let me look up the current seeds and controls for Batch 12 configs from configs.json. I already have the file loaded — let me extract the relevant entries:
+
+#38 Ember Scatter: seed [0, 10, 14]
+#41 Disordered Trifold: seed [2, 6, 7]
+#43 Chaotic Bloom: seed [14, 12, 6]
+#44 Scattered Crystal: seed [15, 17, 2]
+#45 Entropy: seed [17, 17, 8]
+Write c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\seed-sweep.json
+Write failed
+[
+  {"name": "EmberScatter-a0",  "seed": [0, 10, 14],  "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "EmberScatter-a5",  "seed": [5, 10, 14],  "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "EmberScatter-a9",  "seed": [9, 10, 14],  "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "EmberScatter-a13", "seed": [13, 10, 14], "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "EmberScatter-a17", "seed": [17, 10, 14], "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+
+  {"name": "DisorderedTrifold-a0",  "seed": [0, 6, 7],  "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DisorderedTrifold-a5",  "seed": [5, 6, 7],  "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DisorderedTrifold-a9",  "seed": [9, 6, 7],  "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DisorderedTrifold-a13", "seed": [13, 6, 7], "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DisorderedTrifold-a17", "seed": [17, 6, 7], "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+
+  {"name": "ChaoticBloom-a0",  "seed": [0, 12, 6],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+  {"name": "ChaoticBloom-a5",  "seed": [5, 12, 6],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+  {"name": "ChaoticBloom-a9",  "seed": [9, 12, 6],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+  {"name": "ChaoticBloom-a13", "seed": [13, 12, 6], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+  {"name": "ChaoticBloom-a17", "seed": [17, 12, 6], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+
+  {"name": "ScatteredCrystal-a0",  "seed": [0, 17, 2],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+  {"name": "ScatteredCrystal-a5",  "seed": [5, 17, 2],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+  {"name": "ScatteredCrystal-a9",  "seed": [9, 17, 2],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+  {"name": "ScatteredCrystal-a13", "seed": [13, 17, 2], "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+  {"name": "ScatteredCrystal-a17", "seed": [17, 17, 2], "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+
+  {"name": "Entropy-a0",  "seed": [0, 17, 8],  "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}},
+  {"name": "Entropy-a5",  "seed": [5, 17, 8],  "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}},
+  {"name": "Entropy-a9",  "seed": [9, 17, 8],  "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}},
+  {"name": "Entropy-a13", "seed": [13, 17, 8], "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}},
+  {"name": "Entropy-a17", "seed": [17, 17, 8], "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}}
+]
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\seed-sweep.json
+Write c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\seed-sweep.json
+32 lines
+[
+  {"name": "EmberScatter-a0",  "seed": [0, 10, 14],  "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "EmberScatter-a5",  "seed": [5, 10, 14],  "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "EmberScatter-a9",  "seed": [9, 10, 14],  "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "EmberScatter-a13", "seed": [13, 10, 14], "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "EmberScatter-a17", "seed": [17, 10, 14], "controls": {"topology": "flow-field", "density": 0.05, "luminosity": 0.35, "bloom": 0.50, "fracture": 0.65, "coherence": 0.12, "hue": 0.06, "spectrum": 0.15, "chroma": 0.80, "scale": 0.55, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+
+  {"name": "DisorderedTrifold-a0",  "seed": [0, 6, 7],  "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DisorderedTrifold-a5",  "seed": [5, 6, 7],  "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DisorderedTrifold-a9",  "seed": [9, 6, 7],  "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DisorderedTrifold-a13", "seed": [13, 6, 7], "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DisorderedTrifold-a17", "seed": [17, 6, 7], "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.15, "hue": 0.783, "spectrum": 0.24, "chroma": 0.50, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+
+  {"name": "ChaoticBloom-a0",  "seed": [0, 12, 6],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+  {"name": "ChaoticBloom-a5",  "seed": [5, 12, 6],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+  {"name": "ChaoticBloom-a9",  "seed": [9, 12, 6],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+  {"name": "ChaoticBloom-a13", "seed": [13, 12, 6], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+  {"name": "ChaoticBloom-a17", "seed": [17, 12, 6], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.45, "bloom": 0.80, "fracture": 0.70, "coherence": 0.10, "hue": 0.85, "spectrum": 0.70, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.6, "flow": 0.5}},
+
+  {"name": "ScatteredCrystal-a0",  "seed": [0, 17, 2],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+  {"name": "ScatteredCrystal-a5",  "seed": [5, 17, 2],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+  {"name": "ScatteredCrystal-a9",  "seed": [9, 17, 2],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+  {"name": "ScatteredCrystal-a13", "seed": [13, 17, 2], "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+  {"name": "ScatteredCrystal-a17", "seed": [17, 17, 2], "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.50, "bloom": 0.25, "fracture": 0.80, "coherence": 0.20, "hue": 0.586, "spectrum": 0.05, "chroma": 0.10, "scale": 0.5, "division": 0.5, "faceting": 0.95, "flow": 0.5}},
+
+  {"name": "Entropy-a0",  "seed": [0, 17, 8],  "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}},
+  {"name": "Entropy-a5",  "seed": [5, 17, 8],  "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}},
+  {"name": "Entropy-a9",  "seed": [9, 17, 8],  "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}},
+  {"name": "Entropy-a13", "seed": [13, 17, 8], "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}},
+  {"name": "Entropy-a17", "seed": [17, 17, 8], "controls": {"topology": "flow-field", "density": 0.20, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.90, "coherence": 0.05, "hue": 0.50, "spectrum": 0.50, "chroma": 0.60, "scale": 0.65, "division": 0.5, "faceting": 0.65, "flow": 0.5}}
+]
+Bash Render Batch 12 seed sweep variants (25 images)
+IN
+cd /c/Users/thatc/source/repos/geometric-interior && node workflows/image-param-space-exploration/render-sweep.mjs 2>&1
+
+OUT
+Seed sweep: 25 variants to render
+Output: C:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps
+
+  EmberScatter-a0: CACHED
+  EmberScatter-a5: CACHED
+  EmberScatter-a9: CACHED
+  EmberScatter-a13: CACHED
+  EmberScatter-a17: CACHED
+  DisorderedTrifold-a0 [0,6,7] nodes=156 (3.2s)
+  DisorderedTrifold-a5 [5,6,7] nodes=150 (5.4s)
+  DisorderedTrifold-a9 [9,6,7] nodes=157 (7.7s)
+  DisorderedTrifold-a13 [13,6,7] nodes=148 (9.6s)
+  DisorderedTrifold-a17 [17,6,7] nodes=153 (11.3s)
+  ChaoticBloom-a0 [0,12,6] nodes=131 (12.7s)
+  ChaoticBloom-a5 [5,12,6] nodes=133 (14.2s)
+  ChaoticBloom-a9 [9,12,6] nodes=131 (15.5s)
+  ChaoticBloom-a13 [13,12,6] nodes=129 (16.8s)
+  ChaoticBloom-a17 [17,12,6] nodes=125 (18.1s)
+  ScatteredCrystal-a0 [0,17,2] nodes=130 (19.5s)
+  ScatteredCrystal-a5 [5,17,2] nodes=123 (20.6s)
+  ScatteredCrystal-a9 [9,17,2] nodes=126 (21.8s)
+  ScatteredCrystal-a13 [13,17,2] nodes=120 (22.9s)
+  ScatteredCrystal-a17 [17,17,2] nodes=127 (24.3s)
+  Entropy-a0 [0,17,8] nodes=212 (26.1s)
+  Entropy-a5 [5,17,8] nodes=214 (27.8s)
+  Entropy-a9 [9,17,8] nodes=210 (29.7s)
+  Entropy-a13 [13,17,8] nodes=211 (31.8s)
+  Entropy-a17 [17,17,8] nodes=212 (34.2s)
+
+Complete in 35.4s: 20 rendered.
+Batch 12 rendered (20 new + 5 cached Ember Scatter from earlier). Now let me review all variants.
+
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\EmberScatter-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\EmberScatter-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\EmberScatter-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\EmberScatter-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\EmberScatter-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DisorderedTrifold-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DisorderedTrifold-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DisorderedTrifold-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DisorderedTrifold-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DisorderedTrifold-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChaoticBloom-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChaoticBloom-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChaoticBloom-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChaoticBloom-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChaoticBloom-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ScatteredCrystal-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ScatteredCrystal-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ScatteredCrystal-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ScatteredCrystal-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ScatteredCrystal-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Entropy-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Entropy-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Entropy-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Entropy-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Entropy-a17.png
+All Batch 12 variants reviewed. Here's my analysis:
+
+Ember Scatter (current a0): Keep a0 — widest scatter of individual ember points, best "fireflies in darkness" reading. No change.
+
+Disordered Trifold (current a2): a13 wins — sharp intersecting angular planes create the strongest tension between trifold order trying to organize and low coherence pulling apart.
+
+Chaotic Bloom (current a14): a0 wins — widest scatter with strongest bloom diffusion. Fragments blurred by atmospheric haze perfectly captures "chaos softened by glow."
+
+Scattered Crystal (current a15): a17 wins — widest distribution of angular crystal fragments with elongated lines and the most individual shards visible across the frame.
+
+Entropy (current a17): a13 wins — widest horizontal spread with most dramatic separation between clusters. Things genuinely look like they're flying apart.
+
+4 changed, 1 kept. Let me update configs.
+
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\configs.json
+Modified
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\configs.json
+Modified
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\configs.json
+Modified
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\configs.json
+Modified
+Bash Delete 4 stale Batch 12 renders for re-rendering
+IN
+rm /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/041-disordered-trifold.png /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/043-chaotic-bloom.png /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/044-scattered-crystal.png /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/045-entropy.png 2>&1
+
+OUT
+0
+Bash Re-render 4 changed Batch 12 configs
+IN
+cd /c/Users/thatc/source/repos/geometric-interior && node workflows/image-param-space-exploration/render.mjs 2>&1
+
+OUT
+Space exploration: 100 configs to render
+Output: C:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\renders
+
+  [001] Violet Sanctum (Tight): CACHED
+  [002] Violet Sanctum (Aureole): CACHED
+  [003] Sapphire Cathedral: CACHED
+  [004] Ice Precision: CACHED
+  [005] Ember Nimbus: CACHED
+  [006] Dark Ruby Glow: CACHED
+  [007] Emerald Mist: CACHED
+  [008] Rose Haze: CACHED
+  [009] Teal Whisper: CACHED
+  [010] Prismatic Fog: CACHED
+  [011] Crystal Bloom: CACHED
+  [012] Amber Lantern: CACHED
+  [013] Obsidian Mirror: CACHED
+  [014] Dark Jewel Box: CACHED
+  [015] Midnight Cathedral: CACHED
+  [016] Cinder: CACHED
+  [017] Abyssal Green: CACHED
+  [018] Void Prism: CACHED
+  [019] Night Bloom: CACHED
+  [020] Shadow Lattice: CACHED
+  [021] Solar Corona: CACHED
+  [022] White Blaze: CACHED
+  [023] Blazing Emerald: CACHED
+  [024] Night Amber: CACHED
+  [025] Dark Bloom Chaos: CACHED
+  [026] Supernova Bloom: CACHED
+  [027] Night Violet: CACHED
+  [028] Crowded Sanctum: CACHED
+  [029] Dense Emerald Field: CACHED
+  [030] Muted Saffron: CACHED
+  [031] Swarm: CACHED
+  [032] Dense Monolith: CACHED
+  [033] Dense Chaos: CACHED
+  [034] Dense Orbital Teal: CACHED
+  [035] Night Trifold: CACHED
+  [036] Dense Atmosphere: CACHED
+  [037] Muted Rose Bloom: CACHED
+  [038] Ember Scatter: CACHED
+  [039] Night Coral: CACHED
+  [040] Chaotic Sapphire: CACHED
+  [041] Disordered Trifold [chaos-theory] nodes=148 (3.0s)
+  [042] Turbulent Ember: CACHED
+  [043] Chaotic Bloom [chaos-theory] nodes=131 (4.9s)
+  [044] Scattered Crystal [chaos-theory] nodes=127 (6.6s)
+  [045] Entropy [chaos-theory] nodes=211 (8.6s)
+  [046] Dark Crystal: CACHED
+  [047] Turquoise Night: CACHED
+  [048] Partial Divide (Amber): CACHED
+  [049] Chartreuse Night: CACHED
+  [050] Deep Bifurcation: CACHED
+  [051] Achromatic Veil: CACHED
+  [052] Chartreuse Storm: CACHED
+  [053] Warm Fog: CACHED
+  [054] Flow Transition (Amber): CACHED
+  [055] Night Sapphire: CACHED
+  [056] Solitary Ember: CACHED
+  [057] Sparse Prismatic: CACHED
+  [058] Dusty Rose: CACHED
+  [059] Antique Bronze: CACHED
+  [060] Fog Jade: CACHED
+  [061] Pewter: CACHED
+  [062] Muted Sapphire Bloom: CACHED
+  [063] Washed Indigo: CACHED
+  [064] Chartreuse Mist: CACHED
+  [065] Pure Yellow: CACHED
+  [066] Saffron Burst: CACHED
+  [067] Chartreuse Current: CACHED
+  [068] Turquoise Pool: CACHED
+  [069] Canary Scatter: CACHED
+  [070] Aquamarine Orbital: CACHED
+  [071] Lime Trifold: CACHED
+  [072] Deep Orange: CACHED
+  [073] Muted Turquoise Bloom: CACHED
+  [074] Warm Silk: CACHED
+  [075] Sharp Radial Burst: CACHED
+  [076] Bright Vivid Coral: CACHED
+  [077] Dark Monolith: CACHED
+  [078] Atmospheric Silk: CACHED
+  [079] Chaotic Blades: CACHED
+  [080] Orbital Night Rose: CACHED
+  [081] Solitude: CACHED
+  [082] Night Garden: CACHED
+  [083] Aurora: CACHED
+  [084] Meditation: CACHED
+  [085] Eruption: CACHED
+  [086] Symmetry Breaking: CACHED
+  [087] Reverie: CACHED
+  [088] Tempest: CACHED
+  [089] Genesis: CACHED
+  [090] Dissolution: CACHED
+  [091] Miniature Violet: CACHED
+  [092] Vast Teal Expanse: CACHED
+  [093] Tiny Dense Cluster: CACHED
+  [094] Liquid Sapphire: CACHED
+  [095] Crystalline Fracture: CACHED
+  [096] Polished Obsidian: CACHED
+  [097] Grand Cathedral: CACHED
+  [098] Fractured Bloom: CACHED
+  [099] Smooth Orbital Rose: CACHED
+  [100] Monumental Ember: CACHED
+
+Complete in 9.7s: 4 rendered, 96 skipped, 0 failed.
+Files in C:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\renders
+Batch 12 done — 4 re-rendered. Now Batch 13: transitional-division + muted configs. Let me prepare the sweep and continue the pipeline efficiently.
+
+Write c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\seed-sweep.json
+32 lines
+[
+  {"name": "PartialDivideAmber-a0",  "seed": [0, 7, 14],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.55, "coherence": 0.80, "hue": 0.06, "spectrum": 0.22, "chroma": 0.90, "scale": 0.45, "division": 0.75, "faceting": 0.5, "flow": 0.0}},
+  {"name": "PartialDivideAmber-a5",  "seed": [5, 7, 14],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.55, "coherence": 0.80, "hue": 0.06, "spectrum": 0.22, "chroma": 0.90, "scale": 0.45, "division": 0.75, "faceting": 0.5, "flow": 0.0}},
+  {"name": "PartialDivideAmber-a9",  "seed": [9, 7, 14],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.55, "coherence": 0.80, "hue": 0.06, "spectrum": 0.22, "chroma": 0.90, "scale": 0.45, "division": 0.75, "faceting": 0.5, "flow": 0.0}},
+  {"name": "PartialDivideAmber-a13", "seed": [13, 7, 14], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.55, "coherence": 0.80, "hue": 0.06, "spectrum": 0.22, "chroma": 0.90, "scale": 0.45, "division": 0.75, "faceting": 0.5, "flow": 0.0}},
+  {"name": "PartialDivideAmber-a17", "seed": [17, 7, 14], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.55, "coherence": 0.80, "hue": 0.06, "spectrum": 0.22, "chroma": 0.90, "scale": 0.45, "division": 0.75, "faceting": 0.5, "flow": 0.0}},
+
+  {"name": "DeepBifurcation-a0",  "seed": [0, 5, 5],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.30, "bloom": 0.30, "fracture": 0.50, "coherence": 0.80, "hue": 0.867, "spectrum": 0.25, "chroma": 0.50, "scale": 0.5, "division": 0.72, "faceting": 0.50, "flow": 0.5}},
+  {"name": "DeepBifurcation-a5",  "seed": [5, 5, 5],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.30, "bloom": 0.30, "fracture": 0.50, "coherence": 0.80, "hue": 0.867, "spectrum": 0.25, "chroma": 0.50, "scale": 0.5, "division": 0.72, "faceting": 0.50, "flow": 0.5}},
+  {"name": "DeepBifurcation-a9",  "seed": [9, 5, 5],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.30, "bloom": 0.30, "fracture": 0.50, "coherence": 0.80, "hue": 0.867, "spectrum": 0.25, "chroma": 0.50, "scale": 0.5, "division": 0.72, "faceting": 0.50, "flow": 0.5}},
+  {"name": "DeepBifurcation-a13", "seed": [13, 5, 5], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.30, "bloom": 0.30, "fracture": 0.50, "coherence": 0.80, "hue": 0.867, "spectrum": 0.25, "chroma": 0.50, "scale": 0.5, "division": 0.72, "faceting": 0.50, "flow": 0.5}},
+  {"name": "DeepBifurcation-a17", "seed": [17, 5, 5], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.30, "bloom": 0.30, "fracture": 0.50, "coherence": 0.80, "hue": 0.867, "spectrum": 0.25, "chroma": 0.50, "scale": 0.5, "division": 0.72, "faceting": 0.50, "flow": 0.5}},
+
+  {"name": "FogJade-a0",  "seed": [0, 5, 8],  "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.50, "coherence": 0.72, "hue": 0.375, "spectrum": 0.20, "chroma": 0.25, "scale": 0.65, "division": 0.5, "faceting": 0.5, "flow": 0.35}},
+  {"name": "FogJade-a5",  "seed": [5, 5, 8],  "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.50, "coherence": 0.72, "hue": 0.375, "spectrum": 0.20, "chroma": 0.25, "scale": 0.65, "division": 0.5, "faceting": 0.5, "flow": 0.35}},
+  {"name": "FogJade-a9",  "seed": [9, 5, 8],  "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.50, "coherence": 0.72, "hue": 0.375, "spectrum": 0.20, "chroma": 0.25, "scale": 0.65, "division": 0.5, "faceting": 0.5, "flow": 0.35}},
+  {"name": "FogJade-a13", "seed": [13, 5, 8], "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.50, "coherence": 0.72, "hue": 0.375, "spectrum": 0.20, "chroma": 0.25, "scale": 0.65, "division": 0.5, "faceting": 0.5, "flow": 0.35}},
+  {"name": "FogJade-a17", "seed": [17, 5, 8], "controls": {"topology": "flow-field", "density": 0.10, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.50, "coherence": 0.72, "hue": 0.375, "spectrum": 0.20, "chroma": 0.25, "scale": 0.65, "division": 0.5, "faceting": 0.5, "flow": 0.35}},
+
+  {"name": "WashedIndigo-a0",  "seed": [0, 4, 5],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.45, "bloom": 0.35, "fracture": 0.35, "coherence": 0.82, "hue": 0.68, "spectrum": 0.18, "chroma": 0.32, "scale": 0.45, "division": 0.5, "faceting": 0.40, "flow": 0.5}},
+  {"name": "WashedIndigo-a5",  "seed": [5, 4, 5],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.45, "bloom": 0.35, "fracture": 0.35, "coherence": 0.82, "hue": 0.68, "spectrum": 0.18, "chroma": 0.32, "scale": 0.45, "division": 0.5, "faceting": 0.40, "flow": 0.5}},
+  {"name": "WashedIndigo-a9",  "seed": [9, 4, 5],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.45, "bloom": 0.35, "fracture": 0.35, "coherence": 0.82, "hue": 0.68, "spectrum": 0.18, "chroma": 0.32, "scale": 0.45, "division": 0.5, "faceting": 0.40, "flow": 0.5}},
+  {"name": "WashedIndigo-a13", "seed": [13, 4, 5], "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.45, "bloom": 0.35, "fracture": 0.35, "coherence": 0.82, "hue": 0.68, "spectrum": 0.18, "chroma": 0.32, "scale": 0.45, "division": 0.5, "faceting": 0.40, "flow": 0.5}},
+  {"name": "WashedIndigo-a17", "seed": [17, 4, 5], "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.45, "bloom": 0.35, "fracture": 0.35, "coherence": 0.82, "hue": 0.68, "spectrum": 0.18, "chroma": 0.32, "scale": 0.45, "division": 0.5, "faceting": 0.40, "flow": 0.5}},
+
+  {"name": "ChartreuseMist-a0",  "seed": [0, 4, 11],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.40, "coherence": 0.78, "hue": 0.30, "spectrum": 0.15, "chroma": 0.22, "scale": 0.50, "division": 0.5, "faceting": 0.45, "flow": 0.5}},
+  {"name": "ChartreuseMist-a5",  "seed": [5, 4, 11],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.40, "coherence": 0.78, "hue": 0.30, "spectrum": 0.15, "chroma": 0.22, "scale": 0.50, "division": 0.5, "faceting": 0.45, "flow": 0.5}},
+  {"name": "ChartreuseMist-a9",  "seed": [9, 4, 11],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.40, "coherence": 0.78, "hue": 0.30, "spectrum": 0.15, "chroma": 0.22, "scale": 0.50, "division": 0.5, "faceting": 0.45, "flow": 0.5}},
+  {"name": "ChartreuseMist-a13", "seed": [13, 4, 11], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.40, "coherence": 0.78, "hue": 0.30, "spectrum": 0.15, "chroma": 0.22, "scale": 0.50, "division": 0.5, "faceting": 0.45, "flow": 0.5}},
+  {"name": "ChartreuseMist-a17", "seed": [17, 4, 11], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.48, "bloom": 0.55, "fracture": 0.40, "coherence": 0.78, "hue": 0.30, "spectrum": 0.15, "chroma": 0.22, "scale": 0.50, "division": 0.5, "faceting": 0.45, "flow": 0.5}}
+]
+Bash Render Batch 13 seed sweep (25 variants)
+IN
+cd /c/Users/thatc/source/repos/geometric-interior && node workflows/image-param-space-exploration/render-sweep.mjs 2>&1
+
+OUT
+Seed sweep: 25 variants to render
+Output: C:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps
+
+  PartialDivideAmber-a0 [0,7,14] nodes=137 (3.4s)
+  PartialDivideAmber-a5 [5,7,14] nodes=132 (6.2s)
+  PartialDivideAmber-a9 [9,7,14] nodes=137 (9.3s)
+  PartialDivideAmber-a13 [13,7,14] nodes=143 (12.6s)
+  PartialDivideAmber-a17 [17,7,14] nodes=129 (15.3s)
+  DeepBifurcation-a0 [0,5,5] nodes=139 (18.0s)
+  DeepBifurcation-a5 [5,5,5] nodes=137 (20.3s)
+  DeepBifurcation-a9 [9,5,5] nodes=141 (22.8s)
+  DeepBifurcation-a13 [13,5,5] nodes=133 (25.0s)
+  DeepBifurcation-a17 [17,5,5] nodes=144 (27.5s)
+  FogJade-a0 [0,5,8] nodes=186 (30.6s)
+  FogJade-a5 [5,5,8] nodes=171 (33.5s)
+  FogJade-a9 [9,5,8] nodes=180 (36.1s)
+  FogJade-a13 [13,5,8] nodes=182 (38.5s)
+  FogJade-a17 [17,5,8] nodes=183 (41.5s)
+  WashedIndigo-a0 [0,4,5] nodes=141 (45.2s)
+  WashedIndigo-a5 [5,4,5] nodes=130 (48.5s)
+  WashedIndigo-a9 [9,4,5] nodes=134 (51.0s)
+  WashedIndigo-a13 [13,4,5] nodes=138 (54.1s)
+  WashedIndigo-a17 [17,4,5] nodes=143 (58.3s)
+  ChartreuseMist-a0 [0,4,11] nodes=142 (61.5s)
+  ChartreuseMist-a5 [5,4,11] nodes=137 (64.6s)
+  ChartreuseMist-a9 [9,4,11] nodes=148 (67.2s)
+  ChartreuseMist-a13 [13,4,11] nodes=136 (69.5s)
+  ChartreuseMist-a17 [17,4,11] nodes=150 (73.1s)
+
+Complete in 74.2s: 25 rendered.
+Update Todos
+
+Batch 12: Sweep chaos-theory + Ember Scatter
+
+Batch 13: Review and pick winners (#48, #50, #60, #63, #64)
+
+Batches 14-17: Sweep remaining 20 configs
+
+Update session-log.md with Batches 12-17 results
+
+Update notable.json and write final deliverables
+Now review all Batch 13 variants. Reading in parallel:
+
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PartialDivideAmber-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PartialDivideAmber-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PartialDivideAmber-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PartialDivideAmber-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PartialDivideAmber-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DeepBifurcation-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DeepBifurcation-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DeepBifurcation-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DeepBifurcation-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\DeepBifurcation-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\FogJade-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\FogJade-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\FogJade-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\FogJade-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\FogJade-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\WashedIndigo-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\WashedIndigo-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\WashedIndigo-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\WashedIndigo-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\WashedIndigo-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChartreuseMist-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChartreuseMist-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChartreuseMist-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChartreuseMist-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\ChartreuseMist-a17.png
+Batch 13 analysis complete:
+
+Partial Divide (Amber) (current a0): a13 wins — dark angular framing creates strongest "partial divide" reading through warm amber atmosphere.
+
+Deep Bifurcation (current a3): a17 wins — bright center with radiating light beams most clearly shows the structural division/bifurcation.
+
+Fog Jade (current a6): a0 wins — widest atmospheric spread with bright center seen through diffuse jade-green fog.
+
+Washed Indigo (current a1): a13 wins — widest, most diffuse soft indigo-lavender haze, strongest "faded denim" quality.
+
+Chartreuse Mist (current a5): a9 wins — best balance of visible geometric structure through sage-green mist.
+
+All 5 changed. Let me update configs and re-render, then continue to Batch 14.
+
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\configs.json
+Modified
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\configs.json
+Modified
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\configs.json
+Modified
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\configs.json
+Modified
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\configs.json
+Modified
+Bash Delete 5 stale Batch 13 renders
+IN
+rm /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/048-partial-divide-amber-.png /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/050-deep-bifurcation.png /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/060-fog-jade.png /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/063-washed-indigo.png /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/064-chartreuse-mist.png 2>&1
+
+OUT
+Exit code 1
+rm: cannot remove '/c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/048-partial-divide-amber-.png': No such file or directory
+
+rm: cannot remove '/c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/048-partial-divide-amber-.png': No such file or directory
+Globpattern: "**/output/renders/0{48,50,60,63,64}-*.png"
+Found 1 file
+Globpattern: "**/output/renders/0{48,50,60,63,64}*.png"
+Found 1 file
+Bash Find exact filenames for Batch 13 renders
+IN
+ls /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/ | grep -E "^0(50|60|63|64)" 2>&1
+
+OUT
+0
+Bash List files starting with 05
+IN
+ls /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/ | grep -E "^05" 2>&1
+
+OUT
+051-achromatic-veil.png
+051-dense-partial-trifold.png
+052-chartreuse-storm.png
+053-warm-fog.png
+054-flow-transition-amber.png
+055-night-sapphire.png
+056-solitary-ember.png
+057-sparse-prismatic.png
+058-dusty-rose.png
+059-antique-bronze.png
+Bash List files starting with 06
+IN
+ls /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/ | grep -E "^06" 2>&1
+
+OUT
+061-pewter.png
+062-muted-sapphire-bloom.png
+065-pure-yellow.png
+066-saffron-burst.png
+067-chartreuse-current.png
+068-turquoise-pool.png
+069-canary-scatter.png
+Bash Find exact render filenames
+IN
+ls /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/ | wc -l && ls /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/ | grep -iE "(bifurcation|fog-jade|indigo|chartreuse-mist)" 2>&1
+
+OUT
+97
+Bash List all render files sorted
+IN
+ls /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/ | sort 2>&1
+
+OUT
+001-violet-sanctum-tight.png
+002-violet-sanctum-aureole.png
+003-sapphire-cathedral.png
+004-ice-precision.png
+005-ember-nimbus.png
+006-dark-ruby-glow.png
+007-emerald-mist.png
+008-rose-haze.png
+009-teal-whisper.png
+010-prismatic-fog.png
+011-crystal-bloom.png
+012-amber-lantern.png
+013-obsidian-mirror.png
+014-dark-jewel-box.png
+015-midnight-cathedral.png
+016-cinder.png
+017-abyssal-green.png
+018-void-prism.png
+019-night-bloom.png
+020-shadow-lattice.png
+021-solar-corona.png
+022-white-blaze.png
+023-blazing-emerald.png
+024-night-amber.png
+025-dark-bloom-chaos.png
+026-supernova-bloom.png
+027-night-violet.png
+028-crowded-sanctum.png
+029-dense-emerald-field.png
+030-muted-saffron.png
+031-swarm.png
+032-dense-monolith.png
+033-dense-chaos.png
+034-dense-orbital-teal.png
+035-night-trifold.png
+036-dense-atmosphere.png
+037-muted-rose-bloom.png
+038-ember-scatter.png
+039-night-coral.png
+040-chaotic-sapphire.png
+041-disordered-trifold.png
+042-turbulent-ember.png
+043-chaotic-bloom.png
+044-scattered-crystal.png
+045-entropy.png
+046-dark-crystal.png
+047-turquoise-night.png
+048-partial-divide-amber.png
+049-chartreuse-night.png
+051-achromatic-veil.png
+051-dense-partial-trifold.png
+052-chartreuse-storm.png
+053-warm-fog.png
+054-flow-transition-amber.png
+055-night-sapphire.png
+056-solitary-ember.png
+057-sparse-prismatic.png
+058-dusty-rose.png
+059-antique-bronze.png
+061-pewter.png
+062-muted-sapphire-bloom.png
+065-pure-yellow.png
+066-saffron-burst.png
+067-chartreuse-current.png
+068-turquoise-pool.png
+069-canary-scatter.png
+070-aquamarine-orbital.png
+071-lime-trifold.png
+072-deep-orange.png
+073-muted-turquoise-bloom.png
+074-warm-silk.png
+075-sharp-radial-burst.png
+076-bright-vivid-coral.png
+077-dark-monolith.png
+078-atmospheric-silk.png
+079-chaotic-blades.png
+080-orbital-night-rose.png
+081-solitude.png
+082-night-garden.png
+083-aurora.png
+084-meditation.png
+085-eruption.png
+086-symmetry-breaking.png
+087-reverie.png
+088-tempest.png
+089-genesis.png
+090-dissolution.png
+091-miniature-violet.png
+092-vast-teal-expanse.png
+093-tiny-dense-cluster.png
+094-liquid-sapphire.png
+095-crystalline-fracture.png
+096-polished-obsidian.png
+097-grand-cathedral.png
+098-fractured-bloom.png
+099-smooth-orbital-rose.png
+100-monumental-ember.png
+I see — files 050, 060, 063, 064 don't exist (likely old names from before replacements). Only 048 needs deleting. Let me just delete it and re-render all 5.
+
+Bash Delete stale 048 and re-render all changed Batch 13 configs
+IN
+rm /c/Users/thatc/source/repos/geometric-interior/workflows/image-param-space-exploration/output/renders/048-partial-divide-amber.png && cd /c/Users/thatc/source/repos/geometric-interior && node workflows/image-param-space-exploration/render.mjs 2>&1
+
+OUT
+Space exploration: 100 configs to render
+Output: C:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\renders
+
+  [001] Violet Sanctum (Tight): CACHED
+  [002] Violet Sanctum (Aureole): CACHED
+  [003] Sapphire Cathedral: CACHED
+  [004] Ice Precision: CACHED
+  [005] Ember Nimbus: CACHED
+  [006] Dark Ruby Glow: CACHED
+  [007] Emerald Mist: CACHED
+  [008] Rose Haze: CACHED
+  [009] Teal Whisper: CACHED
+  [010] Prismatic Fog: CACHED
+  [011] Crystal Bloom: CACHED
+  [012] Amber Lantern: CACHED
+  [013] Obsidian Mirror: CACHED
+  [014] Dark Jewel Box: CACHED
+  [015] Midnight Cathedral: CACHED
+  [016] Cinder: CACHED
+  [017] Abyssal Green: CACHED
+  [018] Void Prism: CACHED
+  [019] Night Bloom: CACHED
+  [020] Shadow Lattice: CACHED
+  [021] Solar Corona: CACHED
+  [022] White Blaze: CACHED
+  [023] Blazing Emerald: CACHED
+  [024] Night Amber: CACHED
+  [025] Dark Bloom Chaos: CACHED
+  [026] Supernova Bloom: CACHED
+  [027] Night Violet: CACHED
+  [028] Crowded Sanctum: CACHED
+  [029] Dense Emerald Field: CACHED
+  [030] Muted Saffron: CACHED
+  [031] Swarm: CACHED
+  [032] Dense Monolith: CACHED
+  [033] Dense Chaos: CACHED
+  [034] Dense Orbital Teal: CACHED
+  [035] Night Trifold: CACHED
+  [036] Dense Atmosphere: CACHED
+  [037] Muted Rose Bloom: CACHED
+  [038] Ember Scatter: CACHED
+  [039] Night Coral: CACHED
+  [040] Chaotic Sapphire: CACHED
+  [041] Disordered Trifold: CACHED
+  [042] Turbulent Ember: CACHED
+  [043] Chaotic Bloom: CACHED
+  [044] Scattered Crystal: CACHED
+  [045] Entropy: CACHED
+  [046] Dark Crystal: CACHED
+  [047] Turquoise Night: CACHED
+  [048] Partial Divide (Amber) [transitional-division] nodes=143 (3.8s)
+  [049] Chartreuse Night: CACHED
+  [050] Deep Bifurcation [transitional-division] nodes=144 (6.4s)
+  [051] Achromatic Veil: CACHED
+  [052] Chartreuse Storm: CACHED
+  [053] Warm Fog: CACHED
+  [054] Flow Transition (Amber): CACHED
+  [055] Night Sapphire: CACHED
+  [056] Solitary Ember: CACHED
+  [057] Sparse Prismatic: CACHED
+  [058] Dusty Rose: CACHED
+  [059] Antique Bronze: CACHED
+  [060] Fog Jade [muted-worlds] nodes=186 (9.6s)
+  [061] Pewter: CACHED
+  [062] Muted Sapphire Bloom: CACHED
+  [063] Washed Indigo [muted-worlds] nodes=138 (12.8s)
+  [064] Chartreuse Mist [thread-chartreuse] nodes=148 (15.4s)
+  [065] Pure Yellow: CACHED
+  [066] Saffron Burst: CACHED
+  [067] Chartreuse Current: CACHED
+  [068] Turquoise Pool: CACHED
+  [069] Canary Scatter: CACHED
+  [070] Aquamarine Orbital: CACHED
+  [071] Lime Trifold: CACHED
+  [072] Deep Orange: CACHED
+  [073] Muted Turquoise Bloom: CACHED
+  [074] Warm Silk: CACHED
+  [075] Sharp Radial Burst: CACHED
+  [076] Bright Vivid Coral: CACHED
+  [077] Dark Monolith: CACHED
+  [078] Atmospheric Silk: CACHED
+  [079] Chaotic Blades: CACHED
+  [080] Orbital Night Rose: CACHED
+  [081] Solitude: CACHED
+  [082] Night Garden: CACHED
+  [083] Aurora: CACHED
+  [084] Meditation: CACHED
+  [085] Eruption: CACHED
+  [086] Symmetry Breaking: CACHED
+  [087] Reverie: CACHED
+  [088] Tempest: CACHED
+  [089] Genesis: CACHED
+  [090] Dissolution: CACHED
+  [091] Miniature Violet: CACHED
+  [092] Vast Teal Expanse: CACHED
+  [093] Tiny Dense Cluster: CACHED
+  [094] Liquid Sapphire: CACHED
+  [095] Crystalline Fracture: CACHED
+  [096] Polished Obsidian: CACHED
+  [097] Grand Cathedral: CACHED
+  [098] Fractured Bloom: CACHED
+  [099] Smooth Orbital Rose: CACHED
+  [100] Monumental Ember: CACHED
+
+Complete in 16.5s: 5 rendered, 95 skipped, 0 failed.
+Files in C:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\renders
+Batch 13 done. Now Batch 14: unexplored-hues A (#65 Pure Yellow, #68 Turquoise Pool, #69 Canary Scatter, #70 Aquamarine Orbital, #71 Lime Trifold).
+
+Update Todos
+
+Batch 12: Sweep chaos-theory + Ember Scatter
+
+Batch 13: Review and pick winners (#48, #50, #60, #63, #64)
+
+Batch 14: Sweep unexplored-hues A (#65, #68, #69, #70, #71)
+
+Batches 15-17: Sweep remaining 15 configs
+
+Update session-log.md with Batches 12-17 results
+
+Update notable.json and write final deliverables
+Write c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\seed-sweep.json
+32 lines
+[
+  {"name": "PureYellow-a0",  "seed": [0, 5, 11],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.55, "bloom": 0.40, "fracture": 0.50, "coherence": 0.75, "hue": 0.16, "spectrum": 0.22, "chroma": 0.80, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "PureYellow-a5",  "seed": [5, 5, 11],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.55, "bloom": 0.40, "fracture": 0.50, "coherence": 0.75, "hue": 0.16, "spectrum": 0.22, "chroma": 0.80, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "PureYellow-a9",  "seed": [9, 5, 11],  "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.55, "bloom": 0.40, "fracture": 0.50, "coherence": 0.75, "hue": 0.16, "spectrum": 0.22, "chroma": 0.80, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "PureYellow-a13", "seed": [13, 5, 11], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.55, "bloom": 0.40, "fracture": 0.50, "coherence": 0.75, "hue": 0.16, "spectrum": 0.22, "chroma": 0.80, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "PureYellow-a17", "seed": [17, 5, 11], "controls": {"topology": "flow-field", "density": 0.07, "luminosity": 0.55, "bloom": 0.40, "fracture": 0.50, "coherence": 0.75, "hue": 0.16, "spectrum": 0.22, "chroma": 0.80, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+
+  {"name": "TurquoisePool-a0",  "seed": [0, 4, 3],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.52, "bloom": 0.40, "fracture": 0.40, "coherence": 0.82, "hue": 0.45, "spectrum": 0.20, "chroma": 0.70, "scale": 0.45, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "TurquoisePool-a5",  "seed": [5, 4, 3],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.52, "bloom": 0.40, "fracture": 0.40, "coherence": 0.82, "hue": 0.45, "spectrum": 0.20, "chroma": 0.70, "scale": 0.45, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "TurquoisePool-a9",  "seed": [9, 4, 3],  "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.52, "bloom": 0.40, "fracture": 0.40, "coherence": 0.82, "hue": 0.45, "spectrum": 0.20, "chroma": 0.70, "scale": 0.45, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "TurquoisePool-a13", "seed": [13, 4, 3], "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.52, "bloom": 0.40, "fracture": 0.40, "coherence": 0.82, "hue": 0.45, "spectrum": 0.20, "chroma": 0.70, "scale": 0.45, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+  {"name": "TurquoisePool-a17", "seed": [17, 4, 3], "controls": {"topology": "flow-field", "density": 0.06, "luminosity": 0.52, "bloom": 0.40, "fracture": 0.40, "coherence": 0.82, "hue": 0.45, "spectrum": 0.20, "chroma": 0.70, "scale": 0.45, "division": 0.5, "faceting": 0.50, "flow": 0.5}},
+
+  {"name": "CanaryScatter-a0",  "seed": [0, 12, 14],  "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.50, "bloom": 0.30, "fracture": 0.80, "coherence": 0.55, "hue": 0.14, "spectrum": 0.25, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.70, "flow": 0.5}},
+  {"name": "CanaryScatter-a5",  "seed": [5, 12, 14],  "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.50, "bloom": 0.30, "fracture": 0.80, "coherence": 0.55, "hue": 0.14, "spectrum": 0.25, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.70, "flow": 0.5}},
+  {"name": "CanaryScatter-a9",  "seed": [9, 12, 14],  "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.50, "bloom": 0.30, "fracture": 0.80, "coherence": 0.55, "hue": 0.14, "spectrum": 0.25, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.70, "flow": 0.5}},
+  {"name": "CanaryScatter-a13", "seed": [13, 12, 14], "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.50, "bloom": 0.30, "fracture": 0.80, "coherence": 0.55, "hue": 0.14, "spectrum": 0.25, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.70, "flow": 0.5}},
+  {"name": "CanaryScatter-a17", "seed": [17, 12, 14], "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.50, "bloom": 0.30, "fracture": 0.80, "coherence": 0.55, "hue": 0.14, "spectrum": 0.25, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.70, "flow": 0.5}},
+
+  {"name": "AquamarineOrbital-a0",  "seed": [0, 11, 4],  "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.55, "bloom": 0.45, "fracture": 0.50, "coherence": 0.85, "hue": 0.48, "spectrum": 0.22, "chroma": 0.68, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.90}},
+  {"name": "AquamarineOrbital-a5",  "seed": [5, 11, 4],  "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.55, "bloom": 0.45, "fracture": 0.50, "coherence": 0.85, "hue": 0.48, "spectrum": 0.22, "chroma": 0.68, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.90}},
+  {"name": "AquamarineOrbital-a9",  "seed": [9, 11, 4],  "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.55, "bloom": 0.45, "fracture": 0.50, "coherence": 0.85, "hue": 0.48, "spectrum": 0.22, "chroma": 0.68, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.90}},
+  {"name": "AquamarineOrbital-a13", "seed": [13, 11, 4], "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.55, "bloom": 0.45, "fracture": 0.50, "coherence": 0.85, "hue": 0.48, "spectrum": 0.22, "chroma": 0.68, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.90}},
+  {"name": "AquamarineOrbital-a17", "seed": [17, 11, 4], "controls": {"topology": "flow-field", "density": 0.08, "luminosity": 0.55, "bloom": 0.45, "fracture": 0.50, "coherence": 0.85, "hue": 0.48, "spectrum": 0.22, "chroma": 0.68, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.90}},
+
+  {"name": "LimeTrifold-a0",  "seed": [0, 5, 8],  "controls": {"topology": "flow-field", "density": 0.09, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.75, "hue": 0.26, "spectrum": 0.22, "chroma": 0.75, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "LimeTrifold-a5",  "seed": [5, 5, 8],  "controls": {"topology": "flow-field", "density": 0.09, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.75, "hue": 0.26, "spectrum": 0.22, "chroma": 0.75, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "LimeTrifold-a9",  "seed": [9, 5, 8],  "controls": {"topology": "flow-field", "density": 0.09, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.75, "hue": 0.26, "spectrum": 0.22, "chroma": 0.75, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "LimeTrifold-a13", "seed": [13, 5, 8], "controls": {"topology": "flow-field", "density": 0.09, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.75, "hue": 0.26, "spectrum": 0.22, "chroma": 0.75, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}},
+  {"name": "LimeTrifold-a17", "seed": [17, 5, 8], "controls": {"topology": "flow-field", "density": 0.09, "luminosity": 0.48, "bloom": 0.35, "fracture": 0.50, "coherence": 0.75, "hue": 0.26, "spectrum": 0.22, "chroma": 0.75, "scale": 0.5, "division": 0.85, "faceting": 0.5, "flow": 0.5}}
+]
+Bash Render Batch 14 seed sweep (25 variants)
+IN
+cd /c/Users/thatc/source/repos/geometric-interior && node workflows/image-param-space-exploration/render-sweep.mjs 2>&1
+
+OUT
+Seed sweep: 25 variants to render
+Output: C:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps
+
+  PureYellow-a0 [0,5,11] nodes=146 (4.2s)
+  PureYellow-a5 [5,5,11] nodes=137 (7.1s)
+  PureYellow-a9 [9,5,11] nodes=141 (10.0s)
+  PureYellow-a13 [13,5,11] nodes=135 (12.5s)
+  PureYellow-a17 [17,5,11] nodes=148 (15.9s)
+  TurquoisePool-a0 [0,4,3] nodes=134 (19.5s)
+  TurquoisePool-a5 [5,4,3] nodes=130 (22.9s)
+  TurquoisePool-a9 [9,4,3] nodes=143 (26.3s)
+  TurquoisePool-a13 [13,4,3] nodes=128 (28.9s)
+  TurquoisePool-a17 [17,4,3] nodes=143 (32.9s)
+  CanaryScatter-a0 [0,12,14] nodes=140 (34.8s)
+  CanaryScatter-a5 [5,12,14] nodes=137 (36.5s)
+  CanaryScatter-a9 [9,12,14] nodes=137 (38.0s)
+  CanaryScatter-a13 [13,12,14] nodes=135 (40.0s)
+  CanaryScatter-a17 [17,12,14] nodes=134 (41.5s)
+  AquamarineOrbital-a0 [0,11,4] nodes=143 (44.0s)
+  AquamarineOrbital-a5 [5,11,4] nodes=138 (46.0s)
+  AquamarineOrbital-a9 [9,11,4] nodes=150 (49.1s)
+  AquamarineOrbital-a13 [13,11,4] nodes=151 (51.7s)
+  AquamarineOrbital-a17 [17,11,4] nodes=153 (54.4s)
+  LimeTrifold-a0 [0,5,8] nodes=149 (57.5s)
+  LimeTrifold-a5 [5,5,8] nodes=145 (60.9s)
+  LimeTrifold-a9 [9,5,8] nodes=152 (63.9s)
+  LimeTrifold-a13 [13,5,8] nodes=140 (66.9s)
+  LimeTrifold-a17 [17,5,8] nodes=154 (69.6s)
+
+Complete in 70.7s: 25 rendered.
+Now let me review all Batch 14 variants efficiently — reading all 25 in parallel batches.
+
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PureYellow-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PureYellow-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PureYellow-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PureYellow-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\PureYellow-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\TurquoisePool-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\TurquoisePool-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\TurquoisePool-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\TurquoisePool-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\TurquoisePool-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\CanaryScatter-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\CanaryScatter-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\CanaryScatter-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\CanaryScatter-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\CanaryScatter-a17.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\AquamarineOrbital-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\AquamarineOrbital-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\AquamarineOrbital-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\AquamarineOrbital-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\AquamarineOrbital-a17.png
+API Error: Rate limit reached

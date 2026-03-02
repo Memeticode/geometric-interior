@@ -23,7 +23,6 @@ import { xmur3, mulberry32 } from '../../lib/core/prng.js';
 import { loadProfiles, saveProfiles, ensureStarterProfiles, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder } from '../ui/profiles.js';
 import { toast } from '../shared/toast.js';
 import { autoGrow, initAutoGrowTextareas } from '../shared/dom-utils.js';
-import { refreshTooltip } from '../shared/tooltips.js';
 import { initCollapsibles } from '../shared/collapsibles.js';
 import { initPanel, isPanelOpen, closePanel } from '../shared/panel.js';
 import { showConfirm, initModals, closeInfoModal } from '../shared/modals.js';
@@ -65,8 +64,10 @@ const el = {
     seedTagDet: document.getElementById('seedTagDet'),
     zoom: document.getElementById('zoom'),
     rotation: document.getElementById('rotation'),
+    elevation: document.getElementById('elevation'),
     zoomLabel: document.getElementById('zoomLabel'),
     rotationLabel: document.getElementById('rotationLabel'),
+    elevationLabel: document.getElementById('elevationLabel'),
     topology: document.getElementById('topology'),
     topologySelector: document.getElementById('topologySelector'),
     density: document.getElementById('density'),
@@ -100,13 +101,6 @@ const el = {
     userGallery: document.getElementById('userGallery'),
     galleryToggle: document.getElementById('galleryToggle'),
     galleryContent: document.getElementById('galleryContent'),
-    activeSection: document.getElementById('activeSection'),
-    activeCard: document.getElementById('activeCard'),
-    activeCardToggle: document.getElementById('activeCardToggle'),
-    activePreviewThumb: document.getElementById('activePreviewThumb'),
-    activeStatusLabel: document.getElementById('activeStatusLabel'),
-    activePreviewName: document.getElementById('activePreviewName'),
-    activePreviewSeed: document.getElementById('activePreviewSeed'),
     titleText: document.getElementById('titleText'),
     altText: document.getElementById('altText'),
     textWrap: document.getElementById('textWrap'),
@@ -270,7 +264,7 @@ function snapUIToState(state) {
     controls.setControlsInUI(state.controls);
     if (state.camera) {
         controls.setCameraInUI(state.camera);
-        bridge.sendCameraState(state.camera.zoom, state.camera.rotation);
+        bridge.sendCameraState(state.camera.zoom, state.camera.rotation, state.camera.elevation ?? 0);
     }
     controls.syncDisplayFields();
 }
@@ -328,7 +322,7 @@ function loadProfileDataIntoUI(name, p) {
     controls.setSeedInUI(p.seed || name);
     if (p.controls) controls.setControlsInUI(p.controls);
     controls.setCameraInUI(p.camera);
-    bridge.sendCameraState(p.camera?.zoom ?? 1.0, p.camera?.rotation ?? 0);
+    bridge.sendCameraState(p.camera?.zoom ?? 1.0, p.camera?.rotation ?? 0, p.camera?.elevation ?? 0);
     controls.syncDisplayFields();
     setDirty(false);
     setUserEdited(false);
@@ -492,7 +486,7 @@ function restoreSnapshot(snap) {
     controls.updateSliderLabels(snap.controls);
     if (snap.camera) {
         controls.setCameraInUI(snap.camera);
-        bridge.sendCameraState(snap.camera.zoom, snap.camera.rotation);
+        bridge.sendCameraState(snap.camera.zoom, snap.camera.rotation, snap.camera.elevation ?? 0);
     }
     controls.syncDisplayFields();
 
@@ -568,7 +562,7 @@ function randomizeUI() {
     ];
     controls.setSeedInUI(seedTag);
     controls.setCameraInUI(controls.CAMERA_DEFAULTS);
-    bridge.sendCameraState(controls.CAMERA_DEFAULTS.zoom, controls.CAMERA_DEFAULTS.rotation);
+    bridge.sendCameraState(controls.CAMERA_DEFAULTS.zoom, controls.CAMERA_DEFAULTS.rotation, controls.CAMERA_DEFAULTS.elevation);
     controls.setTopologyUI('flow-field');
 
     for (const id of controls.SLIDER_KEYS) {
@@ -658,7 +652,7 @@ function onCameraChange() {
     if (!initComplete) return;
     const cam = controls.readCameraFromUI();
     controls.updateCameraLabels(cam);
-    bridge.sendCameraState(cam.zoom, cam.rotation);
+    bridge.sendCameraState(cam.zoom, cam.rotation, cam.elevation);
     setUserEdited(true);
     setDirty(true);
 }
@@ -669,6 +663,7 @@ el.seedTagStr.addEventListener('change', onControlChange);
 el.seedTagDet.addEventListener('change', onControlChange);
 el.zoom.addEventListener('input', onCameraChange);
 el.rotation.addEventListener('input', onCameraChange);
+el.elevation.addEventListener('input', onCameraChange);
 el.profileNameField.addEventListener('input', () => {
     setUserEdited(true);
     setDirty(true);
@@ -802,11 +797,7 @@ initPageSettings(_footerRefs.pageSettingsBtn, _footerRefs.pageSettingsPopover);
 loadStatementContent();
 ensureStarterProfiles();
 
-// Move configControls into the Active card (starts collapsed)
-const configControlsEl = document.getElementById('configControls');
-el.activeCard.appendChild(configControlsEl);
-configControlsEl.style.display = '';
-configControlsEl.classList.add('collapsed');
+// configControls is always visible in the panel (no collapsed state)
 
 // Gallery header toggle
 el.galleryToggle.addEventListener('click', () => {
@@ -825,21 +816,11 @@ document.querySelectorAll('.gallery-section-header').forEach(header => {
     });
 });
 
-// Active card config toggle
-function toggleActiveConfig() {
-    const expanded = el.activeCardToggle.getAttribute('aria-expanded') === 'true';
-    el.activeCardToggle.setAttribute('aria-expanded', String(!expanded));
-    el.activeCardToggle.setAttribute('data-tooltip', expanded ? 'Open Configuration' : 'Close Configuration');
-    refreshTooltip(el.activeCardToggle);
-    document.getElementById('configControls').classList.toggle('collapsed', expanded);
-}
-
-document.querySelector('.active-card-main').addEventListener('click', (e) => {
-    if (e.target.closest('.active-save-btn')) return;
-    toggleActiveConfig();
-});
-
 // Config randomize + history buttons
+document.getElementById('panelRandomizeBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    randomize();
+});
 document.getElementById('configRandomizeBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     randomize();
@@ -901,7 +882,7 @@ function doInitialRender() {
     const seed = controls.getCurrentSeed();
     const ctrlValues = controls.readControlsFromUI();
     const camera = controls.readCameraFromUI();
-    bridge.sendCameraState(camera.zoom, camera.rotation);
+    bridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
 
     if (animationEnabled) bridge.sendFoldImmediate(0);
 

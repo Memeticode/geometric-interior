@@ -1,0 +1,89 @@
+Edit c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\session-log.md
+Modified
+Batch 10 done. Moving to Batch 11: remaining dense-territories (#31 Swarm, #32 Dense Monolith, #33 Dense Chaos, #36 Dense Atmosphere) + #26 Supernova Bloom.
+
+Update Todos
+
+Batch 10: Sweep blinding-light + dense-territories configs
+
+Batch 11: Sweep remaining dense + Supernova Bloom configs
+
+Continue seed-sweeping remaining ~30 untouched configs
+
+Replace any weak configs and write final deliverables
+Write c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\seed-sweep.json
+32 lines
+[
+  {"name": "Swarm-a0",  "seed": [0, 7, 6],  "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.30, "bloom": 0.25, "fracture": 0.55, "coherence": 0.65, "hue": 0.783, "spectrum": 0.28, "chroma": 0.50, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "Swarm-a5",  "seed": [5, 7, 6],  "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.30, "bloom": 0.25, "fracture": 0.55, "coherence": 0.65, "hue": 0.783, "spectrum": 0.28, "chroma": 0.50, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "Swarm-a9",  "seed": [9, 7, 6],  "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.30, "bloom": 0.25, "fracture": 0.55, "coherence": 0.65, "hue": 0.783, "spectrum": 0.28, "chroma": 0.50, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "Swarm-a13", "seed": [13, 7, 6], "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.30, "bloom": 0.25, "fracture": 0.55, "coherence": 0.65, "hue": 0.783, "spectrum": 0.28, "chroma": 0.50, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "Swarm-a17", "seed": [17, 7, 6], "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.30, "bloom": 0.25, "fracture": 0.55, "coherence": 0.65, "hue": 0.783, "spectrum": 0.28, "chroma": 0.50, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+
+  {"name": "DenseMonolith-a0",  "seed": [0, 3, 6],  "controls": {"topology": "flow-field", "density": 0.25, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.30, "coherence": 0.85, "hue": 0.783, "spectrum": 0.15, "chroma": 0.40, "scale": 0.15, "division": 0.10, "faceting": 0.30, "flow": 0.0}},
+  {"name": "DenseMonolith-a5",  "seed": [5, 3, 6],  "controls": {"topology": "flow-field", "density": 0.25, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.30, "coherence": 0.85, "hue": 0.783, "spectrum": 0.15, "chroma": 0.40, "scale": 0.15, "division": 0.10, "faceting": 0.30, "flow": 0.0}},
+  {"name": "DenseMonolith-a9",  "seed": [9, 3, 6],  "controls": {"topology": "flow-field", "density": 0.25, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.30, "coherence": 0.85, "hue": 0.783, "spectrum": 0.15, "chroma": 0.40, "scale": 0.15, "division": 0.10, "faceting": 0.30, "flow": 0.0}},
+  {"name": "DenseMonolith-a13", "seed": [13, 3, 6], "controls": {"topology": "flow-field", "density": 0.25, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.30, "coherence": 0.85, "hue": 0.783, "spectrum": 0.15, "chroma": 0.40, "scale": 0.15, "division": 0.10, "faceting": 0.30, "flow": 0.0}},
+  {"name": "DenseMonolith-a17", "seed": [17, 3, 6], "controls": {"topology": "flow-field", "density": 0.25, "luminosity": 0.35, "bloom": 0.30, "fracture": 0.30, "coherence": 0.85, "hue": 0.783, "spectrum": 0.15, "chroma": 0.40, "scale": 0.15, "division": 0.10, "faceting": 0.30, "flow": 0.0}},
+
+  {"name": "DenseChaos-a0",  "seed": [0, 13, 8],  "controls": {"topology": "flow-field", "density": 0.35, "luminosity": 0.35, "bloom": 0.35, "fracture": 0.65, "coherence": 0.20, "hue": 0.5, "spectrum": 0.50, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}},
+  {"name": "DenseChaos-a5",  "seed": [5, 13, 8],  "controls": {"topology": "flow-field", "density": 0.35, "luminosity": 0.35, "bloom": 0.35, "fracture": 0.65, "coherence": 0.20, "hue": 0.5, "spectrum": 0.50, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}},
+  {"name": "DenseChaos-a9",  "seed": [9, 13, 8],  "controls": {"topology": "flow-field", "density": 0.35, "luminosity": 0.35, "bloom": 0.35, "fracture": 0.65, "coherence": 0.20, "hue": 0.5, "spectrum": 0.50, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}},
+  {"name": "DenseChaos-a13", "seed": [13, 13, 8], "controls": {"topology": "flow-field", "density": 0.35, "luminosity": 0.35, "bloom": 0.35, "fracture": 0.65, "coherence": 0.20, "hue": 0.5, "spectrum": 0.50, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}},
+  {"name": "DenseChaos-a17", "seed": [17, 13, 8], "controls": {"topology": "flow-field", "density": 0.35, "luminosity": 0.35, "bloom": 0.35, "fracture": 0.65, "coherence": 0.20, "hue": 0.5, "spectrum": 0.50, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}},
+
+  {"name": "DenseAtmosphere-a0",  "seed": [0, 13, 12],  "controls": {"topology": "flow-field", "density": 0.55, "luminosity": 0.22, "bloom": 0.15, "fracture": 0.60, "coherence": 0.55, "hue": 0.06, "spectrum": 0.30, "chroma": 0.75, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DenseAtmosphere-a5",  "seed": [5, 13, 12],  "controls": {"topology": "flow-field", "density": 0.55, "luminosity": 0.22, "bloom": 0.15, "fracture": 0.60, "coherence": 0.55, "hue": 0.06, "spectrum": 0.30, "chroma": 0.75, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DenseAtmosphere-a9",  "seed": [9, 13, 12],  "controls": {"topology": "flow-field", "density": 0.55, "luminosity": 0.22, "bloom": 0.15, "fracture": 0.60, "coherence": 0.55, "hue": 0.06, "spectrum": 0.30, "chroma": 0.75, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DenseAtmosphere-a13", "seed": [13, 13, 12], "controls": {"topology": "flow-field", "density": 0.55, "luminosity": 0.22, "bloom": 0.15, "fracture": 0.60, "coherence": 0.55, "hue": 0.06, "spectrum": 0.30, "chroma": 0.75, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+  {"name": "DenseAtmosphere-a17", "seed": [17, 13, 12], "controls": {"topology": "flow-field", "density": 0.55, "luminosity": 0.22, "bloom": 0.15, "fracture": 0.60, "coherence": 0.55, "hue": 0.06, "spectrum": 0.30, "chroma": 0.75, "scale": 0.85, "division": 0.5, "faceting": 0.5, "flow": 0.5}},
+
+  {"name": "SupernovaBloom-a0",  "seed": [0, 13, 12],  "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.15, "bloom": 0.85, "fracture": 0.85, "coherence": 0.55, "hue": 0.50, "spectrum": 0.65, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}},
+  {"name": "SupernovaBloom-a5",  "seed": [5, 13, 12],  "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.15, "bloom": 0.85, "fracture": 0.85, "coherence": 0.55, "hue": 0.50, "spectrum": 0.65, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}},
+  {"name": "SupernovaBloom-a9",  "seed": [9, 13, 12],  "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.15, "bloom": 0.85, "fracture": 0.85, "coherence": 0.55, "hue": 0.50, "spectrum": 0.65, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}},
+  {"name": "SupernovaBloom-a13", "seed": [13, 13, 12], "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.15, "bloom": 0.85, "fracture": 0.85, "coherence": 0.55, "hue": 0.50, "spectrum": 0.65, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}},
+  {"name": "SupernovaBloom-a17", "seed": [17, 13, 12], "controls": {"topology": "flow-field", "density": 0.50, "luminosity": 0.15, "bloom": 0.85, "fracture": 0.85, "coherence": 0.55, "hue": 0.50, "spectrum": 0.65, "chroma": 0.70, "scale": 0.5, "division": 0.5, "faceting": 0.55, "flow": 0.5}}
+]
+Bash Render Batch 11 seed sweep variants
+IN
+cd /c/Users/thatc/source/repos/geometric-interior && node workflows/image-param-space-exploration/render-sweep.mjs 2>&1
+
+OUT
+Seed sweep: 25 variants to render
+Output: C:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps
+
+  Swarm-a0 [0,7,6] nodes=469 (3.3s)
+  Swarm-a5 [5,7,6] nodes=462 (6.5s)
+  Swarm-a9 [9,7,6] nodes=480 (9.4s)
+  Swarm-a13 [13,7,6] nodes=472 (12.6s)
+  Swarm-a17 [17,7,6] nodes=468 (15.0s)
+  DenseMonolith-a0 [0,3,6] nodes=231 (26.4s)
+  DenseMonolith-a5 [5,3,6] nodes=218 (36.1s)
+  DenseMonolith-a9 [9,3,6] nodes=224 (45.9s)
+  DenseMonolith-a13 [13,3,6] nodes=225 (54.7s)
+  DenseMonolith-a17 [17,3,6] nodes=233 (62.9s)
+  DenseChaos-a0 [0,13,8] nodes=290 (66.5s)
+  DenseChaos-a5 [5,13,8] nodes=261 (69.1s)
+  DenseChaos-a9 [9,13,8] nodes=277 (72.3s)
+  DenseChaos-a13 [13,13,8] nodes=287 (75.9s)
+  DenseChaos-a17 [17,13,8] nodes=266 (79.2s)
+  DenseAtmosphere-a0 [0,13,12] nodes=582 (82.5s)
+  DenseAtmosphere-a5 [5,13,12] nodes=584 (86.2s)
+  DenseAtmosphere-a9 [9,13,12] nodes=593 (90.0s)
+  DenseAtmosphere-a13 [13,13,12] nodes=592 (93.3s)
+  DenseAtmosphere-a17 [17,13,12] nodes=579 (96.1s)
+  SupernovaBloom-a0 [0,13,12] nodes=330 (98.7s)
+  SupernovaBloom-a5 [5,13,12] nodes=333 (102.4s)
+  SupernovaBloom-a9 [9,13,12] nodes=338 (105.7s)
+  SupernovaBloom-a13 [13,13,12] nodes=333 (108.8s)
+  SupernovaBloom-a17 [17,13,12] nodes=333 (111.4s)
+
+Complete in 112.5s: 25 rendered.
+All 25 rendered. Dense configs are slower (up to 593 nodes!). Let me review them efficiently.
+
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Swarm-a0.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Swarm-a5.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Swarm-a9.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Swarm-a13.png
+Read c:\Users\thatc\source\repos\geometric-interior\workflows\image-param-space-exploration\output\seed-sweeps\Swarm-a17.png
+API Error: Rate limit reached

@@ -20,22 +20,34 @@ The configuration interfaces should feel like they belong to the artwork — ins
 
 ### Current State
 
-The image editor panel (`image.html`) occupies the left sidebar at 25rem width. It collapses to zero with an animated slide. Seed tag dropdowns and camera sliders (zoom, rotation) are implemented in the HTML and wired through `editor-main.js`.
+The image editor panel (`image.html`) occupies the left sidebar at 25rem width. It collapses to zero with an animated slide. Seed tag dropdowns and camera sliders (zoom, rotation, elevation) are implemented in the HTML and wired through `editor-main.js`.
 
 **Key files**: `image.html`, `src/editor/editor-main.js`, `src/editor/config-controls.js`, `css/controls.css`, `css/active-card.css`, `css/panel.css`
 
-### Design Direction: Remove Active Card
+### Design Direction: Composable Control Groups
 
-The current implementation wraps the controls in an "active card" — a collapsible container with a thumbnail, status badge, name, seed label, save/reset buttons, and a chevron toggle. This made sense when the sidebar was the primary view, but now that the user always sees the full render on the canvas, the card abstraction is unnecessary indirection.
+The panel is a direct controls surface — open it, and everything is right there. No collapsed cards, no intermediate states to expand past.
 
-**The panel should be a direct controls surface.** Open it, and the controls are right there — no intermediate collapsed state to expand past.
+The controls are organized into four composable groups, each a visually distinct container. "General purpose" groups (Import/Export, Config Utility) are reusable across contexts (image editor, animation editor, gallery generation panel). The scene-specific groups (Geometric Interior Configuration, Camera Position) carry the parameters that define a render.
+
+This composability means contexts can mix and match: the gallery generation panel might use Config Utility + Geometric Interior Configuration without Import/Export or Camera. The animation editor might show Camera Position on its own in a span properties popover.
 
 ### Panel Layout
 
 ```
+
+
+Import/Export Config (general purpose)
 ┌─────────────────────────────────┐
-│  [💾 Save]  [↺ Reset] [↺ Randomize] [Import Config Only] [Export Config Only] │
+│ [Import Config] [Export Config] │
 └─────────────────────────────────┘
+
+Config Utility (general purpose)
+┌─────────────────────────────────┐
+│  [💾 Save]  [↺ Reset] [↺ Randomize] │
+└─────────────────────────────────┘
+
+Geometric Interior (Previously called image configuration) Configuration 
 ┌─────────────────────────────────┐
 │  (i) Name                           │
 │  [ Violet Sanctum            ]  │
@@ -65,29 +77,59 @@ The current implementation wraps the controls in an "active card" — a collapsi
 │   (i) Coherence      ░░░░░▓░░░░     │
 │   (i) Flow           ░░░░░▓░░░░     │
 └─────────────────────────────────┘
-│  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─   │
-│  (i) CAMERA                        │
-│   (i) Zoom           ░░░░░▓░░░░     │
-│   (i) Rotation       ▓░░░░░░░░░     │
 
+Camera Position (included with image config)
+┌─────────────────────────────────┐
+│  (i) CAMERA                        │
+│   (i) Rotation       ▓░░░░░░░░░     │
+│   (i) Elevation       ▓░░░░░░░░░     │
+│   (i) Zoom           ░░░░░▓░░░░     │
 └─────────────────────────────────┘
+
+
 ```
 
 The controls are always visible when the panel is open. No collapsed/expanded card toggle. The stage header (above the canvas) continues to show the read-only identity: profile name, seed label, history arrows, randomize, settings, and share buttons.
 
-### Section Details
+### Component Groups
 
-**Name field**: Single-line auto-growing textarea, 10px rounded border, muted placeholder.
+The panel is composed of four distinct groups, rendered top to bottom:
+
+#### 1. Import/Export Config (general purpose)
+
+Two compact buttons in a flex row, 6px radius, faint border. Import loads a JSON config file; Export saves the current full config (seed + controls + camera) as JSON. This component is reusable anywhere a config needs to be serialized.
+
+#### 2. Config Utility (general purpose)
+
+Action buttons for managing the current config state:
+
+- **Save**: Persists the current config. Disabled until changes are made (`dirty` flag).
+- **Reset**: Reverts to last saved state. Disabled until the user has edited (`userEdited` flag).
+- **Randomize**: Randomizes all 3 seed slots + 11 controls + camera. Triggers a morph transition if enabled.
+
+This group replaces the save/reset icons that were in the old active card header, and centralizes randomize (previously only accessible from the stage header).
+
+#### 3. Geometric Interior Configuration
+
+The core scene parameters. Previously called "image configuration" — renamed because these parameters define the geometric interior itself, independent of how it's used (still image, animation keyframe, gallery generation).
+
+**Name field**: Single-line auto-growing textarea, 10px rounded border, muted placeholder. A name for this arrangement of light and form.
 
 **Seed field**: Three `<select>` dropdowns in a flex row, separated by `·` characters in muted text. Each select shows the localized word from its perceptual spectrum (18 options). Already implemented in the HTML with `#seedTagArr`, `#seedTagStr`, `#seedTagDet`.
 
-**Save / Reset**: Compact inline buttons near the top. Save is disabled until changes are made (`dirty` flag). Reset is disabled until user has edited (`userEdited` flag). These replace the save/reset icons that were in the active card header.
-
-**Parameter sections**: Uppercase 0.625rem headers with letter-spacing 0.4px. Each separated by a 1px `var(--border)` hairline.
+**Parameter sections** (Geometry, Light, Color, Space): Uppercase 0.625rem headers with letter-spacing 0.4px. Each separated by a 1px `var(--border)` hairline. See the Tooltip Reference and Gradient Tracks tables below for per-parameter details.
 
 **Info tooltips**: Every section header and parameter label has an `(i)` info icon that shows a tooltip on hover. The tooltips are poetic and thematic, rewarding curiosity. See the tooltip reference table below.
 
 **Slider rows**: Each row contains a label (0.75rem, left-aligned), a value readout (0.6875rem, tabular-nums, right-aligned, muted), and below them the engine slider. The slider has a 6px gradient track and a 13px round thumb with the characteristic purple glow shadow.
+
+#### 4. Camera Position (included with image config)
+
+Camera framing controls that adjust the viewpoint without triggering a scene rebuild — feels instant. Visually separated from the Geometric Interior Configuration but part of the same config object. In contexts where camera is edited independently (e.g., animation camera spans), this group can appear on its own.
+
+- **Rotation**: Range 0–360, step 1, displayed as "0°". Gradient track: blue → purple → blue (cyclical).
+- **Elevation**: Range -90–90, step 1, displayed as "0°".
+- **Zoom**: Range 0.3–3.0, step 0.01, displayed as "1.00". Gradient track: warm gold → cool blue.
 
 ### Tooltip Reference
 
@@ -114,8 +156,9 @@ All tooltip text is localized via `data-i18n-tooltip` keys. English defaults:
 | Coherence | The discipline binding form to structure. |
 | Flow | The directional field pattern &mdash; radial starburst to noise to orbital bands. |
 | **Camera** (section) | Static framing of the scene &mdash; zoom level and orbital rotation angle. |
-| Zoom | How close or far the viewpoint is. Below 1.0 moves closer to the forms, above 1.0 moves further away. |
 | Rotation | Orbital rotation angle around the scene center, in degrees. 360&deg; wraps back to 0&deg;. |
+| Elevation | Vertical viewing angle &mdash; look up from below or down from above. |
+| Zoom | How close or far the viewpoint is. Below 1.0 moves closer to the forms, above 1.0 moves further away. |
 
 **Gradient tracks**: Each slider has a unique gradient background hinting at its visual effect:
 - Density: sparse blue → dense blue
@@ -126,44 +169,6 @@ All tooltip text is localized via `data-i18n-tooltip` keys. English defaults:
 - Hue: full rainbow
 - Zoom: warm gold → cool blue
 - Rotation: blue → purple → blue (cyclical)
-
-**Camera section**: Zoom uses range 0.3–3.0 with step 0.01, displayed as "1.00". Rotation uses range 0–360 with step 1, displayed as "0°". Both use gradient tracks. Camera adjustments do NOT trigger scene rebuilds — only camera repositioning. This feels notably faster than parameter changes.
-
-**Export/Import**: Two compact buttons at the bottom, flex row, 6px radius, faint border. Export/import the full config (seed + controls + camera) as JSON.
-
-### Gallery Section
-
-Below the controls, the gallery section is unchanged: a collapsible header ("Image Gallery") with Portraits and Saved (local) subsections, each showing profile cards with thumbnails. Clicking a profile loads it and renders on the canvas (with morph transition if enabled).
-
-### Stage Header
-
-The stage header sits above the canvas and provides read-only context:
-
-```
-┌──────────────────────────────────────────────────┐
-│  Violet Sanctum                                  │
-│  Swirling · Crystalline · Radiant                │
-│                              ◄ 🔄 ►  ⚙  ↗      │
-└──────────────────────────────────────────────────┘
-```
-
-- **Profile name** (`#displayName`): prominent, identifies the current config
-- **Seed label** (`#displayIntent`): muted, shows localized seed tag words
-- **History arrows**: undo/redo navigation through recent states
-- **Randomize**: generates a new random config (all controls + seed + camera)
-- **Settings gear**: page settings popover
-- **Share**: share link, download, social media
-
-### Work Remaining
-
-The active card removal requires:
-1. Flatten the HTML: move controls out of the card wrapper, remove `#activeCard`, `#activeSection` container
-2. Move save/reset buttons inline near the name field
-3. Remove the thumbnail preview from the sidebar (it's redundant with the canvas)
-4. Remove the collapsed/expanded toggle chevron
-5. Update `editor-main.js` to not use the card expand/collapse state
-6. Clean up `css/active-card.css` (most of it becomes unnecessary)
-7. The configControls `display:none` / insert-into-card logic goes away — controls are just part of the panel flow
 
 ---
 

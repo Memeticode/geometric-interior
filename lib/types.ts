@@ -100,7 +100,7 @@ export interface StillConfig {
         flow?: number;
         bloom?: number;
     };
-    camera?: { zoom: number; rotation: number };
+    camera?: { zoom: number; rotation: number; elevation?: number };
 }
 
 /** Render metadata returned by renderWith() */
@@ -145,7 +145,7 @@ export interface RendererOptions {
 export interface Profile {
     seed: import('./core/seed-tags.js').Seed;
     controls: Controls;
-    camera?: { zoom: number; rotation: number };
+    camera?: { zoom: number; rotation: number; elevation?: number };
 }
 
 /** Validation result */

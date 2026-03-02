@@ -6,16 +6,20 @@ Standalone processes for tuning, exploring, and surveying the image parameter sp
 
 | Workflow | Purpose | When to run |
 |----------|---------|-------------|
-| [image-param-tuning/](image-param-tuning/) | Verify a parameter's derivation curves are usable and perceptually even | After implementing a new parameter |
-| [image-param-exploration/](image-param-exploration/) | Creative deep-dive into a specific parameter or parameter pair | After tuning confirms curves are healthy |
-| [image-param-space-exploration/](image-param-space-exploration/) | Broad survey of the full N-dimensional parameter space | After major parameter additions or periodically |
+| [agent-image-param-exploration/](agent-image-param-exploration/) | Verify a parameter's derivation curves are usable and perceptually even | After implementing a new parameter |
+| [agent-image-param-space-exploration/](agent-image-param-space-exploration/) | Broad survey of the full N-dimensional parameter space | After major parameter additions or periodically |
+| [image-dialogue/](image-dialogue/) | Freeform conversation with the renderer to create a single image | When you want to explore without a plan |
+| [agent-introspective-journey-image-generation/](agent-introspective-journey-image-generation/) | Guided multi-phase convergence to a single image | When you want a structured path to a specific image |
+
+### Image generation workflows
+
+The dialogue and journey workflows both depend on the shared context library at [shared/image-gen-context.md](shared/image-gen-context.md). Load this into your session before starting either workflow — it contains the parameter vocabulary, known recipes, translation guide, and rendering protocol.
 
 ### Typical sequence for a new parameter
 
 1. **Implement** the parameter in `lib/core/params.ts`, shaders, materials, HTML
-2. **Tune** via `image-param-tuning` -- sweep the range, fix dead zones, adjust curves
-3. **Explore** via `image-param-exploration` -- discover aesthetic territories, find starter profile values
-4. **Survey** via `image-param-space-exploration` -- expand the configuration library across the full space
+2. **Tune** via `agent-image-param-exploration` -- sweep the range, fix dead zones, adjust curves
+3. **Survey** via `agent-image-param-space-exploration` -- expand the configuration library across the full space
 
 ## Output Convention
 
@@ -40,7 +44,8 @@ These are not workflows -- they're build tools that run when source data changes
 
 | Script | Purpose | Trigger |
 |--------|---------|---------|
-| `scripts/gen-thumbs.mjs` | Portrait carousel thumbnails -> `public/thumbs/` | Starter profiles change |
+| `scripts/render-single.mjs` | Render one or more configs to PNG (used by dialogue + journey workflows) | On demand |
+| `scripts/gen-starter-profile-images.mjs` | Portrait thumbnails -> `public/static/images/portraits/` | Starter profiles change |
 | `scripts/gen-fold-anims.mjs` | Fold animation sprites -> `public/thumbs/` | Starter profiles change |
 | `scripts/gen-anim.*` | Full animation video (Playwright + ffmpeg) | On demand |
 | `scripts/gen-loop.*` | Looping morph video (Playwright + ffmpeg) | On demand |
@@ -55,7 +60,7 @@ The `sampler-captures/` folder contains artifacts from the first parameter-space
 - `_render-100.mjs` -- batch render script
 - `_prompt-*.md` -- session prompts used to guide past explorations
 
-These are retained as reference. New exploration work uses `workflows/image-param-space-exploration/`.
+These are retained as reference. New exploration work uses `workflows/agent-image-param-space-exploration/`.
 
 ## Prerequisites
 

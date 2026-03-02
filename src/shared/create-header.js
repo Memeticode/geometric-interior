@@ -50,7 +50,12 @@ export function createHeader(headerEl, { page }) {
         `<button id="governanceStatement" class="header-link" data-i18n="header.governanceFramework">Governance Framework</button>`,
     ];
 
-    const allLinks = [...navLinks, ...statementBtns];
+    // Dev-only exploration link (localhost only)
+    const devLinks = location.hostname === 'localhost'
+        ? [`<a href="/dev-exploration/" class="header-link">Demos</a>`]
+        : [];
+
+    const allLinks = [...navLinks, ...statementBtns, ...devLinks];
     const linksHTML = allLinks.join('<span class="header-sep">&middot;</span>');
 
     // ── Header actions (gallery only: share button + popover) ──

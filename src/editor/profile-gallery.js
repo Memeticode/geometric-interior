@@ -5,14 +5,13 @@
 
 import { loadProfiles, saveProfiles, deleteProfile, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder, syncProfileOrder } from '../ui/profiles.js';
 import { seedTagToLabel } from '../../lib/core/seed-tags.js';
-import { getLocale } from '../i18n/locale.js';
 import { slugify } from '../shared/slugify.js';
 import { t } from '../i18n/locale.js';
 import { TRASH_SVG, ARROW_UP_SVG, ARROW_DOWN_SVG } from '../shared/icons.js';
 
 /**
  * @param {object} opts
- * @param {object} opts.el - DOM refs (portraitGallery, userGallery, activePreviewName, activePreviewSeed, activeStatusLabel, activePreviewThumb, profileNameField)
+ * @param {object} opts.el - DOM refs (portraitGallery, userGallery, profileNameField)
  * @param {object} opts.thumbRenderer - { queueThumbnail, cacheKey, cache, removeCachedThumb }
  * @param {Function} opts.getCurrentSeed
  * @param {Function} opts.readControlsFromUI
@@ -43,25 +42,9 @@ export function createProfileGallery({ el, thumbRenderer, getCurrentSeed, readCo
     }
 
     function updateActivePreview() {
-        const name = el.profileNameField.value.trim() || 'Untitled';
-        const seed = getCurrentSeed();
-        const state = getLoadedState();
-
-        el.activePreviewName.textContent = name;
-        el.activePreviewSeed.textContent = seedTagToLabel(seed, getLocale());
-
-        let status;
-        if (!state.name) {
-            status = 'Unsaved';
-        } else if (state.isPortrait) {
-            status = state.dirty ? 'Portrait \u00b7 unsaved' : 'Portrait';
-        } else {
-            status = state.dirty ? 'User \u00b7 unsaved' : 'User';
-        }
-        el.activeStatusLabel.textContent = status;
-
-        const controls = readControlsFromUI();
-        thumbRenderer.queueThumbnail(seed || 'seed', controls, el.activePreviewThumb);
+        // Active card removed — the stage header shows name/seed,
+        // and the canvas serves as the live preview. This stub
+        // remains so callers don't need to change.
     }
 
     function buildProfileCard(name, p, { isPortrait = false, index = 0, total = 1 } = {}) {
@@ -81,7 +64,7 @@ export function createProfileGallery({ el, thumbRenderer, getCurrentSeed, readCo
         header.appendChild(thumbWrap);
 
         if (isPortrait) {
-            thumbImg.src = `/thumbs/${slugify(name)}.png`;
+            thumbImg.src = `/static/images/portraits/${slugify(name)}-thumb.png`;
             thumbImg.onerror = () => {
                 if (p.seed && p.controls) thumbRenderer.queueThumbnail(p.seed, p.controls, thumbImg);
             };
@@ -175,7 +158,7 @@ export function createProfileGallery({ el, thumbRenderer, getCurrentSeed, readCo
 
         // Portraits section
         const portraits = loadPortraits();
-        const portraitNames = Object.keys(portraits).sort((a, b) => a.localeCompare(b));
+        const portraitNames = getPortraitNames();
         el.portraitGallery.innerHTML = '';
 
         for (const name of portraitNames) {

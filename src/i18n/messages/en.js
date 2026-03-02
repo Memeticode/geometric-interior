@@ -89,7 +89,7 @@ export default {
     'section.space': 'Space',
     'section.space.tooltip': 'The directional organization of forms \u2014 flow patterns and structural coherence.',
     'section.camera': 'Camera',
-    'section.camera.tooltip': 'Static framing of the scene \u2014 zoom level and orbital rotation angle.',
+    'section.camera.tooltip': 'The still eye of the scene \u2014 distance, orbit, and elevation.',
 
     /* ── Seed tag ── */
     'control.seed': 'Seed',
@@ -99,7 +99,9 @@ export default {
     'control.zoom': 'Zoom',
     'control.zoom.tooltip': 'How close or far the viewpoint is. Below 1.0 moves closer to the forms, above 1.0 moves further away.',
     'control.rotation': 'Rotation',
-    'control.rotation.tooltip': 'Orbital rotation angle around the scene center, in degrees. 360\u00b0 wraps back to 0\u00b0.',
+    'control.rotation.tooltip': 'The horizontal orbit \u2014 a slow revolution around the forms.',
+    'control.elevation': 'Elevation',
+    'control.elevation.tooltip': 'How far the gaze rises or descends \u2014 from beneath the forms to above their canopy.',
 
     /* ── Palette names ── */
     'palette.violet': 'Violet',

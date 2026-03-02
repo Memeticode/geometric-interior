@@ -2,3 +2,16 @@ To-Do
 -- add camera controls to image configuration (conceptually disinct from visual render configuration)
 -- create sampler-image generation workflow (not just parameter space exploration workflow)
 
+
+
+
+# (4) continue exploration.
+
+Hello. Please pick up where an earlier session hit the api rate limit. You can read this file and pick up where it left off.
+
+workflows\image-param-space-exploration\output\session-log.md
+
+However, it was in the middle of some work which did not get logged. I have copied the full history since last session-log into this file:
+
+workflows\image-param-space-exploration\output\chat-export-04.txt
+

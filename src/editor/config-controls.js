@@ -8,7 +8,7 @@ import { getLocale } from '../i18n/locale.js';
 
 export const SLIDER_KEYS = ['density', 'luminosity', 'bloom', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
 export const TOPOLOGY_VALUES = ['flow-field', 'icosahedral', 'mobius', 'multi-attractor'];
-export const CAMERA_DEFAULTS = { zoom: 1.0, rotation: 0 };
+export const CAMERA_DEFAULTS = { zoom: 1.0, rotation: 0, elevation: 0 };
 
 /**
  * @param {object} el - DOM element refs (must include slider, seed tag, camera, topology elements)
@@ -58,6 +58,7 @@ export function createConfigControls(el) {
         return {
             zoom: parseFloat(el.zoom.value),
             rotation: parseFloat(el.rotation.value),
+            elevation: parseFloat(el.elevation.value),
         };
     }
 
@@ -65,12 +66,14 @@ export function createConfigControls(el) {
         const cam = camera || CAMERA_DEFAULTS;
         el.zoom.value = cam.zoom;
         el.rotation.value = cam.rotation;
+        el.elevation.value = cam.elevation ?? 0;
         updateCameraLabels(cam);
     }
 
     function updateCameraLabels(camera) {
         el.zoomLabel.textContent = camera.zoom.toFixed(2);
         el.rotationLabel.textContent = Math.round(camera.rotation) + '\u00b0';
+        el.elevationLabel.textContent = Math.round(camera.elevation ?? 0) + '\u00b0';
     }
 
     /* ── Topology ── */

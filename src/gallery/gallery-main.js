@@ -12,6 +12,7 @@
  *   /gallery/animations                      — animation gallery (placeholder)
  */
 
+import '../shared/carousel-dropdown-browser.js';
 import { createHeader } from '../shared/create-header.js';
 import { createFooter } from '../shared/create-footer.js';
 import { initApp } from '../shared/app-init.js';
@@ -19,7 +20,7 @@ import { initTheme } from '../ui/theme.js';
 import { initLangSelector } from '../i18n/lang-selector.js';
 import { initResolutionSelector } from '../ui/resolution.js';
 import { t, getLocale } from '../i18n/locale.js';
-import { loadProfiles, loadPortraits, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder } from '../ui/profiles.js';
+import { loadProfiles, loadPortraits, getPortraitNames, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder } from '../ui/profiles.js';
 import { getAllThumbs, deleteThumb } from '../ui/thumb-cache.js';
 import { getAllAssets, getAsset, deleteAsset, getAllAnimAssets, deleteAnimAsset } from '../ui/asset-store.js';
 import { getResolution } from '../ui/resolution.js';
@@ -174,12 +175,8 @@ const galleryArrowLeft = document.getElementById('galleryArrowLeft');
 const galleryArrowRight = document.getElementById('galleryArrowRight');
 const selectedVideo = document.getElementById('selectedVideo');
 
-/* ── Carousel DOM refs ── */
-const carouselTrack = document.getElementById('carouselTrack');
-const viewAllToggle = document.getElementById('viewAllToggle');
-const viewAllInline = document.getElementById('viewAllInline');
-const viewAllGrid = document.getElementById('viewAllGrid');
-const carouselStrip = document.querySelector('.carousel-strip');
+/* ── Carousel component ── */
+const carouselBrowser = document.getElementById('carouselBrowser');
 const galleryMainEl = document.querySelector('.gallery-main');
 
 /* ── Generate panel DOM refs ── */
@@ -197,7 +194,6 @@ const genProgressLabel = document.getElementById('genProgressLabel');
 const genQueueEl = document.getElementById('genQueue');
 const animSectionEl = document.getElementById('animSection');
 const animGalleryEl = document.getElementById('animGallery');
-const carouselStripEl = carouselTrack.closest('.carousel-strip');
 
 /* ── Generated text toggle ── */
 selectedGenToggle.addEventListener('click', () => {
@@ -205,21 +201,6 @@ selectedGenToggle.addEventListener('click', () => {
     selectedGenToggle.setAttribute('aria-expanded', String(!expanded));
     selectedGenAlt.classList.toggle('expanded', !expanded);
 });
-
-// Carousel responds to its actual container width, not just window resize.
-// ResizeObserver fires when margin-left transitions (menu open/close) change
-// the viewport's content box — window 'resize' does not.
-const carouselViewport = carouselTrack.parentElement;
-if (carouselViewport) {
-    new ResizeObserver(() => {
-        if (carouselCards.length) {
-            positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
-        }
-        if (viewAllToggle && carouselList.length) {
-            viewAllToggle.style.display = carouselList.length > getVisibleCount() ? '' : 'none';
-        }
-    }).observe(carouselViewport);
-}
 
 window.addEventListener('resize', () => {
     positionMenuSlider(false);
@@ -234,9 +215,6 @@ let currentIndex = -1;
 
 /* ── Carousel state ── */
 let carouselList = [];       // [{name, profile, isPortrait, assetId?}] — portraits first, then local
-let carouselCenterIdx = 0;
-let carouselCards = [];      // [{element, index}]
-let carouselDragJustEnded = false; // suppress click after drag
 
 /* ── Slideshow ── */
 const slideshowBtn = document.getElementById('slideshowBtn');
@@ -439,538 +417,76 @@ fullscreenBtn.addEventListener('click', () => {
     else openFullscreen();
 });
 
-/* ── Carousel engine ── */
+/* ── Carousel component integration ── */
 
-const CAROUSEL_ARC_ANGLE = 1.25; // radians — half-arc angle for outermost visible card
-
-/** Compute the circular arc parameters for the current viewport. */
-function getArcParams() {
-    const viewportW = carouselTrack.parentElement
-        ? carouselTrack.parentElement.clientWidth
-        : window.innerWidth;
-    const visible = getVisibleCount();
-    const half = Math.floor(visible / 2);
-    const dTheta = half > 0 ? CAROUSEL_ARC_ANGLE / half : 0.25;
-    const R = CAROUSEL_ARC_ANGLE > 0.01
-        ? viewportW / (2 * Math.sin(Math.min(CAROUSEL_ARC_ANGLE, Math.PI / 2 - 0.05)))
-        : viewportW;
-    return { R, dTheta, half };
+/** Build the items array for the carousel component from carouselList. */
+function updateBrowserItems() {
+    carouselBrowser.items = carouselList.map(entry => ({
+        key: entry.assetId || entry.name,
+        label: entry.name,
+        thumbSrc: resolveThumbSrc(entry),
+        fallbackSrc: entry.isPortrait ? resolveFallbackSrc(entry) : undefined,
+        deletable: !entry.isPortrait,
+        data: entry,
+    }));
 }
 
-function getVisibleCount() {
-    const viewport = carouselTrack.parentElement;
-    const cardW = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--card-w')) || 180;
-    const spacing = cardW * 0.5;
-    const w = viewport ? viewport.clientWidth : window.innerWidth;
-    const half = Math.floor((w - cardW) / (2 * spacing));
-    return Math.max(3, 2 * Math.max(1, half) + 1);
+function resolveThumbSrc(entry) {
+    if (entry.assetId) {
+        const asset = generatedAssets.find(a => a.id === entry.assetId);
+        return asset && asset.thumbDataUrl ? asset.thumbDataUrl : '';
+    }
+    return getCarouselThumbSrc(entry.name, entry.profile, entry.isPortrait);
 }
 
-/**
- * Position carousel cards with coverflow 3D transforms.
- * Centers the card at `centerIdx`, tilts neighbors, hides far-offscreen cards.
- */
-function positionCards(trackEl, cards, centerIdx, total) {
-    const { R, dTheta, half } = getArcParams();
-    trackEl.style.setProperty('--carousel-speed', '0.6s');
-
-    for (const { element, index } of cards) {
-        let offset = index - centerIdx;
-        // Wrap for circular navigation
-        if (total > 1) {
-            if (offset > total / 2) offset -= total;
-            if (offset < -total / 2) offset += total;
-        }
-        const abs = Math.abs(offset);
-
-        element.classList.remove('active');
-
-        if (abs > half + 2) {
-            element.style.setProperty('--card-opacity', '0');
-            element.style.pointerEvents = 'none';
-            element.style.zIndex = '0';
-        } else {
-            let cx, ry, tz, sc, opacity;
-
-            if (abs <= half) {
-                // Zone 1: Visible arc
-                const angle = offset * dTheta;
-                cx = R * Math.sin(angle);
-                const ryDeg = Math.abs(angle) * (180 / Math.PI);
-                ry = Math.sign(offset) * Math.min(ryDeg, 50);
-                tz = abs < 1 ? 40 - 60 * abs : -abs * 20;
-                sc = Math.max(0.65, 1 - abs * 0.1);
-                opacity = 1;
-            } else {
-                // Zone 2: Exit — shrink and rotate at edge like a spinning oval
-                const t = Math.min((abs - half) / 2, 1); // 0 at half, 1 at half+2
-                const edgeAngle = half * dTheta;
-                cx = R * Math.sin(edgeAngle) * Math.sign(offset);
-                ry = Math.sign(offset) * (50 + t * 40); // 50° → 90°
-                tz = -half * 20 - t * 30;
-                sc = 0.65 * (1 - t); // 0.65 → 0
-                opacity = 1 - t;
-            }
-
-            element.style.setProperty('--cx', cx + 'px');
-            element.style.setProperty('--ry', ry + 'deg');
-            element.style.setProperty('--tz', tz + 'px');
-            element.style.setProperty('--sc', String(sc));
-            element.style.setProperty('--card-opacity', String(opacity));
-            element.style.zIndex = String(Math.max(0, 10 - Math.round(abs)));
-            element.style.pointerEvents = abs <= half + 0.5 ? '' : 'none';
-
-            // Mark the selected profile's card as active
-            const aid = element.dataset.assetId;
-            const pname = element.dataset.profileName;
-            if (aid ? aid === selected.assetId : pname === selected.name) {
-                element.classList.add('active');
-            }
-        }
-    }
+function resolveFallbackSrc(entry) {
+    if (!entry.profile || !entry.profile.seed || !entry.profile.controls) return undefined;
+    const key = thumbCacheKey(entry.profile.seed, entry.profile.controls);
+    return thumbCache.has(key) ? thumbCache.get(key) : undefined;
 }
 
-/**
- * Compute the base --cx for a card given its offset from center.
- * Mirrors the formula in positionCards().
- */
-function baseCx(offset) {
-    const { R, dTheta } = getArcParams();
-    return R * Math.sin(offset * dTheta);
-}
+carouselBrowser.addEventListener('item-select', (e) => {
+    const entry = e.detail.item.data;
+    if (slideshowPlaying) stopSlideshow();
+    selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
+});
 
-/**
- * Compute absolute --cx positions for cards displaced by a hover.
- * Returns Map<cardIndex, absoluteCxPx> — only entries that differ from base.
- * Does NOT include the hovered card itself (it stays at its base position).
- */
-function computeHoverDisplacement(hoveredIdx, cards, total, centerIdx) {
-    const result = new Map();
-    const cardW = parseInt(
-        getComputedStyle(document.documentElement).getPropertyValue('--card-w')
-    ) || 180;
+carouselBrowser.addEventListener('center-change', () => {
+    if (slideshowPlaying) stopSlideshow();
+});
 
-    const GAP = 8;
-    const fullPerspSc = 1200 / (1200 - 40);
-    const fullHalfW = (cardW / 2) * fullPerspSc;
-
-    function wrapOffset(idx) {
-        let d = idx - centerIdx;
-        if (total > 1) {
-            if (d > total / 2) d -= total;
-            if (d < -total / 2) d += total;
-        }
-        return d;
-    }
-
-    // Compute half-width for a card at a given offset from center
-    function halfWAtOffset(off) {
-        if (off === 0) return fullHalfW; // active card is full size
-        const abs = Math.abs(off);
-        const sc = Math.max(0.65, 1 - abs * 0.1);
-        const tz = -abs * 20;
-        return (cardW / 2) * sc * (1200 / (1200 - tz));
-    }
-
-    const hoveredOffset = wrapOffset(hoveredIdx);
-    if (hoveredOffset === 0) return result;
-
-    // Walk inward from hovered card toward (and 1 past) center.
-    // Collect cards in that range, sorted outermost first.
-    const dir = hoveredOffset > 0 ? -1 : 1; // direction toward center
-    const inwardCards = [];
-    for (const c of cards) {
-        if (c.index === hoveredIdx) continue;
-        const off = wrapOffset(c.index);
-        const inward = off * dir;
-        const hovInward = hoveredOffset * dir;
-        if (inward >= -1 && inward < hovInward) {
-            inwardCards.push({ index: c.index, offset: off });
-        }
-    }
-    inwardCards.sort((a, b) => Math.abs(b.offset) - Math.abs(a.offset));
-
-    // Cascade: check each adjacent pair from hovered inward
-    const hoveredBaseCx = baseCx(hoveredOffset);
-    const positions = new Map();
-    positions.set(hoveredIdx, hoveredBaseCx);
-
-    let prevIdx = hoveredIdx;
-    let prevHalfW = fullHalfW; // hovered card is at full size
-
-    for (const inner of inwardCards) {
-        const innerBaseCx = baseCx(inner.offset);
-        const innerHW = halfWAtOffset(inner.offset);
-        const prevCx = positions.get(prevIdx);
-
-        const dist = Math.abs(innerBaseCx - prevCx);
-        const minDist = prevHalfW + innerHW + GAP;
-
-        if (dist < minDist) {
-            const sign = innerBaseCx >= prevCx ? 1 : -1;
-            const displaced = innerBaseCx + sign * (minDist - dist);
-            result.set(inner.index, displaced);
-            positions.set(inner.index, displaced);
-        } else {
-            positions.set(inner.index, innerBaseCx);
-        }
-
-        prevIdx = inner.index;
-        prevHalfW = innerHW;
-    }
-
-    return result;
-}
-
-/**
- * Build carousel card elements into a track element.
- */
-function buildCarouselCards(list, trackEl, onCardClick) {
-    trackEl.innerHTML = '';
-    const cards = [];
-    for (let i = 0; i < list.length; i++) {
-        const entry = list[i];
-        const card = document.createElement('div');
-        card.className = 'carousel-card';
-        card.dataset.profileName = entry.name;
-        if (entry.assetId) card.dataset.assetId = entry.assetId;
-
-        const imgWrap = document.createElement('div');
-        imgWrap.className = 'carousel-card-img';
-        const img = document.createElement('img');
-        img.alt = entry.name;
-        if (entry.assetId) {
-            const asset = generatedAssets.find(a => a.id === entry.assetId);
-            if (asset && asset.thumbDataUrl) img.src = asset.thumbDataUrl;
-        } else {
-            const src = getCarouselThumbSrc(entry.name, entry.profile, entry.isPortrait);
-            if (src) img.src = src;
-        }
-        if (entry.isPortrait) {
-            img.onerror = () => {
-                if (entry.profile.seed && entry.profile.controls) {
-                    const key = thumbCacheKey(entry.profile.seed, entry.profile.controls);
-                    if (thumbCache.has(key)) img.src = thumbCache.get(key);
+carouselBrowser.addEventListener('item-delete', (e) => {
+    const entry = e.detail.item.data;
+    const deleteName = entry.name;
+    const deleteAssetId = entry.assetId;
+    showConfirm(
+        deleteAssetId ? 'Delete generated image?' : t('confirm.deleteProfile'),
+        deleteAssetId ? `Delete "${deleteName}"?` : t('confirm.deleteConfirm', { name: deleteName }),
+        [
+            { label: t('btn.cancel') },
+            {
+                label: t('btn.delete'), primary: true, callback: async () => {
+                    if (deleteAssetId) {
+                        await deleteAsset(deleteAssetId);
+                        generatedAssets = generatedAssets.filter(a => a.id !== deleteAssetId);
+                    } else {
+                        const pd = loadProfiles()[deleteName];
+                        if (pd && pd.seed && pd.controls) {
+                            const cacheKey = thumbCacheKey(pd.seed, pd.controls);
+                            thumbCache.delete(cacheKey);
+                            deleteThumb(cacheKey);
+                        }
+                        deleteProfile(deleteName);
+                        const order = loadProfileOrder();
+                        if (order) saveProfileOrder(order.filter(n => n !== deleteName));
+                    }
+                    carouselBrowser.collapse();
+                    refreshGallery();
                 }
-            };
-        }
-        imgWrap.appendChild(img);
-        card.appendChild(imgWrap);
-
-        card.addEventListener('click', () => {
-            if (carouselDragJustEnded) return; // ignore click after drag
-            onCardClick(i, entry);
-        });
-        trackEl.appendChild(card);
-        cards.push({ element: card, index: i });
-    }
-
-    // Hover: grow card to full size, displace center-ward neighbors.
-    // The hover hitbox is the card's resting bounding rect — once the cursor
-    // leaves that original area the hover ends, even if the expanded card
-    // still covers the cursor.
-    let activeHoverEl = null;
-    let activeHoverRect = null;
-    let activeMoveHandler = null;
-
-    function resetHoverState() {
-        for (const c of cards) {
-            c.element.classList.remove('hover-displaced', 'active-shrunk');
-            c.element.style.pointerEvents = '';
-        }
-        if (activeMoveHandler) {
-            document.removeEventListener('mousemove', activeMoveHandler);
-            activeMoveHandler = null;
-        }
-        activeHoverEl = null;
-        activeHoverRect = null;
-    }
-
-    function applyHover(element, index) {
-        const cw = parseInt(
-            getComputedStyle(document.documentElement).getPropertyValue('--card-w')
-        ) || 180;
-
-        // Capture the resting bounding rect before any CSS :hover expansion
-        activeHoverRect = element.getBoundingClientRect();
-        activeHoverEl = element;
-
-        // Reset all cards to base --cx and clear displaced state
-        for (const c of cards) {
-            c.element.classList.remove('hover-displaced');
-            c.element.style.pointerEvents = '';
-            const off = (() => {
-                let d = c.index - carouselCenterIdx;
-                if (list.length > 1) {
-                    if (d > list.length / 2) d -= list.length;
-                    if (d < -list.length / 2) d += list.length;
-                }
-                return d;
-            })();
-            c.element.style.setProperty('--cx', baseCx(off) + 'px');
-        }
-
-        // Shrink the active card only when an immediately adjacent card is hovered
-        const activeEl = cards.find(c => c.element.classList.contains('active'));
-        if (activeEl) {
-            let off = index - activeEl.index;
-            if (list.length > 1) {
-                if (off > list.length / 2) off -= list.length;
-                if (off < -list.length / 2) off += list.length;
             }
-            if (Math.abs(off) === 1) activeEl.element.classList.add('active-shrunk');
-        }
-
-        // Compute and apply absolute displaced positions
-        const displaced = computeHoverDisplacement(
-            index, cards, list.length, carouselCenterIdx
-        );
-        for (const [idx, absCx] of displaced) {
-            const card = cards.find(c => c.index === idx);
-            if (!card) continue;
-            card.element.style.setProperty('--cx', absCx + 'px');
-            card.element.classList.add('hover-displaced');
-        }
-
-        // Track mouse — end hover when cursor leaves the resting rect
-        if (activeMoveHandler) {
-            document.removeEventListener('mousemove', activeMoveHandler);
-        }
-        activeMoveHandler = (e) => {
-            const r = activeHoverRect;
-            if (!r) return;
-            if (e.clientX < r.left || e.clientX > r.right ||
-                e.clientY < r.top || e.clientY > r.bottom) {
-                // Cursor left resting area — disable pointer-events so
-                // :hover drops and cursor falls through to cards beneath
-                element.style.pointerEvents = 'none';
-                resetHoverState();
-                positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
-                // Re-enable after the card has shrunk back
-                requestAnimationFrame(() => { element.style.pointerEvents = ''; });
-            }
-        };
-        document.addEventListener('mousemove', activeMoveHandler);
-    }
-
-    for (const { element, index } of cards) {
-        element.addEventListener('mouseenter', () => {
-            if (isDragging || momentumRaf) return;
-            if (element.classList.contains('active')) return;
-            if (activeHoverEl === element) return;
-            applyHover(element, index);
-        });
-    }
-
-    // Single mouseleave on the track — full reset when leaving carousel entirely
-    trackEl.addEventListener('mouseleave', () => {
-        if (!isDragging) {
-            resetHoverState();
-            positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
-        }
-    });
-
-    // ── Drag-to-scroll with momentum ──
-    let isDragging = false;
-    let dragStartX = 0;
-    let dragStartCenter = 0;
-    let dragFractionalCenter = 0;
-    let lastDragX = 0;
-    let lastDragTime = 0;
-    let dragVelocity = 0; // px/ms
-    let momentumRaf = null;
-
-    function wrapCenter(c) {
-        const t = list.length;
-        return ((c % t) + t) % t;
-    }
-
-    function cancelMomentum() {
-        if (momentumRaf) {
-            cancelAnimationFrame(momentumRaf);
-            momentumRaf = null;
-        }
-    }
-
-    function snapToNearest() {
-        const t = list.length;
-        const nearest = ((Math.round(dragFractionalCenter) % t) + t) % t;
-        carouselCenterIdx = nearest;
-        trackEl.style.setProperty('--carousel-speed', '0.6s');
-        positionCards(carouselTrack, carouselCards, nearest, t);
-    }
-
-    function startMomentum() {
-        const { R, dTheta } = getArcParams();
-        const pxPerUnit = R * dTheta;
-        let vel = dragVelocity; // px/ms
-        let lastTime = performance.now();
-
-        function tick(now) {
-            const dt = Math.min(now - lastTime, 32); // cap at ~30fps minimum
-            lastTime = now;
-
-            dragFractionalCenter += (-vel * dt) / pxPerUnit;
-            dragFractionalCenter = wrapCenter(dragFractionalCenter);
-
-            trackEl.style.setProperty('--carousel-speed', '0s');
-            positionCards(carouselTrack, carouselCards, dragFractionalCenter, list.length);
-
-            // Exponential decay (~0.95 per frame at 60fps → per-ms: 0.95^(1/16.67))
-            vel *= Math.pow(0.95, dt / 16.67);
-
-            if (Math.abs(vel) < 0.05) {
-                momentumRaf = null;
-                snapToNearest();
-                return;
-            }
-            momentumRaf = requestAnimationFrame(tick);
-        }
-        momentumRaf = requestAnimationFrame(tick);
-    }
-
-    trackEl.addEventListener('pointerdown', (e) => {
-        if (e.button !== 0) return; // left button only
-        cancelMomentum();
-        if (slideshowPlaying) stopSlideshow();
-        resetHoverState();
-
-        isDragging = true;
-        carouselDragJustEnded = false;
-        dragStartX = e.clientX;
-        dragStartCenter = carouselCenterIdx;
-        dragFractionalCenter = carouselCenterIdx;
-        lastDragX = e.clientX;
-        lastDragTime = performance.now();
-        dragVelocity = 0;
-
-        trackEl.style.setProperty('--carousel-speed', '0s');
-        trackEl.setPointerCapture(e.pointerId);
-    });
-
-    trackEl.addEventListener('pointermove', (e) => {
-        if (!isDragging) return;
-        const { R, dTheta } = getArcParams();
-        const pxPerUnit = R * dTheta;
-
-        const deltaX = e.clientX - dragStartX;
-        dragFractionalCenter = wrapCenter(dragStartCenter + (-deltaX / pxPerUnit));
-        positionCards(carouselTrack, carouselCards, dragFractionalCenter, list.length);
-
-        // Track velocity from recent movement
-        const now = performance.now();
-        const dt = now - lastDragTime;
-        if (dt > 0) {
-            dragVelocity = (e.clientX - lastDragX) / dt;
-        }
-        lastDragX = e.clientX;
-        lastDragTime = now;
-    });
-
-    function endDrag(e) {
-        if (!isDragging) return;
-        isDragging = false;
-
-        // Suppress the click event that follows pointerup
-        const totalDrag = Math.abs(e.clientX - dragStartX);
-        if (totalDrag > 5) {
-            carouselDragJustEnded = true;
-            requestAnimationFrame(() => { carouselDragJustEnded = false; });
-        }
-
-        if (Math.abs(dragVelocity) > 0.15) {
-            startMomentum();
-        } else {
-            snapToNearest();
-        }
-    }
-
-    trackEl.addEventListener('pointerup', endDrag);
-    trackEl.addEventListener('pointercancel', endDrag);
-
-    // Prevent native drag on images inside carousel
-    trackEl.addEventListener('dragstart', (e) => e.preventDefault());
-
-    // ── Carousel nav arrows (click / double-click / hold) ──
-    const navLeft = document.getElementById('carouselNavLeft');
-    const navRight = document.getElementById('carouselNavRight');
-
-    function setupArrow(btn, direction) {
-        if (!btn) return;
-        let holdTimer = null;
-        let holdInterval = null;
-        let holdActive = false;
-        let holdJustEnded = false;
-
-        function navBy(n) {
-            cancelMomentum();
-            if (slideshowPlaying) stopSlideshow();
-            resetHoverState();
-            const total = list.length;
-            if (total <= 1) return;
-            carouselCenterIdx = ((carouselCenterIdx + n) % total + total) % total;
-            positionCards(carouselTrack, carouselCards, carouselCenterIdx, total);
-        }
-
-        // Hold detection via pointer events
-        btn.addEventListener('pointerdown', (e) => {
-            if (e.button !== 0) return;
-            e.stopPropagation();
-            holdActive = false;
-            holdTimer = setTimeout(() => {
-                holdActive = true;
-                navBy(direction);
-                holdInterval = setInterval(() => navBy(direction), 180);
-            }, 350);
-        });
-
-        btn.addEventListener('pointerup', (e) => {
-            e.stopPropagation();
-            clearTimeout(holdTimer);
-            if (holdActive) {
-                clearInterval(holdInterval);
-                holdActive = false;
-                holdJustEnded = true;
-                requestAnimationFrame(() => { holdJustEnded = false; });
-            }
-        });
-
-        btn.addEventListener('pointerleave', () => {
-            clearTimeout(holdTimer);
-            if (holdActive) {
-                clearInterval(holdInterval);
-                holdActive = false;
-                holdJustEnded = true;
-                requestAnimationFrame(() => { holdJustEnded = false; });
-            }
-        });
-
-        // Click: jump by half (edge card becomes new center)
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (holdJustEnded) return;
-            const { half } = getArcParams();
-            navBy(direction * Math.min(half, 3));
-        });
-    }
-
-    setupArrow(navLeft, 1);
-    setupArrow(navRight, -1);
-
-    return cards;
-}
-
-/**
- * Sync carousel position to match a selected profile.
- */
-function syncCarouselToSelection(name, isPortrait, assetId) {
-    const idx = carouselList.findIndex(e =>
-        assetId ? e.assetId === assetId : e.name === name);
-    if (idx >= 0) {
-        carouselCenterIdx = idx;
-        positionCards(carouselTrack, carouselCards, idx, carouselList.length);
-    }
-}
+        ]
+    );
+});
 
 /* ── Generated assets ── */
 let generatedAssets = []; // loaded from IndexedDB
@@ -1124,11 +640,21 @@ window.addEventListener('popstate', applyRoute);
 
 /* ── Resolution change ── */
 document.addEventListener('resolutionchange', (e) => {
-    if (!workerBridge || !workerBridge.ready) return;
     if (currentIndex < 0 || currentIndex >= navigableList.length) return;
     if (activeMode !== 'gallery' || activeType !== 'image') return;
 
-    const { profile } = navigableList[currentIndex];
+    const entry = navigableList[currentIndex];
+    const { profile } = entry;
+
+    // Portrait: swap to resolution-specific static image
+    if (entry.isPortrait) {
+        selectedImage.src = getDisplaySrc(entry.name, profile, true);
+        syncFullscreenMedia();
+        return;
+    }
+
+    // Generated/local: re-render via worker
+    if (!workerBridge || !workerBridge.ready) return;
     if (!profile || !profile.seed || !profile.controls) return;
 
     const { w, h } = e.detail;
@@ -1163,7 +689,7 @@ function generateProfileText(profile) {
 
 /** Carousel thumbnail (always 280×180 PNG for fast loading) */
 function getCarouselThumbSrc(name, profile, isPortrait) {
-    if (isPortrait) return `/thumbs/${slugify(name)}.png`;
+    if (isPortrait) return `/static/images/portraits/${slugify(name)}-thumb.png`;
     if (profile.seed && profile.controls) {
         const key = thumbCacheKey(profile.seed, profile.controls);
         if (thumbCache.has(key)) return thumbCache.get(key);
@@ -1174,7 +700,8 @@ function getCarouselThumbSrc(name, profile, isPortrait) {
 /** Display image (PNG for portraits, ObjectURL for generated) */
 function getDisplaySrc(name, profile, isPortrait) {
     if (isPortrait) {
-        return `/thumbs/${slugify(name)}.png`;
+        const res = getResolution();
+        return `/static/images/portraits/${slugify(name)}-${res.key}.png`;
     }
     if (profile.seed && profile.controls) {
         const key = thumbCacheKey(profile.seed, profile.controls);
@@ -1224,7 +751,7 @@ function applySelection(name, profile, isPortrait, assetId) {
         selectedImage.onerror = () => {
             selectedImage.onerror = null;
             // Fallback: try carousel PNG, then thumb cache
-            const pngSrc = `/thumbs/${slugify(name)}.png`;
+            const pngSrc = `/static/images/portraits/${slugify(name)}-thumb.png`;
             selectedImage.src = pngSrc;
         };
     }
@@ -1250,7 +777,8 @@ function applySelection(name, profile, isPortrait, assetId) {
     updateArrowStates();
 
     // Sync carousel to selected profile
-    syncCarouselToSelection(name, isPortrait, assetId);
+    carouselBrowser.selectedKey = assetId || name;
+    carouselBrowser.syncToKey(assetId || name);
 
     // Sync fullscreen overlay if open
     syncFullscreenMedia();
@@ -1312,162 +840,9 @@ function navigateToEditor() {
     window.location.href = `/${page}.html?${params}`;
 }
 
-/* ── View All modal ── */
-
-function hasViewAllOverflow() {
-    return galleryMainEl.scrollHeight > galleryMainEl.clientHeight;
-}
-
-function isViewAllOpen() {
-    return viewAllInline.classList.contains('expanded');
-}
-
-function flattenCards() {
-    for (const { element } of carouselCards) {
-        element.style.setProperty('--ry', '0deg');
-        element.style.setProperty('--tz', '0px');
-        element.style.setProperty('--sc', '0.45');
-        element.style.setProperty('--card-opacity', '0');
-        element.style.pointerEvents = 'none';
-    }
-    carouselStrip.classList.add('carousel-flattened');
-}
-
-function unflattenCards() {
-    carouselStrip.classList.remove('carousel-flattened');
-    positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
-}
-
-function expandViewAll(list) {
-    viewAllGrid.innerHTML = '';
-
-    for (let i = 0; i < list.length; i++) {
-        const entry = list[i];
-        const card = document.createElement('div');
-        card.className = 'view-all-card';
-        const isSelected = entry.assetId
-            ? selected.assetId === entry.assetId
-            : selected.name === entry.name;
-        if (isSelected) card.classList.add('selected');
-
-        const img = document.createElement('img');
-        img.alt = entry.name;
-        if (entry.assetId) {
-            const asset = generatedAssets.find(a => a.id === entry.assetId);
-            if (asset && asset.thumbDataUrl) img.src = asset.thumbDataUrl;
-        } else {
-            const src = getCarouselThumbSrc(entry.name, entry.profile, entry.isPortrait);
-            if (src) img.src = src;
-        }
-        if (entry.isPortrait) {
-            img.onerror = () => {
-                if (entry.profile.seed && entry.profile.controls) {
-                    const key = thumbCacheKey(entry.profile.seed, entry.profile.controls);
-                    if (thumbCache.has(key)) img.src = thumbCache.get(key);
-                }
-            };
-        }
-        card.appendChild(img);
-
-        const nameEl = document.createElement('div');
-        nameEl.className = 'view-all-card-name';
-        nameEl.textContent = entry.name;
-        card.appendChild(nameEl);
-
-        // Delete action for non-portrait (local) profiles
-        if (!entry.isPortrait) {
-            const actions = document.createElement('div');
-            actions.className = 'view-all-card-actions';
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'view-all-delete';
-            deleteBtn.innerHTML = TRASH_SVG;
-            deleteBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const deleteName = entry.name;
-                const deleteAssetId = entry.assetId;
-                showConfirm(
-                    deleteAssetId ? 'Delete generated image?' : t('confirm.deleteProfile'),
-                    deleteAssetId ? `Delete "${deleteName}"?` : t('confirm.deleteConfirm', { name: deleteName }),
-                    [
-                        { label: t('btn.cancel') },
-                        {
-                            label: t('btn.delete'), primary: true, callback: async () => {
-                                if (deleteAssetId) {
-                                    await deleteAsset(deleteAssetId);
-                                    generatedAssets = generatedAssets.filter(a => a.id !== deleteAssetId);
-                                } else {
-                                    const pd = loadProfiles()[deleteName];
-                                    if (pd && pd.seed && pd.controls) {
-                                        const cacheKey = thumbCacheKey(pd.seed, pd.controls);
-                                        thumbCache.delete(cacheKey);
-                                        deleteThumb(cacheKey);
-                                    }
-                                    deleteProfile(deleteName);
-                                    const order = loadProfileOrder();
-                                    if (order) saveProfileOrder(order.filter(n => n !== deleteName));
-                                }
-                                collapseViewAll();
-                                refreshGallery();
-                            }
-                        }
-                    ]
-                );
-            });
-            actions.appendChild(deleteBtn);
-            card.appendChild(actions);
-        }
-
-        card.addEventListener('click', () => {
-            const idx = carouselList.findIndex(e =>
-                entry.assetId ? e.assetId === entry.assetId : e.name === entry.name);
-            if (idx >= 0) carouselCenterIdx = idx;
-
-            if (!hasViewAllOverflow()) {
-                const prev = viewAllGrid.querySelector('.view-all-card.selected');
-                if (prev) prev.classList.remove('selected');
-                card.classList.add('selected');
-                selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
-            } else {
-                collapseViewAll();
-                selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
-                selectedDisplay.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-        });
-
-        viewAllGrid.appendChild(card);
-    }
-
-    flattenCards();
-    viewAllInline.classList.add('expanded');
-    viewAllToggle.classList.add('active');
-    const onExpanded = (e) => {
-        if (e.propertyName !== 'max-height') return;
-        viewAllInline.removeEventListener('transitionend', onExpanded);
-        if (hasViewAllOverflow()) {
-            galleryMainEl.scrollTo({ top: galleryMainEl.scrollHeight, behavior: 'smooth' });
-        }
-    };
-    viewAllInline.addEventListener('transitionend', onExpanded);
-}
-
-function collapseViewAll() {
-    if (!isViewAllOpen()) return;
-    viewAllInline.classList.remove('expanded');
-    viewAllToggle.classList.remove('active');
-    unflattenCards();
-}
-
-viewAllToggle.addEventListener('click', () => {
-    if (isViewAllOpen()) {
-        collapseViewAll();
-    } else {
-        expandViewAll(carouselList);
-    }
-});
 
 function refreshGallery() {
-    if (isViewAllOpen()) collapseViewAll();
+    if (carouselBrowser.expanded) carouselBrowser.collapse();
     if (activeType === 'image') {
         clearVideoPlayback();
         showImageGallery();
@@ -1479,11 +854,11 @@ function refreshGallery() {
 function showImageGallery() {
     // Hide animation section, show carousel
     animSectionEl.style.display = 'none';
-    if (carouselStripEl) carouselStripEl.style.display = '';
+    carouselBrowser.style.display = '';
 
     // Build merged list: portraits first, then local
     const portraits = loadPortraits();
-    const portraitNames = Object.keys(portraits).sort((a, b) => a.localeCompare(b));
+    const portraitNames = getPortraitNames();
 
     carouselList = portraitNames.map(name => ({
         name, profile: portraits[name], isPortrait: true
@@ -1508,22 +883,13 @@ function showImageGallery() {
 
     navigableList = carouselList;
 
-    // Build single carousel
-    carouselCards = buildCarouselCards(carouselList, carouselTrack, (idx, entry) => {
-        if (idx === carouselCenterIdx) return;
-        if (slideshowPlaying) stopSlideshow();
-        carouselCenterIdx = idx;
-        positionCards(carouselTrack, carouselCards, idx, carouselList.length);
-        selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
-    });
-
-    // Show/hide View All button
-    viewAllToggle.style.display = carouselList.length > getVisibleCount() ? '' : 'none';
+    // Update carousel component
+    updateBrowserItems();
 
     // Auto-select first entry if nothing selected
     if (!selected.name && carouselList.length > 0) {
         const first = carouselList[0];
-        carouselCenterIdx = 0;
+        carouselBrowser.syncToKey(first.assetId || first.name);
         applySelection(first.name, first.profile, first.isPortrait, first.assetId);
 
         // Use replaceState so auto-select doesn't pollute history
@@ -1536,8 +902,6 @@ function showImageGallery() {
         }
     }
 
-    positionCards(carouselTrack, carouselCards, carouselCenterIdx, carouselList.length);
-
     galleryContentEl.style.display = '';
     selectedDisplay.style.display = '';
 }
@@ -1546,10 +910,8 @@ function showImageGallery() {
  * Show animation gallery — displays animation assets with video playback.
  */
 function showAnimationGallery() {
-    // Hide image carousel strip, show animation section
-    if (carouselStripEl) carouselStripEl.style.display = 'none';
-    carouselTrack.innerHTML = '';
-    carouselCards = [];
+    // Hide image carousel, show animation section
+    carouselBrowser.style.display = 'none';
 
     // Build animation cards
     animGalleryEl.innerHTML = '';
@@ -1941,8 +1303,8 @@ document.addEventListener('keydown', (e) => {
             closeFullscreen();
             return;
         }
-        if (isViewAllOpen()) {
-            collapseViewAll();
+        if (carouselBrowser.expanded) {
+            carouselBrowser.collapse();
             return;
         }
         if (isSiteMenuOpen()) {

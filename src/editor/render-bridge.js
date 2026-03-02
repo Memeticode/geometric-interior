@@ -211,11 +211,11 @@ export function createRenderBridge(canvas, {
         }
     }
 
-    function sendCameraState(zoom, rotation) {
+    function sendCameraState(zoom, rotation, elevation = 0) {
         if (worker && workerReady) {
-            worker.postMessage({ type: 'set-camera', zoom, orbitY: rotation, orbitX: 0 });
+            worker.postMessage({ type: 'set-camera', zoom, orbitY: rotation, orbitX: elevation });
         } else if (fallbackRenderer) {
-            fallbackRenderer.setCameraState(zoom, rotation, 0);
+            fallbackRenderer.setCameraState(zoom, rotation, elevation);
         }
     }
 
