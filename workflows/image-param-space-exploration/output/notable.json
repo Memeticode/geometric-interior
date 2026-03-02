@@ -1,0 +1,266 @@
+[
+  {
+    "number": 10,
+    "name": "Prismatic Fog",
+    "category": "bloom-dimension",
+    "tier": "standout",
+    "why": "Rainbow haze — full spectrum + max bloom creates ghost colors dispersing through the space. Demonstrates bloom's atmospheric potential.",
+    "seedTuned": true
+  },
+  {
+    "number": 12,
+    "name": "Amber Lantern",
+    "category": "bloom-dimension",
+    "tier": "standout",
+    "why": "Warm lantern-in-fog effect. Extreme bloom wraps amber light into soft aureoles. Geometric forms visible through bloom give the light a source shape.",
+    "seedTuned": true
+  },
+  {
+    "number": 14,
+    "name": "Dark Jewel Box",
+    "category": "darklands",
+    "tier": "standout",
+    "why": "Deep-sea luminescence. Dark angular shapes frame the luminous center with scattered gem-like light points. Intimate jewel-box feel.",
+    "seedTuned": true
+  },
+  {
+    "number": 17,
+    "name": "Abyssal Green",
+    "category": "darklands",
+    "tier": "standout",
+    "why": "Dark angular shapes in foreground create sense of looking into deep water. Green holds vividly at lum=0.08. Seed a0 deepest abyssal framing.",
+    "seedTuned": true
+  },
+  {
+    "number": 19,
+    "name": "Night Bloom",
+    "category": "darklands",
+    "tier": "top",
+    "why": "Dreamy moonlit rose. lum=0.12 + bloom=0.80 creates the most atmospheric config in the set. Seed a13 adds asymmetric void = night, bright rose = bloom.",
+    "seedTuned": true
+  },
+  {
+    "number": 20,
+    "name": "Shadow Lattice",
+    "category": "darklands",
+    "tier": "top",
+    "why": "Wide web of fine silvery lines against darkness. Most seed-sensitive config tested — arrangement dominates character when color is achromatic.",
+    "seedTuned": true
+  },
+  {
+    "number": 24,
+    "name": "Night Amber",
+    "category": "thread-dark-bloom",
+    "tier": "standout",
+    "why": "Deep firelight in darkness. Warm golden aureole through bloom. Seed a0 gives widest atmospheric spread with scattered sparkles.",
+    "seedTuned": true
+  },
+  {
+    "number": 27,
+    "name": "Night Violet",
+    "category": "thread-dark-bloom",
+    "tier": "standout",
+    "why": "The project's signature violet in the dark bloom corner. Seed a5 gives widest atmospheric spread with dark geometric framing creating depth.",
+    "seedTuned": true
+  },
+  {
+    "number": 34,
+    "name": "Dense Orbital Teal",
+    "category": "dense-territories",
+    "tier": "standout",
+    "why": "Icy crystalline cluster. Seed a0 gives widest orbital distribution — flow=1.0 distributes 339 dense nodes into readable ring-like patterns.",
+    "seedTuned": true
+  },
+  {
+    "number": 35,
+    "name": "Night Trifold",
+    "category": "thread-dark-bloom",
+    "tier": "standout",
+    "why": "Night recipe + trifold division. Seed a13 shows most visible three-way spatial split through purple atmospheric haze.",
+    "seedTuned": true
+  },
+  {
+    "number": 38,
+    "name": "Ember Scatter",
+    "category": "thread-warm-chaos",
+    "tier": "standout",
+    "why": "Dying embers in darkness. Sparse amber chaos with soft bloom halos. Less frenetic than Turbulent Ember — contemplative warmth from chaos.",
+    "seedTuned": true
+  },
+  {
+    "number": 39,
+    "name": "Night Coral",
+    "category": "thread-dark-bloom",
+    "tier": "standout",
+    "why": "Deep warm golden-red atmospheric glow. Seed a13 gives visible geometric facets with warm coral light. Fills the warmest Night family corner.",
+    "seedTuned": true
+  },
+  {
+    "number": 40,
+    "name": "Chaotic Sapphire",
+    "category": "chaos-theory",
+    "tier": "standout",
+    "why": "Dramatic dark geometric shapes with sapphire light emanating through. Seed a13 creates depth and framing. Purple accents add spectral interest.",
+    "seedTuned": true
+  },
+  {
+    "number": 42,
+    "name": "Turbulent Ember",
+    "category": "chaos-theory",
+    "tier": "standout",
+    "why": "Warm scattered amber sparks. Seed a9 has widest scatter with the most kinetic energy — multiple bright points create firefly effect.",
+    "seedTuned": true
+  },
+  {
+    "number": 46,
+    "name": "Dark Crystal",
+    "category": "thread-achromatic-dark",
+    "tier": "top",
+    "why": "Vertical crystalline monolith from darkness. Same parameters as Shadow Lattice, different seed — validates that in achromatic-dark space, the seed IS the artwork. Seed a9 confirmed best.",
+    "seedTuned": true
+  },
+  {
+    "number": 49,
+    "name": "Chartreuse Night",
+    "category": "thread-chartreuse",
+    "tier": "standout",
+    "why": "The breakthrough green survives in darkness. Deep emerald atmospheric haze — Night Bloom's green sibling.",
+    "seedTuned": true
+  },
+  {
+    "number": 51,
+    "name": "Achromatic Veil",
+    "category": "thread-achromatic-dark",
+    "tier": "standout",
+    "why": "Third achromatic-dark variant — angular lattice trailing downward. Three configs, same parameters, three distinct artworks. Seed a17 confirmed best.",
+    "seedTuned": true
+  },
+  {
+    "number": 52,
+    "name": "Chartreuse Storm",
+    "category": "thread-chartreuse",
+    "tier": "standout",
+    "why": "Angular green shards with kinetic energy. Tempest's green cousin — low coherence scatters geometry while chartreuse makes each shard glow electric.",
+    "seedTuned": true
+  },
+  {
+    "number": 54,
+    "name": "Flow Transition (Amber)",
+    "category": "flow-continuum",
+    "tier": "standout",
+    "why": "Warm golden tones with visible curving lines. Seed a17 shows flow=0.60 transition quality most clearly.",
+    "seedTuned": true
+  },
+  {
+    "number": 55,
+    "name": "Night Sapphire",
+    "category": "thread-dark-bloom",
+    "tier": "top",
+    "why": "Deep blue-purple bloom against darkness. More mysterious than Night Bloom. Dark bloom recipe at blue = stunning.",
+    "seedTuned": true
+  },
+  {
+    "number": 58,
+    "name": "Dusty Rose",
+    "category": "muted-worlds",
+    "tier": "standout",
+    "why": "Widest gossamer spread with the most delicate, quiet quality. Muted pink is beautifully understated with geometric facets barely visible through haze.",
+    "seedTuned": true
+  },
+  {
+    "number": 59,
+    "name": "Antique Bronze",
+    "category": "thread-material",
+    "tier": "standout",
+    "why": "Genuinely evokes aged metal. Very low chroma (0.18) at amber creates patina/sepia quality. Seed a9 confirmed — wide atmospheric fog with half-hidden forms.",
+    "seedTuned": true
+  },
+  {
+    "number": 61,
+    "name": "Pewter",
+    "category": "muted-worlds",
+    "tier": "standout",
+    "why": "Elegant silvery neutrality. Seed a5 shows widest metallic web — most 'pewter vessel' surface texture.",
+    "seedTuned": true
+  },
+  {
+    "number": 66,
+    "name": "Saffron Burst",
+    "category": "unexplored-hues",
+    "tier": "standout",
+    "why": "Focused sparkle point radiating outward. Seed a17 captures the 'burst' quality best. Rich warm saffron glow.",
+    "seedTuned": true
+  },
+  {
+    "number": 67,
+    "name": "Chartreuse Current",
+    "category": "unexplored-hues",
+    "tier": "top",
+    "why": "Breakthrough vibrant lime green at hue=0.30. Seed a5 adds dynamic asymmetry — darkness makes the green luminous.",
+    "seedTuned": true
+  },
+  {
+    "number": 78,
+    "name": "Atmospheric Silk",
+    "category": "extreme-interactions",
+    "tier": "standout",
+    "why": "Vast smooth gossamer purple. Seed a0 gives widest ethereal spread. scale=1.0 + faceting=0.0 + bloom.",
+    "seedTuned": true
+  },
+  {
+    "number": 79,
+    "name": "Chaotic Blades",
+    "category": "extreme-interactions",
+    "tier": "standout",
+    "why": "Most scattered distribution — separated angular teal fragments in crystalline disorder. Seed a0 gives widest blade spread.",
+    "seedTuned": true
+  },
+  {
+    "number": 80,
+    "name": "Orbital Night Rose",
+    "category": "thread-dark-bloom",
+    "tier": "standout",
+    "why": "Night recipe + orbital flow. Seed a0 gives widest atmospheric spread with visible orbital ring structures through pink-purple haze.",
+    "seedTuned": true
+  },
+  {
+    "number": 81,
+    "name": "Solitude",
+    "category": "signature-pieces",
+    "tier": "standout",
+    "why": "One sparse violet presence against vast darkness. d=0.02. Extremely seed-stable — all 5 variants identical.",
+    "seedTuned": true
+  },
+  {
+    "number": 82,
+    "name": "Night Garden",
+    "category": "thread-dark-bloom",
+    "tier": "standout",
+    "why": "Rich emerald green with atmospheric bloom. Lush and verdant — the most vivid of the dark bloom family.",
+    "seedTuned": true
+  },
+  {
+    "number": 84,
+    "name": "Meditation",
+    "category": "signature-pieces",
+    "tier": "top",
+    "why": "Genuine contemplative stillness. Sparse, achromatic, scattered starlike dots. Seed-stable — original was already best.",
+    "seedTuned": true
+  },
+  {
+    "number": 88,
+    "name": "Tempest",
+    "category": "signature-pieces",
+    "tier": "top",
+    "why": "Turbulent teal-green angular energy sweeping horizontally. Seed a0 creates the widest storm sweep — the most kinetic config.",
+    "seedTuned": true
+  },
+  {
+    "number": 90,
+    "name": "Dissolution",
+    "category": "signature-pieces",
+    "tier": "standout",
+    "why": "Two bright clusters splitting apart with fragments between — strongest 'falling apart' reading. Seed a0 creates most dramatic separation.",
+    "seedTuned": true
+  }
+]

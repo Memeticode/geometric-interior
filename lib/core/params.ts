@@ -115,7 +115,8 @@ export function deriveParams(controls: Controls): DerivedParams {
     const faceDensityAtten = cl(c.density, 0.90, 1.0, 2.5);
     const backLightFactor = cl(c.luminosity, 1.2, 2.0, 2.8) / faceDensityAtten;
     const illuminationCap = cl(c.luminosity, 1.3, 1.8, 2.2) / faceDensityAtten;
-    const ambientLight = cl(c.luminosity, 0.008, 0.02, 0.04);
+    const ambientLight = cl(c.luminosity, 0.008, 0.02, 0.04) + cl(c.bloom, 0.0, 0.008, 0.02);
+    const attenuationCoeff = cl(c.bloom, 7.0, 3.0, 1.2);
     const frontLightFactor = cl(c.luminosity, 0.15, 0.3, 0.5) / faceDensityAtten;
     const edgeFadeThreshold = cl(frac, 0.30, 0.22, 0.14);
 
@@ -130,14 +131,14 @@ export function deriveParams(controls: Controls): DerivedParams {
         heroDotSpread: [0.08 * heroSpreadScale, 0.06 * heroSpreadScale, 0.08 * heroSpreadScale] as [number, number, number],
         heroDotRadiusBase: 0.028,
         heroDotRadiusRange: 0.05,
-        heroDotGlowBase: cl(c.luminosity, 24, 34, 44) / densityScale,
+        heroDotGlowBase: cl(c.bloom, 10, 30, 55) / densityScale,
         heroDotGlowRange: 14,
 
         mediumDotCount: Math.round(cl(c.density, 3, 8, 20) * secondaryScale),
         mediumDotJitter: 0.02,
         mediumDotRadiusBase: 0.012,
         mediumDotRadiusRange: 0.020,
-        mediumDotGlowBase: cl(c.luminosity, 12, 16, 21) / densityScale,
+        mediumDotGlowBase: cl(c.bloom, 4, 14, 28) / densityScale,
         mediumDotGlowRange: 8,
 
         smallDotDensity: {
@@ -147,7 +148,7 @@ export function deriveParams(controls: Controls): DerivedParams {
         },
         smallDotRadiusBase: 0.003,
         smallDotRadiusRange: 0.008,
-        smallDotGlowBase: cl(c.luminosity, 7, 10, 14) / densityScale,
+        smallDotGlowBase: cl(c.bloom, 2, 8, 20) / densityScale,
         smallDotLightnessBase: cl(c.luminosity, 0.25, 0.35, 0.50),
         smallDotLightnessRange: 0.35,
 
@@ -166,7 +167,7 @@ export function deriveParams(controls: Controls): DerivedParams {
         ] as [number, number, number],
         microDotRadiusBase: 0.002,
         microDotRadiusRange: 0.006,
-        microDotGlowBase: cl(c.luminosity, 8, 12, 16) / densityScale,
+        microDotGlowBase: cl(c.bloom, 2, 10, 22) / densityScale,
         microDotLightnessBase: cl(c.luminosity, 0.20, 0.30, 0.45),
         microDotLightnessRange: 0.40,
 
@@ -189,8 +190,8 @@ export function deriveParams(controls: Controls): DerivedParams {
 
     // --- Postprocessing ---
     const bloomDensityAtten = cl(c.density, 1.0, 1.0, 1.8);
-    const bloomStrength = cl(c.luminosity, 0.12, 0.20, 0.30) / bloomDensityAtten;
-    const bloomThreshold = cl(c.coherence, 0.55, 0.70, 0.85);
+    const bloomStrength = cl(c.bloom, 0.0, 0.18, 0.40) / bloomDensityAtten;
+    const bloomThreshold = cl(c.bloom, 0.95, 0.70, 0.45);
     const chromaticAberration = cl(frac, 0.001, 0.002, 0.004);
     const vignetteStrength = 0.50;
 
@@ -242,6 +243,7 @@ export function deriveParams(controls: Controls): DerivedParams {
         backLightFactor,
         illuminationCap,
         ambientLight,
+        attenuationCoeff,
         frontLightFactor,
         edgeFadeThreshold,
         atmosphericCount,

@@ -56,6 +56,7 @@ export const MID_CONTROLS = {
     palette: 'violet-depth',
     density: 0.5,
     luminosity: 0.5,
+    bloom: 0.5,
     fracture: 0.5,
     depth: 0.5,
     coherence: 0.5,

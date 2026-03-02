@@ -406,6 +406,10 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         chromaticAberrationEffect.offset.set(caVal, caVal);
         vignetteEffect.darkness = lerpVal(paramsA.vignetteStrength, paramsB.vignetteStrength, t);
 
+        const attenVal = lerpVal(paramsA.attenuationCoeff, paramsB.attenuationCoeff, t);
+        if (refsA.faceMat) refsA.faceMat.uniforms.uAttenuationCoeff.value = attenVal;
+        if (refsB.faceMat) refsB.faceMat.uniforms.uAttenuationCoeff.value = attenVal;
+
         applyCameraOverride();
         composer.render();
     }

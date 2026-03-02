@@ -13,6 +13,7 @@ uniform float uMorphFade;
 uniform float uTime;
 uniform float uSparkleIntensity;
 uniform float uDriftSpeed;
+uniform float uAttenuationCoeff;
 
 varying float fAlpha;
 varying float vFoldAlpha;
@@ -134,7 +135,7 @@ void main() {
         vec3 toLight = uLightPositions[i] - vWorldPos;
         float d2 = dot(toLight, toLight);
         vec3 lightDir = normalize(toLight);
-        float attenuation = uLightIntensities[i] / (1.0 + d2 * 3.0);
+        float attenuation = uLightIntensities[i] / (1.0 + d2 * uAttenuationCoeff);
         float NdotL = dot(vWorldNormal, lightDir);
         float frontLight = max(NdotL, 0.0) * uFrontLightFactor;
         float backLight = max(-NdotL, 0.0) * uBackLightFactor;

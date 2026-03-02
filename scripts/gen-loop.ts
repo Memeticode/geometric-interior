@@ -74,6 +74,7 @@ function randomConfig(rng: () => number, idx: number): ConfigEntry {
             palette: BUILTIN_PALETTES[Math.floor(rng() * BUILTIN_PALETTES.length)],
             density:    0.03 + rng() * 0.22,
             luminosity: 0.30 + rng() * 0.50,
+            bloom:      0.25 + rng() * 0.50,
             fracture:   0.20 + rng() * 0.70,
             depth:      0.65 + rng() * 0.30,
             coherence:  0.50 + rng() * 0.45,

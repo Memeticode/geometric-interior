@@ -6,7 +6,7 @@
 import { seedTagToLabel, parseSeed, getLocalizedWords } from '../../lib/core/seed-tags.js';
 import { getLocale } from '../i18n/locale.js';
 
-export const SLIDER_KEYS = ['density', 'luminosity', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
+export const SLIDER_KEYS = ['density', 'luminosity', 'bloom', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
 export const TOPOLOGY_VALUES = ['flow-field', 'icosahedral', 'mobius', 'multi-attractor'];
 export const CAMERA_DEFAULTS = { zoom: 1.0, rotation: 0 };
 
@@ -102,6 +102,7 @@ export function createConfigControls(el) {
             topology: 'flow-field',
             density: parseFloat(el.density.value),
             luminosity: parseFloat(el.luminosity.value),
+            bloom: parseFloat(el.bloom.value),
             fracture: parseFloat(el.fracture.value),
             coherence: parseFloat(el.coherence.value),
             hue: parseFloat(el.hue.value),

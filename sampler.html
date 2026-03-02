@@ -218,6 +218,7 @@
         <option value="division">division</option>
         <option value="faceting">faceting</option>
         <option value="flow">flow</option>
+        <option value="bloom">bloom</option>
       </select>
     </div>
     <div class="control-group">
@@ -234,6 +235,7 @@
         <option value="division">division</option>
         <option value="faceting">faceting</option>
         <option value="flow">flow</option>
+        <option value="bloom">bloom</option>
       </select>
     </div>
     <div class="control-group">
@@ -278,8 +280,8 @@
     const GRID = 8;
     const CELL_W = 200;
     const CELL_H = 130;
-    const AXES = ['density', 'luminosity', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
-    const DEFAULTS = { density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5, hue: 0.783, spectrum: 0.239, chroma: 0.417, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 };
+    const AXES = ['density', 'luminosity', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow', 'bloom'];
+    const DEFAULTS = { density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5, hue: 0.783, spectrum: 0.239, chroma: 0.417, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5, bloom: 0.35 };
 
     /* ── DOM refs ── */
     const xAxisSel   = document.getElementById('xAxis');

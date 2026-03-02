@@ -11,7 +11,7 @@ import {
 /** Slider grouping: matches the 4 parameter sections from docs/parameters.md */
 const SLIDER_GROUPS = [
     { key: 'geometry', sliders: ['density', 'fracture', 'scale', 'division', 'faceting'] },
-    { key: 'light',    sliders: ['luminosity'] },
+    { key: 'light',    sliders: ['luminosity', 'bloom'] },
     { key: 'color',    sliders: ['hue', 'spectrum', 'chroma'] },
     { key: 'space',    sliders: ['coherence', 'flow'] },
 ];

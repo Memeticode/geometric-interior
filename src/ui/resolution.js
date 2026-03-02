@@ -2,6 +2,8 @@
  * Resolution preference — localStorage-backed with custom event.
  */
 
+import { initCustomDropdown } from '../shared/custom-dropdown.js';
+
 const STORAGE_KEY = 'geo-self-portrait-resolution';
 
 const PRESETS = [
@@ -37,12 +39,26 @@ export function setResolution(key) {
     }));
 }
 
-export function initResolutionSelector(selectEl) {
-    if (!selectEl) return;
+export function initResolutionSelector(dropdownEl) {
+    if (!dropdownEl) return;
     const cur = getResolution();
-    selectEl.value = cur.key;
-    selectEl.addEventListener('change', () => setResolution(selectEl.value));
+
+    initCustomDropdown(dropdownEl, {
+        initialValue: cur.key,
+        onSelect(value) { setResolution(value); },
+    });
+
     document.addEventListener('resolutionchange', (e) => {
-        selectEl.value = e.detail.key;
+        const label = dropdownEl.querySelector('.custom-dropdown-label');
+        const menu = dropdownEl.querySelector('.custom-dropdown-menu');
+        if (menu) {
+            menu.querySelectorAll('.custom-dropdown-item').forEach(item => {
+                const isActive = item.dataset.value === e.detail.key;
+                item.classList.toggle('active', isActive);
+                item.setAttribute('aria-selected', String(isActive));
+                // Use the item's own text so it matches the dropdown's format
+                if (isActive && label) label.textContent = item.textContent;
+            });
+        }
     });
 }

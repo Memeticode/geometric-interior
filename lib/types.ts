@@ -41,6 +41,7 @@ export interface Controls {
     coherence: number;    // 0-1: flow alignment / organization
     // Light
     luminosity: number;   // 0-1: brightness / energy
+    bloom: number;        // 0-1: emanation / light spread
     // New geometric dimensions
     scale: number;        // 0-1: size distribution (monumental → atmospheric)
     division: number;     // 0-1: form topology (1 lobe → 2 → 3)
@@ -97,6 +98,7 @@ export interface StillConfig {
         division?: number;
         faceting?: number;
         flow?: number;
+        bloom?: number;
     };
     camera?: { zoom: number; rotation: number };
 }
@@ -258,6 +260,7 @@ export interface DerivedParams {
     backLightFactor: number;
     illuminationCap: number;
     ambientLight: number;
+    attenuationCoeff: number;
     frontLightFactor: number;
     edgeFadeThreshold: number;
     atmosphericCount: number;

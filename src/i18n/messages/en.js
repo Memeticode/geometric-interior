@@ -46,7 +46,9 @@ export default {
     'control.density': 'Density',
     'control.density.tooltip': 'Abundance \u2014 how populated the space is. Controls the total number of geometric elements across all tiers. At 0, roughly 100 elements \u2014 a sparse, intimate composition where individual forms are distinct. At 1, over 1,000 elements fill the space.',
     'control.luminosity': 'Luminosity',
-    'control.luminosity.tooltip': 'Energy \u2014 the overall brightness and glow intensity. Controls per-element glow strength, lighting factors, and bloom post-processing. At 0, scenes are dim but clearly visible \u2014 preserving color saturation and structural legibility. At 1, scenes are bright but not blown white.',
+    'control.luminosity.tooltip': 'Energy \u2014 the overall brightness and glow intensity. Controls per-element glow strength, lighting factors, and fog/background brightness. At 0, scenes are dim but clearly visible \u2014 preserving color saturation and structural legibility. At 1, scenes are bright but not blown white.',
+    'control.bloom': 'Bloom',
+    'control.bloom.tooltip': 'Emanation \u2014 how far light reaches beyond its sources. Controls the spatial spread of illumination: glow halo sizes, post-processing bloom radius, and the rate at which light falls off with distance. At 0, light stays tight to its sources \u2014 precise pools with defined edges. At 1, light bleeds outward, wrapping forms in soft aureoles.',
     'control.fracture': 'Fracture',
     'control.fracture.tooltip': 'Fragmentation \u2014 how shattered or whole the geometry is. Controls the degree of geometric scatter across all subsystems simultaneously: envelope radii, guide curve curvature, chain spread, dot scatter radius, and chromatic aberration.',
     'control.depth': 'Depth',
@@ -74,14 +76,14 @@ export default {
     'generate.seed': 'Seed',
     'generate.seed.tooltip': 'A three-word compositional seed. Each word controls an independent random stream and visual bias \u2014 arrangement governs spatial flow, structure governs geometric character, and detail governs light and color energy. Same three words always produce the same composition.',
     'generate.parameters': 'Parameters',
-    'generate.parameters.tooltip': 'Eleven continuous parameters, each a 0\u20131 scaling axis. Together they define an 11-dimensional creative space where every point produces a unique composition of luminous geometric forms.',
+    'generate.parameters.tooltip': 'Twelve continuous parameters, each a 0\u20131 scaling axis. Together they define a 12-dimensional creative space where every point produces a unique composition of luminous geometric forms.',
 
     /* ── Parameter sections ── */
     'params.heading': 'Parameters',
     'section.geometry': 'Geometry',
     'section.geometry.tooltip': 'The physical character of forms \u2014 their abundance, fragmentation, granularity, topology, and crystal quality.',
     'section.light': 'Light',
-    'section.light.tooltip': 'The energy and radiance of the scene.',
+    'section.light.tooltip': 'The energy and emanation of the scene \u2014 how bright, and how far light reaches.',
     'section.color': 'Color',
     'section.color.tooltip': 'The chromatic identity of the emitted light \u2014 hue, spectral range, and intensity.',
     'section.space': 'Space',
@@ -294,7 +296,7 @@ export default {
     'anim.renderFailed': 'Animation render failed.',
 
     /* ── Render queue menu ── */
-    'renderQueue.title': 'Render Jobs',
+    'renderQueue.title': 'Renders',
     'renderQueue.clear': 'Clear',
     'renderQueue.empty': 'No render jobs',
     'renderQueue.cancel': 'Cancel',

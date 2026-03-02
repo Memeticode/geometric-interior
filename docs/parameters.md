@@ -1,8 +1,8 @@
 # Parameter Reference
 
-Geometric Interior's visual output is controlled by 11 continuous parameters, each a 0–1 scaling axis. Together they define an 11-dimensional creative space where every point produces a unique composition of luminous geometric forms.
+Geometric Interior's visual output is controlled by 12 continuous parameters, each a 0–1 scaling axis. Together they define a 12-dimensional creative space where every point produces a unique composition of luminous geometric forms.
 
-The parameters fall into four groups: **geometry**, **light**, **color**, and **space**.
+The parameters fall into four groups: **geometry** (5), **light** (2), **color** (3), and **space** (2).
 
 ---
 
@@ -64,13 +64,35 @@ Controls the local geometry of each folding chain link: the ratio of broad quads
 ### luminosity
 **Energy** — the overall brightness and glow intensity.
 
-Controls per-element glow strength, lighting factors (back-light, front-light, ambient), and bloom post-processing. A density-aware attenuation system prevents high-density scenes from blowing out at high luminosity.
+Controls the scene's illumination budget: per-element glow strength, lighting factors (back-light, front-light, ambient), and fog/background brightness. A density-aware attenuation system prevents high-density scenes from blowing out at high luminosity.
 
 The luminosity range has been tuned so that the full 0–1 range is usable. At 0, scenes are dim but clearly visible — a "dark mode" that preserves color saturation and structural legibility. At 1, scenes are bright but not blown white.
 
 - **0.0**: Dark. Subdued glow, rich saturated colors, structure clearly visible. Moody, intimate.
 - **0.5**: Moderate energy. Balanced brightness.
-- **1.0**: Bright. Strong glow and bloom. Radiant, luminous.
+- **1.0**: Bright. Strong illumination. Radiant, luminous.
+
+### bloom
+**Emanation** — how far light reaches beyond its sources.
+
+Controls the spatial spread of illumination: the size of glow halos around dots, the post-processing bloom threshold and radius, and the rate at which light falls off with distance. At 0, light stays tight to its sources — precise pools of illumination with defined edges. At 1, light bleeds outward, wrapping forms in soft aureoles until the atmosphere itself begins to glow.
+
+Bloom is independent of luminosity. Luminosity controls how much light exists; bloom controls how the light behaves in space. This creates a 2D light character space:
+
+- **Low luminosity + low bloom**: Dark, precise, intimate. The "dark jewel" — dim but sharp.
+- **Low luminosity + high bloom**: Dark, ethereal, mystical. Faint forms shrouded in soft glow.
+- **High luminosity + low bloom**: Bright, crisp, architectural. Crystalline forms with defined edges.
+- **High luminosity + high bloom**: Bright, radiant, luminous. Forms engulfed in aureoles of light.
+
+Technically, bloom modulates:
+- Dot glow halo sizes (all 5 tiers)
+- Post-processing bloom strength and threshold
+- Light attenuation coefficient (how fast illumination falls off with distance)
+- Ambient-to-directional light ratio (high bloom shifts toward more fill light)
+
+- **0.0**: Tight. Light pools close to their sources. Crystal-sharp illumination edges. Precise.
+- **0.5**: Moderate emanation. Visible halos with structure still legible.
+- **1.0**: Diffuse. Light spreads far. Soft halos fill the space. Atmospheric, ethereal.
 
 ---
 
@@ -145,40 +167,10 @@ While each parameter is independently controllable, certain pairs create especia
 
 **fracture × faceting**: Both affect geometric character but at different scales. Fracture controls the *global* scatter pattern (how far apart elements are). Faceting controls the *local* face quality (how each individual shard looks). You can have tightly clustered sharp shards (low fracture, high faceting) or widely scattered smooth panels (high fracture, low faceting).
 
-**luminosity × chroma**: Together these define the quality of light. Low luminosity + high chroma = deep, richly saturated colors (the "dark jewel" aesthetic). High luminosity + low chroma = bright white glow with minimal color. The "dark mode" (luminosity=0) is a viable creative space that preserves structural legibility and color saturation.
+**luminosity × bloom**: The 2D light character space. Luminosity controls brightness magnitude; bloom controls spatial spread. Dark + tight = the dark jewel. Dark + diffuse = candlelit cathedral. Bright + tight = architectural crystal. Bright + diffuse = radiant aureole. This is the richest new interaction — the bottom-right corner (dark + high bloom) was previously unreachable.
+
+**luminosity × chroma**: Together these define the quality of colored light. Low luminosity + high chroma = deep, richly saturated colors (the "dark jewel" aesthetic). High luminosity + low chroma = bright white glow with minimal color. The "dark mode" (luminosity=0) is a viable creative space that preserves structural legibility and color saturation.
 
 **spectrum × chroma**: The color character space. Low spectrum + low chroma = achromatic (crystal-lattice). Low spectrum + high chroma = vivid monochrome (sapphire). High spectrum + low chroma = pastel rainbow. High spectrum + high chroma = vivid prismatic.
 
 ---
-
-## Presets
-
-Named presets map former palette identities to coordinates in the continuous space. Each preset sets all 11 parameters — the color axes reproduce the palette's character, and the geometric axes default to 0.5 (balanced).
-
-| Preset | hue | spectrum | chroma | Character |
-|--------|-----|----------|--------|-----------|
-| Violet Depth | 0.783 | 0.24 | 0.42 | Deep purple with subtle hue variation. The classic look. |
-| Warm Spectrum | 0.061 | 0.22 | 0.96 | Intense amber/gold with narrow warm range. |
-| Teal Volumetric | 0.514 | 0.21 | 0.46 | Cool blue-green with atmospheric depth. |
-| Sapphire | 0.625 | 0.24 | 0.86 | Vivid deep blue. Jewel-like intensity. |
-| Amethyst | 0.867 | 0.27 | 0.42 | Purple-magenta with moderate variation. |
-| Crystal Lattice | 0.586 | 0.0 | 0.0 | Near-achromatic. Pure geometric structure. |
-| Prismatic | 0.0 | 1.0 | 1.0 | Full-spectrum vivid color. Every hue present. |
-
----
-
-## Notable Configurations
-
-These parameter combinations produce especially distinctive results, discovered through systematic parameter-space exploration:
-
-**Dark Jewel** — `density=0.20, fracture=0.70, luminosity=0.0, coherence=0.50, hue=any, spectrum=0.24, chroma=0.50`
-Rich saturated colors at minimum luminosity. The tightened luminosity range means lum=0 produces dim but clearly visible scenes. Works beautifully across all hue values — each produces a distinctly different dark mood.
-
-**Stained Glass** — `density=0.10, fracture=1.0, luminosity=0.10, spectrum=1.0, chroma=1.0`
-Maximum color separation. Extreme fracture + minimal density + full prismatic spectrum = individually readable faces with distinct colors. Two or more bright centers connected by scattered colored shards.
-
-**Pure Coherence** — `density=0.0, fracture=0.0, luminosity=0.50, coherence=1.0`
-Minimal geometry + maximum organization = atmospheric nebula with visible tendrils and scattered sparkle dots around a soft compact core.
-
-**Aurora** — `density=0.30, fracture=0.50, luminosity=0.35, coherence=1.0`
-High coherence creates directional flow with dark geometric silhouettes in the foreground. Warm hue values produce an amber aurora effect; cool hue values produce an icy aurora.

@@ -1,0 +1,26 @@
+{
+  "targetParam": "bloom",
+  "values": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+  "anchors": [
+    {
+      "name": "violet-sanctum",
+      "seed": [7, 6, 7],
+      "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 }
+    },
+    {
+      "name": "ice-crystal",
+      "seed": [1, 14, 1],
+      "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.55, "fracture": 0.25, "coherence": 0.85, "hue": 0.55, "spectrum": 0.05, "chroma": 0.08, "scale": 0.35, "division": 0.50, "faceting": 0.85, "flow": 0.5, "bloom": 0.5 }
+    },
+    {
+      "name": "sapphire-lattice",
+      "seed": [1, 2, 3],
+      "controls": { "topology": "flow-field", "density": 0.03, "luminosity": 0.80, "fracture": 0.20, "coherence": 0.95, "hue": 0.556, "spectrum": 0.239, "chroma": 0.417, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 }
+    },
+    {
+      "name": "dark-ruby-divide",
+      "seed": [9, 9, 14],
+      "controls": { "topology": "flow-field", "density": 0.15, "luminosity": 0.30, "fracture": 0.60, "coherence": 0.55, "hue": 0.986, "spectrum": 0.30, "chroma": 0.60, "scale": 0.5, "division": 0.85, "faceting": 0.6, "flow": 0.5, "bloom": 0.5 }
+    }
+  ]
+}

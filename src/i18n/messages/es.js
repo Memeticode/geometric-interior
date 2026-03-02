@@ -46,7 +46,9 @@ export default {
     'control.density': 'Densidad',
     'control.density.tooltip': 'Abundancia \u2014 cu\u00e1n poblado est\u00e1 el espacio. Controla el n\u00famero total de elementos geom\u00e9tricos en todos los niveles. En 0, aproximadamente 100 elementos \u2014 una composici\u00f3n dispersa e \u00edntima donde las formas individuales son distinguibles. En 1, m\u00e1s de 1.000 elementos llenan el espacio.',
     'control.luminosity': 'Luminosidad',
-    'control.luminosity.tooltip': 'Energ\u00eda \u2014 el brillo general y la intensidad del resplandor. Controla la fuerza de brillo por elemento, factores de iluminaci\u00f3n y posprocesamiento de bloom. En 0, las escenas son tenues pero claramente visibles \u2014 preservando la saturaci\u00f3n de color y la legibilidad estructural. En 1, brillantes pero sin quemarse a blanco.',
+    'control.luminosity.tooltip': 'Energ\u00eda \u2014 el brillo general y la intensidad del resplandor. Controla la fuerza de brillo por elemento, factores de iluminaci\u00f3n y brillo de niebla/fondo. En 0, las escenas son tenues pero claramente visibles \u2014 preservando la saturaci\u00f3n de color y la legibilidad estructural. En 1, brillantes pero sin quemarse a blanco.',
+    'control.bloom': 'Florescencia',
+    'control.bloom.tooltip': 'Emanaci\u00f3n \u2014 cu\u00e1n lejos llega la luz m\u00e1s all\u00e1 de sus fuentes. Controla la dispersi\u00f3n espacial de la iluminaci\u00f3n: tama\u00f1os de halo, radio de bloom en posprocesamiento y la velocidad de ca\u00edda de la luz con la distancia. En 0, la luz permanece cerca de sus fuentes \u2014 charcos precisos con bordes definidos. En 1, la luz se expande, envolviendo las formas en suaves aureolas.',
     'control.fracture': 'Fractura',
     'control.fracture.tooltip': 'Fragmentaci\u00f3n \u2014 cu\u00e1n fragmentada o \u00edntegra es la geometr\u00eda. Controla el grado de dispersi\u00f3n geom\u00e9trica en todos los subsistemas simult\u00e1neamente: radios de envolvente, curvatura de gu\u00edas, dispersi\u00f3n de cadenas, radio de dispersi\u00f3n de puntos y aberraci\u00f3n crom\u00e1tica.',
     'control.depth': 'Profundidad',
@@ -74,14 +76,14 @@ export default {
     'generate.seed': 'Semilla',
     'generate.seed.tooltip': 'Una semilla compositiva de tres palabras. Cada palabra controla un flujo aleatorio independiente y un sesgo visual \u2014 disposici\u00f3n gobierna el flujo espacial, estructura gobierna el car\u00e1cter geom\u00e9trico, y detalle gobierna la luz y energ\u00eda crom\u00e1tica. Las mismas tres palabras siempre producen la misma composici\u00f3n.',
     'generate.parameters': 'Par\u00e1metros',
-    'generate.parameters.tooltip': 'Once par\u00e1metros continuos, cada uno un eje de escala de 0 a 1. Juntos definen un espacio creativo de 11 dimensiones donde cada punto produce una composici\u00f3n \u00fanica de formas geom\u00e9tricas luminosas.',
+    'generate.parameters.tooltip': 'Doce par\u00e1metros continuos, cada uno un eje de escala de 0 a 1. Juntos definen un espacio creativo de 12 dimensiones donde cada punto produce una composici\u00f3n \u00fanica de formas geom\u00e9tricas luminosas.',
 
     /* ── Parameter sections ── */
     'params.heading': 'Par\u00e1metros',
     'section.geometry': 'Geometr\u00eda',
     'section.geometry.tooltip': 'El car\u00e1cter f\u00edsico de las formas \u2014 su abundancia, fragmentaci\u00f3n, granularidad, topolog\u00eda y calidad cristalina.',
     'section.light': 'Luz',
-    'section.light.tooltip': 'La energ\u00eda y radiancia de la escena.',
+    'section.light.tooltip': 'La energ\u00eda y emanaci\u00f3n de la escena \u2014 cu\u00e1n brillante, y cu\u00e1n lejos llega la luz.',
     'section.color': 'Color',
     'section.color.tooltip': 'La identidad crom\u00e1tica de la luz emitida \u2014 tono, rango espectral e intensidad.',
     'section.space': 'Espacio',
@@ -294,7 +296,7 @@ export default {
     'anim.renderFailed': 'Error al renderizar animaci\u00f3n.',
 
     /* ── Render queue menu ── */
-    'renderQueue.title': 'Trabajos de renderizado',
+    'renderQueue.title': 'Renders',
     'renderQueue.clear': 'Limpiar',
     'renderQueue.empty': 'Sin trabajos',
     'renderQueue.cancel': 'Cancelar',

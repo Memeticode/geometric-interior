@@ -18,11 +18,11 @@ export function initPageSettings(gearBtn, popover) {
     const themeSwitcher = popover.querySelector('#themeSwitcher');
     if (themeSwitcher) initTheme(themeSwitcher);
 
-    const langSelect = popover.querySelector('#langSelect');
-    if (langSelect) initLangSelector(langSelect);
+    const langDropdown = popover.querySelector('#langDropdown');
+    if (langDropdown) initLangSelector(langDropdown);
 
-    const resSelect = popover.querySelector('#resolutionSelect');
-    if (resSelect) initResolutionSelector(resSelect);
+    const resDropdown = popover.querySelector('#resolutionDropdown');
+    if (resDropdown) initResolutionSelector(resDropdown);
 
     // Toggle popover
     gearBtn.addEventListener('click', (e) => {

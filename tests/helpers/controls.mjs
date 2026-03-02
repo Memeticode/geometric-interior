@@ -50,7 +50,7 @@ export async function setAllControls(page, config) {
                 t.classList.toggle('active', t.dataset.value === c.topology)
             );
         }
-        for (const key of ['density', 'luminosity', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow']) {
+        for (const key of ['density', 'luminosity', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow', 'bloom']) {
             if (c[key] !== undefined) {
                 document.getElementById(key).value = c[key];
             }
@@ -86,6 +86,7 @@ export async function readControlsFromPage(page) {
         division: parseFloat(document.getElementById('division').value),
         faceting: parseFloat(document.getElementById('faceting').value),
         flow: parseFloat(document.getElementById('flow').value),
+        bloom: parseFloat(document.getElementById('bloom').value),
     }));
 }
 

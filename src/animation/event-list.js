@@ -151,7 +151,7 @@ export function createEventList({ containerEl, addBtnEl, onSelect, onEventsChang
 
         // Easing
         const easingSel = document.createElement('select');
-        easingSel.className = 'easing-select';
+        easingSel.className = 'select-base easing-select';
         for (const key of EASING_OPTIONS) {
             const opt = document.createElement('option');
             opt.value = key;

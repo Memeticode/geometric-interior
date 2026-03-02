@@ -68,7 +68,7 @@ test('all easing types are monotonic', () => {
 function makeControls(overrides = {}) {
     return {
         topology: 'flow-field',
-        density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5,
+        density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, coherence: 0.5,
         hue: 0.5, spectrum: 0.3, chroma: 0.4,
         scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5,
         ...overrides,

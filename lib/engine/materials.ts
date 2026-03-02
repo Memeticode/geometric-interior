@@ -24,6 +24,7 @@ export function createDemoFaceMaterial(lightUniforms: LightUniforms, config: Der
             uIlluminationCap: { value: config.illuminationCap },
             uAmbientLight: { value: config.ambientLight },
             uEdgeFadeThreshold: { value: config.edgeFadeThreshold },
+            uAttenuationCoeff: { value: config.attenuationCoeff },
             uMorphFade: { value: 1.0 },
             uTime: { value: 0.0 },
             uFoldProgress: { value: 1.0 },

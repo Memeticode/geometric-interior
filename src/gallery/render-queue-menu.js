@@ -1,7 +1,7 @@
 /**
- * Render queue section inside the site menu drawer.
+ * Render queue section inside the site menu.
+ * Pinned to the bottom of the menu, expands upward to fill available space.
  * Jobs are split into Active, Queued, and Completed sub-sections.
- * Queued and Completed are collapsible; all sections always visible.
  * Updates in real-time from the render queue's onUpdate callback.
  */
 
@@ -9,59 +9,59 @@ import { t } from '../i18n/locale.js';
 
 /**
  * @param {Object} opts
- * @param {HTMLElement}       opts.groupEl   — #rqGroup (the settings-group wrapper)
+ * @param {HTMLElement}       opts.drawerEl  — #rqMenu (the wrapper inside site menu)
+ * @param {HTMLElement}       opts.barEl     — #rqMenuBar (clickable toggle bar)
  * @param {HTMLElement}       opts.listEl    — #rqJobList (job list container)
+ * @param {HTMLElement}       opts.countEl   — #rqMenuCount (inline count on bar)
  * @param {HTMLElement}       opts.badgeEl   — #renderQueueBadge (on hamburger button)
- * @param {HTMLButtonElement} opts.clearBtn  — #rqClearBtn
  * @param {(jobId: string) => void}  opts.onCancel
- * @param {() => void}              opts.onClear
- * @param {(job: Object) => void}   opts.onView
+ * @param {(job: Object) => void}    opts.onView
  */
 export function initRenderQueueMenu(opts) {
-    const { groupEl, listEl, badgeEl, clearBtn } = opts;
-    if (!groupEl || !listEl) return null;
+    const { drawerEl, barEl, listEl, countEl, badgeEl } = opts;
+    if (!drawerEl || !listEl) return null;
 
-    const activeSection = document.getElementById('rqActive');
-    const queuedSection = document.getElementById('rqQueued');
-    const completedSection = document.getElementById('rqCompleted');
     const activeJobs = document.getElementById('rqActiveJobs');
     const queuedJobs = document.getElementById('rqQueuedJobs');
     const completedJobs = document.getElementById('rqCompletedJobs');
-    const activeLabel = activeSection?.querySelector('.rq-section-label');
+    const queuedSection = document.getElementById('rqQueued');
+    const completedSection = document.getElementById('rqCompleted');
     const queuedHeader = queuedSection?.querySelector('.rq-section-header');
     const queuedLabel = queuedSection?.querySelector('.rq-section-label');
     const completedHeader = completedSection?.querySelector('.rq-section-header');
     const completedLabel = completedSection?.querySelector('.rq-section-label');
 
-    // Wire collapsible toggles for Queued and Completed
+    let prevJobCount = 0;
+    let expanded = false;
+
+    const menuEl = drawerEl.closest('.site-menu');
+
+    // Wire bar toggle
+    if (barEl) {
+        barEl.addEventListener('click', () => {
+            expanded = !expanded;
+            drawerEl.classList.toggle('rq-menu-expanded', expanded);
+            // When expanded, prevent site-menu from scrolling so flex layout works
+            if (menuEl) menuEl.classList.toggle('rq-expanded', expanded);
+        });
+    }
+
+    // Wire collapsible toggles for Queued and Completed sub-sections
     for (const header of [queuedHeader, completedHeader]) {
         if (!header) continue;
         const body = header.nextElementSibling;
-        // Start collapsed
         body?.classList.add('collapsed');
         header.addEventListener('click', () => {
-            const expanded = header.getAttribute('aria-expanded') === 'true';
-            header.setAttribute('aria-expanded', String(!expanded));
-            if (body) body.classList.toggle('collapsed', expanded);
+            const exp = header.getAttribute('aria-expanded') === 'true';
+            header.setAttribute('aria-expanded', String(!exp));
+            if (body) body.classList.toggle('collapsed', exp);
         });
     }
 
-    // Clear finished jobs
-    if (clearBtn) {
-        clearBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (opts.onClear) opts.onClear();
-        });
-    }
-
-    /**
-     * Build DOM for a single job item.
-     */
     function buildJobEl(job) {
         const el = document.createElement('div');
         el.className = 'rq-job';
 
-        // Thumbnail for completed jobs
         if (job.status === 'complete' && job.asset && job.asset.thumbDataUrl) {
             const thumb = document.createElement('img');
             thumb.className = 'rq-job-thumb';
@@ -70,7 +70,6 @@ export function initRenderQueueMenu(opts) {
             el.appendChild(thumb);
         }
 
-        // Info column
         const info = document.createElement('div');
         info.className = 'rq-job-info';
 
@@ -101,7 +100,6 @@ export function initRenderQueueMenu(opts) {
 
         el.appendChild(info);
 
-        // Action buttons
         const actions = document.createElement('div');
         actions.className = 'rq-job-actions';
 
@@ -132,9 +130,6 @@ export function initRenderQueueMenu(opts) {
         return el;
     }
 
-    /**
-     * Build empty-state placeholder element.
-     */
     function buildEmptyEl(msgKey) {
         const el = document.createElement('div');
         el.className = 'rq-job-empty';
@@ -142,18 +137,27 @@ export function initRenderQueueMenu(opts) {
         return el;
     }
 
-    /**
-     * Update the job list and badge from the current job list.
-     */
     function update(jobs) {
-        // Show/hide the render queue group
-        groupEl.style.display = jobs.length > 0 ? '' : 'none';
+        // Show/hide the section
+        if (jobs.length > 0) {
+            drawerEl.classList.remove('rq-menu-hidden');
+        } else {
+            drawerEl.classList.add('rq-menu-hidden');
+        }
+
+        // Auto-expand when first job arrives
+        if (prevJobCount === 0 && jobs.length > 0) {
+            expanded = true;
+            drawerEl.classList.add('rq-menu-expanded');
+            if (menuEl) menuEl.classList.add('rq-expanded');
+        }
+        prevJobCount = jobs.length;
 
         // Update hamburger badge
-        if (badgeEl) {
-            const activeCount = jobs.filter(j => j.status === 'rendering' || j.status === 'queued').length;
-            const isRendering = jobs.some(j => j.status === 'rendering');
+        const activeCount = jobs.filter(j => j.status === 'rendering' || j.status === 'queued').length;
+        const isRendering = jobs.some(j => j.status === 'rendering');
 
+        if (badgeEl) {
             if (activeCount > 0) {
                 badgeEl.textContent = activeCount;
                 badgeEl.classList.remove('hidden');
@@ -164,16 +168,30 @@ export function initRenderQueueMenu(opts) {
             }
         }
 
-        // Show/hide clear button
-        const hasFinished = jobs.some(j => j.status === 'complete' || j.status === 'failed');
-        if (clearBtn) clearBtn.style.display = hasFinished ? '' : 'none';
+        // Update inline count on the bar
+        if (countEl) {
+            const queuedCount = jobs.filter(j => j.status === 'queued').length;
+            if (isRendering) {
+                // "Rendering (1/3)" — current position out of total (rendering + queued)
+                const total = 1 + queuedCount;
+                countEl.textContent = `Rendering (1/${total})`;
+                countEl.classList.add('rendering');
+            } else if (queuedCount > 0) {
+                countEl.textContent = `${queuedCount} queued`;
+                countEl.classList.remove('rendering');
+            } else {
+                const completedCount = jobs.filter(j => j.status === 'complete').length;
+                countEl.textContent = completedCount > 0 ? `${completedCount} completed` : '';
+                countEl.classList.remove('rendering');
+            }
+        }
 
         // Split jobs by status
         const active = jobs.filter(j => j.status === 'rendering');
         const queued = jobs.filter(j => j.status === 'queued');
         const completed = jobs.filter(j => j.status === 'complete' || j.status === 'failed');
 
-        // Active section — always visible, show empty state
+        // Active section
         activeJobs.innerHTML = '';
         if (active.length > 0) {
             for (const job of active) activeJobs.appendChild(buildJobEl(job));
@@ -181,7 +199,7 @@ export function initRenderQueueMenu(opts) {
             activeJobs.appendChild(buildEmptyEl('renderQueue.noActive'));
         }
 
-        // Queued section — always visible, show count + empty state
+        // Queued section
         queuedJobs.innerHTML = '';
         if (queued.length > 0) {
             for (const job of queued) queuedJobs.appendChild(buildJobEl(job));
@@ -192,7 +210,7 @@ export function initRenderQueueMenu(opts) {
             queuedLabel.textContent = t('renderQueue.queuedSection') + ' (' + queued.length + ')';
         }
 
-        // Completed section — always visible, show count + empty state
+        // Completed section
         completedJobs.innerHTML = '';
         if (completed.length > 0) {
             for (const job of completed) completedJobs.appendChild(buildJobEl(job));

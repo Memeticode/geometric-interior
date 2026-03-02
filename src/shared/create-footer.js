@@ -21,11 +21,16 @@ export function createFooter(footerEl, { page }) {
             <button class="theme-option" data-theme="dark" data-i18n="theme.dark">Dark</button>
         </div>`;
 
-    const langSelectHTML = `
-        <select id="langSelect" class="lang-select" aria-label="Language" data-i18n-aria="footer.langLabel">
-            <option value="en">English</option>
-            <option value="es">Espa&#241;ol</option>
-        </select>`;
+    const langDropdownHTML = `
+        <div class="custom-dropdown" id="langDropdown">
+            <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox" aria-expanded="false" aria-label="Language" data-i18n-aria="footer.langLabel">
+                <span class="custom-dropdown-label">English</span>
+            </button>
+            <div class="custom-dropdown-menu hidden" role="listbox">
+                <button class="custom-dropdown-item active" role="option" data-value="en" aria-selected="true">English</button>
+                <button class="custom-dropdown-item" role="option" data-value="es" aria-selected="false">Espa&#241;ol</button>
+            </div>
+        </div>`;
 
     const githubLinkHTML = `
         <a href="https://github.com/Memeticode/symmetrical-barnacle" target="_blank" rel="noopener"
@@ -39,7 +44,7 @@ export function createFooter(footerEl, { page }) {
             <div class="footer-content">
                 ${githubLinkHTML}
                 <div class="footer-controls">
-                    ${langSelectHTML}
+                    ${langDropdownHTML}
                     ${themeSwitcherHTML}
                 </div>
             </div>`;
@@ -47,13 +52,18 @@ export function createFooter(footerEl, { page }) {
         const resolutionHTML = hasResolution ? `
             <div class="settings-section">
                 <span class="settings-section-label" data-i18n="footer.resolution">Resolution</span>
-                <select id="resolutionSelect" class="lang-select" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel">
-                    <option value="sd">SD (840&#215;540)</option>
-                    <option value="hd" selected>HD (1400&#215;900)</option>
-                    <option value="fhd">FHD (1680&#215;1080)</option>
-                    <option value="qhd">QHD (2520&#215;1620)</option>
-                    <option value="4k">4K (3360&#215;2160)</option>
-                </select>
+                <div class="custom-dropdown" id="resolutionDropdown">
+                    <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox" aria-expanded="false" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel">
+                        <span class="custom-dropdown-label">HD (1400&#215;900)</span>
+                    </button>
+                    <div class="custom-dropdown-menu hidden" role="listbox">
+                        <button class="custom-dropdown-item" role="option" data-value="sd" aria-selected="false">SD (840&#215;540)</button>
+                        <button class="custom-dropdown-item active" role="option" data-value="hd" aria-selected="true">HD (1400&#215;900)</button>
+                        <button class="custom-dropdown-item" role="option" data-value="fhd" aria-selected="false">FHD (1680&#215;1080)</button>
+                        <button class="custom-dropdown-item" role="option" data-value="qhd" aria-selected="false">QHD (2520&#215;1620)</button>
+                        <button class="custom-dropdown-item" role="option" data-value="4k" aria-selected="false">4K (3360&#215;2160)</button>
+                    </div>
+                </div>
             </div>` : '';
 
         footerEl.innerHTML = `
@@ -69,7 +79,7 @@ export function createFooter(footerEl, { page }) {
                         </div>
                         <div class="settings-section">
                             <span class="settings-section-label" data-i18n="footer.language">Language</span>
-                            ${langSelectHTML}
+                            ${langDropdownHTML}
                         </div>
                         ${resolutionHTML}
                     </div>
@@ -80,8 +90,8 @@ export function createFooter(footerEl, { page }) {
 
     return {
         themeSwitcher: footerEl.querySelector('#themeSwitcher'),
-        langSelect: footerEl.querySelector('#langSelect'),
-        resolutionSelect: footerEl.querySelector('#resolutionSelect'),
+        langDropdown: footerEl.querySelector('#langDropdown'),
+        resolutionDropdown: footerEl.querySelector('#resolutionDropdown'),
         pageSettingsBtn: footerEl.querySelector('#pageSettingsBtn'),
         pageSettingsPopover: footerEl.querySelector('#pageSettingsPopover'),
     };

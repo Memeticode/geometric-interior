@@ -155,31 +155,7 @@
     margin-left: -0.125rem;
 }
 
-.easing-select {
-    padding: 0.1875rem 1.25rem 0.1875rem 0.375rem;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    background: transparent;
-    color: var(--text-muted);
-    font-size: 0.625rem;
-    font-family: inherit;
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.25rem center;
-    transition: border-color 0.15s, background-color 0.15s;
-}
-
-.easing-select:hover {
-    border-color: var(--border);
-    background: var(--surface);
-}
-
-.easing-select:focus {
-    border-color: var(--accent);
-    outline: none;
-}
+/* .easing-select — visual styles now in .select-base (base.css) */
 
 .scene-card-spacer {
     flex: 1;
@@ -364,48 +340,7 @@
     font-variant-numeric: tabular-nums;
 }
 
-.anim-fps-select {
-    padding: 0.1875rem 1.25rem 0.1875rem 0.375rem;
-    border-radius: 6px;
-    border: 1px solid var(--border-strong);
-    background: var(--surface);
-    color: var(--text);
-    font-size: 0.675rem;
-    font-family: inherit;
-    cursor: pointer;
-    appearance: none;
-    outline: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23888'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.375rem center;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
-}
-
-.anim-fps-select:hover {
-    border-color: var(--accent);
-    background: var(--surface-hover);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23b482ff'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.375rem center;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
-}
-
-.anim-fps-select:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent-bg), 0 1px 4px rgba(0, 0, 0, 0.18);
-}
-
-.anim-fps-select option {
-    background: var(--bg);
-    color: var(--text);
-    padding: 0.375rem 0.5rem;
-}
-
-.anim-fps-select option:checked {
-    background: var(--accent-bg);
-    color: var(--text);
-}
+/* .anim-fps-select — visual styles now in .select-base (base.css) */
 
 /* ── Panel Layout for Animation ── */
 .anim-panel-header {

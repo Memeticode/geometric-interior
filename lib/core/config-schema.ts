@@ -8,7 +8,7 @@ import { PRESETS } from './palettes.js';
 import { seedTagToLabel, isSeedTag, TAG_LIST_LENGTH } from './seed-tags.js';
 import type { SeedTag } from './seed-tags.js';
 
-const STRUCTURE_KEYS_V2 = ['density', 'luminosity', 'fracture', 'coherence', 'scale', 'division', 'faceting', 'flow'] as const;
+const STRUCTURE_KEYS_V2 = ['density', 'luminosity', 'bloom', 'fracture', 'coherence', 'scale', 'division', 'faceting', 'flow'] as const;
 const COLOR_KEYS_V2 = ['hue', 'spectrum', 'chroma'] as const;
 
 /** Legacy v1 structure keys */
@@ -155,6 +155,7 @@ export function configToProfile(config: StillConfig): { name: string; profile: P
                     division: 0.5,
                     faceting: 0.5,
                     flow: 0.5,
+                    bloom: 0.5,
                 },
             },
         };
@@ -179,6 +180,7 @@ export function configToProfile(config: StillConfig): { name: string; profile: P
                 division: config.structure.division ?? 0.5,
                 faceting: config.structure.faceting ?? 0.5,
                 flow: config.structure.flow ?? 0.5,
+                bloom: config.structure.bloom ?? 0.5,
             },
             ...(config.camera ? { camera: config.camera } : {}),
         },
@@ -206,6 +208,7 @@ export function profileToConfig(name: string, profile: Profile): StillConfig {
             division: profile.controls.division,
             faceting: profile.controls.faceting,
             flow: profile.controls.flow,
+            bloom: profile.controls.bloom,
         },
         ...(profile.camera ? { camera: profile.camera } : {}),
     };

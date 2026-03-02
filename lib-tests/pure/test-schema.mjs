@@ -109,7 +109,7 @@ const VALID_V2_TAG = {
     seedTag: [5, 3, 11],
     intent: 'Balanced, folded, bright',
     color: { hue: 0.5, spectrum: 0.3, chroma: 0.6 },
-    structure: { density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
+    structure: { density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, coherence: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
 };
 
 test('validateStillConfig accepts v2 config with seedTag', () => {
