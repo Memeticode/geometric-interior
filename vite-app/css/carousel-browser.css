@@ -1,5 +1,15 @@
 /* ── <carousel-dropdown-browser> component styles ── */
 
+@property --mask-size {
+    syntax: '<percentage>';
+    inherits: true;
+    initial-value: 0%;
+}
+
+/* Hide data elements */
+carousel-dropdown-browser-card,
+carousel-dropdown-browser-section { display: none; }
+
 :root {
     --card-w: 180px;
 }
@@ -10,8 +20,9 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.25rem 0;
-    margin-top: 0.5rem;
+    gap: 0.1rem;
+    padding: 0;
+    margin-top: 0.25rem;
 }
 
 .cdb-controls {
@@ -24,7 +35,7 @@
 .cdb-container {
     position: relative;
     width: 100%;
-    padding: 0.5rem 0;
+    padding: 0;
     max-height: 300px;
     transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.3s ease;
 }
@@ -38,7 +49,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 160px;
+    min-height: 0.5rem;
     transition: min-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.4s ease;
 }
@@ -52,7 +63,8 @@
     transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.3s ease;
 }
 .cdb-strip.cdb-flattened .cdb-arrow {
-    display: none;
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* ── Nav arrows ── */
@@ -62,6 +74,10 @@
 }
 .cdb-arrow:hover {
     opacity: 1;
+}
+.cdb-arrow:disabled {
+    opacity: 0.15;
+    pointer-events: none;
 }
 
 /* ── Carousel cards ── */
@@ -84,6 +100,7 @@
 }
 
 .cdb-card-img {
+    position: relative;
     width: 100%;
     aspect-ratio: 14 / 9;
     border-radius: 8px;
@@ -94,11 +111,11 @@
                rotateY(var(--ry, 0deg))
                translateZ(var(--tz, 0px))
                scale(var(--sc, 1));
-    transition: transform 0.28s ease,
-                border-color 0.4s ease,
-                border-top-color 0.4s ease,
-                border-bottom-color 0.4s ease,
-                box-shadow 0.4s ease;
+    transition: transform 0.15s ease,
+                border-color 0.2s ease,
+                border-top-color 0.2s ease,
+                border-bottom-color 0.2s ease,
+                box-shadow 0.2s ease;
     transform-style: preserve-3d;
 }
 
@@ -107,18 +124,23 @@
     border-bottom-color: rgba(180, 130, 255, 0.6);
 }
 
-.cdb-track:not(.cdb-dragging) .cdb-card:hover:not(.active) {
+.cdb-track:not(.cdb-dragging) .cdb-card.cdb-hovered {
     z-index: 20 !important;
-    transform: translate(-50%, calc(-50% - 10px)) translateX(var(--cx, 0px));
 }
 
-.cdb-track:not(.cdb-dragging) .cdb-card:hover:not(.active) .cdb-card-img {
-    border-color: var(--border-strong);
+.cdb-track:not(.cdb-dragging) .cdb-card.cdb-hovered .cdb-card-img {
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-    transform: perspective(1200px)
-               rotateY(var(--ry, 0deg))
-               translateZ(calc(var(--tz, 0px) + 25px))
-               scale(calc(var(--sc, 1) + 0.08));
+    transform: translateY(calc(-1 * var(--hover-lift, 0px)))
+               translateX(var(--hover-cx, 0px))
+               perspective(1200px)
+               rotateY(calc(var(--ry, 0deg) - var(--hover-ry, 0deg)))
+               translateZ(calc(var(--tz, 0px) + var(--hover-tz, 25px)))
+               scale(calc(var(--sc, 1) + var(--hover-sc, 0.08)));
+}
+
+.cdb-track:not(.cdb-dragging) .cdb-card.active.cdb-hovered .cdb-card-img {
+    border-top-color: rgba(180, 130, 255, 0.6);
+    border-bottom-color: rgba(180, 130, 255, 0.6);
 }
 
 .cdb-card-img img {
@@ -127,6 +149,22 @@
     object-fit: cover;
     display: block;
     pointer-events: none;
+}
+
+/* ── Adjacent card fade mask (when neighbor is hovered) ── */
+.cdb-mask-left .cdb-card-img {
+    -webkit-mask-image: linear-gradient(to right, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
+    mask-image: linear-gradient(to right, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
+    transition: transform 0.15s ease, --mask-size 0.075s ease,
+                border-color 0.2s ease, border-top-color 0.2s ease,
+                border-bottom-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cdb-mask-right .cdb-card-img {
+    -webkit-mask-image: linear-gradient(to left, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
+    mask-image: linear-gradient(to left, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
+    transition: transform 0.15s ease, --mask-size 0.075s ease,
+                border-color 0.2s ease, border-top-color 0.2s ease,
+                border-bottom-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* ── View All toggle ── */
@@ -295,6 +333,44 @@
 
 .cdb-grid-card-actions .cdb-delete:hover {
     color: #ff6666;
+}
+
+/* ── Section indicator (below carousel strip) ── */
+.cdb-section-indicator {
+    width: 100%;
+    text-align: center;
+    max-height: 1.2rem;
+    overflow: hidden;
+    transition: max-height 0.4s ease, margin 0.4s ease, opacity 0.3s ease;
+}
+.cdb-strip.cdb-flattened .cdb-section-indicator {
+    max-height: 0;
+    margin: 0;
+    opacity: 0;
+}
+.cdb-section-name {
+    display: inline-block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: rgba(255, 255, 255, 0.3);
+    transition: opacity 0.3s ease;
+}
+.cdb-section-name.fading { opacity: 0; }
+
+/* ── Grid section headers ── */
+.cdb-grid-section-header {
+    grid-column: 1 / -1;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.35);
+    padding: 0.75rem 0 0.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 0.25rem;
+}
+.cdb-grid-section-header:first-child {
+    padding-top: 0;
 }
 
 /* ── Responsive ── */

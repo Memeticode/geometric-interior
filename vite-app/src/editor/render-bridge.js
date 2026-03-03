@@ -211,11 +211,17 @@ export function createRenderBridge(canvas, {
         }
     }
 
+    /**
+     * Send camera state to the renderer.
+     * Zoom is a 0-1 parameter (0=far, ~0.38=default, 1=close);
+     * converted to a distance multiplier for the renderer.
+     */
     function sendCameraState(zoom, rotation, elevation = 0) {
+        const dist = Math.pow(3, 0.6 - 1.6 * zoom);
         if (worker && workerReady) {
-            worker.postMessage({ type: 'set-camera', zoom, orbitY: rotation, orbitX: elevation });
+            worker.postMessage({ type: 'set-camera', zoom: dist, orbitY: rotation, orbitX: elevation });
         } else if (fallbackRenderer) {
-            fallbackRenderer.setCameraState(zoom, rotation, elevation);
+            fallbackRenderer.setCameraState(dist, rotation, elevation);
         }
     }
 

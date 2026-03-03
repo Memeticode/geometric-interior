@@ -1,0 +1,19 @@
+{
+  "name": "Monumental Emerald Lattice",
+  "seed": [4, 7, 15],
+  "controls": {
+    "topology": "flow-field",
+    "hue": 0.41,
+    "spectrum": 0.33,
+    "chroma": 0.58,
+    "density": 0.11,
+    "fracture": 0.62,
+    "coherence": 0.44,
+    "luminosity": 0.37,
+    "bloom": 0.51,
+    "scale": 0.29,
+    "division": 0.66,
+    "faceting": 0.48,
+    "flow": 0.73
+  }
+}

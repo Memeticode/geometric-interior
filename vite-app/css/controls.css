@@ -212,12 +212,22 @@
 }
 
 .param-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 0.625rem;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    padding: 0.5rem 0.5rem 0;
+    padding: 0.5rem 0.5rem 0.25rem;
     margin-top: 0.125rem;
     border-top: 1px solid var(--border);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.param-section-header:hover {
+    background: var(--surface-hover);
 }
 
 .param-section-header:first-of-type {
@@ -229,6 +239,34 @@
     font-size: 0.625rem;
     text-transform: uppercase;
     letter-spacing: 0.4px;
+}
+
+.param-section-header .collapsible-chevron {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    transition: transform 0.25s ease;
+}
+
+.param-section-header[aria-expanded="false"] .collapsible-chevron {
+    transform: rotate(-90deg);
+}
+
+/* ── Collapsible section rows ── */
+.param-section-rows {
+    overflow: hidden;
+    max-height: 100000px;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+    opacity: 1;
+}
+
+.param-section-rows.collapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.param-section-rows .row {
+    padding-left: 1rem;
 }
 
 /* ── Engine slider with gradient track ── */
@@ -322,7 +360,7 @@ select {
 }
 
 select:hover {
-    border-color: var(--accent);
+    border-color: var(--border-strong);
 }
 
 select:focus {
@@ -446,7 +484,7 @@ button {
 }
 
 button:hover {
-    background: var(--surface-active);
+    background-color: var(--surface-active);
 }
 
 button.primary {

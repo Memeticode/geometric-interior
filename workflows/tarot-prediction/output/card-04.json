@@ -1,0 +1,19 @@
+{
+  "name": "Curling Teal Layered",
+  "seed": [17, 14, 2],
+  "controls": {
+    "topology": "flow-field",
+    "hue": 0.56,
+    "spectrum": 0.08,
+    "chroma": 0.12,
+    "density": 0.04,
+    "fracture": 0.15,
+    "coherence": 0.92,
+    "luminosity": 0.08,
+    "bloom": 0.88,
+    "scale": 0.42,
+    "division": 0.53,
+    "faceting": 0.31,
+    "flow": 0.85
+  }
+}

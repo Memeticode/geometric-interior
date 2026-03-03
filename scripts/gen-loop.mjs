@@ -9,7 +9,7 @@
  *   HEADED=1 node scripts/gen-loop.mjs            # watch it render
  *
  * Prerequisites:
- *   npx vite --port 5204  (dev server must be running)
+ *   npm run dev:render  (render server must be running)
  *   ffmpeg must be on PATH
  */
 
@@ -98,7 +98,7 @@ async function main() {
         await page.goto(URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
     } catch (err) {
         console.error(`Failed to load ${URL}`);
-        console.error('Is the Vite dev server running?  npx vite --port 5204');
+        console.error('Is the render server running?  npm run dev:render');
         await browser.close();
         process.exit(1);
     }

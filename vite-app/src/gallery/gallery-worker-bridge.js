@@ -157,10 +157,13 @@ export function initGalleryWorker(canvas) {
 
             /**
              * Send a camera state update to the worker.
+             * Zoom is a 0-1 parameter (0=far, ~0.38=default, 1=close);
+             * converted to a distance multiplier for the renderer.
              */
             sendCameraState(zoom, rotation, elevation) {
                 if (!ready) return;
-                worker.postMessage({ type: 'set-camera', zoom, orbitY: rotation, orbitX: elevation });
+                const dist = Math.pow(3, 0.6 - 1.6 * zoom);
+                worker.postMessage({ type: 'set-camera', zoom: dist, orbitY: rotation, orbitX: elevation });
             },
 
             /**

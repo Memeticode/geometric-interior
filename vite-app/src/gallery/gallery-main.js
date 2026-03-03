@@ -79,6 +79,9 @@ function openSiteMenu() {
     siteMenu.setAttribute('aria-hidden', 'false');
     siteMenuBackdrop.classList.remove('hidden');
     siteMenuToggle.classList.add('menu-open');
+    siteMenuToggle.setAttribute('data-tooltip', 'Close menu');
+    siteMenuToggle.setAttribute('aria-label', 'Close menu');
+    refreshTooltip(siteMenuToggle);
     appContainer.classList.add('menu-push');
     localStorage.setItem(MENU_STATE_KEY, '1');
 }
@@ -88,6 +91,9 @@ function closeSiteMenu() {
     siteMenu.setAttribute('aria-hidden', 'true');
     siteMenuBackdrop.classList.add('hidden');
     siteMenuToggle.classList.remove('menu-open');
+    siteMenuToggle.setAttribute('data-tooltip', 'Open menu');
+    siteMenuToggle.setAttribute('aria-label', 'Open menu');
+    refreshTooltip(siteMenuToggle);
     appContainer.classList.remove('menu-push');
     localStorage.setItem(MENU_STATE_KEY, '0');
 }
@@ -423,16 +429,34 @@ fullscreenBtn.addEventListener('click', () => {
 
 /* ── Carousel component integration ── */
 
-/** Build the items array for the carousel component from carouselList. */
+/** Build section + card elements for the carousel component from carouselList. */
 function updateBrowserItems() {
-    carouselBrowser.items = carouselList.map(entry => ({
-        key: entry.assetId || entry.name,
-        label: entry.name,
-        thumbSrc: resolveThumbSrc(entry),
-        fallbackSrc: entry.isPortrait ? resolveFallbackSrc(entry) : undefined,
-        deletable: !entry.isPortrait,
-        data: entry,
-    }));
+    carouselBrowser.clearItems();
+
+    const portraits = carouselList.filter(e => e.isPortrait);
+    const generated = carouselList.filter(e => e.assetId && !e.isPortrait);
+    const custom = carouselList.filter(e => !e.isPortrait && !e.assetId);
+
+    const addSection = (label, entries) => {
+        if (!entries.length) return;
+        const section = document.createElement('carousel-dropdown-browser-section');
+        section.label = label;
+        for (const entry of entries) {
+            const card = document.createElement('carousel-dropdown-browser-card');
+            card.key = entry.assetId || entry.name;
+            card.label = entry.name;
+            card.thumbSrc = resolveThumbSrc(entry);
+            if (entry.isPortrait) card.fallbackSrc = resolveFallbackSrc(entry) || '';
+            if (!entry.isPortrait) card.deletable = true;
+            card.data = entry;
+            section.appendChild(card);
+        }
+        carouselBrowser.appendChild(section);
+    };
+
+    addSection('Portraits', portraits);
+    addSection('Generated', generated);
+    addSection('Custom', custom);
 }
 
 function resolveThumbSrc(entry) {
@@ -684,7 +708,7 @@ function generateProfileText(profile) {
     const title = generateTitle(c, titleRng, locale);
 
     const nodeCount = Math.round(80 + (c.density || 0.5) * 1400);
-    const altText = generateAltText(c, nodeCount, title, locale);
+    const altText = generateAltText(c, nodeCount, title, locale, seed);
 
     return { title, altText };
 }
@@ -1216,6 +1240,16 @@ function initGenerate() {
         },
     });
 
+    // Wire up static collapsible toggles in the generate config
+    generatePanelEl.querySelectorAll('.gen-collapsible-toggle[data-target]').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const expanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!expanded));
+            const target = document.getElementById(toggle.dataset.target);
+            if (target) target.classList.toggle('collapsed', expanded);
+        });
+    });
+
     workerBridge.onReady(() => {
         renderQueue = createRenderQueue({
             workerBridge,
@@ -1436,17 +1470,20 @@ shareBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     hideTooltip();
     sharePopover.classList.toggle('hidden');
+    shareBtn.classList.toggle('share-open', !sharePopover.classList.contains('hidden'));
 });
 
 document.addEventListener('click', (e) => {
     if (!sharePopover.contains(e.target) && e.target !== shareBtn) {
         sharePopover.classList.add('hidden');
+        shareBtn.classList.remove('share-open');
     }
 });
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !sharePopover.classList.contains('hidden')) {
         sharePopover.classList.add('hidden');
+        shareBtn.classList.remove('share-open');
         shareBtn.focus();
     }
 });

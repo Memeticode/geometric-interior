@@ -136,7 +136,7 @@ export function initShareActions({ el, getCurrentSeed, readControlsFromUI, readC
         const name = el.profileNameField.value.trim() || 'Untitled';
         const titleRng = mulberry32(xmur3(seed + ':title')());
         const title = generateTitle(controls, titleRng);
-        const altText = generateAltText(controls, getNodeCount(), title);
+        const altText = generateAltText(controls, getNodeCount(), title, 'en', seed);
         const meta = { title, altText, nodeCount: getNodeCount() };
 
         try {

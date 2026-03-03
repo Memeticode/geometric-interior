@@ -4,6 +4,9 @@ Verify that a newly implemented parameter produces a usable, perceptually even r
 
 Run this immediately after implementing a new parameter's rendering logic, before creative exploration.
 
+> **Input:** Target parameter name + 3–5 anchor configurations spanning different aesthetic territories
+> **Output:** Sweep renders, tuning report with curve analysis, and recommended `params.ts` derivation curve changes
+
 ---
 
 ## When to Use

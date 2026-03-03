@@ -83,10 +83,10 @@
                     </div>
                     <div class="selected-header-nav">
                         <button class="gallery-arrow gallery-arrow-left" id="galleryArrowLeft" aria-label="Previous portrait" data-i18n-aria="gallery.prevPortrait" data-tooltip="" data-tooltip-pos="above">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M10 3l-5 5 5 5"/></svg>
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M10 3l-5 5 5 5"/></svg>
                         </button>
                         <button class="gallery-arrow gallery-arrow-right" id="galleryArrowRight" aria-label="Next portrait" data-i18n-aria="gallery.nextPortrait" data-tooltip="" data-tooltip-pos="above">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M6 3l5 5-5 5"/></svg>
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 3l5 5-5 5"/></svg>
                         </button>
                         <span class="header-nav-pipe">|</span>
                         <button class="gallery-arrow" id="slideshowBtn" data-tooltip="Start slideshow" data-tooltip-pos="above" aria-label="Start slideshow">
@@ -145,7 +145,7 @@
                 </div>
             </div>
             <div class="gallery-content" id="galleryContent">
-                <carousel-dropdown-browser id="carouselBrowser"></carousel-dropdown-browser>
+                <carousel-dropdown-browser id="carouselBrowser" controls-position="below" section-label-position="above" section-label-align="left" infinite="false"></carousel-dropdown-browser>
                 <!-- Animations -->
                 <div class="gallery-section" id="animSection" style="display:none">
                     <div class="gallery-section-header" data-target="animGallery" aria-expanded="true">
@@ -173,8 +173,9 @@
                             </button>
                         </div>
                         <!-- Parameters -->
-                        <div class="gen-heading">
-                            <span class="label-info" data-tooltip="" data-i18n="generate.parameters" data-i18n-tooltip="generate.parameters.tooltip">Parameters<span class="info-icon">i</span></span>
+                        <div class="gen-heading gen-collapsible-toggle" aria-expanded="true" data-target="genSliders">
+                            <span class="label-info" data-tooltip="" data-i18n="generate.parameters" data-i18n-tooltip="generate.parameters.tooltip"><span class="info-icon">i</span>Parameters</span>
+                            <span class="gen-chevron">&#9662;</span>
                         </div>
                         <div class="gen-sliders" id="genSliders"></div>
                         <!-- Render button -->
@@ -186,12 +187,12 @@
                         <!-- Name + Seed above image -->
                         <div class="gen-identity">
                             <div class="gen-identity-name">
-                                <label class="gen-identity-label"><span class="label-info" data-tooltip="A name for this arrangement of light and form." data-i18n="control.name" data-i18n-tooltip="control.name.tooltip">Name<span class="info-icon">i</span></span></label>
+                                <label class="gen-identity-label"><span class="label-info" data-tooltip="A name for this arrangement of light and form." data-i18n="control.name" data-i18n-tooltip="control.name.tooltip"><span class="info-icon">i</span>Name</span></label>
                                 <textarea id="genNameField" class="auto-grow gen-name-field" rows="1" maxlength="40"
                                     placeholder="Auto-generated title" data-i18n-placeholder="control.name.placeholder"></textarea>
                             </div>
                             <div class="gen-identity-seed">
-                                <label class="gen-identity-label"><span class="label-info" data-tooltip="A three-word compositional seed. Each word controls an independent random stream and visual bias." data-i18n="control.seed" data-i18n-tooltip="control.seed.tooltip">Seed<span class="info-icon">i</span></span></label>
+                                <label class="gen-identity-label"><span class="label-info" data-tooltip="A three-word compositional seed. Each word controls an independent random stream and visual bias." data-i18n="control.seed" data-i18n-tooltip="control.seed.tooltip"><span class="info-icon">i</span>Seed</span></label>
                                 <div class="gen-seed-row" id="genSeedRow">
                                     <select id="genTagArr" class="select-base seed-tag-select"></select>
                                     <span class="seed-tag-sep">&middot;</span>

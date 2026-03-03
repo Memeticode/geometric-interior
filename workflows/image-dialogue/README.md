@@ -2,6 +2,9 @@
 
 A freeform conversation between you and the renderer. No predetermined structure — just render, look, talk, adjust, repeat. The output is a single image. The journey is the conversation itself.
 
+> **Input:** A mood, feeling, visual idea, or nothing — start from any point in parameter space
+> **Output:** A single final image (PNG) + its configuration (JSON)
+
 ---
 
 ## When to Use
@@ -12,7 +15,7 @@ A freeform conversation between you and the renderer. No predetermined structure
 
 ## Setup
 
-1. Start a dev server: `npx vite --port 5204`
+1. Start the render server: `npm run dev:render`
 2. Load the shared context: read `workflows/shared/image-gen-context.md` into your session
 3. Create `workflows/image-dialogue/output/` if it doesn't exist
 

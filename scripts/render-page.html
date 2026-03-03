@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Render Harness</title>
+</head>
+<body>
+  <canvas id="renderCanvas" width="800" height="520" style="display:none"></canvas>
+  <script type="module">
+    import { createRenderer } from '../geometric-interior/src/index.js';
+
+    const canvas = document.getElementById('renderCanvas');
+    const renderer = createRenderer(canvas, { dpr: 1 });
+    renderer.resize(800, 520);
+    window._renderer = renderer;
+    window._canvas = canvas;
+    window._ready = true;
+  </script>
+</body>
+</html>

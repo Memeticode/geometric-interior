@@ -13,7 +13,7 @@
  *     { "name": "Variant B", "seed": [5, 3, 2], "controls": { ... } }
  *   ]
  *
- * Requires dev server running: npx vite --port 5204
+ * Requires render server running: npm run dev:render
  */
 
 import { chromium } from 'playwright';
@@ -57,8 +57,8 @@ console.log(`Output: ${outputDir}\n`);
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-await page.goto('http://localhost:5204/sampler.html', { waitUntil: 'load' });
-await page.waitForFunction(() => !!window._renderer, { timeout: 15000 });
+await page.goto('http://localhost:5204/scripts/render-page.html', { waitUntil: 'load' });
+await page.waitForFunction(() => window._ready === true, { timeout: 15000 });
 await page.waitForTimeout(1000);
 
 let rendered = 0;

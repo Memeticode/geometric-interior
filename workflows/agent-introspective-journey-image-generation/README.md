@@ -2,6 +2,9 @@
 
 A structured convergence from broad exploration to a single image. Four phases funnel from initial attempts through variation and directed search to a final, seed-tuned result. The output is one image — but the journey through parameter space is the point.
 
+> **Input:** A general intent or direction — mood, word, visual idea, or reference image
+> **Output:** A single final image (PNG) + its configuration (JSON), plus intermediate renders from all 4 phases
+
 ---
 
 ## When to Use
@@ -12,7 +15,7 @@ A structured convergence from broad exploration to a single image. Four phases f
 
 ## Setup
 
-1. Start a dev server: `npx vite --port 5204`
+1. Start the render server: `npm run dev:render`
 2. Load the shared context: read `workflows/shared/image-gen-context.md` into your session
 3. Create `workflows/agent-introspective-journey-image-generation/output/` if it doesn't exist
 

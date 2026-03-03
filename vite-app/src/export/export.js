@@ -166,7 +166,7 @@ export function computeKeyframeText(seedForTitles, landmarks, locale = 'en') {
         const derived = deriveParams(k.controls);
         const nodeCount = derived.nodeCount;
 
-        const alt = generateAltText(k.controls, nodeCount, title, locale);
+        const alt = generateAltText(k.controls, nodeCount, title, locale, seedForTitles);
 
         out.push({
             name: k.name,

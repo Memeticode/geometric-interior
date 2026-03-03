@@ -10,10 +10,10 @@
  */
 
 import {
-    createRenderer, resetPalette,
+    createRenderer,
     xmur3, mulberry32,
 } from '../geometric-interior/src/index.js';
-import type { Controls, PaletteKey } from '../geometric-interior/src/core/image-models.js';
+import type { Controls } from '../geometric-interior/src/core/image-models.js';
 import type { Renderer } from '../geometric-interior/src/render-engine/interfaces.js';
 
 /* ── Constants ── */
@@ -23,11 +23,6 @@ const TRANSITION_S = 3;
 const FRAMES_PER_TRANSITION = FPS * TRANSITION_S;   // 180
 const NUM_CONFIGS = 6;
 const MASTER_SEED = 'geometric-loop-v1';
-
-const BUILTIN_PALETTES: PaletteKey[] = [
-    'violet-depth', 'warm-spectrum', 'teal-volumetric',
-    'prismatic', 'crystal-lattice', 'sapphire', 'amethyst',
-];
 
 /* ── DOM refs ── */
 
@@ -72,13 +67,18 @@ function randomConfig(rng: () => number, idx: number): ConfigEntry {
         seed: `loop-${idx}-${Math.floor(rng() * 1e9)}`,
         controls: {
             topology: 'flow-field',
-            palette: BUILTIN_PALETTES[Math.floor(rng() * BUILTIN_PALETTES.length)],
             density:    0.03 + rng() * 0.22,
             luminosity: 0.30 + rng() * 0.50,
             bloom:      0.25 + rng() * 0.50,
             fracture:   0.20 + rng() * 0.70,
-            depth:      0.65 + rng() * 0.30,
             coherence:  0.50 + rng() * 0.45,
+            hue:        rng(),
+            spectrum:   0.10 + rng() * 0.40,
+            chroma:     0.20 + rng() * 0.60,
+            scale:      0.3 + rng() * 0.4,
+            division:   0.3 + rng() * 0.4,
+            faceting:   0.2 + rng() * 0.6,
+            flow:       rng(),
         },
     };
 }
@@ -128,7 +128,7 @@ function createLoopAPI(): LoopAPI {
     const configs = generateConfigs();
     log(`Generated ${configs.length} random configs:`);
     for (const c of configs) {
-        log(`  ${c.seed} — ${c.controls.palette}, d=${c.controls.density.toFixed(2)}`);
+        log(`  ${c.seed} — hue=${c.controls.hue.toFixed(2)}, d=${c.controls.density.toFixed(2)}`);
     }
 
     const pairs = buildTransitionPairs(configs);
@@ -143,8 +143,6 @@ function createLoopAPI(): LoopAPI {
 
         prepareTransition(ti: number) {
             const [from, to] = pairs[ti];
-            resetPalette(from.controls.palette);
-            resetPalette(to.controls.palette);
             renderer.morphPrepare(from.seed, from.controls, to.seed, to.controls);
             log(`Transition ${ti + 1}: morphPrepare done`);
             setStatus(`Transition ${ti + 1}/${totalTransitions}`);

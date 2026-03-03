@@ -797,7 +797,15 @@ initPageSettings(_footerRefs.pageSettingsBtn, _footerRefs.pageSettingsPopover);
 loadStatementContent();
 ensureStarterProfiles();
 
-// configControls is always visible in the panel (no collapsed state)
+// Parameter section collapse/expand toggles
+document.querySelectorAll('.param-section-header[data-target]').forEach(header => {
+    header.addEventListener('click', () => {
+        const expanded = header.getAttribute('aria-expanded') === 'true';
+        header.setAttribute('aria-expanded', String(!expanded));
+        const target = document.getElementById(header.dataset.target);
+        if (target) target.classList.toggle('collapsed', expanded);
+    });
+});
 
 // Gallery header toggle
 el.galleryToggle.addEventListener('click', () => {

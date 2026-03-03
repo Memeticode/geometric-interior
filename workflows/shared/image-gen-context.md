@@ -155,7 +155,7 @@ node scripts/render-single.mjs config.json --output output/
 ]
 ```
 
-**Prerequisites**: Dev server running on port 5204 (`npx vite --port 5204`).
+**Prerequisites**: Render server running on port 5204 (`npm run dev:render`).
 
 Output PNGs are named from the config name (lowercased, hyphenated). Read rendered images with the Read tool to see the result.
 

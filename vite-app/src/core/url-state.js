@@ -65,7 +65,7 @@ export function encodeStateToURL(origin, { seed, controls, camera, name }) {
 
     // Camera (only include when non-default to keep URLs short)
     if (camera) {
-        if (camera.zoom !== 1.0) url.searchParams.set(PARAM_ZOOM, camera.zoom.toFixed(2));
+        if (camera.zoom !== 0.38) url.searchParams.set(PARAM_ZOOM, camera.zoom.toFixed(2));
         if (camera.rotation !== 0) url.searchParams.set(PARAM_ROTATION, camera.rotation.toFixed(0));
         if (camera.elevation !== 0) url.searchParams.set(PARAM_ELEVATION, camera.elevation.toFixed(0));
     }
@@ -108,9 +108,9 @@ export function decodeStateFromURL(href) {
             flow:       clampFloat(p.get(PARAM_FLOW),        0, 1, 0.5),
         },
         camera: {
-            zoom:      clampFloat(p.get(PARAM_ZOOM),      0.3, 3.0, 1.0),
-            rotation:  clampFloat(p.get(PARAM_ROTATION),   0,   360, 0),
-            elevation: clampFloat(p.get(PARAM_ELEVATION), -90,   90, 0),
+            zoom:      clampFloat(p.get(PARAM_ZOOM),      0,    1.0, 0.38),
+            rotation:  clampFloat(p.get(PARAM_ROTATION),  -180,  180, 0),
+            elevation: clampFloat(p.get(PARAM_ELEVATION), -180,  180, 0),
         },
         name: p.get(PARAM_NAME) || '',
     };

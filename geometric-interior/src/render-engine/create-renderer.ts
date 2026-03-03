@@ -242,11 +242,12 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
         vignetteEffect.darkness = params.vignetteStrength;
 
+        applyCameraOverride();
         composer.render();
 
         const titleRng = mulberry32(xmur3('title-' + tag[0] + '-' + tag[1] + '-' + tag[2])());
         const title = generateTitle(controls, titleRng, locale);
-        const altText = generateAltText(controls, result.nodeCount, title, locale);
+        const altText = generateAltText(controls, result.nodeCount, title, locale, tag);
 
         return { title, altText, nodeCount: result.nodeCount };
     }
@@ -396,6 +397,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         camera.aspect = getAspect();
         camera.updateProjectionMatrix();
         camera.lookAt(0, 0, 0);
+        baseCameraPos.copy(camera.position);
 
         const iA = paramsA.bgInnerColor, iB = paramsB.bgInnerColor;
         const oA = paramsA.bgOuterColor, oB = paramsB.bgOuterColor;
@@ -461,6 +463,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
      * renderWith/morphUpdate). Modifies camera.position in place.
      */
     function applyCameraOverride(): void {
+        camera.position.copy(baseCameraPos);
         if (cameraOverrideZoom === 1 && cameraOverrideOrbitY === 0 && cameraOverrideOrbitX === 0) return;
 
         const pos = camera.position;

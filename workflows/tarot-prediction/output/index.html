@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tarot Reading</title>
+  <style>
+    :root {
+      --bg: #05040a;
+      --surface: #0e0c18;
+      --border: #1e1b30;
+      --text: #ccc8e0;
+      --muted: #6b6882;
+      --accent: #8b7ec8;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: Georgia, 'Times New Roman', serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3rem 2rem;
+      line-height: 1.6;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 4rem;
+      padding-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .header h1 {
+      font-size: 1.4rem;
+      font-weight: 400;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+    .prompt {
+      font-size: 1.5rem;
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: 1rem;
+    }
+    .meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .card {
+      margin-bottom: 5rem;
+      text-align: center;
+    }
+    .card-position {
+      color: var(--muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 0.3rem;
+    }
+    .card-title {
+      font-size: 1.6rem;
+      font-weight: 400;
+      margin-bottom: 0.2rem;
+    }
+    .card-seed {
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+    .card-seed .serial {
+      color: var(--accent);
+      font-family: 'Courier New', monospace;
+    }
+    .card-image {
+      width: 100%;
+      border-radius: 4px;
+      display: block;
+      margin: 0 auto 1.5rem;
+    }
+    .card-reading {
+      font-style: italic;
+      color: var(--text);
+      line-height: 1.7;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .alt-texts {
+      margin-top: 4rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .alt-texts summary {
+      cursor: pointer;
+      color: var(--muted);
+    }
+    .alt-text-content {
+      margin-top: 1rem;
+      line-height: 1.6;
+    }
+    .alt-text-content p {
+      margin-bottom: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>Tarot Reading</h1>
+    <p class="prompt">Krystle Augustine</p>
+    <p class="meta">6 cards &middot; March 1, 2026</p>
+  </header>
+
+  <main>
+
+    <article class="card">
+      <div class="card-position">Card 1</div>
+      <h2 class="card-title">Monumental Emerald Lattice</h2>
+      <div class="card-seed">Resting, pleated, molten <span class="serial">4.7.15</span></div>
+      <img class="card-image" src="renders/card-01.png" alt="A dim interior holds geometry in gentle suspension, forms glowing through soft luminescence.
+Emerald tones deepen and lighten across the geometry, shifting into neighboring hues.
+Broad planes layer at commanding scale, filling the space with substantial readable forms.
+Elements drift in loose orbital paths, gentle spiraling without strict adherence.
+Mixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 146 luminous points." loading="lazy">
+      <p class="card-reading">A pale green heart beating inside folded glass, something held close that refuses to go dark.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-position">Card 2</div>
+      <h2 class="card-title">Layered Field Geometry</h2>
+      <div class="card-seed">Spiraling, draped, burning <span class="serial">16.1.17</span></div>
+      <img class="card-image" src="renders/card-02.png" alt="Geometry drifts behind veils of diffusing light, the space itself glowing with atmospheric warmth.
+Intense amethyst saturates every surface — a bold, singular chromatic identity.
+A measured arrangement of translucent planes fills the space, balancing density with legibility.
+Forms follow a coherent flowing pattern, creating visible directional structure.
+Silk-smooth flowing panels with clean whole edges, liquid geometry without fracture, anchored by 141 luminous points." loading="lazy">
+      <p class="card-reading">Violet smoke rising from a cathedral floor, the stars inside it small and unafraid.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-position">Card 3</div>
+      <h2 class="card-title">Golden Minimal Field</h2>
+      <div class="card-seed">Poised, folded, glowing <span class="serial">1.3.10</span></div>
+      <img class="card-image" src="renders/card-03.png" alt="Luminous geometry fills the field with steady radiance, forms visible through spreading halos.
+Multiple hues disperse through the forms, amber anchoring a broad shifting spectrum.
+A cloud of particles populates the field, forms blending into atmospheric texture.
+Ordered elements emanate radially, a starburst of crystal planes diverging from the center. A single unified core anchors the composition.
+Shattered geometry disperses in every direction, smooth and angular fragments intermixed, anchored by 231 luminous points." loading="lazy">
+      <p class="card-reading">A handful of autumn thrown upward, catching light before it falls — gold and rose tangled in wire.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-position">Card 4</div>
+      <h2 class="card-title">Curling Teal Layered</h2>
+      <div class="card-seed">Turbulent, crystalline, still <span class="serial">17.14.2</span></div>
+      <img class="card-image" src="renders/card-04.png" alt="Half-seen forms breathe through darkness, their light dissolving into atmospheric haze.
+Pure achromatic structure in silver and white, geometry without chromatic identity.
+Sparse fragments are carefully placed at readable scale, each form individually distinct.
+Orbital bands wrap around the form, arcs of geometry spiraling with architectural discipline.
+Compact geometry with mixed crystal character, smooth panels alongside angular faces, anchored by 137 luminous points." loading="lazy">
+      <p class="card-reading">Silver breath on a winter window, scattered embers remembering warmth they once carried.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-position">Card 5</div>
+      <h2 class="card-title">Drifting Ruby Dimensional</h2>
+      <div class="card-seed">Flowing, draped, glowing <span class="serial">9.1.10</span></div>
+      <img class="card-image" src="renders/card-05.png" alt="Luminous geometry fills the field with steady radiance, forms visible through spreading halos.
+Rich ruby dominates with vivid accents from adjacent hues adding chromatic depth.
+A measured arrangement of translucent planes fills the space, balancing density with legibility.
+Geometry organizes loosely around organic flow, structure present but unhurried. A single unified core anchors the composition.
+Angular crystal faces catch and scatter light, sharp edges moderately dispersed, anchored by 170 luminous points." loading="lazy">
+      <p class="card-reading">Stained glass seen through closed eyes — plum and amber colliding where dreaming begins.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-position">Card 6</div>
+      <h2 class="card-title">Streaming Essential Plane</h2>
+      <div class="card-seed">Flowing, folded, cool <span class="serial">9.3.3</span></div>
+      <img class="card-image" src="renders/card-06.png" alt="Geometry drifts behind veils of diffusing light, the space itself glowing with atmospheric warmth.
+Cobalt tones deepen and lighten across the geometry, shifting into neighboring hues.
+A measured arrangement of translucent planes fills the space, balancing density with legibility.
+Ordered elements emanate radially, a starburst of crystal planes diverging from the center. Three luminous cores divide the form.
+Mixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 173 luminous points." loading="lazy">
+      <p class="card-reading">Blue-white clarity breaking through layers of itself, as if ice could sing.</p>
+    </article>
+  </main>
+
+
+    <details class="alt-texts">
+      <summary>Image descriptions</summary>
+      <div class="alt-text-content">
+        <p><strong>Card 1:</strong> A dim interior holds geometry in gentle suspension, forms glowing through soft luminescence.
+Emerald tones deepen and lighten across the geometry, shifting into neighboring hues.
+Broad planes layer at commanding scale, filling the space with substantial readable forms.
+Elements drift in loose orbital paths, gentle spiraling without strict adherence.
+Mixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 146 luminous points.</p>
+        <p><strong>Card 2:</strong> Geometry drifts behind veils of diffusing light, the space itself glowing with atmospheric warmth.
+Intense amethyst saturates every surface — a bold, singular chromatic identity.
+A measured arrangement of translucent planes fills the space, balancing density with legibility.
+Forms follow a coherent flowing pattern, creating visible directional structure.
+Silk-smooth flowing panels with clean whole edges, liquid geometry without fracture, anchored by 141 luminous points.</p>
+        <p><strong>Card 3:</strong> Luminous geometry fills the field with steady radiance, forms visible through spreading halos.
+Multiple hues disperse through the forms, amber anchoring a broad shifting spectrum.
+A cloud of particles populates the field, forms blending into atmospheric texture.
+Ordered elements emanate radially, a starburst of crystal planes diverging from the center. A single unified core anchors the composition.
+Shattered geometry disperses in every direction, smooth and angular fragments intermixed, anchored by 231 luminous points.</p>
+        <p><strong>Card 4:</strong> Half-seen forms breathe through darkness, their light dissolving into atmospheric haze.
+Pure achromatic structure in silver and white, geometry without chromatic identity.
+Sparse fragments are carefully placed at readable scale, each form individually distinct.
+Orbital bands wrap around the form, arcs of geometry spiraling with architectural discipline.
+Compact geometry with mixed crystal character, smooth panels alongside angular faces, anchored by 137 luminous points.</p>
+        <p><strong>Card 5:</strong> Luminous geometry fills the field with steady radiance, forms visible through spreading halos.
+Rich ruby dominates with vivid accents from adjacent hues adding chromatic depth.
+A measured arrangement of translucent planes fills the space, balancing density with legibility.
+Geometry organizes loosely around organic flow, structure present but unhurried. A single unified core anchors the composition.
+Angular crystal faces catch and scatter light, sharp edges moderately dispersed, anchored by 170 luminous points.</p>
+        <p><strong>Card 6:</strong> Geometry drifts behind veils of diffusing light, the space itself glowing with atmospheric warmth.
+Cobalt tones deepen and lighten across the geometry, shifting into neighboring hues.
+A measured arrangement of translucent planes fills the space, balancing density with legibility.
+Ordered elements emanate radially, a starburst of crystal planes diverging from the center. Three luminous cores divide the form.
+Mixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 173 luminous points.</p>
+      </div>
+    </details>
+</body>
+</html>

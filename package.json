@@ -23,7 +23,8 @@
     "test:lib:browser": "node geometric-interior/__tests__/browser/run-lib-browser.mjs",
     "test:lib": "node geometric-interior/__tests__/run-lib-all.mjs",
     "test:all": "node vite-app/__tests__/run-all.mjs",
-    "gen:starter-images": "node scripts/gen-starter-profile-images.mjs"
+    "gen:starter-images": "node scripts/gen-starter-profile-images.mjs",
+    "dev:render": "vite --config scripts/vite.config.js --port 5204"
   },
   "peerDependencies": {
     "postprocessing": "^6.36.0",

@@ -101,10 +101,10 @@ export function validateStillConfig(data: unknown): ValidationResult {
         if (!isObj(data.camera)) {
             errors.push('camera: must be an object');
         } else {
-            checkNum(errors, 'camera', data.camera, 'zoom', 0.3, 3.0);
-            checkNum(errors, 'camera', data.camera, 'rotation', 0, 360);
+            checkNum(errors, 'camera', data.camera, 'zoom', 0, 1.0);
+            checkNum(errors, 'camera', data.camera, 'rotation', -180, 180);
             if (data.camera.elevation != null) {
-                checkNum(errors, 'camera', data.camera, 'elevation', -90, 90);
+                checkNum(errors, 'camera', data.camera, 'elevation', -180, 180);
             }
         }
     }

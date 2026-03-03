@@ -112,6 +112,9 @@
 /* ── Headings (Parameters) ── */
 
 .gen-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 0.6875rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -132,6 +135,9 @@
 /* ── Section headers ── */
 
 .gen-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-size: 0.625rem;
     text-transform: uppercase;
     letter-spacing: 0.4px;
@@ -149,12 +155,61 @@
     letter-spacing: 0.4px;
 }
 
+/* ── Collapsible toggle ── */
+
+.gen-collapsible-toggle {
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+.gen-collapsible-toggle:hover {
+    background: var(--surface-hover);
+}
+
+.gen-chevron {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+}
+.gen-collapsible-toggle[aria-expanded="false"] .gen-chevron {
+    transform: rotate(-90deg);
+}
+
+/* ── Collapsible section rows ── */
+
+.gen-section-rows {
+    overflow: hidden;
+    max-height: 1000px;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+    opacity: 1;
+    padding-left: 0.625rem;
+}
+.gen-section-rows.collapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Parameters-level collapse hides the entire sliders block */
+.gen-sliders.collapsed {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+}
+
 /* ── Sliders ── */
 
 .gen-sliders {
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
+    max-height: 5000px;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+    opacity: 1;
 }
 .gen-slider-row {
     display: flex;

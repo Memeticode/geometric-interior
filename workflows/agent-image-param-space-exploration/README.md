@@ -4,6 +4,9 @@ A systematic survey of the full N-dimensional parameter space. The goal is broad
 
 The first run of this workflow produced 100 configurations across the 11-parameter space (artifacts in `sampler-captures/`). Future runs add the bloom dimension and any subsequent parameters.
 
+> **Input:** Current parameter set semantics, existing configurations from prior runs, starter profiles
+> **Output:** Full configuration set (`configs.json`), curated notable configs, exploration notes, and project update recommendations
+
 ---
 
 ## When to Use
@@ -60,7 +63,7 @@ Each config should have a name, full controls object, and a brief note explainin
 
 ### Phase 3: Batch Render
 
-Render all configurations using a Playwright script against `sampler.html`.
+Render all configurations using the Playwright render scripts.
 
 - Skip already-cached renders (check output dir for existing files)
 - Support `--start=N` for resuming after interruption
@@ -114,7 +117,7 @@ These remain in `sampler-captures/` as reference. New exploration runs produce o
 Adapt from `sampler-captures/_render-100.mjs`. The script should:
 
 1. Read `configs.json` from the workflow directory
-2. Navigate to `http://localhost:5204/sampler.html`
+2. Navigate to `http://localhost:5204/scripts/render-page.html`
 3. For each config, call `renderer.renderWith(seed, controls)` and capture the canvas
 4. Save as `{NNN}-{slug}.png` in `output/renders/`
 5. Skip existing files, support `--start=N`

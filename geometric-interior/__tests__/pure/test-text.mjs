@@ -152,6 +152,31 @@ test('generateAltText: every parameter affects output', () => {
     }
 });
 
+test('generateAltText: with seed produces 6 lines', () => {
+    const alt = generateAltText(MID, 150, 'T', 'en', [4, 12, 8]);
+    const lines = alt.split('\n');
+    assert(lines.length === 6, `expected 6 lines, got ${lines.length}`);
+});
+
+test('generateAltText: seed phrase is first line', () => {
+    const alt = generateAltText(MID, 150, 'T', 'en', [4, 12, 8]);
+    const first = alt.split('\n')[0];
+    assert(first === 'Resting, splintered, mild', `expected seed phrase as first line, got: "${first}"`);
+});
+
+test('generateAltText: without seed produces 5 lines', () => {
+    const alt = generateAltText(MID, 150, 'T');
+    const lines = alt.split('\n');
+    assert(lines.length === 5, `expected 5 lines without seed, got ${lines.length}`);
+});
+
+test('generateAltText: seed phrase respects locale', () => {
+    const alt = generateAltText(MID, 150, 'T', 'es', [4, 12, 8]);
+    const first = alt.split('\n')[0];
+    assert(first !== 'Resting, splintered, mild', `Spanish seed phrase should differ from English`);
+    assert(first.length > 0, `Spanish seed phrase should be non-empty`);
+});
+
 test('generateAltText: Night Bloom config uses new opener', () => {
     const nightBloom = {
         topology: 'flow-field', density: 0.08, luminosity: 0.12, bloom: 0.80,

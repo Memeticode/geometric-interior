@@ -16,7 +16,7 @@
  *   from where you left off (existing frames are detected and skipped).
  *
  * Prerequisites:
- *   npx vite --port 5204  (dev server must be running)
+ *   npm run dev:render  (render server must be running)
  *   ffmpeg must be on PATH
  */
 
@@ -106,7 +106,7 @@ async function launchSession(headed) {
         await page.goto(PAGE_URL, { waitUntil: 'load', timeout: 30000 });
     } catch (err) {
         await browser.close();
-        throw new Error(`Failed to load ${PAGE_URL}. Is Vite running?  npx vite --port 5204`);
+        throw new Error(`Failed to load ${PAGE_URL}. Is the render server running?  npm run dev:render`);
     }
 
     // Stabilization delay — prevents context destruction from late module loads

@@ -16,20 +16,22 @@
  *   HEADED=1 node workflows/update-cached-renders/render.mjs
  *
  * Prerequisites:
- *   npx vite --port 5204  (dev server must be running)
+ *   npm run dev:render  (render server must be running)
  */
 
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
-import { slugify } from '../../src/shared/slugify.js';
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = 5204;
-const BASE_URL = `http://localhost:${PORT}/sampler.html`;
-const OUT_DIR = resolve(__dirname, '..', '..', 'public', 'static', 'images', 'portraits');
-const PROFILES_PATH = resolve(__dirname, '..', '..', 'src', 'core', 'starter-profiles.json');
+const BASE_URL = `http://localhost:${PORT}/scripts/render-page.html`;
+const OUT_DIR = resolve(__dirname, '..', '..', 'vite-app', 'public', 'static', 'images', 'portraits');
+const PROFILES_PATH = resolve(__dirname, '..', '..', 'vite-app', 'src', 'core', 'starter-profiles.json');
+
+function slugify(name) {
+    return name.toLowerCase().replace(/[^a-z0-9-]+/g, '_').replace(/^_|_$/g, '');
+}
 const MAX_RESTARTS = 10;
 
 const SIZES = [
@@ -104,10 +106,10 @@ async function launchSession(headed) {
         await new Promise(r => setTimeout(r, 2000));
     } catch {
         await browser.close();
-        throw new Error(`Failed to load ${BASE_URL}. Is Vite running?  npx vite --port 5204`);
+        throw new Error(`Failed to load ${BASE_URL}. Is the render server running?  npm run dev:render`);
     }
 
-    await page.waitForFunction(() => !!window._renderer, { timeout: 30_000 });
+    await page.waitForFunction(() => window._ready === true, { timeout: 30_000 });
     return { browser, page };
 }
 

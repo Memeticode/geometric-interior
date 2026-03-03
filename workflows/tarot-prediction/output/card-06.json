@@ -1,0 +1,19 @@
+{
+  "name": "Streaming Essential Plane",
+  "seed": [9, 3, 3],
+  "controls": {
+    "topology": "flow-field",
+    "hue": 0.67,
+    "spectrum": 0.21,
+    "chroma": 0.49,
+    "density": 0.14,
+    "fracture": 0.52,
+    "coherence": 0.73,
+    "luminosity": 0.31,
+    "bloom": 0.61,
+    "scale": 0.36,
+    "division": 0.85,
+    "faceting": 0.43,
+    "flow": 0.27
+  }
+}

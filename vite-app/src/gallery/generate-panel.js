@@ -24,9 +24,9 @@ const SLIDER_KEYS = SLIDER_GROUPS.flatMap(g => g.sliders);
 
 /** Camera slider definitions with custom ranges. */
 const CAMERA_SLIDERS = [
-    { key: 'rotation',  min: 0,    max: 360,  step: 1,    defaultVal: 0,    format: 'deg' },
-    { key: 'elevation', min: -90,  max: 90,   step: 1,    defaultVal: 0,    format: 'deg' },
-    { key: 'zoom',      min: 0.3,  max: 3.0,  step: 0.01, defaultVal: 1.00, format: '' },
+    { key: 'rotation',  min: -180, max: 180,  step: 1,    defaultVal: 0,    format: 'deg' },
+    { key: 'elevation', min: -180, max: 180,  step: 1,    defaultVal: 0,    format: 'deg' },
+    { key: 'zoom',      min: 0,    max: 1,    step: 0.01, defaultVal: 0.38, format: '' },
 ];
 
 /**
@@ -83,53 +83,68 @@ export function initGeneratePanel(opts) {
 
     slidersEl.innerHTML = '';
     for (const group of SLIDER_GROUPS) {
-        // Section header with (i) tooltip
-        const header = document.createElement('div');
-        header.className = 'gen-section-header';
-        const headerLabel = document.createElement('span');
-        headerLabel.className = 'label-info';
-        headerLabel.setAttribute('data-tooltip', t(`section.${group.key}.tooltip`));
-        headerLabel.setAttribute('data-i18n', `section.${group.key}`);
-        headerLabel.setAttribute('data-i18n-tooltip', `section.${group.key}.tooltip`);
-        headerLabel.textContent = t(`section.${group.key}`);
-        const headerIcon = document.createElement('span');
-        headerIcon.className = 'info-icon';
-        headerIcon.textContent = 'i';
-        headerLabel.appendChild(headerIcon);
-        header.appendChild(headerLabel);
-        slidersEl.appendChild(header);
-
-        // Slider rows within this section
-        for (const key of group.sliders) {
-            buildSliderRow(key, 0, 1, 0.01, 0.50, '', sliderInputs);
-        }
+        buildSection(group.key, group.sliders.map(key => ({ key, min: 0, max: 1, step: 0.01, defaultVal: 0.50, format: '' })), sliderInputs);
     }
 
     // ── Build camera sliders ──
 
-    const cameraHeader = document.createElement('div');
-    cameraHeader.className = 'gen-section-header';
-    const cameraLabel = document.createElement('span');
-    cameraLabel.className = 'label-info';
-    cameraLabel.setAttribute('data-tooltip', t('section.camera.tooltip'));
-    cameraLabel.setAttribute('data-i18n', 'section.camera');
-    cameraLabel.setAttribute('data-i18n-tooltip', 'section.camera.tooltip');
-    cameraLabel.textContent = t('section.camera');
-    const cameraIcon = document.createElement('span');
-    cameraIcon.className = 'info-icon';
-    cameraIcon.textContent = 'i';
-    cameraLabel.appendChild(cameraIcon);
-    cameraHeader.appendChild(cameraLabel);
-    slidersEl.appendChild(cameraHeader);
+    buildSection('camera', CAMERA_SLIDERS.map(cam => ({ key: cam.key, min: cam.min, max: cam.max, step: cam.step, defaultVal: cam.defaultVal, format: cam.format })), cameraInputs);
 
-    for (const cam of CAMERA_SLIDERS) {
-        buildSliderRow(cam.key, cam.min, cam.max, cam.step, cam.defaultVal, cam.format, cameraInputs);
+    /**
+     * Build a collapsible section with header + slider rows.
+     */
+    function buildSection(sectionKey, sliderDefs, targetMap) {
+        const sectionId = 'genSection_' + sectionKey;
+
+        // Collapsible header
+        const header = document.createElement('div');
+        header.className = 'gen-section-header gen-collapsible-toggle';
+        header.setAttribute('aria-expanded', 'true');
+        header.setAttribute('data-target', sectionId);
+
+        const headerLabel = document.createElement('span');
+        headerLabel.className = 'label-info';
+        headerLabel.setAttribute('data-tooltip', t(`section.${sectionKey}.tooltip`));
+        headerLabel.setAttribute('data-i18n', `section.${sectionKey}`);
+        headerLabel.setAttribute('data-i18n-tooltip', `section.${sectionKey}.tooltip`);
+
+        const headerIcon = document.createElement('span');
+        headerIcon.className = 'info-icon';
+        headerIcon.textContent = 'i';
+        headerLabel.appendChild(headerIcon);
+        headerLabel.appendChild(document.createTextNode(t(`section.${sectionKey}`)));
+
+        const chevron = document.createElement('span');
+        chevron.className = 'gen-chevron';
+        chevron.innerHTML = '&#9662;';
+
+        header.appendChild(headerLabel);
+        header.appendChild(chevron);
+        slidersEl.appendChild(header);
+
+        // Collapsible rows container
+        const rowsWrap = document.createElement('div');
+        rowsWrap.className = 'gen-section-rows';
+        rowsWrap.id = sectionId;
+
+        for (const def of sliderDefs) {
+            buildSliderRow(def.key, def.min, def.max, def.step, def.defaultVal, def.format, targetMap, rowsWrap);
+        }
+
+        slidersEl.appendChild(rowsWrap);
+
+        // Toggle click
+        header.addEventListener('click', () => {
+            const expanded = header.getAttribute('aria-expanded') === 'true';
+            header.setAttribute('aria-expanded', String(!expanded));
+            rowsWrap.classList.toggle('collapsed', expanded);
+        });
     }
 
     /**
-     * Build a single slider row and append it to slidersEl.
+     * Build a single slider row and append it to the given container.
      */
-    function buildSliderRow(key, min, max, step, defaultVal, format, targetMap) {
+    function buildSliderRow(key, min, max, step, defaultVal, format, targetMap, container) {
         const row = document.createElement('div');
         row.className = 'gen-slider-row';
 
@@ -138,14 +153,15 @@ export function initGeneratePanel(opts) {
 
         const labelText = document.createElement('span');
         labelText.className = 'gen-slider-name label-info';
-        labelText.textContent = t(`control.${key}`);
         labelText.setAttribute('data-tooltip', t(`control.${key}.tooltip`));
         labelText.setAttribute('data-i18n', `control.${key}`);
         labelText.setAttribute('data-i18n-tooltip', `control.${key}.tooltip`);
+
         const icon = document.createElement('span');
         icon.className = 'info-icon';
         icon.textContent = 'i';
         labelText.appendChild(icon);
+        labelText.appendChild(document.createTextNode(t(`control.${key}`)));
 
         const valueSpan = document.createElement('span');
         valueSpan.className = 'gen-slider-value';
@@ -175,7 +191,7 @@ export function initGeneratePanel(opts) {
         sliderWrap.appendChild(input);
         row.appendChild(labelWrap);
         row.appendChild(sliderWrap);
-        slidersEl.appendChild(row);
+        container.appendChild(row);
     }
 
     function formatValue(val, format, step) {

@@ -109,7 +109,7 @@ export function createTextDisplay({ titleEl, altEl, textWrap, textInner, overlay
     function refreshGeneratedText(seed, controls, nodeCount, animate, animationEnabled) {
         const titleRng = mulberry32(xmur3(seed + ':title')());
         const title = generateTitle(controls, titleRng);
-        const altText = generateAltText(controls, nodeCount, title);
+        const altText = generateAltText(controls, nodeCount, title, 'en', seed);
         if (animate && animationEnabled) {
             playRevealAnimation(title, altText);
         } else {

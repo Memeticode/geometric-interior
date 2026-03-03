@@ -2,7 +2,7 @@
  * Parameter space exploration batch renderer.
  *
  * Usage:
- *   npx vite --port 5204    # in another terminal
+ *   npm run dev:render       # in another terminal
  *   node workflows/agent-image-param-space-exploration/render.mjs [--start=N]
  *
  * Renders each config in configs.json and saves to output/renders/.
@@ -34,8 +34,8 @@ console.log(`Output: ${outputDir}\n`);
 
 const browser = await chromium.launch();
 const page = await browser.newPage();
-await page.goto('http://localhost:5204/sampler.html', { waitUntil: 'load' });
-await page.waitForFunction(() => !!window._renderer, { timeout: 15000 });
+await page.goto('http://localhost:5204/scripts/render-page.html', { waitUntil: 'load' });
+await page.waitForFunction(() => window._ready === true, { timeout: 15000 });
 await page.waitForTimeout(1000);
 
 let rendered = 0;

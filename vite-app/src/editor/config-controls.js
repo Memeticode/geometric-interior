@@ -8,7 +8,7 @@ import { getLocale } from '../i18n/locale.js';
 
 export const SLIDER_KEYS = ['density', 'luminosity', 'bloom', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
 export const TOPOLOGY_VALUES = ['flow-field', 'icosahedral', 'mobius', 'multi-attractor'];
-export const CAMERA_DEFAULTS = { zoom: 1.0, rotation: 0, elevation: 0 };
+export const CAMERA_DEFAULTS = { zoom: 0.38, rotation: 0, elevation: 0 };
 
 /**
  * @param {object} el - DOM element refs (must include slider, seed tag, camera, topology elements)

@@ -11,7 +11,7 @@ export function createHeader(headerEl, { page }) {
 
     // ── Toggle button ──
     const toggleHTML = isGallery
-        ? `<button id="siteMenuToggle" class="site-menu-toggle" aria-label="Open menu">
+        ? `<button id="siteMenuToggle" class="site-menu-toggle" aria-label="Open menu" data-tooltip="Open menu" data-tooltip-pos="right">
                <div class="panel-toggle-icon">
                    <span class="bar bar-top"></span>
                    <span class="bar bar-mid"></span>

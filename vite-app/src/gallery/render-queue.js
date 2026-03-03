@@ -114,7 +114,7 @@ export function createRenderQueue({ workerBridge, onUpdate, locale }) {
 
         // Generate alt text
         const nodeCount = msg.meta.nodeCount || 0;
-        const altText = generateAltText(job.controls, nodeCount, msg.meta.title || job.name, locale || 'en');
+        const altText = generateAltText(job.controls, nodeCount, msg.meta.title || job.name, locale || 'en', job.seed);
 
         // Store in IndexedDB
         const asset = {

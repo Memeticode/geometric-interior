@@ -3,6 +3,8 @@
  */
 
 import type { Controls } from '../image-models.js';
+import type { Seed } from './seed-tags.js';
+import { parseSeed, seedTagToLabel } from './seed-tags.js';
 import { getHueWords } from './word-tables.js';
 
 /* ── Alt-text classifiers ── */
@@ -232,7 +234,7 @@ const NODE_SUFFIX: Record<string, string> = {
     es: ', anclado por {N} puntos luminosos.',
 };
 
-export function generateAltText(controls: Controls, nodeCount: number, _title: string, locale: string = 'en'): string {
+export function generateAltText(controls: Controls, nodeCount: number, _title: string, locale: string = 'en', seed?: Seed): string {
     const c = controls;
     const lang = locale === 'es' ? 'es' : 'en';
     const hueAdj = getHueAdj(c.hue, lang);
@@ -253,7 +255,12 @@ export function generateAltText(controls: Controls, nodeCount: number, _title: s
     const nodeSuffix = NODE_SUFFIX[lang].replace('{N}', String(nodeCount));
     const s5 = SURFACE[lang][surfKey] + nodeSuffix;
 
-    return [s1, s2, s3, s4, s5].join('\n');
+    const lines = [s1, s2, s3, s4, s5];
+    if (seed != null) {
+        const tag = parseSeed(seed);
+        lines.unshift(seedTagToLabel(tag, lang));
+    }
+    return lines.join('\n');
 }
 
 /* ── Animation alt-text ── */
