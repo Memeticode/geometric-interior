@@ -3,11 +3,11 @@
  * and user profile cards with thumbnails, reordering, and deletion.
  */
 
-import { loadProfiles, saveProfiles, deleteProfile, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder, syncProfileOrder } from '../ui/profiles.js';
+import { loadProfiles, saveProfiles, deleteProfile, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder, syncProfileOrder } from '../stores/profiles.js';
 import { seedTagToLabel } from '@geometric-interior/core/text-generation/seed-tags.js';
-import { slugify } from '../shared/slugify.js';
+import { slugify } from '../components/slugify.js';
 import { t } from '../i18n/locale.js';
-import { TRASH_SVG, ARROW_UP_SVG, ARROW_DOWN_SVG } from '../shared/icons.js';
+import { TRASH_SVG, ARROW_UP_SVG, ARROW_DOWN_SVG } from '../components/icons.js';
 
 /**
  * @param {object} opts

@@ -4,8 +4,8 @@
  */
 
 import { createRenderer } from '@geometric-interior/render-engine/create-renderer.js';
-import { loadPortraits } from '../ui/profiles.js';
-import { getAllThumbs, putThumb, deleteThumb } from '../ui/thumb-cache.js';
+import { loadPortraits } from '../stores/profiles.js';
+import { getAllThumbs, putThumb, deleteThumb } from '../stores/thumb-cache.js';
 
 export function createThumbRenderer() {
     let offscreen = null;

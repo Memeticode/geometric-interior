@@ -13,7 +13,8 @@ import {
     DepthOfFieldEffect,
     BlendFunction,
 } from 'postprocessing';
-import { xmur3, mulberry32 } from '../core/prng.js';
+import { xmur3, mulberry32 } from '../utils/prng.js';
+import { lerp } from '../utils/math.js';
 import { deriveParams } from '../core/params.js';
 import { parseSeed, createTagStreams, seedToString } from '../core/text-generation/seed-tags.js';
 import { generateTitle } from '../core/text-generation/title-text.js';
@@ -283,10 +284,6 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         morphGlowMat: THREE.ShaderMaterial | null;
     } | null = null;
 
-    function lerpVal(a: number, b: number, t: number): number {
-        return a + (b - a) * t;
-    }
-
     function setMorphFade(refs: SceneRefs, value: number): void {
         if (refs.faceMat) refs.faceMat.uniforms.uMorphFade.value = value;
         if (refs.edgeMat) refs.edgeMat.uniforms.uMorphFade.value = value;
@@ -388,11 +385,11 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
             mGlowMat.uniforms.uMorphT.value = t;
         }
 
-        camera.fov = lerpVal(paramsA.cameraFov, paramsB.cameraFov, t);
+        camera.fov = lerp(paramsA.cameraFov, paramsB.cameraFov, t);
         camera.position.set(
-            lerpVal(paramsA.cameraOffsetX, paramsB.cameraOffsetX, t),
-            lerpVal(paramsA.cameraOffsetY, paramsB.cameraOffsetY, t),
-            lerpVal(paramsA.cameraZ, paramsB.cameraZ, t),
+            lerp(paramsA.cameraOffsetX, paramsB.cameraOffsetX, t),
+            lerp(paramsA.cameraOffsetY, paramsB.cameraOffsetY, t),
+            lerp(paramsA.cameraZ, paramsB.cameraZ, t),
         );
         camera.aspect = getAspect();
         camera.updateProjectionMatrix();
@@ -402,19 +399,19 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         const iA = paramsA.bgInnerColor, iB = paramsB.bgInnerColor;
         const oA = paramsA.bgOuterColor, oB = paramsB.bgOuterColor;
         bgMaterial.uniforms.uInnerColor.value.setRGB(
-            lerpVal(iA[0], iB[0], t), lerpVal(iA[1], iB[1], t), lerpVal(iA[2], iB[2], t),
+            lerp(iA[0], iB[0], t), lerp(iA[1], iB[1], t), lerp(iA[2], iB[2], t),
         );
         bgMaterial.uniforms.uOuterColor.value.setRGB(
-            lerpVal(oA[0], oB[0], t), lerpVal(oA[1], oB[1], t), lerpVal(oA[2], oB[2], t),
+            lerp(oA[0], oB[0], t), lerp(oA[1], oB[1], t), lerp(oA[2], oB[2], t),
         );
 
-        bloomEffect.intensity = lerpVal(paramsA.bloomStrength, paramsB.bloomStrength, t);
-        bloomEffect.luminanceMaterial.threshold = lerpVal(paramsA.bloomThreshold, paramsB.bloomThreshold, t);
-        const caVal = lerpVal(paramsA.chromaticAberration, paramsB.chromaticAberration, t);
+        bloomEffect.intensity = lerp(paramsA.bloomStrength, paramsB.bloomStrength, t);
+        bloomEffect.luminanceMaterial.threshold = lerp(paramsA.bloomThreshold, paramsB.bloomThreshold, t);
+        const caVal = lerp(paramsA.chromaticAberration, paramsB.chromaticAberration, t);
         chromaticAberrationEffect.offset.set(caVal, caVal);
-        vignetteEffect.darkness = lerpVal(paramsA.vignetteStrength, paramsB.vignetteStrength, t);
+        vignetteEffect.darkness = lerp(paramsA.vignetteStrength, paramsB.vignetteStrength, t);
 
-        const attenVal = lerpVal(paramsA.attenuationCoeff, paramsB.attenuationCoeff, t);
+        const attenVal = lerp(paramsA.attenuationCoeff, paramsB.attenuationCoeff, t);
         if (refsA.faceMat) refsA.faceMat.uniforms.uAttenuationCoeff.value = attenVal;
         if (refsB.faceMat) refsB.faceMat.uniforms.uAttenuationCoeff.value = attenVal;
 

@@ -1,0 +1,11 @@
+/* Image editor page — single CSS entry point for image.html */
+@import '../base/base.css';
+@import '../components/header.css';
+@import '../components/panel.css';
+@import '../components/controls.css';
+@import '../components/active-card.css';
+@import '../components/stage.css';
+@import '../base/buttons.css';
+@import '../components/modals.css';
+@import '../components/footer.css';
+@import '../components/responsive.css';

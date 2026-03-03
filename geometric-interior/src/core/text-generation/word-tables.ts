@@ -87,12 +87,3 @@ export const LUMINOSITY_WORDS: Record<string, Record<string, string[]>> = {
     },
 };
 
-export function pick(arr: string[], rng: () => number): string {
-    return arr[Math.floor(rng() * arr.length)];
-}
-
-export function tier(value: number): string {
-    if (value > 0.66) return 'high';
-    if (value > 0.33) return 'mid';
-    return 'low';
-}

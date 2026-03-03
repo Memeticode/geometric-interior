@@ -12,21 +12,21 @@
  *   text-display.js, import-handler.js, share-actions.js, profile-gallery.js
  */
 
-import { createHeader } from '../shared/create-header.js';
-import { createFooter } from '../shared/create-footer.js';
-import { initApp } from '../shared/app-init.js';
+import { createHeader } from '../components/create-header.js';
+import { createFooter } from '../components/create-footer.js';
+import { initApp } from '../components/app-init.js';
 import { TAG_LIST_LENGTH } from '@geometric-interior/core/text-generation/seed-tags.js';
-import { decodeStateFromURL } from '../core/url-state.js';
-import { initPageSettings } from '../ui/page-settings.js';
+import { decodeStateFromURL } from '../stores/url-state.js';
+import { initPageSettings } from '../stores/page-settings.js';
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
-import { xmur3, mulberry32 } from '@geometric-interior/core/prng.js';
-import { loadProfiles, saveProfiles, ensureStarterProfiles, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder } from '../ui/profiles.js';
-import { toast } from '../shared/toast.js';
-import { autoGrow, initAutoGrowTextareas } from '../shared/dom-utils.js';
-import { initCollapsibles } from '../shared/collapsibles.js';
-import { initPanel, isPanelOpen, closePanel } from '../shared/panel.js';
-import { showConfirm, initModals, closeInfoModal } from '../shared/modals.js';
-import { validateProfileName } from '../shared/slugify.js';
+import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
+import { loadProfiles, saveProfiles, ensureStarterProfiles, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder } from '../stores/profiles.js';
+import { toast } from '../components/toast.js';
+import { autoGrow, initAutoGrowTextareas } from '../components/dom-utils.js';
+import { initCollapsibles } from '../components/collapsibles.js';
+import { initPanel, isPanelOpen, closePanel } from '../components/panel.js';
+import { showConfirm, initModals, closeInfoModal } from '../components/modals.js';
+import { validateProfileName } from '../components/slugify.js';
 import { t, getLocale } from '../i18n/locale.js';
 
 import { createRenderBridge } from './render-bridge.js';

@@ -4,9 +4,9 @@
 
 import type { Controls } from './image-models.js';
 import type { Seed } from './text-generation/seed-tags.js';
-import type { EasingType } from './easing.js';
+import type { EasingType } from '../utils/easing.js';
 
-export type { EasingType } from './easing.js';
+export type { EasingType } from '../utils/easing.js';
 
 export interface ContentEvent {
     type: 'expand' | 'pause' | 'transition' | 'collapse';

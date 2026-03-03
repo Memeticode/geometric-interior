@@ -3,8 +3,8 @@
  */
 
 import { validateStillConfig, configToProfile } from '@geometric-interior/core/config-schema.js';
-import { loadProfiles, saveProfiles } from '../ui/profiles.js';
-import { toast } from '../shared/toast.js';
+import { loadProfiles, saveProfiles } from '../stores/profiles.js';
+import { toast } from '../components/toast.js';
 import { t } from '../i18n/locale.js';
 
 /**

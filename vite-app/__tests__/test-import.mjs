@@ -99,7 +99,7 @@ export async function runTests(page, errors) {
     // ── Test: Missing fields caught ──
     await test('Schema validation catches missing fields', async () => {
         await openImport();
-        await pasteAndImport(JSON.stringify({ kind: 'still' }));
+        await pasteAndImport(JSON.stringify({ kind: 'still-v2' }));
         await sleep(200);
 
         const errorText = await page.$eval('#importError', el => el.textContent);
@@ -117,8 +117,8 @@ export async function runTests(page, errors) {
         await sleep(200);
 
         const errorText = await page.$eval('#importError', el => el.textContent);
-        if (!errorText.includes('must be "still"')) {
-            throw new Error(`Expected 'must be "still"' in error, got: "${errorText}"`);
+        if (!errorText.includes('must be "still-v2"')) {
+            throw new Error(`Expected 'must be "still-v2"' in error, got: "${errorText}"`);
         }
         await closeImport();
     });

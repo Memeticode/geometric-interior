@@ -68,15 +68,6 @@ export const BATCH_CONFIGS = [
     },
 ];
 
-/** A legacy v1 config for testing backward-compatible import. */
-export const LEGACY_STILL_CONFIG = {
-    kind: 'still',
-    name: 'Legacy Import Test',
-    intent: 'A test seed for legacy import',
-    palette: { hue: 200, range: 30, saturation: 0.55 },
-    structure: { density: 0.5, luminosity: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5 },
-};
-
 /** Invalid configs for error case testing: { label, json, expectedError }. */
 export const INVALID_CONFIGS = [
     {
@@ -98,7 +89,7 @@ export const INVALID_CONFIGS = [
             color: { hue: 0.5, spectrum: 0.5, chroma: 0.5 },
             structure: { density: 0, luminosity: 0, bloom: 0, fracture: 0, coherence: 0, scale: 0, division: 0, faceting: 0, flow: 0 },
         }),
-        expectedError: 'must be "still"',
+        expectedError: 'must be "still-v2"',
     },
     {
         label: 'out of range values',

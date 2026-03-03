@@ -4,6 +4,7 @@
  */
 
 import * as THREE from 'three';
+import { gaussianRandom } from '../../utils/math.js';
 import { envelopeSDF } from './envelope.js';
 import { generateAllGuideCurves, sampleAlongCurve, drapingDirection } from './guide-curves.js';
 import { createAccumulators, createFoldingChain } from './folding-chains.js';
@@ -21,22 +22,10 @@ import type { SceneRngStreams } from '../../core/text-generation/seed-tags.js';
 
 export function buildDemoScene(
     params: DerivedParams,
-    rngOrStreams: (() => number) | SceneRngStreams,
+    streams: SceneRngStreams,
     scene: THREE.Scene,
     glowTexture?: THREE.Texture,
 ): SceneBuildResult {
-    // Normalize: accept either a single rng (legacy) or three independent streams
-    const streams: SceneRngStreams = typeof rngOrStreams === 'function'
-        ? {
-            arrangementRng: rngOrStreams,
-            structureRng: rngOrStreams,
-            detailRng: rngOrStreams,
-            arrangementBias: 0.5,
-            structureBias: 0.5,
-            detailBias: 0.5,
-        }
-        : rngOrStreams;
-
     const { arrangementRng, structureRng, detailRng } = streams;
 
     const envelopeRadii = new THREE.Vector3(...params.envelopeRadii);
@@ -404,8 +393,3 @@ export function buildDemoScene(
     };
 }
 
-function gaussianRandom(rng: () => number, mean = 0, stdev = 1): number {
-    const u = 1 - rng();
-    const v = rng();
-    return mean + stdev * Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-}

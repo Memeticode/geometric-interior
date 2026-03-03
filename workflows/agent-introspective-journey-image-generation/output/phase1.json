@@ -1,0 +1,78 @@
+[
+  {
+    "name": "meadow-light",
+    "seed": [5, 4, 8],
+    "controls": {
+      "topology": "flow-field",
+      "density": 0.07,
+      "luminosity": 0.70,
+      "bloom": 0.40,
+      "fracture": 0.20,
+      "coherence": 0.85,
+      "hue": 0.35,
+      "spectrum": 0.45,
+      "chroma": 0.80,
+      "scale": 0.80,
+      "division": 0.5,
+      "faceting": 0.10,
+      "flow": 0.70
+    }
+  },
+  {
+    "name": "sky-bridge",
+    "seed": [9, 5, 3],
+    "controls": {
+      "topology": "flow-field",
+      "density": 0.06,
+      "luminosity": 0.75,
+      "bloom": 0.55,
+      "fracture": 0.25,
+      "coherence": 0.80,
+      "hue": 0.44,
+      "spectrum": 0.70,
+      "chroma": 0.75,
+      "scale": 0.75,
+      "division": 0.5,
+      "faceting": 0.15,
+      "flow": 0.0
+    }
+  },
+  {
+    "name": "bliss",
+    "seed": [13, 6, 5],
+    "controls": {
+      "topology": "flow-field",
+      "density": 0.08,
+      "luminosity": 0.65,
+      "bloom": 0.50,
+      "fracture": 0.30,
+      "coherence": 0.88,
+      "hue": 0.40,
+      "spectrum": 0.80,
+      "chroma": 0.85,
+      "scale": 0.85,
+      "division": 0.5,
+      "faceting": 0.05,
+      "flow": 1.0
+    }
+  },
+  {
+    "name": "windows-xp",
+    "seed": [0, 7, 4],
+    "controls": {
+      "topology": "flow-field",
+      "density": 0.09,
+      "luminosity": 0.78,
+      "bloom": 0.60,
+      "fracture": 0.25,
+      "coherence": 0.82,
+      "hue": 0.375,
+      "spectrum": 0.60,
+      "chroma": 0.90,
+      "scale": 0.85,
+      "division": 0.5,
+      "faceting": 0.08,
+      "flow": 0.50
+    }
+  }
+]

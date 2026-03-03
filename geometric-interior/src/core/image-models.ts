@@ -4,17 +4,6 @@
 
 import type { Seed } from './text-generation/seed-tags.js';
 
-/** @deprecated — kept for profile migration only */
-export type PaletteKey =
-    | 'violet-depth'
-    | 'warm-spectrum'
-    | 'teal-volumetric'
-    | 'prismatic'
-    | 'crystal-lattice'
-    | 'sapphire'
-    | 'amethyst'
-    | 'custom';
-
 /** User-facing control sliders (all 0-1 range) */
 export interface Controls {
     topology: 'flow-field';
@@ -36,13 +25,6 @@ export interface Controls {
     flow: number;         // 0-1: field pattern (radial → noise → orbital)
 }
 
-/** @deprecated — kept for profile migration only */
-export interface PaletteTweaks {
-    baseHue: number;
-    hueRange: number;
-    saturation: number;
-}
-
 /** Resolved palette data (computed from PaletteKey + PaletteTweaks) */
 export interface PaletteData {
     label: string;
@@ -57,19 +39,13 @@ export interface PaletteData {
 
 /** Canonical still image configuration (public API type) */
 export interface StillConfig {
-    kind: 'still' | 'still-v2';
+    kind: 'still-v2';
     name: string;
     intent: string;
     /** Compositional seed tag (3-element numeric array) — alternative to string intent */
     seedTag?: [number, number, number];
-    /** @deprecated v1 format — use `color` instead */
-    palette?: {
-        hue: number;
-        range: number;
-        saturation: number;
-    };
-    /** v2 format — continuous color axes */
-    color?: {
+    /** Continuous color axes */
+    color: {
         hue: number;
         spectrum: number;
         chroma: number;
@@ -78,8 +54,6 @@ export interface StillConfig {
         density: number;
         luminosity: number;
         fracture: number;
-        /** @deprecated v1 format — removed in v2 */
-        depth?: number;
         coherence: number;
         scale?: number;
         division?: number;

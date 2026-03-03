@@ -2,54 +2,14 @@
  * Seamless animation interpolation: Catmull-Rom splines, time-warp, cosine easing.
  */
 
-import { clamp01, lerp } from './prng.js';
+import { clamp01, lerp } from '../utils/math.js';
+import { catmullRom, circularLerp, unwrapCircular, warpSegmentT, cosineEase } from '../utils/easing.js';
 import type { Controls } from './image-models.js';
 
 export const TIME_WARP_STRENGTH = 0.78;
 
 const NUMERIC_KEYS: (keyof Controls)[] = ['density', 'luminosity', 'fracture', 'coherence', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
 const DISCRETE_KEYS: (keyof Controls)[] = ['topology'];
-
-/** Circular lerp on [0, period) domain. */
-function circularLerp(a: number, b: number, t: number, period = 1): number {
-    let diff = b - a;
-    if (diff > period / 2) diff -= period;
-    if (diff < -period / 2) diff += period;
-    return ((a + diff * t) % period + period) % period;
-}
-
-/** Unwrap a value to be within ±period/2 of the anchor. */
-function unwrapCircular(val: number, anchor: number, period = 1): number {
-    let diff = val - anchor;
-    if (diff > period / 2) diff -= period;
-    if (diff < -period / 2) diff += period;
-    return anchor + diff;
-}
-
-export function smootherstep(t: number): number {
-    t = clamp01(t);
-    return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
-export function warpSegmentT(t: number, strength: number): number {
-    const w = smootherstep(t);
-    return lerp(t, w, clamp01(strength));
-}
-
-export function cosineEase(t: number): number {
-    return 0.5 - 0.5 * Math.cos(Math.PI * t);
-}
-
-export function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number): number {
-    const t2 = t * t;
-    const t3 = t2 * t;
-    return 0.5 * (
-        (2 * p1) +
-        (-p0 + p2) * t +
-        (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
-        (-p0 + 3 * p1 - 3 * p2 + p3) * t3
-    );
-}
 
 export function evalControlsAt(tNorm: number, landmarks: Array<{ controls: Controls }>): Controls | null {
     const n = landmarks.length;
@@ -107,5 +67,3 @@ export function evalControlsAt(tNorm: number, landmarks: Array<{ controls: Contr
     (result as unknown as Record<string, unknown>).hue = ((rawHue % 1) + 1) % 1;
     return result;
 }
-
-export const evalAspectsAt = evalControlsAt;

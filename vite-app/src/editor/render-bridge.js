@@ -5,7 +5,7 @@
  */
 
 import { createRenderer } from '@geometric-interior/render-engine/create-renderer.js';
-import { getResolution } from '../ui/resolution.js';
+import { getResolution } from '../stores/resolution.js';
 
 /**
  * @param {HTMLCanvasElement} canvas
@@ -121,7 +121,7 @@ export function createRenderBridge(canvas, {
             const offscreen = canvas.transferControlToOffscreen();
             canvas.dataset.transferred = '1';
             const w = new Worker(
-                new URL('../engine/render-worker.js', import.meta.url),
+                new URL('../worker/render-worker.js', import.meta.url),
                 { type: 'module' },
             );
             w.onmessage = handleMessage;

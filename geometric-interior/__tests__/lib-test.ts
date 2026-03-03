@@ -7,10 +7,8 @@
 
 import {
     createRenderer, deriveParams as _deriveParams,
-    resetPalette as _resetPalette, updatePalette as _updatePalette,
-    getPalette as _getPalette, PALETTE_KEYS,
 } from '../src/index.js';
-import type { Controls, PaletteKey, PaletteTweaks, RenderMeta } from '../src/core/image-models.js';
+import type { Controls, RenderMeta } from '../src/core/image-models.js';
 import type { DerivedParams } from '../src/render-engine/models.js';
 import starterProfiles from '../../vite-app/src/core/starter-profiles.json';
 
@@ -68,24 +66,13 @@ function comparePixels(
 
 /* ── Test API ── */
 
-function setupPalette(controls: Controls, paletteTweaks?: Record<string, PaletteTweaks>): void {
-    _resetPalette(controls.palette as PaletteKey);
-    if (paletteTweaks) {
-        for (const [key, tweaks] of Object.entries(paletteTweaks)) {
-            _updatePalette(key as PaletteKey, tweaks);
-        }
-    }
-}
-
 const testLib = {
     /* ── Rendering ── */
 
     renderStill(
         seed: string,
         controls: Controls,
-        paletteTweaks?: Record<string, PaletteTweaks>,
     ): { meta: RenderMeta; elapsedMs: number } {
-        setupPalette(controls, paletteTweaks);
         const t0 = performance.now();
         const meta = renderer.renderWith(seed, controls);
         const elapsedMs = performance.now() - t0;
@@ -102,20 +89,6 @@ const testLib = {
 
     comparePixels,
 
-    /* ── Palette ── */
-
-    resetPalette(key: string): void {
-        _resetPalette(key as PaletteKey);
-    },
-
-    updatePalette(key: string, tweaks: PaletteTweaks): void {
-        _updatePalette(key as PaletteKey, tweaks);
-    },
-
-    getPalette(key: string) {
-        return _getPalette(key as PaletteKey);
-    },
-
     /* ── Params ── */
 
     deriveParams(controls: Controls): DerivedParams {
@@ -127,12 +100,8 @@ const testLib = {
     morphPrepare(
         seedA: string, controlsA: Controls,
         seedB: string, controlsB: Controls,
-        paletteTweaksA?: Record<string, PaletteTweaks>,
-        paletteTweaksB?: Record<string, PaletteTweaks>,
     ): void {
-        _resetPalette(controlsA.palette as PaletteKey);
-        _resetPalette(controlsB.palette as PaletteKey);
-        renderer.morphPrepare(seedA, controlsA, seedB, controlsB, paletteTweaksA, paletteTweaksB);
+        renderer.morphPrepare(seedA, controlsA, seedB, controlsB);
     },
 
     morphStep(t: number): void {
@@ -147,10 +116,8 @@ const testLib = {
         seedA: string, controlsA: Controls,
         seedB: string, controlsB: Controls,
         frameCount: number,
-        paletteTweaksA?: Record<string, PaletteTweaks>,
-        paletteTweaksB?: Record<string, PaletteTweaks>,
     ): string[] {
-        this.morphPrepare(seedA, controlsA, seedB, controlsB, paletteTweaksA, paletteTweaksB);
+        this.morphPrepare(seedA, controlsA, seedB, controlsB);
         const urls: string[] = [];
         for (let i = 0; i < frameCount; i++) {
             const t = frameCount <= 1 ? 0 : i / (frameCount - 1);
@@ -165,10 +132,8 @@ const testLib = {
         seedA: string, controlsA: Controls,
         seedB: string, controlsB: Controls,
         frameCount: number,
-        paletteTweaksA?: Record<string, PaletteTweaks>,
-        paletteTweaksB?: Record<string, PaletteTweaks>,
     ): { meanDelta: number; maxDelta: number; stddev: number; frames: number } {
-        this.morphPrepare(seedA, controlsA, seedB, controlsB, paletteTweaksA, paletteTweaksB);
+        this.morphPrepare(seedA, controlsA, seedB, controlsB);
         const snapshots: PixelData[] = [];
         for (let i = 0; i < frameCount; i++) {
             const t = frameCount <= 1 ? 0 : i / (frameCount - 1);
@@ -236,7 +201,6 @@ interface ProfileEntry {
     name: string;
     seed: string;
     controls: Controls;
-    paletteTweaks?: { baseHue: number; hueRange: number; saturation: number };
 }
 
 function loadAllProfiles(): { starters: ProfileEntry[]; saved: ProfileEntry[] } {
@@ -246,7 +210,6 @@ function loadAllProfiles(): { starters: ProfileEntry[]; saved: ProfileEntry[] } 
             name,
             seed: (p as any).seed,
             controls: (p as any).controls as Controls,
-            paletteTweaks: (p as any).paletteTweaks,
         }));
 
     const saved: ProfileEntry[] = [];
@@ -260,7 +223,6 @@ function loadAllProfiles(): { starters: ProfileEntry[]; saved: ProfileEntry[] } 
                     name,
                     seed: (prof.seed || prof.note || name) as string,
                     controls: prof.controls as Controls,
-                    paletteTweaks: prof.paletteTweaks as ProfileEntry['paletteTweaks'],
                 });
             }
         }
@@ -366,10 +328,7 @@ populateSelect(elTargetSelect, resolvedTarget);
 /* ── Rendering helpers ── */
 
 function renderProfileToDataURL(profile: ProfileEntry): { url: string; meta: RenderMeta; elapsedMs: number } {
-    const tweaks = profile.paletteTweaks
-        ? { custom: profile.paletteTweaks }
-        : undefined;
-    const result = testLib.renderStill(profile.seed, profile.controls, tweaks);
+    const result = testLib.renderStill(profile.seed, profile.controls);
     return { url: canvas.toDataURL('image/png'), ...result };
 }
 
@@ -430,10 +389,6 @@ function getPrepKey(): string {
     return `${elBaseSelect.value}|${elTargetSelect.value}`;
 }
 
-function getTweaks(p: ProfileEntry) {
-    return p.paletteTweaks ? { custom: p.paletteTweaks } : undefined;
-}
-
 function eagerPrepare(): void {
     if (generating) return;
     const key = getPrepKey();
@@ -453,7 +408,6 @@ function eagerPrepare(): void {
     testLib.morphPrepare(
         baseProfile.seed, baseProfile.controls,
         targetProfile.seed, targetProfile.controls,
-        getTweaks(baseProfile), getTweaks(targetProfile),
     );
     morphReady = true;
     preparedKey = key;
@@ -595,7 +549,6 @@ elMorphBtn.addEventListener('click', async () => {
         testLib.morphPrepare(
             baseProfile.seed, baseProfile.controls,
             targetProfile.seed, targetProfile.controls,
-            getTweaks(baseProfile), getTweaks(targetProfile),
         );
         morphReady = true;
         preparedKey = key;

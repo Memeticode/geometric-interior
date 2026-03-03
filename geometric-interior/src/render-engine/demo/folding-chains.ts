@@ -7,6 +7,7 @@
  */
 
 import * as THREE from 'three';
+import { computeFade, computeNormal } from '../../utils/math.js';
 import type { BatchAccumulators, DotPosition } from '../models.js';
 
 export function createAccumulators(): BatchAccumulators {
@@ -23,10 +24,6 @@ function computeIllumination(worldPos: THREE.Vector3, lightPositions: DotPositio
         total += lp.intensity / (1 + d2 * 10);
     }
     return Math.min(total, 3.0);
-}
-
-function computeFade(dist: number, decayRate: number): number {
-    return Math.exp(-decayRate * dist * dist);
 }
 
 // Reusable temporaries to reduce GC pressure in hot loops
@@ -273,25 +270,6 @@ function accumulateSkirt(
             faceAccum.foldOrigin.push(chainOriginWorld.x, chainOriginWorld.y, chainOriginWorld.z);
         }
     }
-}
-
-/**
- * Compute face normal from first triangle's vertices via cross product.
- * Returns [nx, ny, nz] (normalized).
- */
-function computeNormal(positions: number[]): [number, number, number] {
-    const e1x = positions[3] - positions[0];
-    const e1y = positions[4] - positions[1];
-    const e1z = positions[5] - positions[2];
-    const e2x = positions[6] - positions[0];
-    const e2y = positions[7] - positions[1];
-    const e2z = positions[8] - positions[2];
-    let nx = e1y * e2z - e1z * e2y;
-    let ny = e1z * e2x - e1x * e2z;
-    let nz = e1x * e2y - e1y * e2x;
-    const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
-    if (len > 0) { nx /= len; ny /= len; nz /= len; }
-    return [nx, ny, nz];
 }
 
 interface ChainConfig {

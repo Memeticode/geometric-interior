@@ -7,7 +7,7 @@
  *   3) present: main canvas = acc
  */
 
-import { clamp01 } from '@geometric-interior/core/prng.js';
+import { clamp01 } from '@geometric-interior/utils/math.js';
 
 export function createMotionBlur(mainCanvas, mainCtx, { decay = 0.18, add = 0.90 } = {}) {
     const acc = document.createElement('canvas');

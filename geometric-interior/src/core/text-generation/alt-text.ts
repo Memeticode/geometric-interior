@@ -6,6 +6,7 @@ import type { Controls } from '../image-models.js';
 import type { Seed } from './seed-tags.js';
 import { parseSeed, seedTagToLabel } from './seed-tags.js';
 import { getHueWords } from './word-tables.js';
+import { injectColor } from '../../utils/string.js';
 
 /* ── Alt-text classifiers ── */
 
@@ -71,18 +72,8 @@ function classifyFaceting(v: number): string {
     return 'angular';
 }
 
-function capitalize(s: string): string {
-    return s.charAt(0).toUpperCase() + s.slice(1);
-}
-
 function getHueAdj(hue01: number, locale: string): string {
     return getHueWords(hue01, locale)[0].toLowerCase();
-}
-
-function injectColor(template: string, color: string): string {
-    return template
-        .replace(/\{Color\}/g, capitalize(color))
-        .replace(/\{color\}/g, color);
 }
 
 /* ── Alt-text phrase tables ── */

@@ -2,8 +2,8 @@
  * Controls → derived engine parameters for the demo scene builder.
  */
 
-import { controlLerp } from './prng.js';
-import { hslToRgb01 } from './palettes.js';
+import { controlLerp } from '../utils/math.js';
+import { hslToRgb01 } from '../utils/color.js';
 import type { Controls } from './image-models.js';
 import type { DerivedParams } from '../render-engine/models.js';
 

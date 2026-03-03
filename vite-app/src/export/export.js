@@ -2,7 +2,7 @@
  * Export helpers: ZIP packaging, downloads, metadata generation.
  */
 
-import { xmur3, mulberry32 } from '@geometric-interior/core/prng.js';
+import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
 import { deriveParams } from '@geometric-interior/core/params.js';
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
 import { generateAltText, generateAnimAltText } from '@geometric-interior/core/text-generation/alt-text.js';

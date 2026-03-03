@@ -13,11 +13,11 @@ function test(name, fn) {
 function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
 
 const VALID = {
-    kind: 'still',
+    kind: 'still-v2',
     name: 'Test Profile',
     intent: 'test-seed',
-    palette: { hue: 200, range: 30, saturation: 0.55 },
-    structure: { density: 0.5, luminosity: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5 },
+    color: { hue: 0.55, spectrum: 0.3, chroma: 0.5 },
+    structure: { density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, coherence: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
 };
 
 console.log('\n=== Schema Tests ===\n');
@@ -60,12 +60,10 @@ test('validateStillConfig rejects out-of-range structure values', () => {
     assert(r.ok === false, 'expected rejection for out-of-range density');
 });
 
-test('validateStillConfig rejects out-of-range palette saturation', () => {
-    const r = validateStillConfig({
-        ...VALID,
-        palette: { ...VALID.palette, saturation: 5.0 },
-    });
-    assert(r.ok === false, 'expected rejection for out-of-range saturation');
+test('validateStillConfig rejects missing color', () => {
+    const { color, ...rest } = VALID;
+    const r = validateStillConfig(rest);
+    assert(r.ok === false, 'expected rejection for missing color');
 });
 
 test('validateStillConfig rejects non-object input', () => {
@@ -95,8 +93,7 @@ test('configToProfile → profileToConfig roundtrip preserves values', () => {
     assert(config.intent === VALID.intent);
     assert(config.structure.density === VALID.structure.density);
     assert(config.structure.luminosity === VALID.structure.luminosity);
-    // v1 palette is converted to v2 color axes on roundtrip
-    assert(typeof config.color === 'object' && config.color !== null, 'expected color object in v2 output');
+    assert(typeof config.color === 'object' && config.color !== null, 'expected color object');
     assert(typeof config.color.hue === 'number', 'expected numeric color.hue');
     assert(typeof config.color.chroma === 'number', 'expected numeric color.chroma');
 });

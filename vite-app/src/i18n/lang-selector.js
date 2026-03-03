@@ -4,7 +4,7 @@
  */
 
 import { setLocale, getLocale } from './locale.js';
-import { initCustomDropdown } from '../shared/custom-dropdown.js';
+import { initCustomDropdown } from '../components/custom-dropdown.js';
 
 const LABELS = { en: 'English', es: 'Español' };
 

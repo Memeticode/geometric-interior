@@ -3,15 +3,15 @@
  * and visual export (ZIP download).
  */
 
-import { encodeStateToURL } from '../core/url-state.js';
+import { encodeStateToURL } from '../stores/url-state.js';
 import { packageStillZip, packageStillZipFromBlob } from '../export/export.js';
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
 import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
-import { xmur3, mulberry32 } from '@geometric-interior/core/prng.js';
+import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
 import { profileToConfig } from '@geometric-interior/core/config-schema.js';
 import { downloadBlob, toIsoLocalish, safeName } from '../export/export.js';
-import { hideTooltip } from '../shared/tooltips.js';
-import { toast } from '../shared/toast.js';
+import { hideTooltip } from '../components/tooltips.js';
+import { toast } from '../components/toast.js';
 import { t } from '../i18n/locale.js';
 
 /**

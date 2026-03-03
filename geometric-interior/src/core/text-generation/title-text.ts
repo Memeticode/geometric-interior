@@ -3,7 +3,9 @@
  */
 
 import type { Controls } from '../image-models.js';
-import { TOPOLOGY_WORDS, LUMINOSITY_WORDS, DENSITY_WORDS, SCALE_WORDS, getHueWords, pick, tier } from './word-tables.js';
+import { TOPOLOGY_WORDS, LUMINOSITY_WORDS, DENSITY_WORDS, SCALE_WORDS, getHueWords } from './word-tables.js';
+import { pick } from '../../utils/prng.js';
+import { tier } from '../../utils/string.js';
 
 export function generateTitle(controls: Controls, rng: () => number, locale: string = 'en'): string {
     const c = controls;

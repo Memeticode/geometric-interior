@@ -6,7 +6,7 @@
  * independent PRNG stream and subtle bias for its visual subsystem.
  */
 
-import { xmur3, mulberry32 } from '../prng.js';
+import { xmur3, mulberry32 } from '../../utils/prng.js';
 
 // ── Types ──
 

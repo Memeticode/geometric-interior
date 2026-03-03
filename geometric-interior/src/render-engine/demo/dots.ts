@@ -4,17 +4,8 @@
 
 import * as THREE from 'three';
 import { envelopeSDF } from './envelope.js';
+import { gaussianRandom, computeFade } from '../../utils/math.js';
 import type { DotConfig, GuideCurve, DotGenerationResult, SphereInstDatum, GlowPointDatum, DotPosition } from '../models.js';
-
-function gaussianRandom(rng: () => number, mean = 0, stdev = 1): number {
-    const u = 1 - rng();
-    const v = rng();
-    return mean + stdev * Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
-}
-
-function computeFade(dist: number, decayRate: number): number {
-    return Math.exp(-decayRate * dist * dist);
-}
 
 export function createGlowTexture(): THREE.CanvasTexture {
     const size = 128;

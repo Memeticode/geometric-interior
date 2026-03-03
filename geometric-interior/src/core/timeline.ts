@@ -10,7 +10,8 @@
 
 import type { Controls } from './image-models.js';
 import type { Seed } from './text-generation/seed-tags.js';
-import { applyEasing } from './easing.js';
+import { applyEasing } from '../utils/easing.js';
+import { lerp } from '../utils/math.js';
 import type { ContentEvent, Animation, FrameState } from './animation-models.js';
 
 // Re-export all animation types so existing consumers can still import from timeline
@@ -89,11 +90,6 @@ function resolveConfigCamera(events: ContentEvent[], eventIndex: number): { zoom
     return { zoom: 1.0, rotation: 0 };
 }
 
-/** Interpolate a single value linearly. */
-function lerpVal(a: number, b: number, t: number): number {
-    return a + (b - a) * t;
-}
-
 /* ── Main Evaluator ── */
 
 /**
@@ -168,8 +164,8 @@ export function evaluateTimeline(animation: Animation, timeSeconds: number): Fra
         // Interpolate between from-config and to-config camera during transition
         const fromCam = resolveConfigCamera(events, eventIndex - 1);
         const toCam = resolveConfigCamera(events, eventIndex);
-        baseCamZoom = lerpVal(fromCam.zoom, toCam.zoom, eventProgress);
-        baseCamRotation = lerpVal(fromCam.rotation, toCam.rotation, eventProgress);
+        baseCamZoom = lerp(fromCam.zoom, toCam.zoom, eventProgress);
+        baseCamRotation = lerp(fromCam.rotation, toCam.rotation, eventProgress);
     } else {
         const configCam = resolveConfigCamera(events, eventIndex);
         baseCamZoom = configCam.zoom;
@@ -187,13 +183,13 @@ export function evaluateTimeline(animation: Animation, timeSeconds: number): Fra
         const moveT = applyEasing(moveRaw, move.easing);
 
         if (move.from.zoom !== undefined && move.to.zoom !== undefined) {
-            cameraZoom *= lerpVal(move.from.zoom, move.to.zoom, moveT);
+            cameraZoom *= lerp(move.from.zoom, move.to.zoom, moveT);
         }
         if (move.from.orbitY !== undefined && move.to.orbitY !== undefined) {
-            cameraOrbitY += lerpVal(move.from.orbitY, move.to.orbitY, moveT);
+            cameraOrbitY += lerp(move.from.orbitY, move.to.orbitY, moveT);
         }
         if (move.from.orbitX !== undefined && move.to.orbitX !== undefined) {
-            cameraOrbitX += lerpVal(move.from.orbitX, move.to.orbitX, moveT);
+            cameraOrbitX += lerp(move.from.orbitX, move.to.orbitX, moveT);
         }
     }
 
@@ -206,7 +202,7 @@ export function evaluateTimeline(animation: Animation, timeSeconds: number): Fra
         const trackDur = track.endTime - track.startTime;
         const trackRaw = trackDur > 0 ? (t - track.startTime) / trackDur : 1;
         const trackT = applyEasing(trackRaw, track.easing);
-        const val = lerpVal(track.from, track.to, trackT);
+        const val = lerp(track.from, track.to, trackT);
 
         if (track.param === 'twinkle') twinkle = val;
         else if (track.param === 'dynamism') dynamism = val;
@@ -224,12 +220,12 @@ export function evaluateTimeline(animation: Animation, timeSeconds: number): Fra
         const trackT = applyEasing(trackRaw, track.easing);
 
         if (focusTrackCount === 0) {
-            focalDepth = lerpVal(track.from.focalDepth, track.to.focalDepth, trackT);
-            blurAmount = lerpVal(track.from.blurAmount, track.to.blurAmount, trackT);
+            focalDepth = lerp(track.from.focalDepth, track.to.focalDepth, trackT);
+            blurAmount = lerp(track.from.blurAmount, track.to.blurAmount, trackT);
         } else {
             // Compose multiple simultaneous tracks by averaging
-            const fd = lerpVal(track.from.focalDepth, track.to.focalDepth, trackT);
-            const ba = lerpVal(track.from.blurAmount, track.to.blurAmount, trackT);
+            const fd = lerp(track.from.focalDepth, track.to.focalDepth, trackT);
+            const ba = lerp(track.from.blurAmount, track.to.blurAmount, trackT);
             focalDepth = (focalDepth * focusTrackCount + fd) / (focusTrackCount + 1);
             blurAmount = (blurAmount * focusTrackCount + ba) / (focusTrackCount + 1);
         }

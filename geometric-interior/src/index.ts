@@ -42,17 +42,21 @@ export { validateStillConfig, configToProfile, profileToConfig } from './core/co
 export { deriveParams } from './core/params.js';
 
 // Palettes
-export { PALETTES, PRESETS, hslToRgb01 } from './core/palettes.js';
+export { PALETTES, PRESETS } from './core/palettes.js';
+
+// Utils — math, PRNG, easing, color
+export { clamp01, lerp, controlLerp } from './utils/math.js';
+export { xmur3, mulberry32 } from './utils/prng.js';
+export { applyEasing, cosineEase, smootherstep, warpSegmentT, catmullRom } from './utils/easing.js';
+export type { EasingType } from './utils/easing.js';
+export { hslToRgb01 } from './utils/color.js';
 
 // Text generation
 export { generateTitle } from './core/text-generation/title-text.js';
 export { generateAltText, generateAnimAltText } from './core/text-generation/alt-text.js';
 
 // Interpolation
-export { cosineEase, catmullRom, evalControlsAt, evalAspectsAt, smootherstep, warpSegmentT, TIME_WARP_STRENGTH } from './core/interpolation.js';
-
-// PRNG utilities
-export { xmur3, mulberry32, clamp01, lerp, controlLerp } from './core/prng.js';
+export { evalControlsAt, TIME_WARP_STRENGTH } from './core/interpolation.js';
 
 // Seed tags
 export {
@@ -63,9 +67,7 @@ export {
 
 // Animation timeline
 export { evaluateTimeline, totalDuration, totalFrames } from './core/timeline.js';
-export { applyEasing } from './core/easing.js';
 export type {
-    EasingType,
     ContentEvent,
     CameraState,
     CameraMove,

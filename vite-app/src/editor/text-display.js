@@ -4,7 +4,7 @@
 
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
 import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
-import { xmur3, mulberry32 } from '@geometric-interior/core/prng.js';
+import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
 
 /**
  * @param {object} els - DOM element refs
