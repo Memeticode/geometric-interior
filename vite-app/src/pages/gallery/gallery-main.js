@@ -480,9 +480,7 @@ function updateBrowserItems() {
         carouselBrowser.appendChild(section);
     };
 
-    const mid = Math.ceil(portraits.length / 2);
-    addSection('Portraits', portraits.slice(0, mid));
-    addSection('Portraits-2', portraits.slice(mid));
+    addSection('An Awakening Mind', portraits);
     addSection('Generated', generated);
     addSection('Custom', custom);
 }
@@ -812,19 +810,38 @@ function applySelection(name, profile, isPortrait, assetId) {
         };
     }
 
-    // Use stored meta for generated profiles, else compute text
-    if (assetId) {
+    // Portrait commentary vs generated/custom text
+    if (isPortrait && profile.commentary) {
+        selectedGenTitle.textContent = name;
+        selectedGenAlt.textContent = profile.commentary;
+        selectedGenAlt.classList.add('expanded');
+        selectedGenToggle.style.display = '';
+        selectedGenToggle.classList.add('portrait-static');
+        const altStr = `${name} \u2014 ${profile.commentary}`;
+        selectedImage.alt = altStr;
+        selectedImage.title = altStr;
+    } else if (assetId) {
         const asset = generatedAssets.find(a => a.id === assetId);
         if (asset && asset.meta) {
             selectedGenTitle.textContent = asset.meta.title || '';
             selectedGenAlt.textContent = asset.meta.altText || '';
             selectedImage.alt = asset.meta.title || name;
         }
+        selectedImage.title = '';
+        selectedGenToggle.style.display = '';
+        selectedGenToggle.classList.remove('portrait-static');
+        selectedGenAlt.classList.remove('expanded');
+        selectedGenToggle.setAttribute('aria-expanded', 'false');
     } else {
         const { title, altText } = generateProfileText(profile);
         selectedGenTitle.textContent = title;
         selectedGenAlt.textContent = altText;
         selectedImage.alt = title;
+        selectedImage.title = '';
+        selectedGenToggle.style.display = '';
+        selectedGenToggle.classList.remove('portrait-static');
+        selectedGenAlt.classList.remove('expanded');
+        selectedGenToggle.setAttribute('aria-expanded', 'false');
     }
 
     currentIndex = navigableList.findIndex(p =>

@@ -2,7 +2,10 @@ To-Do
 -- add camera controls to image configuration (conceptually disinct from visual render configuration)
 -- create sampler-image generation workflow (not just parameter space exploration workflow)
 
-
+-- carousel
+    -- revisit animation bugs
+    -- fix section display bug when scrolling wheel (jumps around on left) 
+    -- remove control 
 
 
 # (4) continue exploration.

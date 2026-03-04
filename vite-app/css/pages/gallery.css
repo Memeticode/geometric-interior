@@ -271,6 +271,13 @@
     letter-spacing: 0.3px;
     color: var(--text);
 }
+.selected-gen-toggle.portrait-static {
+    cursor: default;
+    pointer-events: none;
+}
+.selected-gen-toggle.portrait-static .selected-gen-chevron {
+    display: none;
+}
 .selected-gen-chevron {
     font-size: 0.625rem;
     color: var(--text-muted);
