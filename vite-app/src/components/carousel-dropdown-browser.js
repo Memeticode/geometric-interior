@@ -232,19 +232,24 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#navRight.disabled = true;
         this.#toggle.disabled = true;
 
-        // Phase 1: slide controls up (only when positioned below)
-        if (this.#controlsPosition === 'below') {
-            await this.#animateControlsToTop(Math.round(this.#flipDuration * 0.5));
-        }
-
-        // Phase 2: animate carousel cards to grid positions via CSS transitions
-        // Clear hover/mask state so masks don't persist during animation
+        // Animate carousel cards to grid positions via CSS transitions
+        // Clear hover/mask state and force-remove any residual masks from images
         this.#resetHoverState();
+        for (const { element } of this.#cards) {
+            const img = element.querySelector('.cdb-card-img img');
+            if (img) {
+                img.style.webkitMaskImage = 'none';
+                img.style.maskImage = 'none';
+            }
+        }
 
         const sectionLabelRects = this.#captureSectionLabelRects();
         const dur = this.#flipDuration;
         const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
         const cardW = this.#readCardW();
+
+        // ── Capture controls position before layout changes ──
+        const ctrlBefore = this.#controls.getBoundingClientRect();
 
         // ── Remove carousel container from layout flow ──
         const containerH = this.#container.getBoundingClientRect().height;
@@ -257,6 +262,17 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#toggle.classList.add('active');
         void this.#grid.offsetHeight;
         this.#dropdown.classList.remove('cdb-measuring');
+
+        // ── FLIP controls to smooth position change ──
+        const ctrlAfter = this.#controls.getBoundingClientRect();
+        const cdy = ctrlBefore.top - ctrlAfter.top;
+        if (Math.abs(cdy) > 1) {
+            this.#controls.style.transition = 'none';
+            this.#controls.style.transform = `translateY(${cdy}px)`;
+            void this.#controls.offsetHeight;
+            this.#controls.style.transition = `transform ${dur}ms ${easing}`;
+            this.#controls.style.transform = '';
+        }
 
         // Scroll early so user sees content flowing into grid
         this.#scrollParent = this.closest('.gallery-main') || this.parentElement;
@@ -416,8 +432,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                 h.style.transition = `transform ${dur}ms ${easing}`;
                 h.style.transform = '';
             } else {
+                // No matching carousel label — keep hidden during FLIP, fade in at end
                 h.animate([{ opacity: 0 }, { opacity: 1 }], {
-                    duration: dur * 0.6, delay: dur * 0.3, fill: 'forwards'
+                    duration: dur * 0.3, delay: dur * 0.75, fill: 'forwards'
                 });
             }
             headerSecIdx = item.sectionIndex + 1;
@@ -457,7 +474,18 @@ class CarouselDropdownBrowser extends HTMLElement {
             }
             this.#cleanupGridAnimationStyles();
 
-            // Re-enable controls
+            // Clear inline mask overrides so CSS masks work normally again
+            for (const { element } of this.#cards) {
+                const img = element.querySelector('.cdb-card-img img');
+                if (img) {
+                    img.style.webkitMaskImage = '';
+                    img.style.maskImage = '';
+                }
+            }
+
+            // Clear controls FLIP styles and re-enable
+            this.#controls.style.transition = '';
+            this.#controls.style.transform = '';
             this.#navLeft.disabled = false;
             this.#navRight.disabled = false;
             this.#toggle.disabled = false;
@@ -514,6 +542,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                 this.#container.style.transition = 'none';
                 this.#sectionLabelContainer.style.transition = 'none';
 
+                // ── Capture controls position before un-flatten ──
+                const ctrlBefore = this.#controls.getBoundingClientRect();
+
                 // ── Un-flatten carousel ──
                 this.#strip.classList.remove('cdb-flattened');
 
@@ -542,6 +573,17 @@ class CarouselDropdownBrowser extends HTMLElement {
 
                 this.#viewport.style.overflow = 'visible';
                 void this.#track.offsetHeight;
+
+                // ── FLIP controls to smooth position change ──
+                const ctrlAfter = this.#controls.getBoundingClientRect();
+                const cdy = ctrlBefore.top - ctrlAfter.top;
+                if (Math.abs(cdy) > 1) {
+                    this.#controls.style.transition = 'none';
+                    this.#controls.style.transform = `translateY(${cdy}px)`;
+                    void this.#controls.offsetHeight;
+                    this.#controls.style.transition = `transform ${dur}ms ${easing}`;
+                    this.#controls.style.transform = '';
+                }
 
                 // ── Hide grid content (keep dropdown taking space to prevent clipping) ──
                 for (const card of gridCards) card.style.opacity = '0';
@@ -652,6 +694,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                     }
 
                     // Collapse dropdown now that animation is complete
+                    const ctrlBefore2 = this.#controls.getBoundingClientRect();
                     this.#dropdown.style.opacity = '';
                     this.#dropdown.style.pointerEvents = '';
                     this.#dropdown.classList.add('cdb-measuring');
@@ -659,9 +702,24 @@ class CarouselDropdownBrowser extends HTMLElement {
                     void this.#dropdown.offsetHeight;
                     this.#dropdown.classList.remove('cdb-measuring');
 
+                    // FLIP controls for dropdown collapse shift
+                    const ctrlAfter2 = this.#controls.getBoundingClientRect();
+                    const cdy2 = ctrlBefore2.top - ctrlAfter2.top;
+                    if (Math.abs(cdy2) > 1) {
+                        this.#controls.style.transition = 'none';
+                        this.#controls.style.transform = `translateY(${cdy2}px)`;
+                        void this.#controls.offsetHeight;
+                        this.#controls.style.transition = 'transform 0.3s ease';
+                        this.#controls.style.transform = '';
+                    }
+
                     this.#positionCards();
 
-                    // Re-enable controls
+                    // Clear controls FLIP styles and re-enable
+                    setTimeout(() => {
+                        this.#controls.style.transition = '';
+                        this.#controls.style.transform = '';
+                    }, 350);
                     this.#navLeft.disabled = false;
                     this.#navRight.disabled = false;
                     this.#toggle.disabled = false;
@@ -670,11 +728,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                 }, totalDur + 50);
             }, cardDelay);
         });
-
-        // Phase 2: slide controls back down (only when positioned below)
-        if (this.#controlsPosition === 'below') {
-            await this.#animateControlsToBottom(Math.round(dur * 0.5));
-        }
 
         this.#animatingExpand = false;
         this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: false } }));
@@ -901,8 +954,6 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#container.appendChild(this.#sectionLabelContainer);
         this.#container.appendChild(this.#viewport);
 
-        this.#appendStripChildren();
-
         // Dropdown
         this.#dropdown = document.createElement('div');
         this.#dropdown.className = 'cdb-dropdown';
@@ -915,9 +966,9 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#flipLayout.appendChild(this.#grid);
         this.#dropdown.appendChild(this.#flipLayout);
 
-        // Append rendered DOM to self
+        // Append rendered DOM — dropdown inside strip so controls-position="below" flows smoothly
+        this.#appendStripChildren();
         this.appendChild(this.#strip);
-        this.appendChild(this.#dropdown);
 
         this.#toggle.addEventListener('click', () => this.toggle());
     }
@@ -998,13 +1049,14 @@ class CarouselDropdownBrowser extends HTMLElement {
             }
 
             imgWrap.appendChild(img);
-            card.appendChild(imgWrap);
 
-            // Title element (always created, visibility controlled by CSS class)
+            // Title element inside card-img so it inherits 3D perspective transform
             const titleEl = document.createElement('div');
             titleEl.className = 'cdb-card-title';
             titleEl.textContent = item.label;
-            card.appendChild(titleEl);
+            imgWrap.appendChild(titleEl);
+
+            card.appendChild(imgWrap);
 
             this.#track.appendChild(card);
             this.#cards.push({ element: card, index: i });
@@ -1025,7 +1077,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (idx !== this.#centerIdx) {
             // Rotate to center first, then emit select
             this.#centerIdx = idx;
-            this.#track.style.setProperty('--carousel-speed', '0.85s');
+            this.#container.style.setProperty('--carousel-speed', '0.85s');
             this.#positionCards();
             this.#emitCenterChange();
             setTimeout(() => {
@@ -1188,15 +1240,15 @@ class CarouselDropdownBrowser extends HTMLElement {
     #morphSectionLabels(fromRects, toRects, duration, easing) {
         const overlays = [];
         for (const [secIdx, from] of fromRects) {
+            if (!from) continue;
             const to = toRects.get(secIdx);
-            if (!from || !to) continue;
 
             const phantom = document.createElement('div');
             phantom.className = 'cdb-section-phantom';
             phantom.textContent = from.text;
             phantom.style.cssText = `
-                position: fixed; z-index: 1000; pointer-events: none;
-                left: ${from.rect.left}px; top: ${from.rect.top}px;
+                position: absolute; z-index: 1000; pointer-events: none;
+                left: ${from.rect.left + window.scrollX}px; top: ${from.rect.top + window.scrollY}px;
                 font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em;
                 color: rgba(255, 255, 255, 0.3); white-space: nowrap;
             `;
@@ -1213,24 +1265,38 @@ class CarouselDropdownBrowser extends HTMLElement {
             document.body.appendChild(phantom);
             overlays.push(phantom);
 
-            const toUW = to.underlineWidth || to.rect.width;
-            const dx = to.rect.left - from.rect.left;
-            const dy = to.rect.top - from.rect.top;
+            if (to) {
+                // Morph from source to target position
+                const toUW = to.underlineWidth || to.rect.width;
+                const dx = to.rect.left - from.rect.left;
+                const dy = to.rect.top - from.rect.top;
 
-            phantom.animate([
-                { transform: 'translate(0, 0)', opacity: 1 },
-                { transform: `translate(${dx}px, ${dy}px)`, opacity: 1 }
-            ], { duration, easing, fill: 'forwards' });
+                phantom.animate([
+                    { transform: 'translate(0, 0)', opacity: 1 },
+                    { transform: `translate(${dx}px, ${dy}px)`, opacity: 1 }
+                ], { duration, easing, fill: 'forwards' });
 
-            bar.animate([
-                { width: fromUW + 'px' },
-                { width: toUW + 'px' }
-            ], { duration, easing, fill: 'forwards' });
+                bar.animate([
+                    { width: fromUW + 'px' },
+                    { width: toUW + 'px' }
+                ], { duration, easing, fill: 'forwards' });
 
-            phantom.animate([
-                { fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.3)' },
-                { fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }
-            ], { duration, easing, fill: 'forwards' });
+                phantom.animate([
+                    { fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.3)' },
+                    { fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }
+                ], { duration, easing, fill: 'forwards' });
+            } else {
+                // No matching carousel label — fade out in place
+                phantom.animate([
+                    { opacity: 1 },
+                    { opacity: 0 }
+                ], { duration: duration * 0.5, easing: 'ease-out', fill: 'forwards' });
+
+                bar.animate([
+                    { opacity: 1 },
+                    { opacity: 0 }
+                ], { duration: duration * 0.5, easing: 'ease-out', fill: 'forwards' });
+            }
         }
 
         return overlays;
@@ -1280,57 +1346,13 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (!this.#strip) return;
         if (this.#controlsPosition === 'below') {
             this.#strip.appendChild(this.#container);
+            this.#strip.appendChild(this.#dropdown);
             this.#strip.appendChild(this.#controls);
         } else {
             this.#strip.appendChild(this.#controls);
             this.#strip.appendChild(this.#container);
+            this.#strip.appendChild(this.#dropdown);
         }
-    }
-
-    // ── Controls FLIP animation (two-phase expand/collapse) ──
-
-    /** FLIP-animate the controls bar from below to above the container. */
-    async #animateControlsToTop(duration) {
-        const firstRect = this.#controls.getBoundingClientRect();
-        this.#strip.insertBefore(this.#controls, this.#container);
-        void this.#controls.offsetHeight;
-        const lastRect = this.#controls.getBoundingClientRect();
-
-        const dx = firstRect.left - lastRect.left;
-        const dy = firstRect.top - lastRect.top;
-        const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
-
-        this.#controls.style.transform = `translate(${dx}px, ${dy}px)`;
-        this.#controls.style.transition = 'none';
-        void this.#controls.offsetHeight;
-
-        this.#controls.style.transition = `transform ${duration}ms ${easing}`;
-        this.#controls.style.transform = '';
-
-        await new Promise(r => setTimeout(r, duration + 20));
-        this.#controls.style.transition = '';
-    }
-
-    /** FLIP-animate the controls bar from above back to below the container. */
-    async #animateControlsToBottom(duration) {
-        const firstRect = this.#controls.getBoundingClientRect();
-        this.#strip.appendChild(this.#controls);
-        void this.#controls.offsetHeight;
-        const lastRect = this.#controls.getBoundingClientRect();
-
-        const dx = firstRect.left - lastRect.left;
-        const dy = firstRect.top - lastRect.top;
-        const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
-
-        this.#controls.style.transform = `translate(${dx}px, ${dy}px)`;
-        this.#controls.style.transition = 'none';
-        void this.#controls.offsetHeight;
-
-        this.#controls.style.transition = `transform ${duration}ms ${easing}`;
-        this.#controls.style.transform = '';
-
-        await new Promise(r => setTimeout(r, duration + 20));
-        this.#controls.style.transition = '';
     }
 
     // ═══════════════════════════════════════════════════════
@@ -1803,7 +1825,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             const t = this.#items.length;
             const nearest = ((Math.round(this.#dragFractionalCenter) % t) + t) % t;
             this.#centerIdx = nearest;
-            track.style.setProperty('--carousel-speed', '0.85s');
+            this.#container.style.setProperty('--carousel-speed', '0.85s');
             track.classList.remove('cdb-dragging');
             this.#positionCards();
             this.#emitCenterChange();
@@ -1822,7 +1844,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 this.#dragFractionalCenter += (-vel * dt) / pxPerUnit;
                 this.#dragFractionalCenter = wrapCenter(this.#dragFractionalCenter);
 
-                track.style.setProperty('--carousel-speed', '0s');
+                this.#container.style.setProperty('--carousel-speed', '0s');
                 this.#positionCards_fractional(this.#dragFractionalCenter);
 
                 // Slower decay for more graceful momentum
@@ -1891,7 +1913,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#lastDragTime = performance.now();
             this.#dragVelocity = 0;
 
-            track.style.setProperty('--carousel-speed', '0s');
+            this.#container.style.setProperty('--carousel-speed', '0s');
             track.classList.add('cdb-dragging');
             document.addEventListener('pointermove', onDragMove);
             document.addEventListener('pointerup', onDragEnd);
@@ -1934,7 +1956,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 this.#centerIdx = Math.max(0, Math.min(total - 1, this.#centerIdx + n));
             }
             this.#track.classList.add('cdb-dragging');
-            this.#track.style.setProperty('--carousel-speed', '0.85s');
+            this.#container.style.setProperty('--carousel-speed', '0.85s');
             this.#positionCards();
             this.#emitCenterChange();
             setTimeout(() => this.#track.classList.remove('cdb-dragging'), 900);

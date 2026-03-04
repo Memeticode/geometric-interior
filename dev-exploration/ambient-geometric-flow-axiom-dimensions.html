@@ -10,7 +10,6 @@
       --page1:#070A14;
       --fg:#E9EEFF;
       --muted:#AAB3D6;
-
       --panel:rgba(12, 18, 40, 0.62);
       --panel2:rgba(12, 18, 40, 0.35);
       --border:rgba(170, 190, 255, 0.18);
@@ -83,11 +82,7 @@
     }
     .status b{ color: rgba(233,238,255,0.92); font-weight: 600; }
 
-    .hudWrap{
-      display: grid;
-      place-items: center;
-      padding-bottom: 10px;
-    }
+    .hudWrap{ display: grid; place-items: center; padding-bottom: 10px; }
 
     .hud {
       width: min(1200px, calc(100vw - 40px));
@@ -108,20 +103,8 @@
       gap: 12px;
       margin-bottom: 10px;
     }
-
-    .title {
-      font-size: 14px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgba(233,238,255,0.92);
-    }
-
-    .subtitle {
-      font-size: 12px;
-      color: var(--muted);
-      opacity: 0.95;
-      white-space: nowrap;
-    }
+    .title { font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: rgba(233,238,255,0.92); }
+    .subtitle { font-size: 12px; color: var(--muted); opacity: 0.95; white-space: nowrap; }
 
     .cols{
       display:grid;
@@ -136,7 +119,6 @@
       padding: 12px;
       background: rgba(12,18,40,0.25);
     }
-
     .blockTitle{
       font-size: 12px;
       letter-spacing: 0.08em;
@@ -151,19 +133,8 @@
       gap: 10px 12px;
       align-items: center;
     }
-
-    .label {
-      font-size: 12px;
-      color: rgba(233,238,255,0.88);
-      letter-spacing: 0.02em;
-    }
-
-    .value {
-      font-size: 12px;
-      color: rgba(233,238,255,0.8);
-      text-align: right;
-      font-variant-numeric: tabular-nums;
-    }
+    .label { font-size: 12px; color: rgba(233,238,255,0.88); letter-spacing: 0.02em; }
+    .value { font-size: 12px; color: rgba(233,238,255,0.8); text-align: right; font-variant-numeric: tabular-nums; }
 
     input[type="range"]{
       grid-column: 1 / -1;
@@ -171,12 +142,7 @@
       accent-color: rgba(200,220,255,0.9);
     }
 
-    .row {
-      display:flex;
-      gap: 10px;
-      margin-top: 10px;
-      flex-wrap: wrap;
-    }
+    .row { display:flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
 
     button {
       appearance: none;
@@ -190,18 +156,10 @@
       transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
       white-space: nowrap;
     }
-    button:hover{
-      border-color: rgba(190,210,255,0.35);
-      transform: translateY(-1px);
-    }
+    button:hover{ border-color: rgba(190,210,255,0.35); transform: translateY(-1px); }
     button:active{ transform: translateY(0px); }
 
-    .hint {
-      margin-top: 10px;
-      font-size: 11px;
-      color: rgba(233,238,255,0.66);
-      line-height: 1.35;
-    }
+    .hint { margin-top: 10px; font-size: 11px; color: rgba(233,238,255,0.66); line-height: 1.35; }
 
     .colors {
       display: grid;
@@ -237,24 +195,14 @@
       outline: none;
     }
 
-    .presetBar{
-      display:flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-    }
-    .presetBtn{
-      padding: 7px 9px;
-      border-radius: 999px;
-      font-size: 12px;
-    }
+    .presetBar{ display:flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .presetBtn{ padding: 7px 9px; border-radius: 999px; font-size: 12px; }
     .presetBtn[data-active="true"]{
       border-color: rgba(220,235,255,0.45);
       background: rgba(170,200,255,0.12);
     }
 
     .hidden{ display:none !important; }
-
     @media (max-width: 980px){
       .cols{ grid-template-columns: 1fr; }
       .subtitle{ display:none; }
@@ -268,7 +216,7 @@
     <div class="stage">
       <div class="frame" id="frame">
         <canvas id="c"></canvas>
-        <div class="status" id="status"><b>Axiom Dimensions</b> — floating in many fields</div>
+        <div class="status" id="status"><b>Axiom Dimensions</b> — streaks of intensity in a field</div>
       </div>
     </div>
 
@@ -301,15 +249,19 @@
 
               <div class="label">Haze (medium)</div>
               <div class="value" id="vHaze">—</div>
-              <input id="haze" type="range" min="0.0" max="1.0" step="0.01" value="0.75" />
+              <input id="haze" type="range" min="0.0" max="1.0" step="0.01" value="0.70" />
 
               <div class="label">Lines strength</div>
               <div class="value" id="vLines">—</div>
-              <input id="lines" type="range" min="0.0" max="1.0" step="0.01" value="0.55" />
+              <input id="lines" type="range" min="0.0" max="1.0" step="0.01" value="0.70" />
+
+              <div class="label">Hero lines</div>
+              <div class="value" id="vHero">—</div>
+              <input id="hero" type="range" min="0.0" max="1.0" step="0.01" value="0.75" />
 
               <div class="label">Dots</div>
               <div class="value" id="vDots">—</div>
-              <input id="dotsAmt" type="range" min="0.0" max="1.0" step="0.01" value="0.25" />
+              <input id="dotsAmt" type="range" min="0.0" max="1.0" step="0.01" value="0.18" />
 
               <div class="label">Density <span style="opacity:.75">(seeds)</span></div>
               <div class="value" id="vDensity">—</div>
@@ -328,7 +280,7 @@
             </div>
 
             <div class="hint">
-              “Haze” turns the field into medium. “Fields” layers multiple vector fields with slight parallax so you feel immersed rather than observing.
+              Hero lines add sparse, brighter ribbons so color reads as streaks of intensity without losing the medium.
             </div>
           </div>
 
@@ -371,7 +323,7 @@
             </div>
 
             <div class="hint">
-              Presets now intentionally demonstrate palette variety + different “field immersion” moods.
+              Presets demonstrate palette variety + hero ribbons. Copy Link preserves the whole configuration.
             </div>
           </div>
 
@@ -385,175 +337,103 @@
 (() => {
   "use strict";
 
-  // ---------- Utilities ----------
+  // ---------- Small utils ----------
   const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
   const lerp = (a, b, t) => a + (b - a) * t;
-  const smoothstep = (a, b, x) => {
-    const t = clamp((x - a) / (b - a), 0, 1);
-    return t * t * (3 - 2 * t);
+  const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  const hexToRgba = (hex, a) => {
+    const h = hex.replace("#", "").trim();
+    const r = parseInt(h.slice(0,2), 16), g = parseInt(h.slice(2,4), 16), b = parseInt(h.slice(4,6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${a})`;
   };
 
-  function hexToRgba(hex, a) {
-    const h = hex.replace("#", "").trim();
-    const r = parseInt(h.slice(0,2), 16);
-    const g = parseInt(h.slice(2,4), 16);
-    const b = parseInt(h.slice(4,6), 16);
-    return `rgba(${r}, ${g}, ${b}, ${a})`;
-  }
+  // PRNG + value noise
+  const mulberry32 = (seed) => { let t = seed >>> 0; return () => {
+    t += 0x6D2B79F5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };};
 
-  function mulberry32(seed) {
-    let t = seed >>> 0;
-    return function() {
-      t += 0x6D2B79F5;
-      let r = Math.imul(t ^ (t >>> 15), 1 | t);
-      r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-      return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-
-  function makeValueNoise(seed) {
+  const makeValueNoise = (seed) => {
     const rnd = mulberry32(seed);
     const GRID = 256;
     const table = new Float32Array(GRID * GRID);
     for (let i = 0; i < table.length; i++) table[i] = rnd() * 2 - 1;
     const idx = (x, y) => ((x & 255) + ((y & 255) << 8));
-
-    function sample(x, y) {
+    const sample = (x, y) => {
       const x0 = Math.floor(x), y0 = Math.floor(y);
       const xf = x - x0, yf = y - y0;
-
-      const v00 = table[idx(x0, y0)];
-      const v10 = table[idx(x0 + 1, y0)];
-      const v01 = table[idx(x0, y0 + 1)];
-      const v11 = table[idx(x0 + 1, y0 + 1)];
-
-      const u = xf * xf * (3 - 2 * xf);
-      const v = yf * yf * (3 - 2 * yf);
-
-      const x1 = lerp(v00, v10, u);
-      const x2 = lerp(v01, v11, u);
+      const v00 = table[idx(x0, y0)], v10 = table[idx(x0 + 1, y0)];
+      const v01 = table[idx(x0, y0 + 1)], v11 = table[idx(x0 + 1, y0 + 1)];
+      const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+      const x1 = lerp(v00, v10, u), x2 = lerp(v01, v11, u);
       return lerp(x1, x2, v);
-    }
-
-    function fbm(x, y, oct = 4) {
-      let sum = 0;
-      let amp = 0.55;
-      let freq = 1.0;
-      for (let i = 0; i < oct; i++) {
-        sum += amp * sample(x * freq, y * freq);
-        freq *= 2.0;
-        amp *= 0.5;
-      }
+    };
+    const fbm = (x, y, oct = 4) => {
+      let sum = 0, amp = 0.55, freq = 1.0;
+      for (let i = 0; i < oct; i++) { sum += amp * sample(x * freq, y * freq); freq *= 2.0; amp *= 0.5; }
       return sum;
-    }
+    };
+    return { fbm };
+  };
 
-    return { sample, fbm };
-  }
-
-  // ---------- Elements ----------
+  // ---------- DOM ----------
   const frame = document.getElementById("frame");
   const canvas = document.getElementById("c");
   const ctx = canvas.getContext("2d", { alpha: false });
-
   const hud = document.getElementById("hud");
   const status = document.getElementById("status");
 
-  const ui = {
-    order: document.getElementById("order"),
-    twist: document.getElementById("twist"),
-    lift: document.getElementById("lift"),
-    layers: document.getElementById("layers"),
-    haze: document.getElementById("haze"),
-    lines: document.getElementById("lines"),
-    dotsAmt: document.getElementById("dotsAmt"),
-    density: document.getElementById("density"),
-    drift: document.getElementById("drift"),
-
-    vOrder: document.getElementById("vOrder"),
-    vTwist: document.getElementById("vTwist"),
-    vLift: document.getElementById("vLift"),
-    vLayers: document.getElementById("vLayers"),
-    vHaze: document.getElementById("vHaze"),
-    vLines: document.getElementById("vLines"),
-    vDots: document.getElementById("vDots"),
-    vDensity: document.getElementById("vDensity"),
-    vDrift: document.getElementById("vDrift"),
-
-    bgA: document.getElementById("bgA"),
-    bgB: document.getElementById("bgB"),
-    line1: document.getElementById("line1"),
-    line2: document.getElementById("line2"),
-    line3: document.getElementById("line3"),
-    dotsColor: document.getElementById("dotsColor"),
-
-    aspect: document.getElementById("aspect"),
-    exportScale: document.getElementById("exportScale"),
-
-    reseed: document.getElementById("reseed"),
-    freeze: document.getElementById("freeze"),
-    toggleUi: document.getElementById("toggleUi"),
-    copyLink: document.getElementById("copyLink"),
-    save: document.getElementById("save"),
-
-    presetBar: document.getElementById("presetBar"),
-  };
+  const ui = Object.fromEntries([
+    "order","twist","lift","layers","haze","lines","hero","dotsAmt","density","drift",
+    "bgA","bgB","line1","line2","line3","dotsColor","aspect","exportScale",
+    "reseed","freeze","toggleUi","copyLink","save","presetBar",
+    "vOrder","vTwist","vLift","vLayers","vHaze","vLines","vHero","vDots","vDensity","vDrift",
+  ].map(id => [id, document.getElementById(id)]));
 
   // ---------- State ----------
   let seed = (Math.random() * 1e9) | 0;
-
-  // Multiple noise sources for multiple fields
-  let noise = [
+  let noise = [];
+  const rebuildNoise = () => noise = [
     makeValueNoise(seed ^ 0xA5A5A5A5),
     makeValueNoise(seed ^ 0x5A5A5A5A),
     makeValueNoise(seed ^ 0xC3C3C3C3),
     makeValueNoise(seed ^ 0x3C3C3C3C),
   ];
+  rebuildNoise();
 
-  let frozen = false;
-  let dirty = true;
-
-  // Frame size
+  let frozen = false, dirty = true;
   let W = 1, H = 1, DPR = 1;
 
-  function setAspect(value) {
+  const setAspect = (value) => {
     const [a,b] = value.split(":").map(Number);
     frame.style.aspectRatio = `${a} / ${b}`;
-  }
+  };
 
-  function resize() {
-    const rect = frame.getBoundingClientRect();
+  const resize = () => {
+    const r = frame.getBoundingClientRect();
     DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    W = Math.max(1, Math.floor(rect.width));
-    H = Math.max(1, Math.floor(rect.height));
+    W = Math.max(1, Math.floor(r.width));
+    H = Math.max(1, Math.floor(r.height));
     canvas.width = Math.floor(W * DPR);
     canvas.height = Math.floor(H * DPR);
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     dirty = true;
-  }
-
+  };
   window.addEventListener("resize", resize);
-  const ro = new ResizeObserver(() => resize());
-  ro.observe(frame);
+  new ResizeObserver(resize).observe(frame);
 
-  function markDirty(){ dirty = true; }
+  const markDirty = () => { dirty = true; };
 
-  function readParams() {
+  const readParams = () => {
     const p = {
-      k: parseFloat(ui.order.value),
-      tau: parseFloat(ui.twist.value),
-      pi: parseFloat(ui.lift.value),
+      k: +ui.order.value, tau: +ui.twist.value, pi: +ui.lift.value,
       layers: parseInt(ui.layers.value, 10),
-      haze: parseFloat(ui.haze.value),
-      lines: parseFloat(ui.lines.value),
-      dotsAmt: parseFloat(ui.dotsAmt.value),
-      density: parseFloat(ui.density.value),
-      drift: parseFloat(ui.drift.value),
-
-      bgA: ui.bgA.value,
-      bgB: ui.bgB.value,
-      line1: ui.line1.value,
-      line2: ui.line2.value,
-      line3: ui.line3.value,
+      haze: +ui.haze.value, lines: +ui.lines.value, hero: +ui.hero.value,
+      dotsAmt: +ui.dotsAmt.value, density: +ui.density.value, drift: +ui.drift.value,
+      bgA: ui.bgA.value, bgB: ui.bgB.value,
+      l1: ui.line1.value, l2: ui.line2.value, l3: ui.line3.value,
       dotsColor: ui.dotsColor.value,
     };
 
@@ -563,215 +443,137 @@
     ui.vLayers.textContent = String(p.layers);
     ui.vHaze.textContent = p.haze.toFixed(2);
     ui.vLines.textContent = p.lines.toFixed(2);
+    ui.vHero.textContent = p.hero.toFixed(2);
     ui.vDots.textContent = p.dotsAmt.toFixed(2);
     ui.vDensity.textContent = p.density.toFixed(2);
     ui.vDrift.textContent = p.drift.toFixed(2);
 
     return p;
-  }
+  };
 
   // ---------- URL serialization ----------
-  function paramsToQuery(p) {
+  const paramsToQuery = (p) => {
     const q = new URLSearchParams();
     q.set("seed", String(seed));
-    q.set("k", p.k.toFixed(3));
-    q.set("tau", p.tau.toFixed(3));
-    q.set("pi", p.pi.toFixed(3));
-    q.set("layers", String(p.layers));
-    q.set("haze", p.haze.toFixed(3));
-    q.set("lines", p.lines.toFixed(3));
-    q.set("dotsAmt", p.dotsAmt.toFixed(3));
-    q.set("density", p.density.toFixed(3));
-    q.set("drift", p.drift.toFixed(3));
-
-    q.set("bgA", p.bgA.replace("#",""));
-    q.set("bgB", p.bgB.replace("#",""));
-    q.set("l1", p.line1.replace("#",""));
-    q.set("l2", p.line2.replace("#",""));
-    q.set("l3", p.line3.replace("#",""));
+    for (const [k,v] of Object.entries({
+      k:p.k, tau:p.tau, pi:p.pi, layers:p.layers, haze:p.haze, lines:p.lines, hero:p.hero,
+      dotsAmt:p.dotsAmt, density:p.density, drift:p.drift,
+    })) q.set(k, typeof v === "number" ? v.toFixed(3) : String(v));
+    q.set("bgA", p.bgA.replace("#","")); q.set("bgB", p.bgB.replace("#",""));
+    q.set("l1", p.l1.replace("#","")); q.set("l2", p.l2.replace("#","")); q.set("l3", p.l3.replace("#",""));
     q.set("dotsColor", p.dotsColor.replace("#",""));
-
     q.set("aspect", ui.aspect.value);
     q.set("preset", String(activePresetIndex));
     return q;
-  }
+  };
 
-  function applyQuery() {
+  const applyQuery = () => {
     const q = new URLSearchParams(location.search);
 
     const s = q.get("seed");
-    if (s) {
-      const n = parseInt(s, 10);
-      if (!Number.isNaN(n)) {
-        seed = n | 0;
-        noise = [
-          makeValueNoise(seed ^ 0xA5A5A5A5),
-          makeValueNoise(seed ^ 0x5A5A5A5A),
-          makeValueNoise(seed ^ 0xC3C3C3C3),
-          makeValueNoise(seed ^ 0x3C3C3C3C),
-        ];
-      }
-    }
+    if (s) { const n = parseInt(s, 10); if (!Number.isNaN(n)) { seed = n | 0; rebuildNoise(); } }
 
-    const setNum = (key, el) => {
-      const v = q.get(key);
-      if (v != null) {
-        const n = parseFloat(v);
-        if (!Number.isNaN(n)) el.value = String(n);
-      }
-    };
+    const setNum = (key, el) => { const v = q.get(key); if (v != null) { const n = parseFloat(v); if (!Number.isNaN(n)) el.value = String(n); } };
+    ["k","tau","pi","layers","haze","lines","hero","dotsAmt","density","drift"].forEach(key => {
+      const map = {k:"order",tau:"twist",pi:"lift"}; setNum(key, ui[map[key] || key]);
+    });
 
-    setNum("k", ui.order);
-    setNum("tau", ui.twist);
-    setNum("pi", ui.lift);
-    setNum("layers", ui.layers);
-    setNum("haze", ui.haze);
-    setNum("lines", ui.lines);
-    setNum("dotsAmt", ui.dotsAmt);
-    setNum("density", ui.density);
-    setNum("drift", ui.drift);
-
-    const setHex = (key, el) => {
-      const v = q.get(key);
-      if (v && /^[0-9a-fA-F]{6}$/.test(v)) el.value = `#${v}`;
-    };
-    setHex("bgA", ui.bgA);
-    setHex("bgB", ui.bgB);
-    setHex("l1", ui.line1);
-    setHex("l2", ui.line2);
-    setHex("l3", ui.line3);
+    const setHex = (key, el) => { const v = q.get(key); if (v && /^[0-9a-fA-F]{6}$/.test(v)) el.value = `#${v}`; };
+    setHex("bgA", ui.bgA); setHex("bgB", ui.bgB);
+    setHex("l1", ui.line1); setHex("l2", ui.line2); setHex("l3", ui.line3);
     setHex("dotsColor", ui.dotsColor);
 
     const aspect = q.get("aspect");
-    if (aspect) {
-      ui.aspect.value = aspect;
-      setAspect(aspect);
-    }
+    if (aspect) { ui.aspect.value = aspect; setAspect(aspect); }
 
     const presetIdx = q.get("preset");
-    if (presetIdx != null) {
-      const n = parseInt(presetIdx, 10);
-      if (!Number.isNaN(n)) activePresetIndex = clamp(n, 0, PRESETS.length - 1);
-    }
-  }
+    if (presetIdx != null) { const n = parseInt(presetIdx, 10); if (!Number.isNaN(n)) activePresetIndex = clamp(n, 0, PRESETS.length - 1); }
+  };
 
   // ---------- Multi-field vector field ----------
-  // Each "layer" is a sibling field with slightly different noise + frequency + phase.
-  function fieldAtLayer(nx, ny, t, p, layerId) {
+  const fieldAtLayer = (nx, ny, t, p, layerId) => {
     const nA = noise[layerId % noise.length];
     const nB = noise[(layerId + 1) % noise.length];
-
-    // Layer-space parallax and phase: implies depth / multi-field superposition
     const phase = 0.15 * layerId;
-    const par = 0.10 * (p.pi) * (layerId - (p.layers - 1) * 0.5);
+    const par = 0.10 * p.pi * (layerId - (p.layers - 1) * 0.5);
+
     const qx = nx + par + 0.18 * nA.fbm(nx * 1.25 + 8.7 + phase + t*0.03, ny * 1.25 - 4.1, 3);
     const qy = ny - par + 0.18 * nA.fbm(nx * 1.25 - 6.3, ny * 1.25 + 7.9 + phase + t*0.03, 3);
 
-    // Base current per layer
-    const cx = -0.15 + 0.05 * layerId;
-    const cy =  0.10 - 0.04 * layerId;
+    const cx = -0.15 + 0.05 * layerId, cy = 0.10 - 0.04 * layerId;
     const dx = qx - cx, dy = qy - cy;
-    const r2 = dx*dx + dy*dy + 0.10;
-    const swirl = (0.12 + 0.03*layerId) / r2;
+    const swirl = (0.12 + 0.03*layerId) / (dx*dx + dy*dy + 0.10);
 
-    let bx = 0.50 + 0.18 * nB.fbm(qx * 0.65 + t * (0.08 + 0.02*layerId), qy * 0.65 - t * 0.06, 3);
-    let by = 0.02 + 0.18 * nB.fbm(qx * 0.65 - t * 0.05, qy * 0.65 + t * (0.07 + 0.02*layerId), 3);
+    let bx = 0.50 + 0.18 * nB.fbm(qx * 0.65 + t*(0.08+0.02*layerId), qy * 0.65 - t*0.06, 3);
+    let by = 0.02 + 0.18 * nB.fbm(qx * 0.65 - t*0.05, qy * 0.65 + t*(0.07+0.02*layerId), 3);
+    bx += -dy * swirl; by += dx * swirl;
 
-    bx += -dy * swirl;
-    by +=  dx * swirl;
+    const family = smoothstep(0.0, 4.0, p.k);
 
-    const k = p.k;
-    const familyStrength = smoothstep(0.0, 4.0, k);
-
-    // Coherent direction families (angle fields)
     const a1 = Math.PI * (
-      0.70 * nA.fbm(qx * (1.15 + 0.05*layerId) + 10.0 + phase + t*0.05, qy * (1.15 + 0.05*layerId) - 6.0, 4) +
-      0.30 * nA.fbm(qx * 2.05, qy * 2.05 + t*0.03, 3)
+      0.70 * nA.fbm(qx*(1.15+0.05*layerId) + 10.0 + phase + t*0.05, qy*(1.15+0.05*layerId) - 6.0, 4) +
+      0.30 * nA.fbm(qx*2.05, qy*2.05 + t*0.03, 3)
     );
-
     const a2 = Math.PI * (
-      0.65 * nB.fbm(qx * 1.02 - 3.0, qy * 1.02 + 14.0 + phase + t*0.04, 4) +
-      0.35 * nB.fbm(qx * 2.20 + t*0.02, qy * 2.20, 3)
+      0.65 * nB.fbm(qx*1.02 - 3.0, qy*1.02 + 14.0 + phase + t*0.04, 4) +
+      0.35 * nB.fbm(qx*2.20 + t*0.02, qy*2.20, 3)
     );
+    const a3 = 0.5*(a1+a2) + 0.35*Math.sin(qx*1.4 - qy*1.0 + phase + t*0.04);
 
-    const a3 = 0.5*(a1 + a2) + 0.35*Math.sin(qx*1.4 - qy*1.0 + phase + t*0.04);
+    let fx = 0.55*Math.cos(a1) + smoothstep(0.9, 2.2, p.k)*0.35*Math.cos(a2) + smoothstep(2.0, 3.8, p.k)*0.25*Math.cos(a3);
+    let fy = 0.55*Math.sin(a1) + smoothstep(0.9, 2.2, p.k)*0.35*Math.sin(a2) + smoothstep(2.0, 3.8, p.k)*0.25*Math.sin(a3);
 
-    let f1x = Math.cos(a1), f1y = Math.sin(a1);
-    let f2x = Math.cos(a2), f2y = Math.sin(a2);
-    let f3x = Math.cos(a3), f3y = Math.sin(a3);
+    if (fx*bx + fy*by < 0) { fx = -fx; fy = -fy; }
 
-    // Twist/holonomy: curl-ish perturbation
-    const tau = p.tau;
+    let vx = (1-family)*bx + family*fx;
+    let vy = (1-family)*by + family*fy;
+
+    // curl-ish perturbation
     const pot = nA.fbm(qx*1.7 + 5.0 + phase + t*0.03, qy*1.7 - 2.0, 4);
     const eps = 0.004;
     const potx = nA.fbm((qx+eps)*1.7 + 5.0 + phase + t*0.03, qy*1.7 - 2.0, 4);
     const poty = nA.fbm(qx*1.7 + 5.0 + phase + t*0.03, (qy+eps)*1.7 - 2.0, 4);
-    const gx = (potx - pot)/eps;
-    const gy = (poty - pot)/eps;
-    const curlx = -gy;
-    const curly =  gx;
+    const curlx = -((poty - pot)/eps);
+    const curly =  ((potx - pot)/eps);
+    vx += 0.20 * p.tau * curlx;
+    vy += 0.20 * p.tau * curly;
 
-    // Layer weights increase with k
-    const wF1 = 0.55;
-    const wF2 = smoothstep(0.9, 2.2, k) * 0.35;
-    const wF3 = smoothstep(2.0, 3.8, k) * 0.25;
+    const m = Math.hypot(vx, vy) + 1e-6;
+    return { vx: vx / m, vy: vy / m };
+  };
 
-    let fx = wF1*f1x + wF2*f2x + wF3*f3x;
-    let fy = wF1*f1y + wF2*f2y + wF3*f3y;
-
-    // Align sign to base drift for stability
-    if (fx*bx + fy*by < 0) { fx = -fx; fy = -fy; }
-
-    let vx = (1 - familyStrength)*bx + familyStrength*fx;
-    let vy = (1 - familyStrength)*by + familyStrength*fy;
-
-    vx += 0.20 * tau * curlx;
-    vy += 0.20 * tau * curly;
-
-    // Normalize
-    const mag = Math.hypot(vx, vy) + 1e-6;
-    return { vx: vx / mag, vy: vy / mag, mag };
-  }
-
-  function rk2StepLayer(x, y, h, t, p, layerId) {
+  const rk2StepLayer = (x, y, h, t, p, layerId) => {
     const a = fieldAtLayer(x, y, t, p, layerId);
-    const mx = x + 0.5 * h * a.vx;
-    const my = y + 0.5 * h * a.vy;
+    const mx = x + 0.5*h*a.vx, my = y + 0.5*h*a.vy;
     const b = fieldAtLayer(mx, my, t, p, layerId);
-    return { x: x + h * b.vx, y: y + h * b.vy };
-  }
+    return { x: x + h*b.vx, y: y + h*b.vy };
+  };
 
-  // ---------- Drawing ----------
-  function clearBackground(p) {
+  // ---------- Render layers ----------
+  const clearBackground = (p) => {
     const g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0.0, p.bgA);
     g.addColorStop(1.0, p.bgB);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
-    // Soft haze core
-    const cx = W * 0.52;
-    const cy = H * 0.42;
-    const r = Math.max(W, H) * 0.70;
+    const cx = W*0.52, cy = H*0.42, r = Math.max(W,H)*0.70;
     const rg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
     rg.addColorStop(0.0, "rgba(220,230,255,0.06)");
     rg.addColorStop(0.35, "rgba(140,180,255,0.04)");
     rg.addColorStop(1.0, "rgba(0,0,0,0)");
     ctx.fillStyle = rg;
     ctx.fillRect(0, 0, W, H);
-  }
+  };
 
-  function drawDots(p, rnd) {
+  const drawDots = (p, rnd) => {
     if (p.dotsAmt <= 0.001) return;
-
     const base = (W * H) / 60000;
     const count = Math.floor(base * (0.25 + 2.0 * p.dotsAmt));
-
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     for (let i = 0; i < count; i++) {
-      const x = rnd() * W;
-      const y = rnd() * H;
+      const x = rnd() * W, y = rnd() * H;
       const a = (0.03 + 0.12 * rnd()) * p.dotsAmt;
       const r = 0.5 + 1.2 * rnd();
       ctx.fillStyle = hexToRgba(p.dotsColor, a);
@@ -780,105 +582,97 @@
       ctx.fill();
     }
     ctx.restore();
-  }
+  };
 
-  // The “push it all the way up” part:
-  // Field haze is directional micro-strokes aligned to the vector field.
-  // This replaces the explicit tensor ticks with a continuous medium.
-  function drawFieldHaze(t, p) {
+  // medium: directional micro-strokes aligned to local flow
+  const drawFieldHaze = (t, p) => {
     if (p.haze <= 0.001) return;
 
     const aspect = W / H;
     const rnd = mulberry32(seed ^ 0xBADC0DE);
-
-    // More haze strokes = more medium. Keep it bounded for performance.
     const strokes = Math.floor((W * H) / 1200 * (0.25 + 1.15 * p.haze));
-    const baseLen = 6 + 14 * p.haze; // medium reads when strokes are long enough to imply flow
+    const baseLen = 6 + 14 * p.haze;
 
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     ctx.lineWidth = 1;
 
     for (let layerId = 0; layerId < p.layers; layerId++) {
-      // Layer tint: tiny variation so multiple fields are felt, not “seen”
       const layerMix = p.layers <= 1 ? 0 : layerId / (p.layers - 1);
-      // Use line palette as haze palette (feels coherent)
-      const hazeColor =
-        (layerMix < 0.5)
-          ? hexToRgba(p.line1, 0.020 * p.haze)
-          : hexToRgba(p.line2, 0.020 * p.haze);
-
-      ctx.strokeStyle = hazeColor;
+      ctx.strokeStyle = (layerMix < 0.5)
+        ? hexToRgba(p.l1, 0.020 * p.haze)
+        : hexToRgba(p.l2, 0.020 * p.haze);
 
       const layerStrokes = Math.floor(strokes * (0.55 + 0.35 * layerMix));
       for (let i = 0; i < layerStrokes; i++) {
-        const x = rnd() * W;
-        const y = rnd() * H;
-
+        const x = rnd() * W, y = rnd() * H;
         const nx = ((x / W) * 2 - 1) * aspect;
         const ny = ((y / H) * 2 - 1);
-
         const v = fieldAtLayer(nx, ny, t, p, layerId);
 
-        // Small, depth-like modulation so it doesn't become uniform fog
         const mod = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((nx*1.2 - ny*0.9) + layerId*0.6));
         const len = baseLen * mod * (0.7 + 0.3 * rnd());
 
-        const dx = v.vx * len * 0.5;
-        const dy = v.vy * len * 0.5;
-
+        const dx = v.vx * len * 0.5, dy = v.vy * len * 0.5;
         ctx.beginPath();
         ctx.moveTo(x - dx, y - dy);
         ctx.lineTo(x + dx, y + dy);
         ctx.stroke();
       }
     }
-
     ctx.restore();
-  }
+  };
 
-  function drawStreamlines(t, p) {
-    if (p.lines <= 0.001) return;
+  // helper to pick one of 3 line colors in a stable, low-bias way
+  const pickLineColor = (r, p) => (r < 0.42) ? p.l1 : (r < 0.78) ? p.l2 : p.l3;
 
-    const rnd = mulberry32(seed ^ 0xC0FFEE);
+  const drawStreamlines = (t, p, mode) => {
+    // mode: "base" or "hero"
     const aspect = W / H;
+    const rnd = mulberry32(seed ^ (mode === "hero" ? 0xDEADBEEF : 0xC0FFEE));
 
+    // Base lines are denser but dimmer; hero lines are few, thick, bright.
     const baseCount = (W * H) / 19000;
     const count = Math.floor(baseCount * p.density * (0.30 + 1.30 * p.lines));
+    const layerWeight = 1 / p.layers;
 
-    const h = 0.010;
-    const maxSteps = 170;
+    const h = mode === "hero" ? 0.012 : 0.010;
+    const maxSteps = mode === "hero" ? 260 : 170;
+
+    const hazePenalty = mode === "hero" ? 0.0 : (0.35 * p.haze);
+    const perLayer = mode === "hero"
+      ? Math.max(2, Math.floor(8 + 22 * p.hero))
+      : Math.floor(count * layerWeight * (0.90 - 0.20 * p.haze));
 
     ctx.save();
     ctx.globalCompositeOperation = "screen";
-    ctx.lineWidth = 1.2;
+    ctx.lineWidth = mode === "hero" ? 2.4 : 1.2;
 
     for (let layerId = 0; layerId < p.layers; layerId++) {
-      // Each layer contributes fewer “hero” lines when haze is strong
-      const layerWeight = 1.0 / p.layers;
-      const layerCount = Math.floor(count * layerWeight * (0.90 - 0.20 * p.haze));
-
-      for (let i = 0; i < layerCount; i++) {
+      for (let i = 0; i < perLayer; i++) {
+        // hero: bias seeds toward mid-band to read like “current”
         const sx = rnd();
-        const sy = clamp(0.5 + (rnd() - 0.5) * 0.85, 0.02, 0.98);
+        const sy = mode === "hero"
+          ? clamp(0.5 + (rnd() - 0.5) * 0.55, 0.06, 0.94)
+          : clamp(0.5 + (rnd() - 0.5) * 0.85, 0.02, 0.98);
 
         let px = ((sx * 2 - 1) * aspect);
         let py = (sy * 2 - 1);
 
         const dir = rnd() < 0.5 ? 1 : -1;
 
-        const pick = rnd();
-        const visibilityBoost = 0.6 + 1.6 * (p.haze);  
-        const baseA = (0.010 + 0.030 * smoothstep(0.0, 3.0, p.k)) * p.lines * visibilityBoost;
-        const aBoost = (0.006 * p.pi + 0.006 * p.tau) * p.lines;
+        // Alpha strategy:
+        // - Base lines: modest alpha, but boosted as haze rises (so they stay visible).
+        // - Hero lines: substantially higher alpha + slight per-line variance.
+        const kGain = 0.010 + 0.030 * smoothstep(0.0, 3.0, p.k);
+        const boostWithHaze = 0.70 + 1.80 * p.haze;
+        const baseA = kGain * p.lines * boostWithHaze;
 
-        const c = (pick < 0.42)
-          ? hexToRgba(p.line1, baseA + aBoost)
-          : (pick < 0.78)
-            ? hexToRgba(p.line2, baseA + aBoost)
-            : hexToRgba(p.line3, baseA + aBoost);
+        const heroA = (0.045 + 0.085 * p.hero) * (0.85 + 0.30 * rnd()); // visible streaks
+        const alpha = mode === "hero" ? heroA : Math.max(0.0, baseA * (1 - hazePenalty));
 
-        ctx.strokeStyle = c;
+        const c = pickLineColor(rnd(), p);
+        ctx.strokeStyle = hexToRgba(c, alpha);
 
         ctx.beginPath();
         ctx.moveTo((px / aspect + 1) * 0.5 * W, (py + 1) * 0.5 * H);
@@ -887,22 +681,33 @@
           const step = rk2StepLayer(px, py, dir * h, t, p, layerId);
           px = step.x; py = step.y;
 
-          if (px < -aspect - 0.1 || px > aspect + 0.1 || py < -1.1 || py > 1.1) break;
+          if (px < -aspect - 0.12 || px > aspect + 0.12 || py < -1.12 || py > 1.12) break;
 
           const x = (px / aspect + 1) * 0.5 * W;
           const y = (py + 1) * 0.5 * H;
           ctx.lineTo(x, y);
 
-          if (s > 20 && rnd() < 0.006) break;
+          if (mode !== "hero" && s > 20 && rnd() < 0.006) break;
+          if (mode === "hero" && s > 40 && rnd() < 0.003) break;
         }
+
         ctx.stroke();
+
+        // hero glow pass: draw once more wider + dimmer to create a soft halo
+        if (mode === "hero" && p.hero > 0.001) {
+          ctx.save();
+          ctx.lineWidth = 5.0;
+          ctx.strokeStyle = hexToRgba(c, alpha * 0.28);
+          ctx.stroke();
+          ctx.restore();
+        }
       }
     }
 
     ctx.restore();
-  }
+  };
 
-  function postGlow() {
+  const postGlow = () => {
     ctx.save();
     ctx.globalCompositeOperation = "screen";
     const g = ctx.createRadialGradient(W*0.50, H*0.44, 0, W*0.50, H*0.44, Math.max(W,H)*0.75);
@@ -912,87 +717,69 @@
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
     ctx.restore();
-  }
+  };
 
   // ---------- Export ----------
-  function exportPng(scale, t, p) {
+  const exportPng = (scale, t, p) => {
     const off = document.createElement("canvas");
     off.width = Math.floor(W * DPR * scale);
     off.height = Math.floor(H * DPR * scale);
     const octx = off.getContext("2d", { alpha: false });
     octx.setTransform(DPR * scale, 0, 0, DPR * scale, 0, 0);
 
-    // Minimal duplication to render on offscreen
+    // Minimal render duplication (same math; draw calls rewritten for octx)
     const savedW = W, savedH = H;
+    const aspect = savedW / savedH;
 
-    const clearBg = () => {
+    const oClear = () => {
       const g = octx.createLinearGradient(0, 0, 0, savedH);
-      g.addColorStop(0.0, p.bgA);
-      g.addColorStop(1.0, p.bgB);
-      octx.fillStyle = g;
-      octx.fillRect(0, 0, savedW, savedH);
-
-      const cx = savedW * 0.52;
-      const cy = savedH * 0.42;
-      const r = Math.max(savedW, savedH) * 0.70;
+      g.addColorStop(0.0, p.bgA); g.addColorStop(1.0, p.bgB);
+      octx.fillStyle = g; octx.fillRect(0, 0, savedW, savedH);
+      const cx = savedW*0.52, cy = savedH*0.42, r = Math.max(savedW,savedH)*0.70;
       const rg = octx.createRadialGradient(cx, cy, 0, cx, cy, r);
       rg.addColorStop(0.0, "rgba(220,230,255,0.06)");
       rg.addColorStop(0.35, "rgba(140,180,255,0.04)");
       rg.addColorStop(1.0, "rgba(0,0,0,0)");
-      octx.fillStyle = rg;
-      octx.fillRect(0, 0, savedW, savedH);
+      octx.fillStyle = rg; octx.fillRect(0, 0, savedW, savedH);
     };
 
-    const dots = () => {
+    const oDots = () => {
       if (p.dotsAmt <= 0.001) return;
       const rnd = mulberry32(seed ^ 0x1234567);
       const base = (savedW * savedH) / 60000;
       const count = Math.floor(base * (0.25 + 2.0 * p.dotsAmt));
-
-      octx.save();
-      octx.globalCompositeOperation = "screen";
+      octx.save(); octx.globalCompositeOperation = "screen";
       for (let i = 0; i < count; i++) {
-        const x = rnd() * savedW;
-        const y = rnd() * savedH;
+        const x = rnd() * savedW, y = rnd() * savedH;
         const a = (0.03 + 0.12 * rnd()) * p.dotsAmt;
         const rr = 0.5 + 1.2 * rnd();
         octx.fillStyle = hexToRgba(p.dotsColor, a);
-        octx.beginPath();
-        octx.arc(x, y, rr, 0, Math.PI * 2);
-        octx.fill();
+        octx.beginPath(); octx.arc(x, y, rr, 0, Math.PI * 2); octx.fill();
       }
       octx.restore();
     };
 
-    const haze = () => {
+    const oHaze = () => {
       if (p.haze <= 0.001) return;
-      const aspect = savedW / savedH;
       const rnd = mulberry32(seed ^ 0xBADC0DE);
       const strokes = Math.floor((savedW * savedH) / 1200 * (0.25 + 1.15 * p.haze));
       const baseLen = 6 + 14 * p.haze;
 
-      octx.save();
-      octx.globalCompositeOperation = "screen";
-      octx.lineWidth = 1;
-
+      octx.save(); octx.globalCompositeOperation = "screen"; octx.lineWidth = 1;
       for (let layerId = 0; layerId < p.layers; layerId++) {
-        const layerMix = p.layers <= 1 ? 0 : layerId / (p.layers - 1);
-        const hazeColor = (layerMix < 0.5)
-          ? hexToRgba(p.line1, 0.020 * p.haze)
-          : hexToRgba(p.line2, 0.020 * p.haze);
-        octx.strokeStyle = hazeColor;
+        const mix = p.layers <= 1 ? 0 : layerId / (p.layers - 1);
+        octx.strokeStyle = (mix < 0.5) ? hexToRgba(p.l1, 0.020 * p.haze) : hexToRgba(p.l2, 0.020 * p.haze);
+        const layerStrokes = Math.floor(strokes * (0.55 + 0.35 * mix));
 
-        const layerStrokes = Math.floor(strokes * (0.55 + 0.35 * layerMix));
         for (let i = 0; i < layerStrokes; i++) {
-          const x = rnd() * savedW;
-          const y = rnd() * savedH;
+          const x = rnd() * savedW, y = rnd() * savedH;
           const nx = ((x / savedW) * 2 - 1) * aspect;
           const ny = ((y / savedH) * 2 - 1);
           const v = fieldAtLayer(nx, ny, t, p, layerId);
+
           const mod = 0.55 + 0.45 * (0.5 + 0.5 * Math.sin((nx*1.2 - ny*0.9) + layerId*0.6));
           const len = baseLen * mod * (0.7 + 0.3 * rnd());
-          const dx = v.vx * len * 0.5;
-          const dy = v.vy * len * 0.5;
+          const dx = v.vx * len * 0.5, dy = v.vy * len * 0.5;
 
           octx.beginPath();
           octx.moveTo(x - dx, y - dy);
@@ -1000,49 +787,51 @@
           octx.stroke();
         }
       }
-
       octx.restore();
     };
 
-    const lines = () => {
-      if (p.lines <= 0.001) return;
+    const oLines = (mode) => {
+      if (mode !== "hero" && p.lines <= 0.001) return;
+      if (mode === "hero" && p.hero <= 0.001) return;
 
-      const rnd = mulberry32(seed ^ 0xC0FFEE);
-      const aspect = savedW / savedH;
+      const rnd = mulberry32(seed ^ (mode === "hero" ? 0xDEADBEEF : 0xC0FFEE));
       const baseCount = (savedW * savedH) / 19000;
       const count = Math.floor(baseCount * p.density * (0.30 + 1.30 * p.lines));
-      const h = 0.010;
-      const maxSteps = 170;
+      const layerWeight = 1 / p.layers;
+
+      const h = mode === "hero" ? 0.012 : 0.010;
+      const maxSteps = mode === "hero" ? 260 : 170;
+
+      const hazePenalty = mode === "hero" ? 0.0 : (0.35 * p.haze);
+      const perLayer = mode === "hero"
+        ? Math.max(2, Math.floor(8 + 22 * p.hero))
+        : Math.floor(count * layerWeight * (0.90 - 0.20 * p.haze));
 
       octx.save();
       octx.globalCompositeOperation = "screen";
-      octx.lineWidth = 1.2;
+      octx.lineWidth = mode === "hero" ? 2.4 : 1.2;
 
       for (let layerId = 0; layerId < p.layers; layerId++) {
-        const layerWeight = 1.0 / p.layers;
-        const layerCount = Math.floor(count * layerWeight * (0.90 - 0.20 * p.haze));
-
-        for (let i = 0; i < layerCount; i++) {
+        for (let i = 0; i < perLayer; i++) {
           const sx = rnd();
-          const sy = clamp(0.5 + (rnd() - 0.5) * 0.85, 0.02, 0.98);
+          const sy = mode === "hero"
+            ? clamp(0.5 + (rnd() - 0.5) * 0.55, 0.06, 0.94)
+            : clamp(0.5 + (rnd() - 0.5) * 0.85, 0.02, 0.98);
 
           let px = ((sx * 2 - 1) * aspect);
           let py = (sy * 2 - 1);
 
           const dir = rnd() < 0.5 ? 1 : -1;
 
-          const pick = rnd();
-          const visibilityBoost = 0.6 + 1.6 * (p.haze);  
-          const baseA = (0.010 + 0.030 * smoothstep(0.0, 3.0, p.k)) * p.lines * visibilityBoost;
-          const aBoost = (0.006 * p.pi + 0.006 * p.tau) * p.lines;
+          const kGain = 0.010 + 0.030 * smoothstep(0.0, 3.0, p.k);
+          const boostWithHaze = 0.70 + 1.80 * p.haze;
+          const baseA = kGain * p.lines * boostWithHaze;
 
-          const c = (pick < 0.42)
-            ? hexToRgba(p.line1, baseA + aBoost)
-            : (pick < 0.78)
-              ? hexToRgba(p.line2, baseA + aBoost)
-              : hexToRgba(p.line3, baseA + aBoost);
+          const heroA = (0.045 + 0.085 * p.hero) * (0.85 + 0.30 * rnd());
+          const alpha = mode === "hero" ? heroA : Math.max(0.0, baseA * (1 - hazePenalty));
 
-          octx.strokeStyle = c;
+          const c = pickLineColor(rnd(), p);
+          octx.strokeStyle = hexToRgba(c, alpha);
 
           octx.beginPath();
           octx.moveTo((px / aspect + 1) * 0.5 * savedW, (py + 1) * 0.5 * savedH);
@@ -1051,208 +840,158 @@
             const step = rk2StepLayer(px, py, dir * h, t, p, layerId);
             px = step.x; py = step.y;
 
-            if (px < -aspect - 0.1 || px > aspect + 0.1 || py < -1.1 || py > 1.1) break;
+            if (px < -aspect - 0.12 || px > aspect + 0.12 || py < -1.12 || py > 1.12) break;
 
             const x = (px / aspect + 1) * 0.5 * savedW;
             const y = (py + 1) * 0.5 * savedH;
             octx.lineTo(x, y);
 
-            if (s > 20 && rnd() < 0.006) break;
+            if (mode !== "hero" && s > 20 && rnd() < 0.006) break;
+            if (mode === "hero" && s > 40 && rnd() < 0.003) break;
           }
+
           octx.stroke();
+
+          if (mode === "hero" && p.hero > 0.001) {
+            octx.save();
+            octx.lineWidth = 5.0;
+            octx.strokeStyle = hexToRgba(c, alpha * 0.28);
+            octx.stroke();
+            octx.restore();
+          }
         }
       }
-
       octx.restore();
     };
 
-    const glow = () => {
+    const oGlow = () => {
       octx.save();
       octx.globalCompositeOperation = "screen";
       const g = octx.createRadialGradient(savedW*0.50, savedH*0.44, 0, savedW*0.50, savedH*0.44, Math.max(savedW,savedH)*0.75);
       g.addColorStop(0.0, "rgba(210, 220, 255, 0.04)");
       g.addColorStop(0.35, "rgba(170, 200, 255, 0.028)");
       g.addColorStop(1.0, "rgba(0,0,0,0)");
-      octx.fillStyle = g;
-      octx.fillRect(0, 0, savedW, savedH);
+      octx.fillStyle = g; octx.fillRect(0, 0, savedW, savedH);
       octx.restore();
     };
 
-    clearBg(); dots(); haze(); lines(); glow();
+    oClear(); oDots(); oHaze(); oLines("base"); oLines("hero"); oGlow();
 
     const link = document.createElement("a");
     link.download = `ambient-geometric-flow_seed-${seed}_x${scale}.png`;
     link.href = off.toDataURL("image/png");
     link.click();
-  }
+  };
 
-  // ---------- Presets (palette variety + immersion) ----------
+  // ---------- Presets (now include hero lines) ----------
   const PRESETS = [
-    {
-      name: "Abyssal Medium",
-      p: { k: 2.35, tau: 0.45, pi: 0.55, layers: 3, haze: 0.78, lines: 0.55, dotsAmt: 0.18, density: 0.95, drift: 0.10 },
-      colors: { bgA:"#020611", bgB:"#070A18", l1:"#BEE6FF", l2:"#F0CDFF", l3:"#91FFEB", dots:"#DCE6FF" }
-    },
-    {
-      name: "Aurora Basin",
-      p: { k: 2.65, tau: 0.35, pi: 0.70, layers: 4, haze: 0.85, lines: 0.45, dotsAmt: 0.10, density: 0.90, drift: 0.09 },
-      colors: { bgA:"#021018", bgB:"#06041A", l1:"#7AF0FF", l2:"#C9FF8B", l3:"#FFB3F7", dots:"#BCEBFF" }
-    },
-    {
-      name: "Jade Drift",
-      p: { k: 1.95, tau: 0.30, pi: 0.45, layers: 3, haze: 0.72, lines: 0.52, dotsAmt: 0.15, density: 0.92, drift: 0.11 },
-      colors: { bgA:"#031014", bgB:"#071A12", l1:"#9DFFD6", l2:"#A7D7FF", l3:"#E1FFB5", dots:"#BFE7FF" }
-    },
-    {
-      name: "Violet Pressure",
-      p: { k: 3.10, tau: 0.55, pi: 0.60, layers: 4, haze: 0.88, lines: 0.40, dotsAmt: 0.08, density: 0.90, drift: 0.08 },
-      colors: { bgA:"#07051A", bgB:"#040612", l1:"#E8C6FF", l2:"#A7B7FF", l3:"#FF9BE8", dots:"#D6D9FF" }
-    },
-    {
-      name: "Sepia Current",
-      p: { k: 2.10, tau: 0.22, pi: 0.40, layers: 2, haze: 0.68, lines: 0.58, dotsAmt: 0.20, density: 1.00, drift: 0.09 },
-      colors: { bgA:"#0F0A06", bgB:"#1B1209", l1:"#F2D6B3", l2:"#FFD3A1", l3:"#E7B97A", dots:"#FFE6C8" }
-    },
-    {
-      name: "Ember Field",
-      p: { k: 2.75, tau: 0.40, pi: 0.50, layers: 3, haze: 0.82, lines: 0.46, dotsAmt: 0.12, density: 0.95, drift: 0.10 },
-      colors: { bgA:"#120405", bgB:"#1A0A07", l1:"#FFB86B", l2:"#FF5E7A", l3:"#FFD1A8", dots:"#FFD7C2" }
-    },
-    {
-      name: "Glacier Veil",
-      p: { k: 1.80, tau: 0.18, pi: 0.55, layers: 3, haze: 0.90, lines: 0.35, dotsAmt: 0.06, density: 0.85, drift: 0.06 },
-      colors: { bgA:"#030A10", bgB:"#08121B", l1:"#DFF6FF", l2:"#CBE4FF", l3:"#B8FFF1", dots:"#DFF6FF" }
-    },
-    {
-      name: "Midnight Magenta",
-      p: { k: 3.40, tau: 0.65, pi: 0.75, layers: 4, haze: 0.92, lines: 0.38, dotsAmt: 0.05, density: 0.90, drift: 0.09 },
-      colors: { bgA:"#050013", bgB:"#0A0618", l1:"#FF9AF2", l2:"#BFA8FF", l3:"#7DFFF2", dots:"#E6D9FF" }
-    },
-    {
-      name: "Cobalt Silence",
-      p: { k: 0.95, tau: 0.10, pi: 0.30, layers: 2, haze: 0.60, lines: 0.40, dotsAmt: 0.08, density: 0.75, drift: 0.04 },
-      colors: { bgA:"#020617", bgB:"#06112B", l1:"#A7D7FF", l2:"#C1B4FF", l3:"#8BFFF0", dots:"#9DBBFF" }
-    },
-    {
-      name: "Monochrome Field",
-      p: { k: 2.25, tau: 0.35, pi: 0.55, layers: 3, haze: 0.85, lines: 0.42, dotsAmt: 0.10, density: 0.90, drift: 0.08 },
-      colors: { bgA:"#05070C", bgB:"#0A0E14", l1:"#DCE6FF", l2:"#BFC8D8", l3:"#EEF3FF", dots:"#A8B1C2" }
-    },
+    { name:"Abyssal Medium",
+      p:{k:2.35,tau:0.45,pi:0.55,layers:3,haze:0.70,lines:0.72,hero:0.70,dotsAmt:0.12,density:0.95,drift:0.10},
+      c:{bgA:"#020611",bgB:"#070A18",l1:"#BEE6FF",l2:"#F0CDFF",l3:"#91FFEB",dots:"#DCE6FF"} },
+    { name:"Aurora Basin",
+      p:{k:2.65,tau:0.35,pi:0.70,layers:4,haze:0.78,lines:0.65,hero:0.80,dotsAmt:0.08,density:0.90,drift:0.09},
+      c:{bgA:"#021018",bgB:"#06041A",l1:"#7AF0FF",l2:"#C9FF8B",l3:"#FFB3F7",dots:"#BCEBFF"} },
+    { name:"Jade Drift",
+      p:{k:1.95,tau:0.30,pi:0.45,layers:3,haze:0.64,lines:0.75,hero:0.72,dotsAmt:0.10,density:0.92,drift:0.11},
+      c:{bgA:"#031014",bgB:"#071A12",l1:"#9DFFD6",l2:"#A7D7FF",l3:"#E1FFB5",dots:"#BFE7FF"} },
+    { name:"Violet Pressure",
+      p:{k:3.10,tau:0.55,pi:0.60,layers:4,haze:0.82,lines:0.62,hero:0.85,dotsAmt:0.06,density:0.90,drift:0.08},
+      c:{bgA:"#07051A",bgB:"#040612",l1:"#E8C6FF",l2:"#A7B7FF",l3:"#FF9BE8",dots:"#D6D9FF"} },
+    { name:"Sepia Current",
+      p:{k:2.10,tau:0.22,pi:0.40,layers:2,haze:0.58,lines:0.82,hero:0.70,dotsAmt:0.14,density:1.00,drift:0.09},
+      c:{bgA:"#0F0A06",bgB:"#1B1209",l1:"#F2D6B3",l2:"#FFD3A1",l3:"#E7B97A",dots:"#FFE6C8"} },
+    { name:"Ember Field",
+      p:{k:2.75,tau:0.40,pi:0.50,layers:3,haze:0.72,lines:0.70,hero:0.90,dotsAmt:0.08,density:0.95,drift:0.10},
+      c:{bgA:"#120405",bgB:"#1A0A07",l1:"#FFB86B",l2:"#FF5E7A",l3:"#FFD1A8",dots:"#FFD7C2"} },
+    { name:"Glacier Veil",
+      p:{k:1.80,tau:0.18,pi:0.55,layers:3,haze:0.80,lines:0.58,hero:0.75,dotsAmt:0.05,density:0.85,drift:0.06},
+      c:{bgA:"#030A10",bgB:"#08121B",l1:"#DFF6FF",l2:"#CBE4FF",l3:"#B8FFF1",dots:"#DFF6FF"} },
+    { name:"Midnight Magenta",
+      p:{k:3.40,tau:0.65,pi:0.75,layers:4,haze:0.86,lines:0.60,hero:0.92,dotsAmt:0.04,density:0.90,drift:0.09},
+      c:{bgA:"#050013",bgB:"#0A0618",l1:"#FF9AF2",l2:"#BFA8FF",l3:"#7DFFF2",dots:"#E6D9FF"} },
+    { name:"Cobalt Silence",
+      p:{k:0.95,tau:0.10,pi:0.30,layers:2,haze:0.52,lines:0.72,hero:0.62,dotsAmt:0.06,density:0.75,drift:0.04},
+      c:{bgA:"#020617",bgB:"#06112B",l1:"#A7D7FF",l2:"#C1B4FF",l3:"#8BFFF0",dots:"#9DBBFF"} },
+    { name:"Monochrome Field",
+      p:{k:2.25,tau:0.35,pi:0.55,layers:3,haze:0.78,lines:0.58,hero:0.72,dotsAmt:0.06,density:0.90,drift:0.08},
+      c:{bgA:"#05070C",bgB:"#0A0E14",l1:"#EEF3FF",l2:"#C8D0E0",l3:"#DCE6FF",dots:"#A8B1C2"} },
   ];
 
   let activePresetIndex = 0;
 
-  function applyPreset(idx) {
-    const pr = PRESETS[idx];
-    if (!pr) return;
-    activePresetIndex = idx;
-
-    ui.order.value   = String(pr.p.k);
-    ui.twist.value   = String(pr.p.tau);
-    ui.lift.value    = String(pr.p.pi);
-    ui.layers.value  = String(pr.p.layers);
-    ui.haze.value    = String(pr.p.haze);
-    ui.lines.value   = String(pr.p.lines);
-    ui.dotsAmt.value = String(pr.p.dotsAmt);
-    ui.density.value = String(pr.p.density);
-    ui.drift.value   = String(pr.p.drift);
-
-    ui.bgA.value = pr.colors.bgA;
-    ui.bgB.value = pr.colors.bgB;
-    ui.line1.value = pr.colors.l1;
-    ui.line2.value = pr.colors.l2;
-    ui.line3.value = pr.colors.l3;
-    ui.dotsColor.value = pr.colors.dots;
-
-    renderPresetButtons();
-    markDirty();
-  }
-
-  function renderPresetButtons() {
+  const renderPresetButtons = () => {
     ui.presetBar.innerHTML = "";
     PRESETS.forEach((pr, i) => {
       const b = document.createElement("button");
       b.className = "presetBtn";
       b.textContent = pr.name;
       b.dataset.active = (i === activePresetIndex) ? "true" : "false";
-      b.addEventListener("click", () => applyPreset(i));
+      b.onclick = () => applyPreset(i);
       ui.presetBar.appendChild(b);
     });
-  }
+  };
+
+  const applyPreset = (idx) => {
+    const pr = PRESETS[idx]; if (!pr) return;
+    activePresetIndex = idx;
+
+    ui.order.value   = pr.p.k;
+    ui.twist.value   = pr.p.tau;
+    ui.lift.value    = pr.p.pi;
+    ui.layers.value  = pr.p.layers;
+    ui.haze.value    = pr.p.haze;
+    ui.lines.value   = pr.p.lines;
+    ui.hero.value    = pr.p.hero;
+    ui.dotsAmt.value = pr.p.dotsAmt;
+    ui.density.value = pr.p.density;
+    ui.drift.value   = pr.p.drift;
+
+    ui.bgA.value = pr.c.bgA; ui.bgB.value = pr.c.bgB;
+    ui.line1.value = pr.c.l1; ui.line2.value = pr.c.l2; ui.line3.value = pr.c.l3;
+    ui.dotsColor.value = pr.c.dots;
+
+    renderPresetButtons();
+    markDirty();
+  };
 
   // ---------- Events ----------
   [
-    "order","twist","lift","layers","haze","lines","dotsAmt","density","drift",
+    "order","twist","lift","layers","haze","lines","hero","dotsAmt","density","drift",
     "bgA","bgB","line1","line2","line3","dotsColor"
-  ].forEach(id => {
-    ui[id].addEventListener("input", markDirty);
-    ui[id].addEventListener("change", markDirty);
-  });
+  ].forEach(id => { ui[id].addEventListener("input", markDirty); ui[id].addEventListener("change", markDirty); });
 
-  ui.aspect.addEventListener("change", () => {
-    setAspect(ui.aspect.value);
-    markDirty();
-  });
-
-  ui.reseed.addEventListener("click", () => {
-    seed = (Math.random() * 1e9) | 0;
-    noise = [
-      makeValueNoise(seed ^ 0xA5A5A5A5),
-      makeValueNoise(seed ^ 0x5A5A5A5A),
-      makeValueNoise(seed ^ 0xC3C3C3C3),
-      makeValueNoise(seed ^ 0x3C3C3C3C),
-    ];
-    markDirty();
-  });
-
-  ui.freeze.addEventListener("click", () => {
-    frozen = !frozen;
-    ui.freeze.textContent = frozen ? "Unfreeze" : "Freeze";
-    markDirty();
-  });
-
-  ui.toggleUi.addEventListener("click", () => {
+  ui.aspect.onchange = () => { setAspect(ui.aspect.value); markDirty(); };
+  ui.reseed.onclick = () => { seed = (Math.random() * 1e9) | 0; rebuildNoise(); markDirty(); };
+  ui.freeze.onclick = () => { frozen = !frozen; ui.freeze.textContent = frozen ? "Unfreeze" : "Freeze"; markDirty(); };
+  ui.toggleUi.onclick = () => {
     const hidden = hud.classList.toggle("hidden");
     status.classList.toggle("hidden", hidden);
     ui.toggleUi.textContent = hidden ? "Show UI" : "Hide UI";
-  });
-
-  ui.copyLink.addEventListener("click", async () => {
+  };
+  ui.copyLink.onclick = async () => {
     const p = readParams();
     const url = `${location.origin}${location.pathname}?${paramsToQuery(p).toString()}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      ui.copyLink.textContent = "Copied!";
-      setTimeout(() => ui.copyLink.textContent = "Copy Link", 900);
-    } catch {
-      window.prompt("Copy this link:", url);
-    }
-  });
-
-  ui.save.addEventListener("click", () => {
-    const scale = parseInt(ui.exportScale.value, 10) || 1;
-    const p = readParams();
-    exportPng(scale, time, p);
-  });
+    try { await navigator.clipboard.writeText(url); ui.copyLink.textContent = "Copied!"; setTimeout(() => ui.copyLink.textContent = "Copy Link", 900); }
+    catch { window.prompt("Copy this link:", url); }
+  };
+  ui.save.onclick = () => { const p = readParams(); const scale = parseInt(ui.exportScale.value, 10) || 1; exportPng(scale, time, p); };
 
   // ---------- Boot ----------
   applyQuery();
   setAspect(ui.aspect.value);
   renderPresetButtons();
   applyPreset(activePresetIndex);
-
   resize();
 
   // ---------- Render loop ----------
   let t0 = performance.now();
   let time = 0;
 
-  function render(now) {
+  const render = (now) => {
     const dt = (now - t0) / 1000;
     t0 = now;
 
     const p = readParams();
-
     if (!frozen) {
       time += dt * (0.20 * p.drift);
       if (p.drift > 0.001) dirty = true;
@@ -1263,12 +1002,13 @@
       clearBackground(p);
       drawDots(p, mulberry32(seed ^ 0x1234567));
       drawFieldHaze(time, p);
-      drawStreamlines(time, p);
+      drawStreamlines(time, p, "base");
+      drawStreamlines(time, p, "hero"); // <-- hero ribbons
       postGlow();
     }
 
     requestAnimationFrame(render);
-  }
+  };
 
   requestAnimationFrame(render);
 

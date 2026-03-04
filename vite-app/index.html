@@ -145,7 +145,7 @@
                 </div>
             </div>
             <div class="gallery-content" id="galleryContent">
-                <div class="title-toggle-controls" style="display: flex; gap: 0.75rem; align-items: center; font-size: 0.75rem; color: var(--text-muted); padding: 0.25rem 0;">
+                <div class="title-toggle-controls" style="display: flex; gap: 0.75rem; align-items: center; font-size: 0.75rem; color: var(--text-muted); padding: 0.25rem 0; flex-wrap: wrap;">
                     <label>Carousel titles:
                         <select id="carouselTitlePos">
                             <option value="none" selected>None</option>
@@ -163,6 +163,19 @@
                             <option value="top">Top</option>
                             <option value="center">Center</option>
                             <option value="bottom">Bottom</option>
+                            <option value="below">Below</option>
+                        </select>
+                    </label>
+                    <label>Title align:
+                        <select id="titleAlign">
+                            <option value="left">Left</option>
+                            <option value="center" selected>Center</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </label>
+                    <label>Buttons:
+                        <select id="controlsPos">
+                            <option value="above" selected>Above</option>
                             <option value="below">Below</option>
                         </select>
                     </label>

@@ -189,16 +189,28 @@ const galleryMainEl = document.querySelector('.gallery-main');
 /* ── Title position toggles ── */
 const carouselTitleSel = document.getElementById('carouselTitlePos');
 const gridTitleSel = document.getElementById('gridTitlePos');
-if (carouselTitleSel) {
-    carouselTitleSel.addEventListener('change', () => {
-        carouselBrowser.setAttribute('carousel-title', carouselTitleSel.value);
-    });
+const titleAlignSel = document.getElementById('titleAlign');
+
+function updateTitleAttrs() {
+    const hAlign = titleAlignSel ? titleAlignSel.value : 'center';
+    if (carouselTitleSel) {
+        const v = carouselTitleSel.value;
+        carouselBrowser.setAttribute('carousel-title', v === 'none' ? 'none' : `${v} ${hAlign}`);
+    }
+    if (gridTitleSel) {
+        const v = gridTitleSel.value;
+        carouselBrowser.setAttribute('grid-title', v === 'none' ? 'none' : `${v} ${hAlign}`);
+    }
 }
-if (gridTitleSel) {
-    gridTitleSel.addEventListener('change', () => {
-        carouselBrowser.setAttribute('grid-title', gridTitleSel.value);
-    });
-}
+
+if (carouselTitleSel) carouselTitleSel.addEventListener('change', updateTitleAttrs);
+if (gridTitleSel) gridTitleSel.addEventListener('change', updateTitleAttrs);
+if (titleAlignSel) titleAlignSel.addEventListener('change', updateTitleAttrs);
+
+const controlsPosSel = document.getElementById('controlsPos');
+if (controlsPosSel) controlsPosSel.addEventListener('change', () => {
+    carouselBrowser.setAttribute('controls-position', controlsPosSel.value);
+});
 
 /* ── Generate panel DOM refs ── */
 const generatePanelEl = document.getElementById('generatePanel');
