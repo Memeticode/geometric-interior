@@ -7,11 +7,11 @@
  */
 
 import { xmur3, mulberry32 } from '../../utils/prng.js';
+import type { SeedTag, Seed } from '../schemas.js';
 
 // ── Types ──
 
-export type SeedTag = [number, number, number];
-export type Seed = string | SeedTag;
+export type { SeedTag, Seed } from '../schemas.js';
 
 export interface SceneRngStreams {
     arrangementRng: () => number;

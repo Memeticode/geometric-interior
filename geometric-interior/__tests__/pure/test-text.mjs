@@ -161,7 +161,7 @@ test('generateAltText: with seed produces 6 lines', () => {
 test('generateAltText: seed phrase is first line', () => {
     const alt = generateAltText(MID, 150, 'T', 'en', [4, 12, 8]);
     const first = alt.split('\n')[0];
-    assert(first === 'Resting, splintered, mild', `expected seed phrase as first line, got: "${first}"`);
+    assert(first === 'Resting, splintered, mild.', `expected seed phrase as first line, got: "${first}"`);
 });
 
 test('generateAltText: without seed produces 5 lines', () => {

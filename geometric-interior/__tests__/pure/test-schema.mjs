@@ -1,7 +1,7 @@
 /**
  * Tests for validateStillConfig, configToProfile, profileToConfig.
  */
-import { validateStillConfig, configToProfile, profileToConfig } from '../../dist/geometric-interior.js';
+import { validateStillConfig, configToProfile, profileToConfig, ControlsSchema, ImageAssetMetaSchema, AnimAssetMetaSchema, AnimationSchema } from '../../dist/geometric-interior.js';
 
 let passed = 0, failed = 0;
 
@@ -165,6 +165,94 @@ test('profileToConfig does not emit seedTag for string seed', () => {
     const config = profileToConfig('Test', { seed: 'hello', controls: VALID_V2_TAG.structure });
     assert(config.seedTag === undefined, 'expected no seedTag for string seed');
     assert(config.intent === 'hello', `expected intent "hello", got "${config.intent}"`);
+});
+
+// ── Defaults tests ──
+
+test('ControlsSchema.parse({}) produces valid defaults', () => {
+    const c = ControlsSchema.parse({});
+    assert(c.topology === 'flow-field', `expected topology "flow-field", got "${c.topology}"`);
+    assert(c.hue === 0.5, `expected hue 0.5, got ${c.hue}`);
+    assert(c.density === 0.5, `expected density 0.5, got ${c.density}`);
+    assert(c.bloom === 0.5, `expected bloom 0.5, got ${c.bloom}`);
+    assert(c.scale === 0.5, `expected scale 0.5, got ${c.scale}`);
+    assert(c.flow === 0.5, `expected flow 0.5, got ${c.flow}`);
+});
+
+test('ControlsSchema.parse preserves explicit values', () => {
+    const c = ControlsSchema.parse({ hue: 0.8, density: 0.1 });
+    assert(c.hue === 0.8, `expected hue 0.8, got ${c.hue}`);
+    assert(c.density === 0.1, `expected density 0.1, got ${c.density}`);
+    assert(c.spectrum === 0.5, `expected spectrum default 0.5, got ${c.spectrum}`);
+});
+
+test('StillConfig with omitted optional structure fields gets defaults', () => {
+    const minimal = {
+        kind: 'still-v2',
+        name: 'Minimal',
+        intent: 'test',
+        color: { hue: 0.5, spectrum: 0.5, chroma: 0.5 },
+        structure: { density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5 },
+    };
+    const r = validateStillConfig(minimal);
+    assert(r.ok === true, `expected ok=true, got errors: ${r.errors?.join(', ')}`);
+});
+
+// ── Asset metadata tests ──
+
+test('ImageAssetMetaSchema accepts full meta with config', () => {
+    const meta = {
+        title: 'Test', altText: 'desc', commentary: 'notes',
+        seed: [3, 5, 7],
+        controls: { topology: 'flow-field', hue: 0.5, spectrum: 0.5, chroma: 0.5, density: 0.5, fracture: 0.5, coherence: 0.5, luminosity: 0.5, bloom: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
+        nodeCount: 42, width: 1920, height: 1080,
+    };
+    const parsed = ImageAssetMetaSchema.parse(meta);
+    assert(parsed.commentary === 'notes', `expected commentary "notes", got "${parsed.commentary}"`);
+    assert(Array.isArray(parsed.seed), 'expected seed array in parsed meta');
+    assert(parsed.controls.hue === 0.5, 'expected controls.hue in parsed meta');
+});
+
+test('ImageAssetMetaSchema defaults commentary to empty string', () => {
+    const meta = {
+        title: 'Test', altText: 'desc',
+        seed: 'my-seed',
+        controls: {},
+        nodeCount: 10, width: 800, height: 600,
+    };
+    const parsed = ImageAssetMetaSchema.parse(meta);
+    assert(parsed.commentary === '', `expected empty commentary, got "${parsed.commentary}"`);
+});
+
+test('ImageAssetMetaSchema includes optional camera', () => {
+    const meta = {
+        title: 'Test', altText: 'desc',
+        seed: [1, 2, 3],
+        controls: {},
+        camera: { rotation: 45, elevation: 10, zoom: 0.8 },
+        nodeCount: 10, width: 800, height: 600,
+    };
+    const parsed = ImageAssetMetaSchema.parse(meta);
+    assert(parsed.camera !== undefined, 'expected camera in parsed meta');
+    assert(parsed.camera.rotation === 45, `expected rotation 45, got ${parsed.camera.rotation}`);
+});
+
+test('AnimAssetMetaSchema accepts full meta with animation', () => {
+    const anim = {
+        settings: { fps: 30, width: 1920, height: 1080 },
+        events: [{ type: 'expand', duration: 1.5, easing: 'ease-out', config: {}, seed: 'test' }],
+        cameraMoves: [],
+        paramTracks: [],
+    };
+    const meta = {
+        title: 'Anim', altText: 'desc', commentary: 'my notes',
+        animation: anim,
+        fps: 30, totalFrames: 90, durationS: 3.0,
+        width: 1920, height: 1080,
+    };
+    const parsed = AnimAssetMetaSchema.parse(meta);
+    assert(parsed.commentary === 'my notes', `expected commentary, got "${parsed.commentary}"`);
+    assert(parsed.animation.settings.fps === 30, 'expected animation in parsed meta');
 });
 
 export { passed, failed };

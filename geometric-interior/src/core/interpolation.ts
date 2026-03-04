@@ -4,7 +4,7 @@
 
 import { clamp01, lerp } from '../utils/math.js';
 import { catmullRom, circularLerp, unwrapCircular, warpSegmentT, cosineEase } from '../utils/easing.js';
-import type { Controls } from './image-models.js';
+import type { Controls } from './schemas.js';
 
 export const TIME_WARP_STRENGTH = 0.78;
 

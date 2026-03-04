@@ -8,17 +8,17 @@
  * frame without sequential playback.
  */
 
-import type { Controls } from './image-models.js';
-import type { Seed } from './text-generation/seed-tags.js';
+import type { Controls, Seed, ContentEvent, Animation } from './schemas.js';
 import { applyEasing } from '../utils/easing.js';
 import { lerp } from '../utils/math.js';
-import type { ContentEvent, Animation, FrameState } from './animation-models.js';
+import type { FrameState } from './animation-models.js';
 
-// Re-export all animation types so existing consumers can still import from timeline
+// Re-export animation types so consumers can import from timeline
 export type {
     EasingType, ContentEvent, CameraState, CameraMove, ParamTrack,
-    FocusState, FocusTrack, AnimationSettings, Animation, FrameState,
-} from './animation-models.js';
+    FocusState, FocusTrack, AnimationSettings, Animation,
+} from './schemas.js';
+export type { FrameState } from './animation-models.js';
 
 /* ── Helpers ── */
 

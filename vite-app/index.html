@@ -145,6 +145,28 @@
                 </div>
             </div>
             <div class="gallery-content" id="galleryContent">
+                <div class="title-toggle-controls" style="display: flex; gap: 0.75rem; align-items: center; font-size: 0.75rem; color: var(--text-muted); padding: 0.25rem 0;">
+                    <label>Carousel titles:
+                        <select id="carouselTitlePos">
+                            <option value="none" selected>None</option>
+                            <option value="above">Above</option>
+                            <option value="top">Top</option>
+                            <option value="center">Center</option>
+                            <option value="bottom">Bottom</option>
+                            <option value="below">Below</option>
+                        </select>
+                    </label>
+                    <label>Grid titles:
+                        <select id="gridTitlePos">
+                            <option value="none" selected>None</option>
+                            <option value="above">Above</option>
+                            <option value="top">Top</option>
+                            <option value="center">Center</option>
+                            <option value="bottom">Bottom</option>
+                            <option value="below">Below</option>
+                        </select>
+                    </label>
+                </div>
                 <carousel-dropdown-browser id="carouselBrowser" controls-position="above" infinite="false" bounce="0.35"></carousel-dropdown-browser>
                 <!-- Animations -->
                 <div class="gallery-section" id="animSection" style="display:none">

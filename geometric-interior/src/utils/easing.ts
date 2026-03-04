@@ -4,7 +4,8 @@
 
 import { clamp01, lerp } from './math.js';
 
-export type EasingType = 'linear' | 'ease-in' | 'ease-out' | 'ease-in-out';
+export const EASING_TYPES = ['linear', 'ease-in', 'ease-out', 'ease-in-out'] as const;
+export type EasingType = (typeof EASING_TYPES)[number];
 
 /** Apply an easing function to a normalized time value. */
 export function applyEasing(t: number, easing: EasingType): number {

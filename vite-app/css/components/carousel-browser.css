@@ -157,6 +157,86 @@ carousel-dropdown-browser-section { display: none; }
     pointer-events: none;
 }
 
+/* ── Card titles (carousel) ── */
+.cdb-card-title {
+    display: none;
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    padding: 0.15rem 0.25rem;
+    pointer-events: none;
+}
+
+/* Vertical alignment */
+carousel-dropdown-browser.cdb-ct-above .cdb-card-title { display: block; order: -1; }
+carousel-dropdown-browser.cdb-ct-below .cdb-card-title { display: block; }
+carousel-dropdown-browser.cdb-ct-top .cdb-card-title,
+carousel-dropdown-browser.cdb-ct-center .cdb-card-title,
+carousel-dropdown-browser.cdb-ct-bottom .cdb-card-title {
+    display: block;
+    position: absolute;
+    left: 0;
+    right: 0;
+    z-index: 2;
+}
+carousel-dropdown-browser.cdb-ct-top .cdb-card-title { top: 0.25rem; }
+carousel-dropdown-browser.cdb-ct-center .cdb-card-title { top: 50%; transform: translateY(-50%); }
+carousel-dropdown-browser.cdb-ct-bottom .cdb-card-title {
+    bottom: 0;
+    padding: 0.25rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+}
+
+/* Horizontal alignment */
+carousel-dropdown-browser.cdb-ct-h-left .cdb-card-title { text-align: left; }
+carousel-dropdown-browser.cdb-ct-h-center .cdb-card-title { text-align: center; }
+carousel-dropdown-browser.cdb-ct-h-right .cdb-card-title { text-align: right; }
+
+/* ── Card titles (grid) ── */
+/* Grid titles re-use .cdb-grid-card-name — hidden by default, shown via host class */
+.cdb-grid-card-name { display: none; }
+
+carousel-dropdown-browser.cdb-gt-bottom .cdb-grid-card-name { display: block; }
+carousel-dropdown-browser.cdb-gt-above .cdb-grid-card-name,
+carousel-dropdown-browser.cdb-gt-top .cdb-grid-card-name,
+carousel-dropdown-browser.cdb-gt-center .cdb-grid-card-name,
+carousel-dropdown-browser.cdb-gt-below .cdb-grid-card-name {
+    display: block;
+}
+
+carousel-dropdown-browser.cdb-gt-above .cdb-grid-card-name {
+    position: static;
+    background: none;
+    padding: 0.15rem 0;
+    order: -1;
+}
+carousel-dropdown-browser.cdb-gt-top .cdb-grid-card-name {
+    top: 0;
+    bottom: auto;
+    background: linear-gradient(rgba(0, 0, 0, 0.6), transparent);
+}
+carousel-dropdown-browser.cdb-gt-center .cdb-grid-card-name {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+carousel-dropdown-browser.cdb-gt-below .cdb-grid-card-name {
+    position: static;
+    background: none;
+    padding: 0.15rem 0;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+carousel-dropdown-browser.cdb-gt-h-left .cdb-grid-card-name { text-align: left; }
+carousel-dropdown-browser.cdb-gt-h-center .cdb-grid-card-name { text-align: center; }
+carousel-dropdown-browser.cdb-gt-h-right .cdb-grid-card-name { text-align: right; }
+
 /* ── Adjacent card fade mask (when neighbor is hovered) ── */
 .cdb-mask-left .cdb-card-img {
     -webkit-mask-image: linear-gradient(to right, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
@@ -270,7 +350,7 @@ carousel-dropdown-browser-section { display: none; }
     aspect-ratio: 14 / 9;
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid var(--border);
+    border: 2px solid transparent;
     background: var(--surface);
     cursor: pointer;
     position: relative;
@@ -278,13 +358,13 @@ carousel-dropdown-browser-section { display: none; }
 }
 
 .cdb-grid-card:hover {
-    border-color: var(--border-strong);
+    border-color: rgba(255, 255, 255, 0.15);
     transform: translateY(-2px);
 }
 
 .cdb-grid-card.selected {
-    border-color: var(--accent-text);
-    box-shadow: 0 0 0 1px var(--accent-text);
+    border-top-color: rgba(180, 130, 255, 0.6);
+    border-bottom-color: rgba(180, 130, 255, 0.6);
 }
 
 .cdb-grid-card img {

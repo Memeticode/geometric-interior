@@ -4,7 +4,7 @@
 
 import { controlLerp } from '../utils/math.js';
 import { hslToRgb01 } from '../utils/color.js';
-import type { Controls } from './image-models.js';
+import type { Controls } from './schemas.js';
 import type { DerivedParams } from '../render-engine/models.js';
 import type { BgConfig } from '../render-engine/background.js';
 

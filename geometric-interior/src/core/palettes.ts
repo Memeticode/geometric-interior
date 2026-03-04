@@ -2,7 +2,7 @@
  * Palette definitions for the crystalline plane engine.
  */
 
-import type { PaletteData } from './image-models.js';
+import type { PaletteData } from './schemas.js';
 
 type BuiltinPaletteKey = 'violet-depth' | 'warm-spectrum' | 'teal-volumetric' | 'prismatic' | 'crystal-lattice' | 'sapphire' | 'amethyst';
 

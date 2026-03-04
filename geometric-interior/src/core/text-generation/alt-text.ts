@@ -2,8 +2,7 @@
  * Alt-text and animation alt-text generation from controls.
  */
 
-import type { Controls } from '../image-models.js';
-import type { Seed } from './seed-tags.js';
+import type { Controls, Seed } from '../schemas.js';
 import { parseSeed, seedTagToLabel } from './seed-tags.js';
 import { getHueWords } from './word-tables.js';
 import { injectColor } from '../../utils/string.js';
@@ -249,7 +248,7 @@ export function generateAltText(controls: Controls, nodeCount: number, _title: s
     const lines = [s1, s2, s3, s4, s5];
     if (seed != null) {
         const tag = parseSeed(seed);
-        lines.unshift(seedTagToLabel(tag, lang));
+        lines.unshift(seedTagToLabel(tag, lang) + '.');
     }
     return lines.join('\n');
 }

@@ -120,14 +120,15 @@ export function createRenderQueue({ workerBridge, onUpdate, locale }) {
         const asset = {
             id: job.id,
             name: job.name,
-            seed: job.seed,
-            controls: job.controls,
             thumbDataUrl,
             spriteBlob: msg.spriteBlob,
             staticBlob: msg.staticBlob,
             meta: {
                 title: msg.meta.title || job.name,
                 altText: msg.meta.altText || altText,
+                commentary: '',
+                seed: job.seed,
+                controls: job.controls,
                 nodeCount,
                 width: msg.meta.width,
                 height: msg.meta.height,
@@ -219,13 +220,14 @@ export function createRenderQueue({ workerBridge, onUpdate, locale }) {
         const asset = {
             id: job.id,
             name: job.name,
-            animation: job.animation,
             videoBlob,
             framesBlob,
             thumbDataUrl,
             meta: {
                 title: job.name,
                 altText: '',
+                commentary: '',
+                animation: job.animation,
                 fps: msg.fps,
                 totalFrames: msg.totalFrames,
                 durationS: msg.durationS,

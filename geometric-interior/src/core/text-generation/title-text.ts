@@ -2,7 +2,7 @@
  * Procedural title generation from controls.
  */
 
-import type { Controls } from '../image-models.js';
+import type { Controls } from '../schemas.js';
 import { TOPOLOGY_WORDS, LUMINOSITY_WORDS, DENSITY_WORDS, SCALE_WORDS, getHueWords } from './word-tables.js';
 import { pick } from '../../utils/prng.js';
 import { tier } from '../../utils/string.js';

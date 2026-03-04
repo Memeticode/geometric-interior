@@ -186,6 +186,20 @@ const selectedVideo = document.getElementById('selectedVideo');
 const carouselBrowser = document.getElementById('carouselBrowser');
 const galleryMainEl = document.querySelector('.gallery-main');
 
+/* ── Title position toggles ── */
+const carouselTitleSel = document.getElementById('carouselTitlePos');
+const gridTitleSel = document.getElementById('gridTitlePos');
+if (carouselTitleSel) {
+    carouselTitleSel.addEventListener('change', () => {
+        carouselBrowser.setAttribute('carousel-title', carouselTitleSel.value);
+    });
+}
+if (gridTitleSel) {
+    gridTitleSel.addEventListener('change', () => {
+        carouselBrowser.setAttribute('grid-title', gridTitleSel.value);
+    });
+}
+
 /* ── Generate panel DOM refs ── */
 const generatePanelEl = document.getElementById('generatePanel');
 const genSlidersEl = document.getElementById('genSliders');
@@ -545,7 +559,7 @@ function viewJob(job) {
             generatedAssets = generatedAssets.filter(a => a.id !== job.asset.id);
             generatedAssets.unshift(job.asset);
             refreshGallery();
-            const profile = { seed: job.asset.seed, controls: job.asset.controls };
+            const profile = { seed: job.asset.meta.seed, controls: job.asset.meta.controls };
             selectProfile(job.asset.name, profile, false, job.asset.id);
         }
     }
@@ -655,7 +669,7 @@ function findProfileBySlug(slug, source) {
         if (asset) {
             return {
                 name: asset.name,
-                profile: { seed: asset.seed, controls: asset.controls },
+                profile: { seed: asset.meta.seed, controls: asset.meta.controls },
                 isPortrait: false,
                 isGenerated: true,
                 assetId: asset.id,
@@ -898,7 +912,7 @@ function showImageGallery() {
     for (const asset of generatedAssets) {
         carouselList.push({
             name: asset.name,
-            profile: { seed: asset.seed, controls: asset.controls },
+            profile: { seed: asset.meta.seed, controls: asset.meta.controls },
             isPortrait: false,
             assetId: asset.id
         });

@@ -31,10 +31,11 @@
     "three": "^0.172.0"
   },
   "dependencies": {
-    "postprocessing": "^6.36.4",
+    "postprocessing": "^6.36.0",
     "simplex-noise": "^4.0.3",
     "three": "^0.172.0",
-    "tweakpane": "^4.0.5"
+    "tweakpane": "^4.0.5",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@cloudflare/pages-plugin-vercel-og": "^0.1.2",

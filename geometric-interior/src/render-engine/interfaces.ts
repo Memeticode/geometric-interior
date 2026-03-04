@@ -3,7 +3,7 @@
  */
 
 import type { ShaderMaterial, Mesh, InstancedMesh, MeshBasicMaterial } from 'three';
-import type { Controls, RenderMeta } from '../core/image-models.js';
+import type { Controls, RenderMeta } from '../core/schemas.js';
 import type { Seed } from '../core/text-generation/seed-tags.js';
 import type { GlowPointDatum, LightUniforms } from './models.js';
 import type { BgConfig } from './background.js';
