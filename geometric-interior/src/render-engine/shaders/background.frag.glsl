@@ -90,14 +90,16 @@ float voronoi(vec2 p) {
     return clamp(minDist, 0.0, 1.0);
 }
 
-// Flow-lines — thin contour lines perpendicular to flow direction
+// Flow-lines — luminous filaments with Gaussian glow halo.
+// Models light-emitting threads: magnetic field lines, bioluminescent currents, etc.
 float flowLines(vec2 p, float angle) {
     float ca = cos(angle), sa = sin(angle);
-    // Project onto axis perpendicular to flow direction
     float proj = -sa * p.x + ca * p.y;
-    // Thin stripes: smooth narrow peaks at integer values of proj
-    float s = fract(proj);
-    return smoothstep(0.0, 0.06, s) * smoothstep(0.12, 0.06, s);
+    // Normalised distance from nearest line centre: 0 at line, 1 at midpoint
+    float s = abs(fract(proj + 0.5) - 0.5) * 2.0;
+    float core = exp(-s * s * 40.0);        // sharp bright filament
+    float halo = exp(-s * s * 4.0) * 0.25; // wide soft atmospheric glow
+    return clamp(core + halo, 0.0, 1.0);
 }
 
 // ============================================================
@@ -132,8 +134,10 @@ vec3 evalGradient(float t) {
 
 float gradientParam(vec3 ray) {
     if (uGradientType == 0) {
-        // Radial — screen-space distance from centre
-        float d = length(vUv - 0.5) * 2.0;
+        // Radial — aspect-corrected circle in pixel space.
+        // uHalfFovTanX / uHalfFovTanY == screen aspect ratio (tanY*aspect / tanY).
+        float aspect = uHalfFovTanX / uHalfFovTanY;
+        float d = length(vec2((vUv.x - 0.5) * aspect, vUv.y - 0.5)) * 2.0;
         return clamp(d * d, 0.0, 1.0);
     } else if (uGradientType == 1) {
         // Vertical — world-space Y (sky=1, ground=0)
@@ -205,10 +209,18 @@ void main() {
 
     if (uTexType > 0 && uTexStrength > 0.001) {
         float texVal = sampleTexture(ray);
-        // Multiplicative overlay: texture darkens/brightens the gradient
-        // texVal from voronoi ≈ 0(edge) to 1(centre); from noise ≈ 0-1
-        float modulation = 0.75 + 0.25 * texVal;
-        color = mix(color, color * modulation, uTexStrength);
+        if (uTexType == 3) {
+            // Flow-lines: additive emission — filaments glow above the gradient.
+            // texVal peaks at 1.0 at line centres, tapers via Gaussian halo.
+            color = color + color * texVal * uTexStrength * 3.0;
+        } else {
+            // Noise / voronoi: symmetric brightness modulation centred at 0.5.
+            // voronoi: 0 at cell centre → dark nodes, ~0.7 at edges → bright network.
+            // noise: fbm averages ~0.5 → organic brightness variation.
+            float mod = 1.0 + (texVal - 0.5) * uTexStrength * 2.0;
+            color = color * mod;
+        }
+        color = clamp(color, vec3(0.0), vec3(1.0));
     }
 
     gl_FragColor = vec4(color, 1.0);

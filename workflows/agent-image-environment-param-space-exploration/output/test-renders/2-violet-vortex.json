@@ -1,0 +1,38 @@
+{
+  "name": "Violet Vortex",
+  "group": "environment-portraits",
+  "bgNote": "Deep violet radial + voronoi + strong orbital flow. Cosmic whirlpool or magnetic field — cells spiral into concentric arcs. Combines distortion and geometry in a single moody purple field.",
+  "bgConfig": {
+    "gradient": {
+      "type": "radial",
+      "stops": [
+        {
+          "t": 0,
+          "rgb": [
+            0.08,
+            0.02,
+            0.18
+          ]
+        },
+        {
+          "t": 1,
+          "rgb": [
+            0.008,
+            0,
+            0.018
+          ]
+        }
+      ]
+    },
+    "texture": {
+      "type": "voronoi",
+      "scale": 0.42,
+      "strength": 0.48
+    },
+    "flow": {
+      "type": "orbital",
+      "angle": 0,
+      "strength": 0.65
+    }
+  }
+}

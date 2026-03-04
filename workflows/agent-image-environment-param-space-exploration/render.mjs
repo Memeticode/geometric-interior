@@ -39,9 +39,9 @@ const startIdx = startArg ? parseInt(startArg.split('=')[1], 10) : 0;
 const MINIMAL_SEED = [5, 3, 2];
 const MINIMAL_CONTROLS = {
     topology: 'flow-field',
-    density: 0.01, fracture: 0.50, scale: 0.50,
+    density: 0.0, fracture: 0.50, scale: 0.50,
     coherence: 0.90, division: 0.0, faceting: 0.40,
-    luminosity: 0.02, bloom: 0.0,
+    luminosity: 0.0, bloom: 0.0,
     hue: 0.0, spectrum: 0.0, chroma: 0.0, flow: 0.5,
 };
 
@@ -69,7 +69,8 @@ for (let i = 0; i < configs.length; i++) {
     const cfg = configs[i];
     const idx = String(i + 1).padStart(3, '0');
     const slug = toSlug(cfg.name);
-    const outPath = resolve(outputDir, `${idx}-${slug}.png`);
+    const outPath  = resolve(outputDir, `${idx}-${slug}.png`);
+    const jsonPath = resolve(outputDir, `${idx}-${slug}.json`);
 
     if (existsSync(outPath)) {
         console.log(`  [${idx}] ${cfg.name}: CACHED`);
@@ -92,6 +93,7 @@ for (let i = 0; i < configs.length; i++) {
 
         if (result) {
             writeFileSync(outPath, Buffer.from(result.replace(/^data:image\/png;base64,/, ''), 'base64'));
+            writeFileSync(jsonPath, JSON.stringify({ name: cfg.name, group: cfg.group, bgNote: cfg.bgNote, bgConfig: cfg.bgConfig }, null, 2));
             rendered++;
             console.log(`  [${idx}] ${cfg.name} [${cfg.group}] (${elapsed()}s)`);
         } else {

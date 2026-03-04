@@ -1,0 +1,38 @@
+{
+  "name": "Phosphor Field",
+  "group": "environment-portraits",
+  "bgNote": "Dark green-teal radial + coarse flow-lines + orbital distortion. Bioluminescent deep-sea field or magnetic aurora — the orbital warp curves the flow-lines into concentric rings of ghostly light.",
+  "bgConfig": {
+    "gradient": {
+      "type": "radial",
+      "stops": [
+        {
+          "t": 0,
+          "rgb": [
+            0.02,
+            0.08,
+            0.055
+          ]
+        },
+        {
+          "t": 1,
+          "rgb": [
+            0,
+            0.007,
+            0.005
+          ]
+        }
+      ]
+    },
+    "texture": {
+      "type": "flow-lines",
+      "scale": 0.52,
+      "strength": 0.55
+    },
+    "flow": {
+      "type": "orbital",
+      "angle": 0,
+      "strength": 0.45
+    }
+  }
+}

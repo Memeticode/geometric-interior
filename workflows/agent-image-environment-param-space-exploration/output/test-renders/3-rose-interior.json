@@ -1,0 +1,38 @@
+{
+  "name": "Rose Interior",
+  "group": "environment-portraits",
+  "bgNote": "Warm rose-magenta radial + noise at subtle strength. Intimate, soft, mineral warmth — rose quartz or candlelit velvet. The only warm-pink environment in the survey.",
+  "bgConfig": {
+    "gradient": {
+      "type": "radial",
+      "stops": [
+        {
+          "t": 0,
+          "rgb": [
+            0.22,
+            0.06,
+            0.1
+          ]
+        },
+        {
+          "t": 1,
+          "rgb": [
+            0.03,
+            0.005,
+            0.012
+          ]
+        }
+      ]
+    },
+    "texture": {
+      "type": "noise",
+      "scale": 0.35,
+      "strength": 0.25
+    },
+    "flow": {
+      "type": "none",
+      "angle": 0,
+      "strength": 0
+    }
+  }
+}

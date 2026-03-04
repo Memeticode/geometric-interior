@@ -98,11 +98,12 @@ class CarouselDropdownBrowser extends HTMLElement {
     // ── Configuration ──
     #arcAngle = 0.85;
     #smilePx = 20;
-    #flipDuration = 450;
+    #flipDuration = 1500;
     #controlsPosition = 'above'; // 'above' | 'below'
     #infinite = true;              // wrap around or clamp at edges
     #bounce = 0.35;                // overshoot amount (0 = smooth, 1 = pronounced bounce)
     #expandable = true;            // whether the grid-expand toggle is available
+    #animatingExpand = false;       // guard against overlapping expand/collapse
 
     // ── Data ──
     #items = [];           // [{ key, label, thumbSrc, fallbackSrc, deletable, data, section, sectionIndex }]
@@ -215,9 +216,16 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
     }
 
-    expand() {
-        if (this.expanded) return;
+    async expand() {
+        if (this.expanded || this.#animatingExpand) return;
+        this.#animatingExpand = true;
 
+        // Phase 1: slide controls up (only when positioned below)
+        if (this.#controlsPosition === 'below') {
+            await this.#animateControlsToTop(Math.round(this.#flipDuration * 0.5));
+        }
+
+        // Phase 2: FLIP cards to grid
         const firstRects = this.#captureCarouselRects();
         const sectionLabelRects = this.#captureSectionLabelRects();
         const dur = this.#flipDuration;
@@ -232,18 +240,30 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#dropdown.classList.remove('cdb-measuring');
         }, { firstRects });
 
-        // Hide real grid headers — phantoms will cover during morph
+        // Animate section headers from carousel label positions to grid positions
+        // (direct FLIP on headers keeps them in sync with card movement)
         const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
-        for (const h of headers) h.style.opacity = '0';
-
-        // Morph carousel section labels → grid section headers
-        const gridHeaderRects = this.#captureGridHeaderRects();
-        this.#morphSectionLabels(sectionLabelRects, gridHeaderRects, dur, easing);
-
-        // Reveal real grid headers after morph completes
-        setTimeout(() => {
-            for (const h of headers) h.style.opacity = '';
-        }, dur + 30);
+        let headerSecIdx = 0;
+        for (const h of headers) {
+            const item = this.#items.find(it => it.section === h.textContent && it.sectionIndex >= headerSecIdx);
+            if (!item) continue;
+            const secLabel = sectionLabelRects.get(item.sectionIndex);
+            const headerRect = h.getBoundingClientRect();
+            if (secLabel) {
+                const dy = secLabel.rect.top - headerRect.top;
+                const dx = secLabel.rect.left - headerRect.left;
+                h.style.transform = `translate(${dx}px, ${dy}px)`;
+                h.style.opacity = '1';
+                void h.offsetHeight;
+                h.style.transition = `transform ${dur}ms ${easing}`;
+                h.style.transform = '';
+            } else {
+                h.animate([{ opacity: 0 }, { opacity: 1 }], {
+                    duration: dur * 0.6, delay: dur * 0.3, fill: 'forwards'
+                });
+            }
+            headerSecIdx = item.sectionIndex + 1;
+        }
 
         // Card name overlays fade in
         this.#animateGridNamesIn(dur);
@@ -258,11 +278,14 @@ class CarouselDropdownBrowser extends HTMLElement {
             }
         }, dur + 30);
 
+        this.#animatingExpand = false;
         this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: true } }));
     }
 
-    collapse() {
-        if (!this.expanded) return;
+    async collapse() {
+        if (!this.expanded || this.#animatingExpand) return;
+        this.#animatingExpand = true;
+
         const dur = this.#flipDuration;
         const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
 
@@ -276,47 +299,58 @@ class CarouselDropdownBrowser extends HTMLElement {
         const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
         for (const h of headers) h.style.opacity = '0';
 
+        // Phase 1: collapse grid back to carousel
         const cardDelay = Math.round(dur * 0.15);
-        setTimeout(() => {
-            // Capture grid card positions
-            const gridCards = this.#grid.querySelectorAll('.cdb-grid-card');
-            const firstRects = new Map();
-            for (const card of gridCards) {
-                firstRects.set(card.dataset.flipKey, card.getBoundingClientRect());
-            }
+        await new Promise(resolve => {
+            setTimeout(() => {
+                // Capture grid card positions
+                const gridCards = this.#grid.querySelectorAll('.cdb-grid-card');
+                const firstRects = new Map();
+                for (const card of gridCards) {
+                    firstRects.set(card.dataset.flipKey, card.getBoundingClientRect());
+                }
 
-            // Restore carousel (invisible for measurement)
-            this.#container.style.transition = 'none';
-            this.#container.style.opacity = '0';
-            this.#strip.classList.remove('cdb-flattened');
-            this.#positionCards();
+                // Restore carousel (invisible for measurement)
+                this.#container.style.transition = 'none';
+                this.#container.style.opacity = '0';
+                this.#strip.classList.remove('cdb-flattened');
+                this.#positionCards();
 
-            // Collapse grid
-            this.#dropdown.classList.add('cdb-measuring');
-            this.#dropdown.classList.remove('expanded');
-            this.#toggle.classList.remove('active');
-            void this.#track.offsetHeight;
+                // Collapse grid
+                this.#dropdown.classList.add('cdb-measuring');
+                this.#dropdown.classList.remove('expanded');
+                this.#toggle.classList.remove('active');
+                void this.#track.offsetHeight;
 
-            this.#dropdown.classList.remove('cdb-measuring');
-            this.#container.style.transition = '';
-            this.#container.style.opacity = '';
+                this.#dropdown.classList.remove('cdb-measuring');
+                this.#container.style.transition = '';
+                this.#container.style.opacity = '';
 
-            // Capture carousel section label positions (now visible)
-            const sectionLabelRects = this.#captureSectionLabelRects();
+                // Capture carousel section label positions (now visible)
+                const sectionLabelRects = this.#captureSectionLabelRects();
 
-            // Morph grid headers → carousel section labels
-            this.#morphSectionLabels(gridHeaderRects, sectionLabelRects, dur, easing);
+                // Morph grid headers → carousel section labels
+                this.#morphSectionLabels(gridHeaderRects, sectionLabelRects, dur, easing);
 
-            // FLIP-animate card images grid → carousel
-            const imgs = [];
-            for (const { element } of this.#cards) {
-                const img = element.querySelector('.cdb-card-img');
-                if (img) imgs.push(img);
-            }
-            flipAnimate(imgs, el => el.dataset.flipKey, firstRects, { duration: dur });
+                // FLIP-animate card images grid → carousel
+                const imgs = [];
+                for (const { element } of this.#cards) {
+                    const img = element.querySelector('.cdb-card-img');
+                    if (img) imgs.push(img);
+                }
+                flipAnimate(imgs, el => el.dataset.flipKey, firstRects, { duration: dur });
 
-            this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: false } }));
-        }, cardDelay);
+                setTimeout(resolve, dur + 20);
+            }, cardDelay);
+        });
+
+        // Phase 2: slide controls back down (only when positioned below)
+        if (this.#controlsPosition === 'below') {
+            await this.#animateControlsToBottom(Math.round(dur * 0.5));
+        }
+
+        this.#animatingExpand = false;
+        this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: false } }));
     }
 
     toggle() {
@@ -483,6 +517,12 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#track.addEventListener('mousemove', (e) => this.#onTrackMouseMove(e));
         this.#track.addEventListener('mouseleave', () => this.#onTrackMouseLeave());
         this.#track.addEventListener('click', (e) => this.#onTrackClick(e));
+        this.#track.addEventListener('transitionend', (e) => {
+            if (e.target.classList?.contains('cdb-card') && e.propertyName === 'transform') {
+                clearTimeout(this.#zoneTimer);
+                this.#computeHoverZones();
+            }
+        });
 
         this.#viewport.appendChild(this.#track);
         // Section label container (per-section scrolling labels above track)
@@ -830,7 +870,11 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     #cleanupGridAnimationStyles() {
-        for (const h of this.#grid.querySelectorAll('.cdb-grid-section-header')) h.style.opacity = '';
+        for (const h of this.#grid.querySelectorAll('.cdb-grid-section-header')) {
+            h.style.opacity = '';
+            h.style.transform = '';
+            h.style.transition = '';
+        }
         for (const n of this.#grid.querySelectorAll('.cdb-grid-card-name')) n.style.opacity = '';
     }
 
@@ -843,6 +887,52 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#strip.appendChild(this.#controls);
             this.#strip.appendChild(this.#container);
         }
+    }
+
+    // ── Controls FLIP animation (two-phase expand/collapse) ──
+
+    /** FLIP-animate the controls bar from below to above the container. */
+    async #animateControlsToTop(duration) {
+        const firstRect = this.#controls.getBoundingClientRect();
+        this.#strip.insertBefore(this.#controls, this.#container);
+        void this.#controls.offsetHeight;
+        const lastRect = this.#controls.getBoundingClientRect();
+
+        const dx = firstRect.left - lastRect.left;
+        const dy = firstRect.top - lastRect.top;
+        const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+        this.#controls.style.transform = `translate(${dx}px, ${dy}px)`;
+        this.#controls.style.transition = 'none';
+        void this.#controls.offsetHeight;
+
+        this.#controls.style.transition = `transform ${duration}ms ${easing}`;
+        this.#controls.style.transform = '';
+
+        await new Promise(r => setTimeout(r, duration + 20));
+        this.#controls.style.transition = '';
+    }
+
+    /** FLIP-animate the controls bar from above back to below the container. */
+    async #animateControlsToBottom(duration) {
+        const firstRect = this.#controls.getBoundingClientRect();
+        this.#strip.appendChild(this.#controls);
+        void this.#controls.offsetHeight;
+        const lastRect = this.#controls.getBoundingClientRect();
+
+        const dx = firstRect.left - lastRect.left;
+        const dy = firstRect.top - lastRect.top;
+        const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
+
+        this.#controls.style.transform = `translate(${dx}px, ${dy}px)`;
+        this.#controls.style.transition = 'none';
+        void this.#controls.offsetHeight;
+
+        this.#controls.style.transition = `transform ${duration}ms ${easing}`;
+        this.#controls.style.transform = '';
+
+        await new Promise(r => setTimeout(r, duration + 20));
+        this.#controls.style.transition = '';
     }
 
     // ═══════════════════════════════════════════════════════
@@ -1059,6 +1149,9 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Schedule hover zone recomputation
         clearTimeout(this.#zoneTimer);
         this.#zoneTimer = setTimeout(() => this.#computeHoverZones(), HOVER_ZONE_DELAY);
+
+        // Apply rest-state masks to center card (transitions with carousel speed)
+        this.#applyRestMasks();
     }
 
     /** Position section labels using projected edges from FrameLayout. */
@@ -1101,7 +1194,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#hoveredCard = null;
         }
         for (const c of this.#cards) {
-            c.element.classList.remove('hover-displaced', 'active-shrunk', 'cdb-mask-left', 'cdb-mask-right');
+            c.element.classList.remove('hover-displaced', 'active-shrunk', 'cdb-mask-left', 'cdb-mask-right', 'cdb-rest-mask');
             c.element.style.removeProperty('--mask-size');
             c.element.style.pointerEvents = '';
         }
@@ -1177,7 +1270,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     #applyAdjacentMasks(hoveredEl) {
         // Clear existing masks
         for (const { element } of this.#cards) {
-            element.classList.remove('cdb-mask-left', 'cdb-mask-right');
+            element.classList.remove('cdb-mask-left', 'cdb-mask-right', 'cdb-rest-mask');
             element.style.removeProperty('--mask-size');
         }
         if (!hoveredEl) return;
@@ -1221,6 +1314,58 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
     }
 
+    /**
+     * Apply gradient masks to the center card where adjacent cards' rest-state
+     * edges overlap. Since --mask-size is a registered @property and cdb-rest-mask
+     * transitions at --carousel-speed, the mask animates with card rotation.
+     */
+    #applyRestMasks() {
+        const centerEl = this.#cards.find(c => c.index === this.#centerIdx)?.element;
+        if (!centerEl) return;
+        const cd = this.#cardLayout.get(centerEl);
+        if (!cd) return;
+
+        // Don't apply rest masks if a card is hovered (hover masks take priority)
+        if (this.#hoveredCard) return;
+
+        // Clear existing rest mask state on center card
+        centerEl.classList.remove('cdb-mask-left', 'cdb-mask-right', 'cdb-rest-mask');
+        centerEl.style.removeProperty('--mask-size');
+
+        const BUFFER = 12;
+        const visible = [];
+        for (const [, layout] of this.#cardLayout) {
+            if (!layout) continue;
+            visible.push(layout);
+        }
+        visible.sort((a, b) => a.cx - b.cx);
+
+        const cIdx = visible.findIndex(v => v.element === centerEl);
+        if (cIdx < 0) return;
+
+        for (const side of [-1, +1]) {
+            const nIdx = cIdx + side;
+            if (nIdx < 0 || nIdx >= visible.length) continue;
+            const nd = visible[nIdx];
+
+            // Check if neighbor's near edge projects past center's far edge
+            const overlapPx = side > 0
+                ? cd.projRightRest - nd.projLeftRest
+                : nd.projRightRest - cd.projLeftRest;
+
+            if (overlapPx > 0) {
+                const cWidth = cd.projRightRest - cd.projLeftRest;
+                const maskPx = overlapPx + BUFFER;
+                const maskPct = cWidth > 0 ? Math.min(40, (maskPx / cWidth) * 100) : 0;
+
+                if (maskPct > 0) {
+                    centerEl.classList.add(side > 0 ? 'cdb-mask-right' : 'cdb-mask-left', 'cdb-rest-mask');
+                    centerEl.style.setProperty('--mask-size', maskPct.toFixed(1) + '%');
+                }
+            }
+        }
+    }
+
     #onTrackMouseMove(e) {
         if (this.#isDragging) return;
         const x = e.clientX;
@@ -1245,20 +1390,51 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#hoveredCard = null;
         }
         this.#applyAdjacentMasks(null);
+        this.#applyRestMasks();
+    }
+
+    /** Find card element at a given clientX using fresh getBoundingClientRect positions. */
+    #findCardAtX(clientX) {
+        const visible = [];
+        for (const { element } of this.#cards) {
+            const opacity = parseFloat(element.style.getPropertyValue('--card-opacity'));
+            if (opacity <= 0) continue;
+            const img = element.querySelector('.cdb-card-img');
+            if (!img) continue;
+            const imgRect = img.getBoundingClientRect();
+            if (imgRect.width <= 0) continue;
+            visible.push({ element, leftEdge: imgRect.left, rightEdge: imgRect.right });
+        }
+        if (visible.length === 0) return null;
+
+        visible.sort((a, b) => a.leftEdge - b.leftEdge);
+
+        const centerEl = this.#cards.find(c => c.index === this.#centerIdx)?.element;
+        const centerIdx = visible.findIndex(v => v.element === centerEl);
+
+        const dividers = [];
+        for (let i = 1; i < visible.length; i++) {
+            if (centerIdx >= 0 && i > centerIdx) {
+                dividers.push(visible[i - 1].rightEdge);
+            } else {
+                dividers.push(visible[i].leftEdge);
+            }
+        }
+
+        for (let i = 0; i < visible.length; i++) {
+            const zoneLeft = i === 0 ? -Infinity : dividers[i - 1];
+            const zoneRight = i === visible.length - 1 ? Infinity : dividers[i];
+            if (clientX >= zoneLeft && clientX < zoneRight) {
+                return visible[i].element;
+            }
+        }
+        return null;
     }
 
     #onTrackClick(e) {
         if (this.#dragJustEnded) return;
-        const x = e.clientX;
-        let found = null;
-        for (const zone of this.#hoverZones) {
-            if (x >= zone.left && x < zone.right) {
-                found = zone.element;
-                break;
-            }
-        }
+        const found = this.#findCardAtX(e.clientX);
         if (!found) return;
-        // Find the card index from the element
         const entry = this.#cards.find(c => c.element === found);
         if (entry) this.#onCardClick(entry.index);
     }

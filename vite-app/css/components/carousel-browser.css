@@ -173,6 +173,15 @@ carousel-dropdown-browser-section { display: none; }
                 border-bottom-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Rest-state mask (center card during rotation) — matches carousel transition speed */
+.cdb-card.cdb-rest-mask.cdb-mask-left .cdb-card-img,
+.cdb-card.cdb-rest-mask.cdb-mask-right .cdb-card-img {
+    transition: transform 0.15s ease,
+                --mask-size var(--carousel-speed, 0.85s) ease,
+                border-color 0.2s ease, border-top-color 0.2s ease,
+                border-bottom-color 0.2s ease, box-shadow 0.2s ease;
+}
+
 /* ── View All toggle ── */
 .cdb-toggle {
     display: flex;
