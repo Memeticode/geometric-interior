@@ -6,6 +6,12 @@
     initial-value: 0%;
 }
 
+@property --underline-width {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 100px;
+}
+
 /* Hide data elements */
 carousel-dropdown-browser-card,
 carousel-dropdown-browser-section { display: none; }
@@ -20,9 +26,9 @@ carousel-dropdown-browser-section { display: none; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.1rem;
+    gap: var(--cdb-controls-gap, 0rem);
     padding: 0;
-    margin-top: 0.25rem;
+    margin-top: 1rem;
 }
 
 .cdb-controls {
@@ -35,7 +41,7 @@ carousel-dropdown-browser-section { display: none; }
 .cdb-container {
     position: relative;
     width: 100%;
-    padding: 0;
+    padding: var(--cdb-container-pad, 0);
     max-height: 300px;
     transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.3s ease;
 }
@@ -92,7 +98,7 @@ carousel-dropdown-browser-section { display: none; }
     align-items: center;
     cursor: pointer;
     transform: translate(-50%, -50%) translateX(var(--cx, 0px)) translateY(var(--cy, 0px));
-    transition: transform var(--carousel-speed, 0.85s) cubic-bezier(0.25, 0.1, 0.25, 1),
+    transition: transform var(--carousel-speed, 0.85s) var(--cdb-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
                 opacity var(--carousel-speed, 0.85s) ease;
     opacity: var(--card-opacity, 1);
     will-change: transform, opacity;
@@ -339,7 +345,7 @@ carousel-dropdown-browser-section { display: none; }
 .cdb-section-label-container {
     position: relative;
     width: 100%;
-    height: 1.4rem;
+    height: var(--cdb-label-height, 1.1rem);
     overflow: hidden;
     pointer-events: none;
 }
@@ -358,8 +364,9 @@ carousel-dropdown-browser-section { display: none; }
     letter-spacing: 0.15em;
     color: rgba(255, 255, 255, 0.3);
     padding-bottom: 0.25rem;
-    transition: transform 0.85s cubic-bezier(0.25, 0.1, 0.25, 1),
-                opacity 0.85s ease;
+    transition: transform var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
+                opacity 0.85s ease,
+                --underline-width var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1));
     will-change: transform;
 }
 .cdb-section-label::after {
@@ -370,6 +377,14 @@ carousel-dropdown-browser-section { display: none; }
     width: var(--underline-width, 100px);
     height: 1px;
     background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Section morph phantoms (temporary overlays during expand/collapse) ── */
+.cdb-section-phantom {
+    will-change: transform, opacity;
+}
+.cdb-section-phantom-bar {
+    will-change: width;
 }
 
 /* ── Grid section headers ── */

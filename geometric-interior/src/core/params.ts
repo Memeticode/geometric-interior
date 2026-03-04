@@ -6,6 +6,7 @@ import { controlLerp } from '../utils/math.js';
 import { hslToRgb01 } from '../utils/color.js';
 import type { Controls } from './image-models.js';
 import type { DerivedParams } from '../render-engine/models.js';
+import type { BgConfig } from '../render-engine/background.js';
 
 export function deriveParams(controls: Controls): DerivedParams {
     const c = controls;
@@ -27,8 +28,17 @@ export function deriveParams(controls: Controls): DerivedParams {
     const clampColor = (v: number) => Math.max(0, Math.min(0.008, v));
     const fogColor: [number, number, number] = [clampColor(rawFogColor[0]), clampColor(rawFogColor[1]), clampColor(rawFogColor[2])];
     const bgColor: [number, number, number] = [clampColor(rawBgColor[0]), clampColor(rawBgColor[1]), clampColor(rawBgColor[2])];
-    const bgInnerColor: [number, number, number] = [fogColor[0], fogColor[1], fogColor[2]];
-    const bgOuterColor: [number, number, number] = [0.0, 0.0, 0.0];
+    const bgConfig: BgConfig = {
+        gradient: {
+            type: 'radial',
+            stops: [
+                { t: 0.0, rgb: [fogColor[0], fogColor[1], fogColor[2]] },
+                { t: 1.0, rgb: [0.0, 0.0, 0.0] },
+            ],
+        },
+        texture: { type: 'none', scale: 0.5, strength: 0.0 },
+        flow:    { type: 'none', angle: 0.0, strength: 0.0 },
+    };
 
     // --- Envelope ---
     const envelopeRadii: [number, number, number] = [
@@ -226,8 +236,7 @@ export function deriveParams(controls: Controls): DerivedParams {
         baseHue,
         hueRange,
         saturation,
-        bgInnerColor,
-        bgOuterColor,
+        bgConfig,
         bgColor,
         fogColor,
         envelopeRadii,

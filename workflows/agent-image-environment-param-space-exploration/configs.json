@@ -1,0 +1,944 @@
+[
+  // ─── GROUP 1: GRADIENT BASELINE SURVEY (9) ────────────────────────────────
+  // Three gradient types × three palette intensities: void, dim-amber, dim-blue.
+  // Establishes reference points for each type before adding texture or color.
+
+  {
+    "name": "Void Radial",
+    "group": "gradient-baseline",
+    "bgNote": "Near-black radial baseline — identical to the original derived bgConfig. Reference point for all comparisons.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.003, 0.001, 0.006] },
+        { "t": 1.0, "rgb": [0.0, 0.0, 0.0] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Void Vertical",
+    "group": "gradient-baseline",
+    "bgNote": "Near-black vertical gradient. Top is pure black, bottom is void-violet. Tests world-space sky/ground split at minimal brightness.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.0, 0.0, 0.0] },
+        { "t": 1.0, "rgb": [0.003, 0.001, 0.006] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Void Diagonal",
+    "group": "gradient-baseline",
+    "bgNote": "Near-black diagonal sweep. Breaks radial symmetry with a subtle directional bias — upper-left lit, lower-right pure black.",
+    "bgConfig": {
+      "gradient": { "type": "diagonal", "stops": [
+        { "t": 0.0, "rgb": [0.004, 0.002, 0.008] },
+        { "t": 1.0, "rgb": [0.0, 0.0, 0.0] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Amber Radial",
+    "group": "gradient-baseline",
+    "bgNote": "Warm amber vignette — glowing warm center, dark edges. Candlelit cave or forge. First clearly visible background.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.18, 0.09, 0.02] },
+        { "t": 1.0, "rgb": [0.01, 0.005, 0.0] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Amber Vertical",
+    "group": "gradient-baseline",
+    "bgNote": "Warm amber vertical — darkness above, warm glow rising from below. Tests world-space vertical with a visible warm gradient.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.01, 0.005, 0.0] },
+        { "t": 1.0, "rgb": [0.18, 0.09, 0.02] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Amber Diagonal",
+    "group": "gradient-baseline",
+    "bgNote": "Amber sweep diagonal — light source implied from upper-left. Tests diagonal type with a clearly visible warm tone.",
+    "bgConfig": {
+      "gradient": { "type": "diagonal", "stops": [
+        { "t": 0.0, "rgb": [0.18, 0.09, 0.02] },
+        { "t": 1.0, "rgb": [0.005, 0.002, 0.0] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Blue Radial",
+    "group": "gradient-baseline",
+    "bgNote": "Deep blue radial — cold center glowing into pure black. Moonlight or deep-sea pressure dome.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.02, 0.05, 0.18] },
+        { "t": 1.0, "rgb": [0.0, 0.0, 0.0] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Blue Vertical",
+    "group": "gradient-baseline",
+    "bgNote": "Cold blue vertical — pure black floor, dim blue above. Deep sea floor with water column above. Tests cold palette in vertical type.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.0, 0.005, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.05, 0.18] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Blue Diagonal",
+    "group": "gradient-baseline",
+    "bgNote": "Cold blue diagonal — moonbeam or winter light from upper-left. Third point in cold type survey.",
+    "bgConfig": {
+      "gradient": { "type": "diagonal", "stops": [
+        { "t": 0.0, "rgb": [0.02, 0.05, 0.18] },
+        { "t": 1.0, "rgb": [0.0, 0.0, 0.005] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+
+  // ─── GROUP 2: DARK AMBIENT ENRICHED (8) ───────────────────────────────────
+  // Still very dark, but with spectral richness beyond the near-black void.
+
+  {
+    "name": "Deep Space",
+    "group": "dark-ambient",
+    "bgNote": "Dark blue-violet radial — richer than void baseline, suggests interstellar medium. Blue dominant.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.015, 0.020, 0.075] },
+        { "t": 1.0, "rgb": [0.0, 0.0, 0.005] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Cosmic Fog",
+    "group": "dark-ambient",
+    "bgNote": "Dark violet center → deep red-purple edge. Nebula-like — warm gas cloud in darkness. Non-radially-symmetric color field.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.040, 0.010, 0.075] },
+        { "t": 1.0, "rgb": [0.025, 0.005, 0.040] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Abyssal Teal",
+    "group": "dark-ambient",
+    "bgNote": "Very dark teal-green radial — deep sea trench or bioluminescent void. Cold, organic, unsettling.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.005, 0.038, 0.035] },
+        { "t": 1.0, "rgb": [0.0, 0.005, 0.005] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Infernal Ember",
+    "group": "dark-ambient",
+    "bgNote": "Dark amber center fading to pure black — the glow of cooling coals. Sinister warmth in pure void.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.065, 0.018, 0.004] },
+        { "t": 1.0, "rgb": [0.0, 0.0, 0.0] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Void Rose",
+    "group": "dark-ambient",
+    "bgNote": "Dark rose-pink radial — warm softness in darkness. The opposite of cold. Subtle, intimate.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.035, 0.006, 0.022] },
+        { "t": 1.0, "rgb": [0.005, 0.0, 0.003] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Indigo Depth",
+    "group": "dark-ambient",
+    "bgNote": "Deep indigo vertical — dark indigo sky, pure black ground. Contemplative, moody, directional.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.0, 0.0, 0.0] },
+        { "t": 1.0, "rgb": [0.018, 0.008, 0.055] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Dark Forest",
+    "group": "dark-ambient",
+    "bgNote": "Dark forest green vertical — dim canopy above, deep earth below. Organic, living darkness.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.005, 0.012, 0.003] },
+        { "t": 1.0, "rgb": [0.010, 0.028, 0.008] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Dark Gold",
+    "group": "dark-ambient",
+    "bgNote": "Dark gold-amber vignette — ancient gilded hall in darkness. Rich, restrained, museum-like.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.038, 0.026, 0.005] },
+        { "t": 1.0, "rgb": [0.005, 0.003, 0.0] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+
+  // ─── GROUP 3: LIT ENVIRONMENTS (10) ───────────────────────────────────────
+  // The major new territory — backgrounds with real, perceivable ambient color.
+  // These require higher geo luminosity to remain visible (additive blending).
+
+  {
+    "name": "Warm Stone Hall",
+    "group": "lit-environment",
+    "bgNote": "Warm stone-beige vertical — sun-baked limestone wall. Top is dim shadow, bottom is warm-lit. First truly lit background.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.08, 0.06, 0.04] },
+        { "t": 1.0, "rgb": [0.22, 0.17, 0.11] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Cool Marble",
+    "group": "lit-environment",
+    "bgNote": "Pale gray-blue vertical — cool marble interior, overcast daylight from above. Quiet, austere, gallery-like.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.12, 0.12, 0.15] },
+        { "t": 1.0, "rgb": [0.75, 0.76, 0.80] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Amber Hall",
+    "group": "lit-environment",
+    "bgNote": "Rich amber vignette — warm golden interior, firelight from center. Dramatic, intimate, Rembrandt-like warmth.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.55, 0.30, 0.06] },
+        { "t": 1.0, "rgb": [0.04, 0.02, 0.005] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Ocean Depth",
+    "group": "lit-environment",
+    "bgNote": "Ocean vertical — dark indigo floor, teal-blue above. Sunlight filtering down through water column.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.02, 0.06, 0.12] },
+        { "t": 1.0, "rgb": [0.08, 0.28, 0.38] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Dawn Sky",
+    "group": "lit-environment",
+    "bgNote": "Pre-dawn 3-stop vertical — deep violet ground, warm coral-orange horizon, pale blue zenith. First light.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.08, 0.03, 0.15] },
+        { "t": 0.4, "rgb": [0.75, 0.38, 0.12] },
+        { "t": 1.0, "rgb": [0.42, 0.60, 0.85] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Dusk Sky",
+    "group": "lit-environment",
+    "bgNote": "Dusk 3-stop vertical — deep violet ground, burnt orange horizon, warm gold zenith. Twilight inversion of Dawn Sky.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.08, 0.03, 0.15] },
+        { "t": 0.6, "rgb": [0.85, 0.45, 0.18] },
+        { "t": 1.0, "rgb": [0.95, 0.82, 0.45] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Day Sky",
+    "group": "lit-environment",
+    "bgNote": "Clear midday sky vertical — deep cerulean above, bright pale-blue horizon. Maximum ambient brightness test.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.20, 0.32, 0.55] },
+        { "t": 1.0, "rgb": [0.62, 0.75, 0.92] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Cave Glow",
+    "group": "lit-environment",
+    "bgNote": "Dark cave ceiling, warm amber rising from below — torch or lava at ground level. Dramatic upward lighting.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.35, 0.16, 0.02] },
+        { "t": 1.0, "rgb": [0.08, 0.06, 0.05] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Forest Light",
+    "group": "lit-environment",
+    "bgNote": "Forest canopy vertical — dark earth-green below, dim sunbeam gold above. Dappled forest floor, light from canopy.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.03, 0.10, 0.02] },
+        { "t": 1.0, "rgb": [0.45, 0.42, 0.08] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Copper Interior",
+    "group": "lit-environment",
+    "bgNote": "Rich copper-brown radial — alchemist's workshop or ancient observatory dome. Warm material presence at medium brightness.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.42, 0.22, 0.07] },
+        { "t": 1.0, "rgb": [0.10, 0.05, 0.015] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+
+  // ─── GROUP 4: TEXTURE TYPE × SCALE SURVEY (9) ─────────────────────────────
+  // Baseline: dark amber gradient (visible but not overwrought).
+  // 3 types × 3 scales (fine 0.15 / medium 0.45 / coarse 0.80).
+
+  {
+    "name": "Noise Fine",
+    "group": "texture-survey",
+    "bgNote": "Fractal value noise at fine scale (0.15) — organic micro-detail, cloudy. Baseline for noise type.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.14, 0.08, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.01, 0.0] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.15, "strength": 0.45 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Noise Medium",
+    "group": "texture-survey",
+    "bgNote": "Fractal value noise at medium scale (0.45) — larger cloud formations. Smoke, fog, turbulence reading.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.14, 0.08, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.01, 0.0] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.45, "strength": 0.45 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Noise Coarse",
+    "group": "texture-survey",
+    "bgNote": "Fractal value noise at coarse scale (0.80) — massive cloud banks. Weather system or storm reading.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.14, 0.08, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.01, 0.0] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.80, "strength": 0.45 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Voronoi Fine",
+    "group": "texture-survey",
+    "bgNote": "Voronoi cells at fine scale (0.15) — mosaic of tiny crystalline cells. The reference image aesthetic at its finest.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.14, 0.08, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.01, 0.0] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.15, "strength": 0.45 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Voronoi Medium",
+    "group": "texture-survey",
+    "bgNote": "Voronoi cells at medium scale (0.45) — geometric tessellation. The most direct translation of the reference image.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.14, 0.08, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.01, 0.0] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.45, "strength": 0.45 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Voronoi Coarse",
+    "group": "texture-survey",
+    "bgNote": "Voronoi cells at coarse scale (0.80) — large geometric plates. Cracked earth or shattered glass reading.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.14, 0.08, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.01, 0.0] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.80, "strength": 0.45 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Flow Lines Fine",
+    "group": "texture-survey",
+    "bgNote": "Directional contour lines at fine scale (0.15) — dense hatching. Engraving or topographic map.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.14, 0.08, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.01, 0.0] }
+      ]},
+      "texture": { "type": "flow-lines", "scale": 0.15, "strength": 0.45 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Flow Lines Medium",
+    "group": "texture-survey",
+    "bgNote": "Directional contour lines at medium scale (0.45) — readable stripes. Ocean currents or wind map.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.14, 0.08, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.01, 0.0] }
+      ]},
+      "texture": { "type": "flow-lines", "scale": 0.45, "strength": 0.45 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Flow Lines Coarse",
+    "group": "texture-survey",
+    "bgNote": "Directional contour lines at coarse scale (0.80) — wide atmospheric bands. Aurora or gas-giant atmosphere.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.14, 0.08, 0.02] },
+        { "t": 1.0, "rgb": [0.02, 0.01, 0.0] }
+      ]},
+      "texture": { "type": "flow-lines", "scale": 0.80, "strength": 0.45 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+
+  // ─── GROUP 5: TEXTURE STRENGTH RAMP (8) ───────────────────────────────────
+  // Voronoi and noise at 4 strengths on a warm stone vertical.
+  // Answers: how loud should texture be?
+
+  {
+    "name": "Voronoi Whisper",
+    "group": "texture-strength",
+    "bgNote": "Voronoi at strength 0.10 — subliminal geometry. Texture suggested, not stated.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.06, 0.05, 0.03] },
+        { "t": 1.0, "rgb": [0.18, 0.14, 0.09] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.40, "strength": 0.10 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Voronoi Subtle",
+    "group": "texture-strength",
+    "bgNote": "Voronoi at strength 0.30 — visible on attention, enriches without dominating.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.06, 0.05, 0.03] },
+        { "t": 1.0, "rgb": [0.18, 0.14, 0.09] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.40, "strength": 0.30 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Voronoi Visible",
+    "group": "texture-strength",
+    "bgNote": "Voronoi at strength 0.55 — texture is a clearly readable layer. Background has texture personality.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.06, 0.05, 0.03] },
+        { "t": 1.0, "rgb": [0.18, 0.14, 0.09] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.40, "strength": 0.55 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Voronoi Dominant",
+    "group": "texture-strength",
+    "bgNote": "Voronoi at strength 0.80 — texture competes with or leads the gradient. Upper bound test.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.06, 0.05, 0.03] },
+        { "t": 1.0, "rgb": [0.18, 0.14, 0.09] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.40, "strength": 0.80 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Noise Whisper",
+    "group": "texture-strength",
+    "bgNote": "Noise at strength 0.10 — organic micro-variation just beneath the surface.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.18, 0.12, 0.06] },
+        { "t": 1.0, "rgb": [0.04, 0.02, 0.01] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.35, "strength": 0.10 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Noise Subtle",
+    "group": "texture-strength",
+    "bgNote": "Noise at strength 0.30 — adds life and depth to gradient without announcing itself.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.18, 0.12, 0.06] },
+        { "t": 1.0, "rgb": [0.04, 0.02, 0.01] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.35, "strength": 0.30 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Noise Visible",
+    "group": "texture-strength",
+    "bgNote": "Noise at strength 0.55 — background has clear atmospheric texture. Smokiness or haze reading.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.18, 0.12, 0.06] },
+        { "t": 1.0, "rgb": [0.04, 0.02, 0.01] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.35, "strength": 0.55 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Noise Dominant",
+    "group": "texture-strength",
+    "bgNote": "Noise at strength 0.80 — texture overpowers gradient. Turbulent sky or thick fog.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.18, 0.12, 0.06] },
+        { "t": 1.0, "rgb": [0.04, 0.02, 0.01] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.35, "strength": 0.80 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+
+  // ─── GROUP 6: FLOW DISTORTION (8) ─────────────────────────────────────────
+  // Base: voronoi medium on dark teal — distortion clearly visible.
+
+  {
+    "name": "Directional East",
+    "group": "flow-distortion",
+    "bgNote": "Directional flow, angle=0 (east), strength=0.35. Voronoi cells sheared horizontally. Current or wind reading.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.04, 0.10, 0.09] },
+        { "t": 1.0, "rgb": [0.005, 0.015, 0.014] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.45, "strength": 0.45 },
+      "flow": { "type": "directional", "angle": 0.0, "strength": 0.35 }
+    }
+  },
+  {
+    "name": "Directional Diagonal",
+    "group": "flow-distortion",
+    "bgNote": "Directional flow, angle=0.785 (45°), strength=0.35. Cells sheared diagonally. Dynamic diagonal energy.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.04, 0.10, 0.09] },
+        { "t": 1.0, "rgb": [0.005, 0.015, 0.014] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.45, "strength": 0.45 },
+      "flow": { "type": "directional", "angle": 0.785, "strength": 0.35 }
+    }
+  },
+  {
+    "name": "Directional Strong",
+    "group": "flow-distortion",
+    "bgNote": "Directional flow, angle=0, strength=0.75. Cells highly elongated horizontally. Maximum shear test.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.04, 0.10, 0.09] },
+        { "t": 1.0, "rgb": [0.005, 0.015, 0.014] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.45, "strength": 0.45 },
+      "flow": { "type": "directional", "angle": 0.0, "strength": 0.75 }
+    }
+  },
+  {
+    "name": "Orbital Gentle",
+    "group": "flow-distortion",
+    "bgNote": "Orbital distortion at strength=0.20. Cells gently curved around sphere centre. Soft vortex.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.04, 0.10, 0.09] },
+        { "t": 1.0, "rgb": [0.005, 0.015, 0.014] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.45, "strength": 0.45 },
+      "flow": { "type": "orbital", "angle": 0.0, "strength": 0.20 }
+    }
+  },
+  {
+    "name": "Orbital Medium",
+    "group": "flow-distortion",
+    "bgNote": "Orbital distortion at strength=0.50. Cells noticeably warped into concentric arcs. Clear rotational energy.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.04, 0.10, 0.09] },
+        { "t": 1.0, "rgb": [0.005, 0.015, 0.014] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.45, "strength": 0.45 },
+      "flow": { "type": "orbital", "angle": 0.0, "strength": 0.50 }
+    }
+  },
+  {
+    "name": "Orbital Strong",
+    "group": "flow-distortion",
+    "bgNote": "Orbital distortion at strength=0.85. Maximum vortex — cells stretched into radial arcs. Tornado or gravitational lensing.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.04, 0.10, 0.09] },
+        { "t": 1.0, "rgb": [0.005, 0.015, 0.014] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.45, "strength": 0.45 },
+      "flow": { "type": "orbital", "angle": 0.0, "strength": 0.85 }
+    }
+  },
+  {
+    "name": "Orbital Flow Lines",
+    "group": "flow-distortion",
+    "bgNote": "Orbital distortion on flow-lines texture — creates concentric rings. Aurora oval or magnetic field rings.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.03, 0.06, 0.10] },
+        { "t": 1.0, "rgb": [0.005, 0.010, 0.018] }
+      ]},
+      "texture": { "type": "flow-lines", "scale": 0.30, "strength": 0.50 },
+      "flow": { "type": "orbital", "angle": 0.0, "strength": 0.60 }
+    }
+  },
+  {
+    "name": "Directional Flow Lines",
+    "group": "flow-distortion",
+    "bgNote": "Directional distortion on flow-lines at 60° — creates diagonal hatching. Compass lines or wind direction map.",
+    "bgConfig": {
+      "gradient": { "type": "diagonal", "stops": [
+        { "t": 0.0, "rgb": [0.03, 0.06, 0.10] },
+        { "t": 1.0, "rgb": [0.0, 0.005, 0.010] }
+      ]},
+      "texture": { "type": "flow-lines", "scale": 0.30, "strength": 0.50 },
+      "flow": { "type": "directional", "angle": 1.047, "strength": 0.50 }
+    }
+  },
+
+  // ─── GROUP 7: MULTI-STOP GRADIENTS (8) ────────────────────────────────────
+  // 3–6 stop gradients creating complex tonal progressions.
+
+  {
+    "name": "Tricolor Sunset",
+    "group": "multi-stop",
+    "bgNote": "3-stop vertical: dark violet ground → burnt orange horizon → pale gold zenith. Painterly sunset in three bands.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.08, 0.02, 0.15] },
+        { "t": 0.45, "rgb": [0.72, 0.32, 0.08] },
+        { "t": 1.0, "rgb": [0.95, 0.80, 0.35] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Fire Core",
+    "group": "multi-stop",
+    "bgNote": "4-stop radial: pale gold core → orange → deep red → black void. Furnace or stellar core radiating outward.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.92, 0.82, 0.30] },
+        { "t": 0.25, "rgb": [0.80, 0.30, 0.04] },
+        { "t": 0.55, "rgb": [0.40, 0.05, 0.01] },
+        { "t": 1.0, "rgb": [0.0, 0.0, 0.0] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Aurora Column",
+    "group": "multi-stop",
+    "bgNote": "4-stop vertical: dark indigo floor → deep green → cyan-teal → dark purple sky. Aurora borealis cross-section.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.02, 0.02, 0.06] },
+        { "t": 0.30, "rgb": [0.04, 0.38, 0.12] },
+        { "t": 0.60, "rgb": [0.08, 0.55, 0.50] },
+        { "t": 1.0, "rgb": [0.20, 0.04, 0.38] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Ocean Column",
+    "group": "multi-stop",
+    "bgNote": "4-stop vertical: black abyss → deep blue → blue-green → pale aqua surface. Full ocean depth column.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.0, 0.0, 0.0] },
+        { "t": 0.25, "rgb": [0.01, 0.04, 0.10] },
+        { "t": 0.65, "rgb": [0.04, 0.20, 0.32] },
+        { "t": 1.0, "rgb": [0.18, 0.55, 0.62] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Rainbow Veil",
+    "group": "multi-stop",
+    "bgNote": "6-stop diagonal: full spectrum at dim brightness — prismatic atmospheric sweep. Subtle chromatic wash.",
+    "bgConfig": {
+      "gradient": { "type": "diagonal", "stops": [
+        { "t": 0.0, "rgb": [0.12, 0.02, 0.02] },
+        { "t": 0.2, "rgb": [0.10, 0.08, 0.01] },
+        { "t": 0.4, "rgb": [0.02, 0.10, 0.02] },
+        { "t": 0.6, "rgb": [0.02, 0.06, 0.12] },
+        { "t": 0.8, "rgb": [0.06, 0.02, 0.12] },
+        { "t": 1.0, "rgb": [0.10, 0.02, 0.06] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Marble Bands",
+    "group": "multi-stop",
+    "bgNote": "4-stop radial with noise + directional flow: off-white center → cool gray → warm beige → dim stone. Marble slab.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.88, 0.88, 0.90] },
+        { "t": 0.30, "rgb": [0.62, 0.62, 0.66] },
+        { "t": 0.65, "rgb": [0.78, 0.74, 0.68] },
+        { "t": 1.0, "rgb": [0.18, 0.16, 0.14] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.25, "strength": 0.25 },
+      "flow": { "type": "directional", "angle": 0.524, "strength": 0.30 }
+    }
+  },
+  {
+    "name": "Dusk Drama",
+    "group": "multi-stop",
+    "bgNote": "4-stop vertical: deep midnight blue → twilight purple → warm coral horizon → pale gold sky. High-drama dusk.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.02, 0.04, 0.10] },
+        { "t": 0.35, "rgb": [0.20, 0.08, 0.35] },
+        { "t": 0.70, "rgb": [0.80, 0.38, 0.15] },
+        { "t": 1.0, "rgb": [0.95, 0.82, 0.38] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Haze Column",
+    "group": "multi-stop",
+    "bgNote": "3-stop vertical with noise: dark base → muted mid → pale upper. Foggy valley or overcast twilight.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.03, 0.04, 0.05] },
+        { "t": 0.55, "rgb": [0.18, 0.18, 0.22] },
+        { "t": 1.0, "rgb": [0.42, 0.40, 0.45] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.50, "strength": 0.40 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+
+  // ─── GROUP 8: ENVIRONMENT PORTRAITS (8) ───────────────────────────────────
+  // Distinctive standalone environments not yet represented in groups 1–7.
+  // Each is designed to be a complete visual environment in its own right —
+  // cool tones, crystalline textures, geological gradients, bioluminescent glows.
+  // These will be candidates for seed-mapping once the exploration is complete.
+
+  {
+    "name": "Teal Crystal",
+    "group": "environment-portraits",
+    "bgNote": "Deep teal-cyan radial + voronoi at visible strength. Crystalline underwater grotto or mineral geode. The voronoi cells echo gemstone facets against a luminous teal ground.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.04, 0.14, 0.12] },
+        { "t": 1.0, "rgb": [0.004, 0.014, 0.012] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.38, "strength": 0.50 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Arctic Ice",
+    "group": "environment-portraits",
+    "bgNote": "Pale blue-white vertical + fine voronoi at whisper strength. Ice shelf or frozen tundra — the voronoi suggests crystal facets in the snow without announcing itself. The brightest environment in the survey.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.12, 0.14, 0.20] },
+        { "t": 1.0, "rgb": [0.55, 0.62, 0.78] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.18, "strength": 0.12 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Violet Vortex",
+    "group": "environment-portraits",
+    "bgNote": "Deep violet radial + voronoi + strong orbital flow. Cosmic whirlpool or magnetic field — cells spiral into concentric arcs. Combines distortion and geometry in a single moody purple field.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.08, 0.02, 0.18] },
+        { "t": 1.0, "rgb": [0.008, 0.0, 0.018] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.42, "strength": 0.48 },
+      "flow": { "type": "orbital", "angle": 0.0, "strength": 0.65 }
+    }
+  },
+  {
+    "name": "Rose Interior",
+    "group": "environment-portraits",
+    "bgNote": "Warm rose-magenta radial + noise at subtle strength. Intimate, soft, mineral warmth — rose quartz or candlelit velvet. The only warm-pink environment in the survey.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.22, 0.06, 0.10] },
+        { "t": 1.0, "rgb": [0.03, 0.005, 0.012] }
+      ]},
+      "texture": { "type": "noise", "scale": 0.35, "strength": 0.25 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Jade Strata",
+    "group": "environment-portraits",
+    "bgNote": "3-stop vertical: near-black earth → deep jade → pale celadon sky. Ancient mineral geology. The jade family (green-teal) is underrepresented in the survey; this is its primary exploration.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.01, 0.04, 0.02] },
+        { "t": 0.45, "rgb": [0.04, 0.22, 0.10] },
+        { "t": 1.0, "rgb": [0.22, 0.48, 0.30] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Brass Patina",
+    "group": "environment-portraits",
+    "bgNote": "Warm amber-gold diagonal + fine voronoi + directional flow. Aged metalwork or alchemical surface — the flow warps the voronoi cells into directional striations like hammered brass.",
+    "bgConfig": {
+      "gradient": { "type": "diagonal", "stops": [
+        { "t": 0.0, "rgb": [0.42, 0.30, 0.06] },
+        { "t": 1.0, "rgb": [0.08, 0.05, 0.008] }
+      ]},
+      "texture": { "type": "voronoi", "scale": 0.20, "strength": 0.38 },
+      "flow": { "type": "directional", "angle": 0.35, "strength": 0.40 }
+    }
+  },
+  {
+    "name": "Cobalt Depth",
+    "group": "environment-portraits",
+    "bgNote": "3-stop vertical: near-black void → rich cobalt → pale blue-grey. Monochromatic blue depth survey — the full cobalt spectrum from abyss to haze. Pairs with the ocean column but stays purely monochromatic.",
+    "bgConfig": {
+      "gradient": { "type": "vertical", "stops": [
+        { "t": 0.0, "rgb": [0.004, 0.006, 0.014] },
+        { "t": 0.50, "rgb": [0.05, 0.12, 0.45] },
+        { "t": 1.0, "rgb": [0.20, 0.28, 0.55] }
+      ]},
+      "texture": { "type": "none", "scale": 0.5, "strength": 0.0 },
+      "flow": { "type": "none", "angle": 0.0, "strength": 0.0 }
+    }
+  },
+  {
+    "name": "Phosphor Field",
+    "group": "environment-portraits",
+    "bgNote": "Dark green-teal radial + coarse flow-lines + orbital distortion. Bioluminescent deep-sea field or magnetic aurora — the orbital warp curves the flow-lines into concentric rings of ghostly light.",
+    "bgConfig": {
+      "gradient": { "type": "radial", "stops": [
+        { "t": 0.0, "rgb": [0.02, 0.08, 0.055] },
+        { "t": 1.0, "rgb": [0.0, 0.007, 0.005] }
+      ]},
+      "texture": { "type": "flow-lines", "scale": 0.52, "strength": 0.55 },
+      "flow": { "type": "orbital", "angle": 0.0, "strength": 0.45 }
+    }
+  }
+]

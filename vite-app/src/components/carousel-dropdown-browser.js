@@ -93,7 +93,7 @@ function readCard(el) {
 // ── Main component ──
 
 class CarouselDropdownBrowser extends HTMLElement {
-    static observedAttributes = ['arc-angle', 'smile-px', 'flip-duration', 'controls-position', 'infinite'];
+    static observedAttributes = ['arc-angle', 'smile-px', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable'];
 
     // ── Configuration ──
     #arcAngle = 0.85;
@@ -101,6 +101,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     #flipDuration = 450;
     #controlsPosition = 'above'; // 'above' | 'below'
     #infinite = true;              // wrap around or clamp at edges
+    #bounce = 0.35;                // overshoot amount (0 = smooth, 1 = pronounced bounce)
+    #expandable = true;            // whether the grid-expand toggle is available
 
     // ── Data ──
     #items = [];           // [{ key, label, thumbSrc, fallbackSrc, deletable, data, section, sectionIndex }]
@@ -215,9 +217,11 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     expand() {
         if (this.expanded) return;
-        const firstRects = this.#captureCarouselRects();
 
+        const firstRects = this.#captureCarouselRects();
+        const sectionLabelRects = this.#captureSectionLabelRects();
         const dur = this.#flipDuration;
+        const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
 
         this.#flipLayout.flip(() => {
             this.#renderGridCards();
@@ -228,10 +232,20 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#dropdown.classList.remove('cdb-measuring');
         }, { firstRects });
 
-        // Track 2: Section headers fade-slide in
-        this.#animateGridHeadersIn(dur);
+        // Hide real grid headers — phantoms will cover during morph
+        const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
+        for (const h of headers) h.style.opacity = '0';
 
-        // Track 3: Card name overlays fade in
+        // Morph carousel section labels → grid section headers
+        const gridHeaderRects = this.#captureGridHeaderRects();
+        this.#morphSectionLabels(sectionLabelRects, gridHeaderRects, dur, easing);
+
+        // Reveal real grid headers after morph completes
+        setTimeout(() => {
+            for (const h of headers) h.style.opacity = '';
+        }, dur + 30);
+
+        // Card name overlays fade in
         this.#animateGridNamesIn(dur);
 
         // Clean up inline opacity after all animations finish
@@ -250,15 +264,21 @@ class CarouselDropdownBrowser extends HTMLElement {
     collapse() {
         if (!this.expanded) return;
         const dur = this.#flipDuration;
+        const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
 
-        // Phase 1: Fade out headers and names
-        this.#animateGridHeadersOut(dur);
+        // Capture grid header positions BEFORE collapse
+        const gridHeaderRects = this.#captureGridHeaderRects();
+
+        // Fade out card names
         this.#animateGridNamesOut(dur);
 
-        // Phase 2: After brief delay, run card FLIP
-        const cardDelay = Math.round(dur * 0.3);
+        // Hide real grid headers — phantoms will cover during morph
+        const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
+        for (const h of headers) h.style.opacity = '0';
+
+        const cardDelay = Math.round(dur * 0.15);
         setTimeout(() => {
-            // Capture grid positions
+            // Capture grid card positions
             const gridCards = this.#grid.querySelectorAll('.cdb-grid-card');
             const firstRects = new Map();
             for (const card of gridCards) {
@@ -281,7 +301,13 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#container.style.transition = '';
             this.#container.style.opacity = '';
 
-            // Animate carousel images from grid positions
+            // Capture carousel section label positions (now visible)
+            const sectionLabelRects = this.#captureSectionLabelRects();
+
+            // Morph grid headers → carousel section labels
+            this.#morphSectionLabels(gridHeaderRects, sectionLabelRects, dur, easing);
+
+            // FLIP-animate card images grid → carousel
             const imgs = [];
             for (const { element } of this.#cards) {
                 const img = element.querySelector('.cdb-card-img');
@@ -311,6 +337,30 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (name === 'infinite') {
             this.#infinite = val !== null && val !== 'false';
         }
+        if (name === 'bounce') {
+            this.#bounce = Math.max(0, Math.min(1, parseFloat(val) || 0.35));
+            this.#updateEasing();
+        }
+        if (name === 'expandable') {
+            this.#expandable = val !== 'false';
+            this.#updateToggleVisibility();
+        }
+    }
+
+    /** Compute cubic-bezier from bounce parameter and set CSS custom properties. */
+    #updateEasing() {
+        const b = this.#bounce;
+        // bounce=0: cubic-bezier(0.25, 0.1, 0.25, 1) — smooth, no overshoot
+        // bounce=1: cubic-bezier(0.34, 1.56, 0.64, 1) — pronounced overshoot
+        const p1x = (0.25 + 0.09 * b).toFixed(3);
+        const p1y = (0.1 + 1.46 * b).toFixed(3);
+        const p2x = (0.25 + 0.39 * b).toFixed(3);
+        const easing = `cubic-bezier(${p1x}, ${p1y}, ${p2x}, 1)`;
+        this.style.setProperty('--cdb-easing', easing);
+        // Labels get a smoother version (half the overshoot) so they don't jitter
+        const lp1y = (0.1 + 0.73 * b).toFixed(3);
+        const labelEasing = `cubic-bezier(${p1x}, ${lp1y}, ${p2x}, 1)`;
+        this.style.setProperty('--cdb-label-easing', labelEasing);
     }
 
     // ── Lifecycle ──
@@ -320,6 +370,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#buildDOM();
             this.#domBuilt = true;
         }
+        this.#updateEasing();
         this.#attachResizeObserver();
         this.#attachMutationObserver();
         // Collect any data children already present
@@ -485,10 +536,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     #updateToggleVisibility() {
-        if (this.#toggle) {
-            const vc = this.#lastFrame?.visibleCount ?? this.#computeArcParams(this.#readCardW()).visibleCount;
-            this.#toggle.style.display = this.#items.length > vc ? '' : 'none';
-        }
+        if (!this.#toggle) return;
+        this.#toggle.style.display = this.#expandable && this.#items.length > 0 ? '' : 'none';
     }
 
     // ── Carousel card rendering ──
@@ -667,37 +716,89 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
     }
 
+    /** Capture carousel section label positions + underline widths. */
+    #captureSectionLabelRects() {
+        const rects = new Map();
+        for (const sec of this.#sectionLabels) {
+            const rect = sec.element.getBoundingClientRect();
+            if (rect.width <= 0) continue;
+            const uw = parseFloat(getComputedStyle(sec.element).getPropertyValue('--underline-width')) || rect.width;
+            rects.set(sec.sectionIndex, { rect, underlineWidth: uw, text: sec.element.textContent });
+        }
+        return rects;
+    }
+
+    /** Capture grid section header positions. */
+    #captureGridHeaderRects() {
+        const rects = new Map();
+        const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
+        let secIdx = 0;
+        for (const h of headers) {
+            const item = this.#items.find(it => it.section === h.textContent && it.sectionIndex >= secIdx);
+            if (item) {
+                const rect = h.getBoundingClientRect();
+                rects.set(item.sectionIndex, { rect, underlineWidth: rect.width, text: h.textContent });
+                secIdx = item.sectionIndex + 1;
+            }
+        }
+        return rects;
+    }
+
+    /** Animate phantom overlays from one set of section rects to another. */
+    #morphSectionLabels(fromRects, toRects, duration, easing) {
+        const overlays = [];
+        for (const [secIdx, from] of fromRects) {
+            const to = toRects.get(secIdx);
+            if (!from || !to) continue;
+
+            const phantom = document.createElement('div');
+            phantom.className = 'cdb-section-phantom';
+            phantom.textContent = from.text;
+            phantom.style.cssText = `
+                position: fixed; z-index: 1000; pointer-events: none;
+                left: ${from.rect.left}px; top: ${from.rect.top}px;
+                font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em;
+                color: rgba(255, 255, 255, 0.3); white-space: nowrap;
+            `;
+
+            const fromUW = from.underlineWidth || from.rect.width;
+            const bar = document.createElement('div');
+            bar.className = 'cdb-section-phantom-bar';
+            bar.style.cssText = `
+                position: absolute; bottom: 0; left: 0;
+                width: ${fromUW}px; height: 1px;
+                background: rgba(255, 255, 255, 0.08);
+            `;
+            phantom.appendChild(bar);
+            document.body.appendChild(phantom);
+            overlays.push(phantom);
+
+            const toUW = to.underlineWidth || to.rect.width;
+            const dx = to.rect.left - from.rect.left;
+            const dy = to.rect.top - from.rect.top;
+
+            phantom.animate([
+                { transform: 'translate(0, 0)', opacity: 1 },
+                { transform: `translate(${dx}px, ${dy}px)`, opacity: 1 }
+            ], { duration, easing, fill: 'forwards' });
+
+            bar.animate([
+                { width: fromUW + 'px' },
+                { width: toUW + 'px' }
+            ], { duration, easing, fill: 'forwards' });
+
+            phantom.animate([
+                { fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.3)' },
+                { fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }
+            ], { duration, easing, fill: 'forwards' });
+        }
+
+        setTimeout(() => {
+            for (const o of overlays) o.remove();
+        }, duration + 50);
+    }
+
     // ── Grid transition animations ──
-
-    #animateGridHeadersIn(dur) {
-        const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
-        headers.forEach((h, i) => {
-            h.animate([
-                { opacity: 0, transform: 'translateY(-8px)' },
-                { opacity: 1, transform: 'translateY(0)' }
-            ], {
-                duration: dur * 0.65,
-                delay: dur * 0.2 + i * 50,
-                easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-                fill: 'backwards',
-            });
-        });
-    }
-
-    #animateGridHeadersOut(dur) {
-        const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
-        headers.forEach((h, i) => {
-            h.animate([
-                { opacity: 1, transform: 'translateY(0)' },
-                { opacity: 0, transform: 'translateY(-8px)' }
-            ], {
-                duration: dur * 0.35,
-                delay: i * 30,
-                easing: 'ease-in',
-                fill: 'forwards',
-            });
-        });
-    }
 
     #animateGridNamesIn(dur) {
         const names = this.#grid.querySelectorAll('.cdb-grid-card-name');

@@ -27,6 +27,7 @@ import type { Controls, RenderMeta } from '../core/image-models.js';
 import type { Seed } from '../core/text-generation/seed-tags.js';
 import type { DerivedParams } from './models.js';
 import type { Renderer, RendererOptions, SceneRefs } from './interfaces.js';
+import { Background, defaultBgConfig } from './background.js';
 
 export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts: RendererOptions = {}): Renderer {
     const renderer = new THREE.WebGLRenderer({
@@ -93,41 +94,14 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
     // --- Cached reusable objects ---
 
-    const bgGeometry = new THREE.PlaneGeometry(2, 2);
-    const bgMaterial = new THREE.ShaderMaterial({
-        uniforms: {
-            uInnerColor: { value: new THREE.Color() },
-            uOuterColor: { value: new THREE.Color() },
-        },
-        vertexShader: `
-            varying vec2 vUv;
-            void main() {
-                vUv = uv;
-                gl_Position = vec4(position.xy, 0.9999, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform vec3 uInnerColor;
-            uniform vec3 uOuterColor;
-            varying vec2 vUv;
-            void main() {
-                float d = length(vUv - 0.5) * 2.0;
-                gl_FragColor = vec4(mix(uInnerColor, uOuterColor, d * d), 1.0);
-            }
-        `,
-        depthWrite: false,
-        depthTest: false,
-    });
-    const bgQuad = new THREE.Mesh(bgGeometry, bgMaterial);
-    bgQuad.frustumCulled = false;
-    bgQuad.renderOrder = -1;
+    const bg = new Background(defaultBgConfig());
 
     const cachedGlowTexture = createGlowTexture();
 
     function clearScene(targetScene: THREE.Scene): void {
         while (targetScene.children.length > 0) {
             const child = targetScene.children[0];
-            if (child === bgQuad) {
+            if (child === bg.mesh) {
                 targetScene.remove(child);
                 continue;
             }
@@ -213,9 +187,8 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         currentRefs = null;
         clearScene(scene);
 
-        bgMaterial.uniforms.uInnerColor.value.setRGB(...params.bgInnerColor);
-        bgMaterial.uniforms.uOuterColor.value.setRGB(...params.bgOuterColor);
-        scene.add(bgQuad);
+        bg.setConfig(params.bgConfig);
+        scene.add(bg.mesh);
 
         const result = buildDemoScene(params, streams, scene, cachedGlowTexture);
 
@@ -244,6 +217,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         vignetteEffect.darkness = params.vignetteStrength;
 
         applyCameraOverride();
+        bg.update(camera);
         composer.render();
 
         const titleRng = mulberry32(xmur3('title-' + tag[0] + '-' + tag[1] + '-' + tag[2])());
@@ -255,8 +229,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
     function dispose(): void {
         clearScene(scene);
-        bgGeometry.dispose();
-        bgMaterial.dispose();
+        bg.dispose();
         cachedGlowTexture.dispose();
         composer.dispose();
         renderer.dispose();
@@ -317,9 +290,8 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         const paramsA = deriveParams(controlsA);
         const paramsB = deriveParams(controlsB);
 
-        bgMaterial.uniforms.uInnerColor.value.setRGB(...paramsA.bgInnerColor);
-        bgMaterial.uniforms.uOuterColor.value.setRGB(...paramsA.bgOuterColor);
-        scene.add(bgQuad);
+        bg.setConfig(paramsA.bgConfig);
+        scene.add(bg.mesh);
 
         const streamsA = createTagStreams(parseSeed(seedA));
         const resultA = buildDemoScene(paramsA, streamsA, scene, cachedGlowTexture);
@@ -370,6 +342,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
             morphGlowMat,
         };
 
+        bg.update(camera);
         composer.render();
     }
 
@@ -396,14 +369,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         camera.lookAt(0, 0, 0);
         baseCameraPos.copy(camera.position);
 
-        const iA = paramsA.bgInnerColor, iB = paramsB.bgInnerColor;
-        const oA = paramsA.bgOuterColor, oB = paramsB.bgOuterColor;
-        bgMaterial.uniforms.uInnerColor.value.setRGB(
-            lerp(iA[0], iB[0], t), lerp(iA[1], iB[1], t), lerp(iA[2], iB[2], t),
-        );
-        bgMaterial.uniforms.uOuterColor.value.setRGB(
-            lerp(oA[0], oB[0], t), lerp(oA[1], oB[1], t), lerp(oA[2], oB[2], t),
-        );
+        bg.lerpConfig(paramsA.bgConfig, paramsB.bgConfig, t);
 
         bloomEffect.intensity = lerp(paramsA.bloomStrength, paramsB.bloomStrength, t);
         bloomEffect.luminanceMaterial.threshold = lerp(paramsA.bloomThreshold, paramsB.bloomThreshold, t);
@@ -416,6 +382,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         if (refsB.faceMat) refsB.faceMat.uniforms.uAttenuationCoeff.value = attenVal;
 
         applyCameraOverride();
+        bg.update(camera);
         composer.render();
     }
 
@@ -621,7 +588,12 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
     function renderFrame(): void {
         applyCameraOverride();
+        bg.update(camera);
         composer.render();
+    }
+
+    function setBgConfig(config: import('./background.js').BgConfig): void {
+        bg.setConfig(config);
     }
 
     function foldIn(): void { foldTarget = 1.0; }
@@ -645,6 +617,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         setCameraState, clearCameraState,
         setLiveParams,
         setFocusState, clearFocusState,
+        setBgConfig,
         foldIn, foldOut, setFoldImmediate, isFoldComplete,
         getCanvas: () => canvas,
     };

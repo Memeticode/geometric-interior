@@ -6,6 +6,7 @@ import type { ShaderMaterial, Mesh, InstancedMesh, MeshBasicMaterial } from 'thr
 import type { Controls, RenderMeta } from '../core/image-models.js';
 import type { Seed } from '../core/text-generation/seed-tags.js';
 import type { GlowPointDatum, LightUniforms } from './models.js';
+import type { BgConfig } from './background.js';
 
 /** Renderer instance returned by createRenderer() */
 export interface Renderer {
@@ -15,6 +16,8 @@ export interface Renderer {
     morphEnd(): void;
     updateTime(seconds: number): void;
     renderFrame(): void;
+    /** Override the derived background config and trigger a re-render. */
+    setBgConfig(config: BgConfig): void;
     setAnimConfig(config: { sparkle?: number; drift?: number; wobble?: number }): void;
     setCameraState(zoom: number, orbitY: number, orbitX: number): void;
     clearCameraState(): void;

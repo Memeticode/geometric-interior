@@ -3,6 +3,7 @@
  */
 
 import type { Vector3, Color } from 'three';
+import type { BgConfig } from './background.js';
 
 /** Curve config per tier */
 export interface CurveTierConfig {
@@ -84,8 +85,7 @@ export interface DerivedParams {
     baseHue: number;
     hueRange: number;
     saturation: number;
-    bgInnerColor: [number, number, number];
-    bgOuterColor: [number, number, number];
+    bgConfig: BgConfig;
     bgColor: [number, number, number];
     fogColor: [number, number, number];
     envelopeRadii: [number, number, number];
