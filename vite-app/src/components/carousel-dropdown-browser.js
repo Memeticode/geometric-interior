@@ -9,6 +9,31 @@
  *   <carousel-dropdown-browser-card key="..." label="..." thumb-src="...">
  *   <carousel-dropdown-browser-section label="..."> (optional grouping)
  *
+ * ── Animation Architecture ──
+ *
+ * Card positioning uses CSS custom properties (--cx, --cy, --ry, --tz, --sc,
+ * --card-opacity) which feed into CSS `transform` and `opacity` declarations.
+ * Normal carousel navigation animates these via CSS transitions.
+ *
+ * Expand/collapse uses the Web Animations API (element.animate()) instead
+ * of CSS transitions. This avoids fragile reflow-timing issues inherent in the
+ * FLIP pattern (`transition:none → reflow → transition+targets`), where
+ * intermediate reflows during layout changes can "consume" the from-state
+ * before the browser sees the to-state.
+ *
+ * The animation flow for both directions:
+ *   1. Suppress CSS transitions (transition:'none') during layout changes
+ *   2. Read "from" positions from current custom property values
+ *   3. Compute "to" positions from target layout (grid rects or carousel layout)
+ *   4. Call #animateCardsWA() — creates Web Animations with explicit keyframes
+ *   5. Set custom properties to target values (CSS uses these after animation)
+ *   6. Cleanup: cancel animations, restore transitions, swap DOM state
+ *
+ * Scroll synchronization:
+ *   - Expand: scrolls down during animation if grid overflows viewport
+ *   - Collapse: scrolls up during card animation, then compensates for the
+ *     dropdown-collapse layout shift with an instant offset + smooth ease
+ *
  * @fires item-select   — { key, index, item } when a card is clicked
  * @fires center-change — { key, index } when carousel center changes (drag, arrow)
  * @fires item-delete   — { key, index, item } when grid delete button is clicked
@@ -66,6 +91,26 @@ const SECTION_GAP = 0.4;         // extra card-widths of spacing at section boun
 const PERSPECTIVE_D = 1200;      // matches CSS perspective(1200px)
 const DEG = Math.PI / 180;       // degrees-to-radians multiplier
 const HOVER_ZONE_DELAY = 900;    // ms delay before recomputing hover zones after layout
+
+/** Cubic-bezier evaluator for JS-driven scroll animations. */
+function cubicBezierEase(x1, y1, x2, y2) {
+    const at = (t, a, b) => 3 * (1 - t) * (1 - t) * t * a + 3 * (1 - t) * t * t * b + t * t * t;
+    const dAt = (t, a, b) => 3 * (1 - t) * (1 - t) * a + 6 * (1 - t) * t * (b - a) + 3 * t * t * (1 - b);
+    return (progress) => {
+        if (progress <= 0) return 0;
+        if (progress >= 1) return 1;
+        let g = progress;
+        for (let i = 0; i < 8; i++) {
+            const err = at(g, x1, x2) - progress;
+            if (Math.abs(err) < 1e-6) break;
+            const d = dAt(g, x1, x2);
+            if (Math.abs(d) < 1e-6) break;
+            g -= err / d;
+        }
+        return at(g, y1, y2);
+    };
+}
+const FLIP_EASE = cubicBezierEase(0.4, 0, 0.2, 1);
 
 /** Project the outer edge of a card: perspective(d) rotateY(θ) translateZ(tz) scale(s). */
 function projOuterEdge(W, s, tz, thetaRad, d, side) {
@@ -154,6 +199,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     #flipLayout = null;
     #resizeObs = null;
     #scrollParent = null;
+    #scrollRaf = null;
+    #flipAnimations = [];  // Web Animations created by #animateCardsWA
     #sectionLabelContainer = null;
     #sectionLabels = [];
 
@@ -395,29 +442,31 @@ class CarouselDropdownBrowser extends HTMLElement {
             });
         }
 
-        // ── Force reflow: snapshot all "from" positions (transition:none is already set) ──
-        void this.#track.offsetHeight;
-
-        // ── Animate: set transition + targets together (mirrors collapse pattern) ──
+        // ── Animate cards to grid positions via Web Animations API ──
+        // Explicit from/to keyframes — no reflow timing dependency.
+        const waTargets = [];
         for (const t of visibleTargets) {
-            t.element.style.transition = `transform ${dur}ms ${easing} ${t.delay}ms`;
-            if (t.img) t.img.style.transition = `transform ${dur}ms ${easing} ${t.delay}ms`;
-            t.element.style.setProperty('--cx', t.cx + 'px');
-            t.element.style.setProperty('--cy', t.cy + 'px');
-            t.element.style.setProperty('--ry', '0deg');
-            t.element.style.setProperty('--tz', '0px');
-            t.element.style.setProperty('--sc', String(t.sc));
+            const from = this.#readCardFromState(t.element);
+            waTargets.push({
+                element: t.element, img: t.img,
+                fromCx: from.cx, fromCy: from.cy, fromRy: from.ry,
+                fromTz: from.tz, fromSc: from.sc, fromOpacity: from.opacity,
+                toCx: t.cx, toCy: t.cy, toRy: 0, toTz: 0, toSc: t.sc, toOpacity: 1,
+                duration: dur, delay: t.delay, easing,
+            });
         }
         for (const t of offScreenTargets) {
-            t.element.style.transition = `transform ${dur}ms ${easing} ${offScreenBaseDelay}ms, opacity ${Math.round(dur * 0.6)}ms ease ${offScreenBaseDelay}ms`;
-            if (t.img) t.img.style.transition = `transform ${dur}ms ${easing} ${offScreenBaseDelay}ms`;
-            t.element.style.setProperty('--cx', t.cx + 'px');
-            t.element.style.setProperty('--cy', t.cy + 'px');
-            t.element.style.setProperty('--ry', '0deg');
-            t.element.style.setProperty('--tz', '0px');
-            t.element.style.setProperty('--sc', String(t.sc));
-            t.element.style.setProperty('--card-opacity', '1');
+            const from = this.#readCardFromState(t.element);
+            waTargets.push({
+                element: t.element, img: t.img,
+                fromCx: from.cx, fromCy: from.cy, fromRy: from.ry,
+                fromTz: from.tz, fromSc: from.sc, fromOpacity: 0,
+                toCx: t.cx, toCy: t.cy, toRy: 0, toTz: 0, toSc: t.sc, toOpacity: 1,
+                duration: dur, delay: offScreenBaseDelay, easing,
+                opacityDuration: Math.round(dur * 0.6), opacityEasing: 'ease',
+            });
         }
+        this.#animateCardsWA(waTargets);
 
         const totalDur = Math.max(dur + maxVisibleDelay,
             offScreenCards.length > 0 ? dur + offScreenBaseDelay : 0);
@@ -485,16 +534,27 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Card name overlays fade in
         this.#animateGridNamesIn(totalDur);
 
+        // ── Synchronized scroll: follow cards as they fly to grid positions ──
+        if (this.#scrollParent && this.#scrollParent.scrollHeight > this.#scrollParent.clientHeight) {
+            const dropdownBottom = this.#dropdown.getBoundingClientRect().bottom;
+            const parentRect = this.#scrollParent.getBoundingClientRect();
+            const overflow = dropdownBottom - parentRect.bottom;
+            if (overflow > 0) {
+                this.#animateScroll(this.#scrollParent.scrollTop + overflow, totalDur);
+            }
+        }
+
         // ── Cleanup after all animations complete ──
         setTimeout(() => {
-            // Clear card transition overrides BEFORE flattenCards changes custom
-            // properties, otherwise they'd animate back to center.
+            // Cancel Web Animations — CSS custom properties already hold targets
+            this.#cancelFlipAnimations();
+
+            // Suppress transitions before flattenCards changes custom properties
             for (const { element } of this.#cards) {
                 element.style.transition = 'none';
                 const img = element.querySelector('.cdb-card-img');
                 if (img) img.style.transition = 'none';
             }
-            // Suppress section-label-container transition from cdb-flattened
             this.#sectionLabelContainer.style.transition = 'none';
 
             // Show grid cards, flatten carousel
@@ -523,11 +583,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                     img.style.webkitMaskImage = '';
                     img.style.maskImage = '';
                 }
-            }
-
-            // Scroll to show grid content now that animation is complete
-            if (this.#scrollParent && this.#scrollParent.scrollHeight > this.#scrollParent.clientHeight) {
-                this.#scrollParent.scrollTo({ top: this.#scrollParent.scrollHeight, behavior: 'smooth' });
             }
 
             // Clear controls FLIP styles and re-enable
@@ -601,6 +656,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 const trackCX = trackRect.left + trackRect.width / 2;
                 const trackCY = trackRect.top + trackRect.height / 2;
 
+                // Position off-screen cards at grid positions (for "from" state)
                 for (const { element } of this.#cards) {
                     const key = element.dataset.flipKey;
                     const gridRect = gridRects.get(key);
@@ -620,7 +676,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                 }
 
                 this.#viewport.style.overflow = 'visible';
-                void this.#track.offsetHeight;
 
                 // ── FLIP controls to smooth position change ──
                 const ctrlAfter = this.#controls.getBoundingClientRect();
@@ -643,7 +698,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                 const frame = this.#computeLayout();
 
                 // ── Section label morph ──
-                // Position labels without changing opacity (they stay hidden from expand)
                 const visibleSections = this.#applySectionLabels(frame, true);
                 const sectionLabelRects = this.#captureSectionLabelRects(visibleSections);
                 const sectionPhantoms = this.#morphSectionLabels(gridHeaderRects, sectionLabelRects, dur, easing);
@@ -661,7 +715,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 if (!leftEdge) leftEdge = rightEdge;
                 if (!rightEdge) rightEdge = leftEdge;
 
-                // ── Animate visible carousel cards to carousel positions (center first) ──
+                // ── Animate cards to carousel positions via Web Animations API ──
                 const total = this.#items.length;
                 const staggerDelay = 50;
                 const sorted = [...this.#cards]
@@ -671,55 +725,66 @@ class CarouselDropdownBrowser extends HTMLElement {
 
                 const maxVisibleDelay = sorted.length > 0 ? (sorted.length - 1) * staggerDelay : 0;
 
+                const waTargets = [];
                 for (let i = 0; i < sorted.length; i++) {
                     const { element, layout } = sorted[i];
-                    const delay = i * staggerDelay;
-                    element.style.transition = `transform ${dur}ms ${easing} ${delay}ms, opacity ${dur}ms ease ${delay}ms`;
-                    const img = element.querySelector('.cdb-card-img');
-                    if (img) img.style.transition = `transform ${dur}ms ${easing} ${delay}ms`;
-
-                    element.style.setProperty('--cx', layout.cx + 'px');
-                    element.style.setProperty('--cy', layout.cy + 'px');
-                    element.style.setProperty('--ry', layout.ry + 'deg');
-                    element.style.setProperty('--tz', layout.tz + 'px');
-                    element.style.setProperty('--sc', String(layout.sc));
-                    element.style.setProperty('--card-opacity', String(layout.opacity));
+                    const from = this.#readCardFromState(element);
+                    waTargets.push({
+                        element, img: element.querySelector('.cdb-card-img'),
+                        fromCx: from.cx, fromCy: from.cy, fromRy: from.ry,
+                        fromTz: from.tz, fromSc: from.sc, fromOpacity: 1,
+                        toCx: layout.cx, toCy: layout.cy, toRy: layout.ry,
+                        toTz: layout.tz, toSc: layout.sc, toOpacity: layout.opacity,
+                        duration: dur, delay: i * staggerDelay, easing,
+                    });
                     element.style.zIndex = String(layout.zIndex);
                 }
 
-                // ── Animate off-screen cards from grid to edge positions + fade out ──
+                // Off-screen cards: grid → edge position + fade out
                 const offScreenBaseDelay = Math.min(sorted.length, 3) * staggerDelay;
                 for (const { element, index } of this.#cards) {
                     const layout = this.#cardLayout.get(element);
-                    if (layout && layout.opacity > 0) continue; // visible in carousel
-                    if (!gridRects.has(element.dataset.flipKey)) continue; // wasn't in grid
+                    if (layout && layout.opacity > 0) continue;
+                    if (!gridRects.has(element.dataset.flipKey)) continue;
 
                     let offset = index - this.#centerIdx;
                     if (this.#infinite && total > 1) {
                         if (offset > total / 2) offset -= total;
                         if (offset < -total / 2) offset += total;
                     }
-
                     const edge = offset < 0 ? leftEdge : rightEdge;
                     if (!edge) continue;
 
-                    element.style.transition = `transform ${dur}ms ${easing} ${offScreenBaseDelay}ms, opacity ${Math.round(dur * 0.6)}ms ease ${offScreenBaseDelay}ms`;
-                    const img = element.querySelector('.cdb-card-img');
-                    if (img) img.style.transition = `transform ${dur}ms ${easing} ${offScreenBaseDelay}ms`;
-
-                    element.style.setProperty('--cx', edge.cx + 'px');
-                    element.style.setProperty('--cy', edge.cy + 'px');
-                    element.style.setProperty('--ry', edge.ry + 'deg');
-                    element.style.setProperty('--tz', edge.tz + 'px');
-                    element.style.setProperty('--sc', String(edge.sc));
-                    element.style.setProperty('--card-opacity', '0');
+                    const from = this.#readCardFromState(element);
+                    waTargets.push({
+                        element, img: element.querySelector('.cdb-card-img'),
+                        fromCx: from.cx, fromCy: from.cy, fromRy: from.ry,
+                        fromTz: from.tz, fromSc: from.sc, fromOpacity: 1,
+                        toCx: edge.cx, toCy: edge.cy, toRy: edge.ry,
+                        toTz: edge.tz, toSc: edge.sc, toOpacity: 0,
+                        duration: dur, delay: offScreenBaseDelay, easing,
+                        opacityDuration: Math.round(dur * 0.6), opacityEasing: 'ease',
+                    });
                     element.style.zIndex = '0';
                 }
+                this.#animateCardsWA(waTargets);
 
                 const totalDur = Math.max(dur + maxVisibleDelay, dur + offScreenBaseDelay);
 
+                // ── Synchronized scroll: scroll up to follow cards during animation ──
+                this.#scrollParent = this.closest('.gallery-main') || this.parentElement;
+                if (this.#scrollParent) {
+                    const componentRect = this.getBoundingClientRect();
+                    const parentRect = this.#scrollParent.getBoundingClientRect();
+                    const above = parentRect.top - componentRect.top;
+                    if (above > 0) {
+                        this.#animateScroll(this.#scrollParent.scrollTop - above, totalDur);
+                    }
+                }
+
                 // ── Cleanup after animation ──
                 setTimeout(() => {
+                    this.#cancelFlipAnimations();
                     for (const { element } of this.#cards) {
                         element.style.transition = '';
                         const img = element.querySelector('.cdb-card-img');
@@ -736,14 +801,35 @@ class CarouselDropdownBrowser extends HTMLElement {
                     this.#sectionLabelContainer.style.opacity = '';
                     void this.#sectionLabelContainer.offsetHeight;
 
-                    // Collapse dropdown now that animation is complete
+                    // ── Collapse dropdown — compensate scroll for layout shift ──
                     const ctrlBefore2 = this.#controls.getBoundingClientRect();
+                    const scrollParent = this.closest('.gallery-main') || this.parentElement;
+                    const scrollBefore = scrollParent ? scrollParent.scrollTop : 0;
+                    const rectBefore = this.getBoundingClientRect();
+
                     this.#dropdown.style.opacity = '';
                     this.#dropdown.style.pointerEvents = '';
                     this.#dropdown.classList.add('cdb-measuring');
                     this.#dropdown.classList.remove('expanded');
                     void this.#dropdown.offsetHeight;
                     this.#dropdown.classList.remove('cdb-measuring');
+
+                    // Compensate for dropdown-collapse layout shift
+                    if (scrollParent) {
+                        const rectAfter = this.getBoundingClientRect();
+                        const layoutShift = rectBefore.top - rectAfter.top;
+                        if (Math.abs(layoutShift) > 1) {
+                            // Instantly offset so component stays in same visual spot
+                            scrollParent.scrollTop = scrollBefore - layoutShift;
+                            // Then smooth-scroll to show carousel at top of viewport
+                            this.#scrollParent = scrollParent;
+                            const targetScroll = Math.max(0, Math.min(
+                                scrollParent.scrollTop + this.getBoundingClientRect().top - this.#scrollParent.getBoundingClientRect().top,
+                                scrollParent.scrollHeight - scrollParent.clientHeight
+                            ));
+                            this.#animateScroll(targetScroll, 300);
+                        }
+                    }
 
                     // FLIP controls for dropdown collapse shift
                     const ctrlAfter2 = this.#controls.getBoundingClientRect();
@@ -758,7 +844,6 @@ class CarouselDropdownBrowser extends HTMLElement {
 
                     // positionCards sets correct label opacity via applySectionLabels
                     this.#positionCards();
-                    // Re-enable label transitions after positionCards set correct state
                     for (const sec of this.#sectionLabels) {
                         sec.element.style.transition = '';
                     }
@@ -772,8 +857,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                     this.#navRight.disabled = false;
                     this.#toggle.disabled = false;
                     this.#toggle.setAttribute('data-tooltip', 'Expand');
-
-                    this.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
                     resolve();
                 }, totalDur + 50);
@@ -884,6 +967,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     disconnectedCallback() {
+        this.#cancelFlipAnimations();
+        if (this.#scrollRaf) { cancelAnimationFrame(this.#scrollRaf); this.#scrollRaf = null; }
         if (this.#resizeObs) {
             this.#resizeObs.disconnect();
             this.#resizeObs = null;
@@ -1376,6 +1461,104 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     // ── Grid transition animations ──
+
+    /**
+     * FLIP-animate cards via Web Animations API.
+     *
+     * Each target describes a card's from/to positions. This avoids the fragile
+     * `transition:none → reflow → transition+targets` CSS pattern entirely —
+     * from and to keyframes are explicit, no reflow timing dependency.
+     *
+     * Stores created Animation objects in #flipAnimations for cleanup.
+     *
+     * @param {Array<{
+     *   element: HTMLElement,
+     *   img?: HTMLElement,
+     *   fromCx: number, fromCy: number, fromRy: number, fromTz: number,
+     *   fromSc: number, fromOpacity: number,
+     *   toCx: number, toCy: number, toRy: number, toTz: number,
+     *   toSc: number, toOpacity: number,
+     *   duration: number, delay?: number, easing: string,
+     *   opacityDuration?: number, opacityEasing?: string,
+     * }>} targets
+     */
+    #animateCardsWA(targets) {
+        for (const t of targets) {
+            const fromTransform = `translate(-50%, -50%) translateX(${t.fromCx}px) translateY(${t.fromCy}px)`;
+            const toTransform = `translate(-50%, -50%) translateX(${t.toCx}px) translateY(${t.toCy}px)`;
+            const delay = t.delay || 0;
+
+            // Card wrapper: position + opacity
+            if (t.opacityDuration != null && t.opacityDuration !== t.duration) {
+                // Different timing for transform vs opacity — use two animations
+                this.#flipAnimations.push(t.element.animate(
+                    [{ transform: fromTransform }, { transform: toTransform }],
+                    { duration: t.duration, delay, easing: t.easing, fill: 'forwards' }
+                ));
+                this.#flipAnimations.push(t.element.animate(
+                    [{ opacity: t.fromOpacity }, { opacity: t.toOpacity }],
+                    { duration: t.opacityDuration, delay, easing: t.opacityEasing || 'ease', fill: 'forwards' }
+                ));
+            } else {
+                this.#flipAnimations.push(t.element.animate([
+                    { transform: fromTransform, opacity: t.fromOpacity },
+                    { transform: toTransform, opacity: t.toOpacity }
+                ], { duration: t.duration, delay, easing: t.easing, fill: 'forwards' }));
+            }
+
+            // Card-img wrapper: 3D perspective transform
+            if (t.img) {
+                this.#flipAnimations.push(t.img.animate([
+                    { transform: `perspective(1200px) rotateY(${t.fromRy}deg) translateZ(${t.fromTz}px) scale(${t.fromSc})` },
+                    { transform: `perspective(1200px) rotateY(${t.toRy}deg) translateZ(${t.toTz}px) scale(${t.toSc})` }
+                ], { duration: t.duration, delay, easing: t.easing, fill: 'forwards' }));
+            }
+
+            // Set custom properties to target values immediately — CSS will use
+            // these after the Web Animation is cancelled/finished in cleanup.
+            t.element.style.setProperty('--cx', t.toCx + 'px');
+            t.element.style.setProperty('--cy', t.toCy + 'px');
+            t.element.style.setProperty('--ry', t.toRy + 'deg');
+            t.element.style.setProperty('--tz', t.toTz + 'px');
+            t.element.style.setProperty('--sc', String(t.toSc));
+            t.element.style.setProperty('--card-opacity', String(t.toOpacity));
+        }
+    }
+
+    /** Cancel all FLIP Web Animations and clear the list. */
+    #cancelFlipAnimations() {
+        for (const a of this.#flipAnimations) a.cancel();
+        this.#flipAnimations = [];
+    }
+
+    /** Read a card element's current custom property "from" state. */
+    #readCardFromState(element) {
+        return {
+            cx: parseFloat(element.style.getPropertyValue('--cx')) || 0,
+            cy: parseFloat(element.style.getPropertyValue('--cy')) || 0,
+            ry: parseFloat(element.style.getPropertyValue('--ry')) || 0,
+            tz: parseFloat(element.style.getPropertyValue('--tz')) || 0,
+            sc: parseFloat(element.style.getPropertyValue('--sc')) || 1,
+            opacity: parseFloat(element.style.getPropertyValue('--card-opacity')) ?? 1,
+        };
+    }
+
+    /** Animate scrollTop of #scrollParent in sync with card animations. */
+    #animateScroll(targetTop, duration) {
+        if (!this.#scrollParent) return;
+        if (this.#scrollRaf) cancelAnimationFrame(this.#scrollRaf);
+        const from = this.#scrollParent.scrollTop;
+        const delta = targetTop - from;
+        if (Math.abs(delta) < 1) return;
+        const start = performance.now();
+        const tick = (now) => {
+            const t = Math.min(1, (now - start) / duration);
+            this.#scrollParent.scrollTop = from + delta * FLIP_EASE(t);
+            if (t < 1) this.#scrollRaf = requestAnimationFrame(tick);
+            else this.#scrollRaf = null;
+        };
+        this.#scrollRaf = requestAnimationFrame(tick);
+    }
 
     #animateGridNamesIn(dur) {
         const names = this.#grid.querySelectorAll('.cdb-grid-card-name');
