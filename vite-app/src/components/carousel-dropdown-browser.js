@@ -524,7 +524,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                     h.style.opacity = '1';
                 } else {
                     h.animate([{ opacity: 0 }, { opacity: 1 }], {
-                        duration: dur * 0.3, delay: dur * 0.75, fill: 'forwards'
+                        duration: dur * 0.3, delay: dur * 0.75, fill: 'both'
                     });
                 }
             }
@@ -628,10 +628,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Fade out card names
         this.#animateGridNamesOut(dur);
 
-        // Hide real grid headers — phantoms will cover during morph
         const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
-        for (const h of headers) h.style.opacity = '0';
-
         const cardDelay = Math.round(dur * 0.15);
 
         await new Promise(resolve => {
@@ -671,7 +668,8 @@ class CarouselDropdownBrowser extends HTMLElement {
                     element.style.setProperty('--ry', '0deg');
                     element.style.setProperty('--tz', '0px');
                     element.style.setProperty('--sc', String(gridRect.width / cardW));
-                    element.style.setProperty('--card-opacity', '1');
+                    // Leave --card-opacity at 0 — Web Animation fill:'both' handles
+                    // opacity, keeping cards invisible until animation starts.
                     element.style.zIndex = '5';
                 }
 
@@ -698,6 +696,8 @@ class CarouselDropdownBrowser extends HTMLElement {
                 const frame = this.#computeLayout();
 
                 // ── Section label morph ──
+                // Hide grid headers just before phantoms replace them (no gap)
+                for (const h of headers) h.style.opacity = '0';
                 const visibleSections = this.#applySectionLabels(frame, true);
                 const sectionLabelRects = this.#captureSectionLabelRects(visibleSections);
                 const sectionPhantoms = this.#morphSectionLabels(gridHeaderRects, sectionLabelRects, dur, easing);
@@ -771,15 +771,21 @@ class CarouselDropdownBrowser extends HTMLElement {
 
                 const totalDur = Math.max(dur + maxVisibleDelay, dur + offScreenBaseDelay);
 
-                // ── Synchronized scroll: scroll up to follow cards during animation ──
+                // ── Synchronized scroll: scroll to post-collapse position during animation ──
                 this.#scrollParent = this.closest('.gallery-main') || this.parentElement;
                 if (this.#scrollParent) {
                     const componentRect = this.getBoundingClientRect();
                     const parentRect = this.#scrollParent.getBoundingClientRect();
                     const above = parentRect.top - componentRect.top;
-                    if (above > 0) {
-                        this.#animateScroll(this.#scrollParent.scrollTop - above, totalDur);
-                    }
+                    const dropdownH = this.#dropdown.getBoundingClientRect().height;
+                    // Scroll up if component is above viewport, otherwise hold position
+                    const rawTarget = above > 0
+                        ? this.#scrollParent.scrollTop - above
+                        : this.#scrollParent.scrollTop;
+                    // Clamp to future max (after dropdown height disappears)
+                    const futureMaxScroll = Math.max(0,
+                        (this.#scrollParent.scrollHeight - dropdownH) - this.#scrollParent.clientHeight);
+                    this.#animateScroll(Math.min(rawTarget, futureMaxScroll), totalDur);
                 }
 
                 // ── Cleanup after animation ──
@@ -793,7 +799,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                     this.#container.style.transition = '';
                     this.#sectionLabelContainer.style.transition = '';
                     this.#viewport.style.overflow = '';
-                    for (const o of sectionPhantoms) o.remove();
                     // Suppress label transitions, clear container opacity
                     for (const sec of this.#sectionLabels) {
                         sec.element.style.transition = 'none';
@@ -814,20 +819,12 @@ class CarouselDropdownBrowser extends HTMLElement {
                     void this.#dropdown.offsetHeight;
                     this.#dropdown.classList.remove('cdb-measuring');
 
-                    // Compensate for dropdown-collapse layout shift
+                    // Compensate for any residual layout shift from dropdown collapse
                     if (scrollParent) {
                         const rectAfter = this.getBoundingClientRect();
                         const layoutShift = rectBefore.top - rectAfter.top;
                         if (Math.abs(layoutShift) > 1) {
-                            // Instantly offset so component stays in same visual spot
                             scrollParent.scrollTop = scrollBefore - layoutShift;
-                            // Then smooth-scroll to show carousel at top of viewport
-                            this.#scrollParent = scrollParent;
-                            const targetScroll = Math.max(0, Math.min(
-                                scrollParent.scrollTop + this.getBoundingClientRect().top - this.#scrollParent.getBoundingClientRect().top,
-                                scrollParent.scrollHeight - scrollParent.clientHeight
-                            ));
-                            this.#animateScroll(targetScroll, 300);
                         }
                     }
 
@@ -844,6 +841,8 @@ class CarouselDropdownBrowser extends HTMLElement {
 
                     // positionCards sets correct label opacity via applySectionLabels
                     this.#positionCards();
+                    // Remove phantoms only after real labels are restored
+                    for (const o of sectionPhantoms) o.remove();
                     for (const sec of this.#sectionLabels) {
                         sec.element.style.transition = '';
                     }
@@ -1395,6 +1394,10 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
         if (matchCount > 0) { avgDx /= matchCount; avgDy /= matchCount; }
 
+        // Position phantoms relative to the component so they scroll with content
+        const hostRect = this.getBoundingClientRect();
+        this.style.position = this.style.position || 'relative';
+
         for (const [secIdx, from] of fromRects) {
             if (!from) continue;
             const to = toRects.get(secIdx);
@@ -1404,7 +1407,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             phantom.textContent = from.text;
             phantom.style.cssText = `
                 position: absolute; z-index: 1000; pointer-events: none;
-                left: ${from.rect.left + window.scrollX}px; top: ${from.rect.top + window.scrollY}px;
+                left: ${from.rect.left - hostRect.left}px; top: ${from.rect.top - hostRect.top}px;
                 font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em;
                 color: rgba(255, 255, 255, 0.3); white-space: nowrap;
             `;
@@ -1418,7 +1421,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 background: rgba(255, 255, 255, 0.08);
             `;
             phantom.appendChild(bar);
-            document.body.appendChild(phantom);
+            this.appendChild(phantom);
             overlays.push(phantom);
 
             if (to) {
@@ -1430,17 +1433,17 @@ class CarouselDropdownBrowser extends HTMLElement {
                 phantom.animate([
                     { transform: 'translate(0, 0)', opacity: 1 },
                     { transform: `translate(${dx}px, ${dy}px)`, opacity: 1 }
-                ], { duration, easing, fill: 'forwards' });
+                ], { duration, easing, fill: 'both' });
 
                 bar.animate([
                     { width: fromUW + 'px' },
                     { width: toUW + 'px' }
-                ], { duration, easing, fill: 'forwards' });
+                ], { duration, easing, fill: 'both' });
 
                 phantom.animate([
                     { fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.3)' },
                     { fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }
-                ], { duration, easing, fill: 'forwards' });
+                ], { duration, easing, fill: 'both' });
             } else {
                 // No matching carousel label — drift in the average direction while fading
                 const driftDx = avgDx * 0.6 || 0;
@@ -1448,12 +1451,12 @@ class CarouselDropdownBrowser extends HTMLElement {
                 phantom.animate([
                     { transform: 'translate(0, 0)', opacity: 1 },
                     { transform: `translate(${driftDx}px, ${driftDy}px)`, opacity: 0 }
-                ], { duration, easing, fill: 'forwards' });
+                ], { duration, easing, fill: 'both' });
 
                 bar.animate([
                     { opacity: 1 },
                     { opacity: 0 }
-                ], { duration: duration * 0.6, easing: 'ease-out', fill: 'forwards' });
+                ], { duration: duration * 0.6, easing: 'ease-out', fill: 'both' });
             }
         }
 
@@ -1493,17 +1496,17 @@ class CarouselDropdownBrowser extends HTMLElement {
                 // Different timing for transform vs opacity — use two animations
                 this.#flipAnimations.push(t.element.animate(
                     [{ transform: fromTransform }, { transform: toTransform }],
-                    { duration: t.duration, delay, easing: t.easing, fill: 'forwards' }
+                    { duration: t.duration, delay, easing: t.easing, fill: 'both' }
                 ));
                 this.#flipAnimations.push(t.element.animate(
                     [{ opacity: t.fromOpacity }, { opacity: t.toOpacity }],
-                    { duration: t.opacityDuration, delay, easing: t.opacityEasing || 'ease', fill: 'forwards' }
+                    { duration: t.opacityDuration, delay, easing: t.opacityEasing || 'ease', fill: 'both' }
                 ));
             } else {
                 this.#flipAnimations.push(t.element.animate([
                     { transform: fromTransform, opacity: t.fromOpacity },
                     { transform: toTransform, opacity: t.toOpacity }
-                ], { duration: t.duration, delay, easing: t.easing, fill: 'forwards' }));
+                ], { duration: t.duration, delay, easing: t.easing, fill: 'both' }));
             }
 
             // Card-img wrapper: 3D perspective transform
@@ -1511,7 +1514,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 this.#flipAnimations.push(t.img.animate([
                     { transform: `perspective(1200px) rotateY(${t.fromRy}deg) translateZ(${t.fromTz}px) scale(${t.fromSc})` },
                     { transform: `perspective(1200px) rotateY(${t.toRy}deg) translateZ(${t.toTz}px) scale(${t.toSc})` }
-                ], { duration: t.duration, delay, easing: t.easing, fill: 'forwards' }));
+                ], { duration: t.duration, delay, easing: t.easing, fill: 'both' }));
             }
 
             // Set custom properties to target values immediately — CSS will use
@@ -1584,7 +1587,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             ], {
                 duration: dur * 0.25,
                 easing: 'ease-in',
-                fill: 'forwards',
+                fill: 'both',
             });
         }
     }
@@ -1948,9 +1951,10 @@ class CarouselDropdownBrowser extends HTMLElement {
             sec.element.style.transform = `translateX(${clampedLeft}px)`;
             sec.element.style.setProperty('--underline-width', spanWidth + 'px');
 
-            // Apply fade mask if the label text would be clipped
+            // Apply fade mask if the label text would be meaningfully clipped
             const textWidth = sec.element.scrollWidth;
-            if (availableWidth < textWidth && availableWidth > 0) {
+            const MASK_TOLERANCE = 20;
+            if (availableWidth < textWidth - MASK_TOLERANCE && availableWidth > 0) {
                 const fadeStart = Math.max(0, availableWidth - FADE_PX);
                 const mask = `linear-gradient(to right, black ${fadeStart}px, transparent ${availableWidth}px)`;
                 sec.element.style.maskImage = mask;
