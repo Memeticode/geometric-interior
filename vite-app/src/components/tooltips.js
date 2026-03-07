@@ -6,7 +6,7 @@
 let paramTooltip = null;
 let tooltipSource = null;
 
-function showTooltip(el, mouseX, mouseY) {
+export function showTooltip(el, mouseX, mouseY) {
     tooltipSource = el;
     paramTooltip.textContent = el.getAttribute('data-tooltip');
     const pos = el.getAttribute('data-tooltip-pos');
@@ -18,11 +18,26 @@ function showTooltip(el, mouseX, mouseY) {
     paramTooltip.style.transform = '';
     paramTooltip.style.left = '0px';
     paramTooltip.style.top = '0px';
+    paramTooltip.style.width = '';
+    paramTooltip.style.maxWidth = '';
+    paramTooltip.style.textAlign = '';
     paramTooltip.classList.add('visible');
     const tw = paramTooltip.offsetWidth;
     const th = paramTooltip.offsetHeight;
 
-    if (pos === 'right' || (!pos && el.closest('.panel'))) {
+    if (pos === 'overlay') {
+        /* Overlay positioning — centered on the element with inset */
+        const rect = el.getBoundingClientRect();
+        const inset = 8;
+        const overlayWidth = rect.width - inset * 2;
+        paramTooltip.style.width = overlayWidth + 'px';
+        paramTooltip.style.maxWidth = overlayWidth + 'px';
+        paramTooltip.style.textAlign = 'center';
+        // Re-measure height after setting width
+        const overlayHeight = paramTooltip.offsetHeight;
+        paramTooltip.style.left = (rect.left + inset) + 'px';
+        paramTooltip.style.top = (rect.top + (rect.height - overlayHeight) / 2) + 'px';
+    } else if (pos === 'right' || (!pos && el.closest('.panel'))) {
         /* Element-anchored positioning (panel items) */
         const rect = el.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
@@ -108,12 +123,12 @@ export function initTooltips() {
     document.addEventListener('mouseover', (e) => {
         if (recentTouch) return;
         const el = findTooltip(e.target);
-        if (el) showTooltip(el, e.clientX, e.clientY);
+        if (el && !el.hasAttribute('data-tooltip-click')) showTooltip(el, e.clientX, e.clientY);
     });
 
     document.addEventListener('mouseout', (e) => {
         const el = findTooltip(e.target);
-        if (!el) return;
+        if (!el || el.hasAttribute('data-tooltip-click')) return;
         // Only hide if we're actually leaving the tooltip element
         const related = e.relatedTarget;
         if (related && el.contains(related)) return;

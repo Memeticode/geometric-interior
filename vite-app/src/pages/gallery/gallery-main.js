@@ -20,7 +20,7 @@ import { initTheme } from '../../stores/theme.js';
 import { initLangSelector } from '../../i18n/lang-selector.js';
 import { initResolutionSelector } from '../../stores/resolution.js';
 import { t, getLocale } from '../../i18n/locale.js';
-import { loadProfiles, loadPortraits, getPortraitNames, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder } from '../../stores/profiles.js';
+import { loadProfiles, loadPortraits, getPortraitNames, loadPortraitSections, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder } from '../../stores/profiles.js';
 import { getAllThumbs, deleteThumb } from '../../stores/thumb-cache.js';
 import { getAllAssets, getAsset, deleteAsset, getAllAnimAssets, deleteAnimAsset } from '../../stores/asset-store.js';
 import { getResolution } from '../../stores/resolution.js';
@@ -32,7 +32,7 @@ import { toast } from '../../components/toast.js';
 import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
 import { TRASH_SVG } from '../../components/icons.js';
-import { refreshTooltip, hideTooltip } from '../../components/tooltips.js';
+import { refreshTooltip, hideTooltip, showTooltip } from '../../components/tooltips.js';
 import { initGalleryWorker } from './gallery-worker-bridge.js';
 import { createRenderQueue } from './render-queue.js';
 import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
@@ -181,6 +181,8 @@ const selectedGenAlt = document.getElementById('selectedGenAlt');
 const galleryArrowLeft = document.getElementById('galleryArrowLeft');
 const galleryArrowRight = document.getElementById('galleryArrowRight');
 const selectedVideo = document.getElementById('selectedVideo');
+const selectedHeaderText = document.querySelector('.selected-header-text');
+const selectedFooter = document.querySelector('.selected-footer');
 
 /* ── Carousel component ── */
 const carouselBrowser = document.getElementById('carouselBrowser');
@@ -211,6 +213,14 @@ const controlsPosSel = document.getElementById('controlsPos');
 if (controlsPosSel) controlsPosSel.addEventListener('change', () => {
     carouselBrowser.setAttribute('controls-position', controlsPosSel.value);
 });
+
+const infiniteToggle = document.getElementById('infiniteToggle');
+if (infiniteToggle) {
+    infiniteToggle.checked = carouselBrowser.getAttribute('infinite') === 'true';
+    infiniteToggle.addEventListener('change', () => {
+        carouselBrowser.setAttribute('infinite', infiniteToggle.checked ? 'true' : 'false');
+    });
+}
 
 /* ── Generate panel DOM refs ── */
 const generatePanelEl = document.getElementById('generatePanel');
@@ -480,7 +490,11 @@ function updateBrowserItems() {
         carouselBrowser.appendChild(section);
     };
 
-    addSection('An Awakening Mind', portraits);
+    const sections = loadPortraitSections();
+    for (const sec of sections) {
+        const sectionPortraits = portraits.filter(e => sec.portraitNames.includes(e.name));
+        addSection(sec.name, sectionPortraits);
+    }
     addSection('Generated', generated);
     addSection('Custom', custom);
 }
@@ -771,78 +785,96 @@ function getDisplaySrc(name, profile, isPortrait) {
  * Pure DOM update — sets image, name, seed, generated text, highlights card.
  * No animation, no history push.
  */
+let selectionFadeTimer = 0;
+
 function applySelection(name, profile, isPortrait, assetId) {
     selected = { name, isPortrait, assetId };
+    const fadeDuration = 250;
 
-    selectedName.textContent = name;
-    selectedSeed.textContent = Array.isArray(profile.seed) ? seedTagToLabel(profile.seed) : (profile.seed || '');
-
-    // Fade out current image, then swap src
+    // Fade out text + image together
+    selectedHeaderText.classList.add('fading');
+    selectedFooter.classList.add('fading');
     selectedImage.style.opacity = '0';
-    selectedImage.addEventListener('load', () => {
-        selectedImage.style.opacity = '1';
-    }, { once: true });
 
-    // Display full-resolution image
-    if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
-    if (snapshotUrl) { URL.revokeObjectURL(snapshotUrl); snapshotUrl = null; }
-    if (assetId) {
-        // Generated profiles: load full-res staticBlob from IndexedDB
-        const asset = generatedAssets.find(a => a.id === assetId);
-        if (asset && asset.thumbDataUrl) selectedImage.src = asset.thumbDataUrl; // placeholder
-        getAsset(assetId).then(full => {
-            if (full && full.staticBlob && selected.assetId === assetId) {
-                currentStaticUrl = URL.createObjectURL(full.staticBlob);
-                selectedImage.src = currentStaticUrl;
+    // Cancel any pending fade-in from a previous rapid selection
+    clearTimeout(selectionFadeTimer);
+
+    // After fade-out completes, swap content and fade back in
+    selectionFadeTimer = setTimeout(() => {
+        // Update text
+        selectedName.textContent = name;
+        selectedSeed.textContent = Array.isArray(profile.seed) ? seedTagToLabel(profile.seed) : (profile.seed || '');
+
+        // Portrait commentary vs generated/custom text
+        if (isPortrait && profile.generated) {
+            selectedGenTitle.textContent = '';
+            selectedGenAlt.textContent = profile.commentary || '';
+            selectedGenAlt.classList.add('expanded');
+            selectedGenToggle.style.display = '';
+            selectedGenToggle.classList.add('portrait-static');
+            selectedImage.alt = `${name} \u2014 ${profile.generated.title}`;
+            selectedImage.setAttribute('data-tooltip', profile.generated['alt-text']);
+            selectedImage.setAttribute('data-tooltip-pos', 'overlay');
+        } else if (assetId) {
+            const asset = generatedAssets.find(a => a.id === assetId);
+            if (asset && asset.meta) {
+                selectedGenTitle.textContent = asset.meta.title || '';
+                selectedGenAlt.textContent = asset.meta.altText || '';
+                selectedImage.alt = asset.meta.title || name;
+                selectedImage.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
+                selectedImage.setAttribute('data-tooltip-pos', 'overlay');
             }
-        });
-    } else {
-        const src = getDisplaySrc(name, profile, isPortrait);
-        if (src) selectedImage.src = src;
-    }
-
-    if (isPortrait) {
-        selectedImage.onerror = () => {
-            selectedImage.onerror = null;
-            // Fallback: try carousel PNG, then thumb cache
-            const pngSrc = `/static/images/portraits/${slugify(name)}-thumb.png`;
-            selectedImage.src = pngSrc;
-        };
-    }
-
-    // Portrait commentary vs generated/custom text
-    if (isPortrait && profile.commentary) {
-        selectedGenTitle.textContent = name;
-        selectedGenAlt.textContent = profile.commentary;
-        selectedGenAlt.classList.add('expanded');
-        selectedGenToggle.style.display = '';
-        selectedGenToggle.classList.add('portrait-static');
-        const altStr = `${name} \u2014 ${profile.commentary}`;
-        selectedImage.alt = altStr;
-        selectedImage.title = altStr;
-    } else if (assetId) {
-        const asset = generatedAssets.find(a => a.id === assetId);
-        if (asset && asset.meta) {
-            selectedGenTitle.textContent = asset.meta.title || '';
-            selectedGenAlt.textContent = asset.meta.altText || '';
-            selectedImage.alt = asset.meta.title || name;
+            selectedGenToggle.style.display = '';
+            selectedGenToggle.classList.remove('portrait-static');
+            selectedGenAlt.classList.remove('expanded');
+            selectedGenToggle.setAttribute('aria-expanded', 'false');
+        } else {
+            const { title, altText } = generateProfileText(profile);
+            selectedGenTitle.textContent = title;
+            selectedGenAlt.textContent = altText;
+            selectedImage.alt = title;
+            selectedImage.setAttribute('data-tooltip', altText || title);
+            selectedImage.setAttribute('data-tooltip-pos', 'overlay');
+            selectedGenToggle.style.display = '';
+            selectedGenToggle.classList.remove('portrait-static');
+            selectedGenAlt.classList.remove('expanded');
+            selectedGenToggle.setAttribute('aria-expanded', 'false');
         }
-        selectedImage.title = '';
-        selectedGenToggle.style.display = '';
-        selectedGenToggle.classList.remove('portrait-static');
-        selectedGenAlt.classList.remove('expanded');
-        selectedGenToggle.setAttribute('aria-expanded', 'false');
-    } else {
-        const { title, altText } = generateProfileText(profile);
-        selectedGenTitle.textContent = title;
-        selectedGenAlt.textContent = altText;
-        selectedImage.alt = title;
-        selectedImage.title = '';
-        selectedGenToggle.style.display = '';
-        selectedGenToggle.classList.remove('portrait-static');
-        selectedGenAlt.classList.remove('expanded');
-        selectedGenToggle.setAttribute('aria-expanded', 'false');
-    }
+
+        // Swap image src (old image is now fully hidden)
+        if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
+        if (snapshotUrl) { URL.revokeObjectURL(snapshotUrl); snapshotUrl = null; }
+
+        selectedImage.addEventListener('load', () => {
+            selectedImage.style.opacity = '1';
+        }, { once: true });
+
+        if (assetId) {
+            const asset = generatedAssets.find(a => a.id === assetId);
+            if (asset && asset.thumbDataUrl) selectedImage.src = asset.thumbDataUrl;
+            getAsset(assetId).then(full => {
+                if (full && full.staticBlob && selected.assetId === assetId) {
+                    currentStaticUrl = URL.createObjectURL(full.staticBlob);
+                    selectedImage.src = currentStaticUrl;
+                }
+            });
+        } else {
+            const src = getDisplaySrc(name, profile, isPortrait);
+            if (src) selectedImage.src = src;
+        }
+
+        if (isPortrait) {
+            selectedImage.onerror = () => {
+                selectedImage.onerror = null;
+                const pngSrc = `/static/images/portraits/${slugify(name)}-thumb.png`;
+                selectedImage.src = pngSrc;
+            };
+        }
+
+        // Fade text back in
+        selectedHeaderText.classList.remove('fading');
+        selectedFooter.classList.remove('fading');
+    }, fadeDuration);
 
     currentIndex = navigableList.findIndex(p =>
         assetId ? p.assetId === assetId : p.name === name
@@ -880,19 +912,16 @@ function updateArrowStates() {
     galleryArrowLeft.disabled = disabled;
     galleryArrowRight.disabled = disabled;
 
-    if (!disabled && currentIndex >= 0) {
-        const prevEntry = navigableList[(currentIndex - 1 + len) % len];
-        const nextEntry = navigableList[(currentIndex + 1) % len];
-        galleryArrowLeft.setAttribute('data-tooltip', prevEntry.name);
-        galleryArrowRight.setAttribute('data-tooltip', nextEntry.name);
-    } else {
-        galleryArrowLeft.setAttribute('data-tooltip', '');
-        galleryArrowRight.setAttribute('data-tooltip', '');
-    }
+    galleryArrowLeft.setAttribute('data-tooltip', disabled ? '' : 'Previous');
+    galleryArrowRight.setAttribute('data-tooltip', disabled ? '' : 'Next');
 }
+
+let tooltipClickTarget = null;
 
 function navigateArrow(direction) {
     if (navigableList.length <= 1) return;
+    hideTooltip();
+    tooltipClickTarget = null;
     let newIndex = currentIndex + direction;
     if (newIndex < 0) newIndex = navigableList.length - 1;
     if (newIndex >= navigableList.length) newIndex = 0;
@@ -902,6 +931,27 @@ function navigateArrow(direction) {
 
 galleryArrowLeft.addEventListener('click', () => { if (slideshowPlaying) stopSlideshow(); navigateArrow(-1); });
 galleryArrowRight.addEventListener('click', () => { if (slideshowPlaying) stopSlideshow(); navigateArrow(1); });
+
+/* ── Image alt-text click-to-toggle overlay ── */
+selectedImage.setAttribute('data-tooltip-click', '');
+selectedImage.addEventListener('click', () => {
+    const text = selectedImage.getAttribute('data-tooltip');
+    if (!text) return;
+    const isVisible = selectedImage === tooltipClickTarget;
+    hideTooltip();
+    tooltipClickTarget = null;
+    if (!isVisible) {
+        showTooltip(selectedImage);
+        tooltipClickTarget = selectedImage;
+    }
+});
+// Dismiss overlay when clicking outside the image
+document.addEventListener('click', (e) => {
+    if (tooltipClickTarget && !tooltipClickTarget.contains(e.target)) {
+        hideTooltip();
+        tooltipClickTarget = null;
+    }
+}, true);
 
 function navigateToEditor() {
     const params = new URLSearchParams();

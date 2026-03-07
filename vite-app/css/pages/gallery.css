@@ -235,6 +235,7 @@
     object-fit: cover;
     display: block;
     transition: opacity 0.25s ease;
+    cursor: pointer;
 }
 .selected-video {
     width: 100%;
@@ -246,7 +247,7 @@
 .selected-video.hidden { display: none; }
 .selected-footer {
     width: 100%;
-    padding: 0.5rem 0.75rem 0.625rem;
+    padding: 0.25rem 0.75rem 0.5rem;
     text-align: center;
     border-top: 1px solid var(--border);
 }
@@ -272,11 +273,10 @@
     color: var(--text);
 }
 .selected-gen-toggle.portrait-static {
-    cursor: default;
-    pointer-events: none;
-}
-.selected-gen-toggle.portrait-static .selected-gen-chevron {
     display: none;
+}
+.portrait-static ~ .selected-gen-alt {
+    margin-top: 0;
 }
 .selected-gen-chevron {
     font-size: 0.625rem;
@@ -296,6 +296,16 @@
 }
 .selected-gen-alt.expanded {
     display: block;
+}
+
+/* Cross-fade transition for selection change */
+.selected-header-text,
+.selected-footer {
+    transition: opacity 0.25s ease;
+}
+.selected-header-text.fading,
+.selected-footer.fading {
+    opacity: 0;
 }
 @media (max-width: 767px) {
     .gallery-arrow { width: 24px; height: 24px; }
@@ -339,10 +349,10 @@
     text-align: left;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity 0.25s ease;
     box-shadow: 0 4px 16px var(--shadow);
     z-index: 9999;
-    white-space: normal;
+    white-space: pre-line;
 }
 
 #paramTooltip.visible {

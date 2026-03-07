@@ -156,6 +156,33 @@ export const ProfileSchema = z.object({
 });
 
 // ──────────────────────────────────────
+// Starter profiles (curated gallery data)
+// ──────────────────────────────────────
+
+export const StarterGeneratedSchema = z.object({
+    title: z.string(),
+    'alt-text': z.string(),
+});
+
+export const StarterPortraitSchema = z.object({
+    name: z.string(),
+    commentary: z.string().optional(),
+    seed: SeedTagSchema,
+    controls: ControlsSchema,
+    generated: StarterGeneratedSchema,
+});
+
+export const StarterSectionSchema = z.object({
+    name: z.string(),
+    portraits: z.record(z.string(), StarterPortraitSchema),
+});
+
+export const StarterProfilesSchema = z.object({
+    'section-order': z.array(z.string()),
+    sections: z.record(z.string(), StarterSectionSchema),
+});
+
+// ──────────────────────────────────────
 // Animation types
 // ──────────────────────────────────────
 
@@ -263,6 +290,10 @@ export type PaletteData = z.infer<typeof PaletteDataSchema>;
 export type StillConfig = z.infer<typeof StillConfigSchema>;
 export type RenderMeta = z.infer<typeof RenderMetaSchema>;
 export type Profile = z.infer<typeof ProfileSchema>;
+export type StarterGenerated = z.infer<typeof StarterGeneratedSchema>;
+export type StarterPortrait = z.infer<typeof StarterPortraitSchema>;
+export type StarterSection = z.infer<typeof StarterSectionSchema>;
+export type StarterProfiles = z.infer<typeof StarterProfilesSchema>;
 export type ContentEvent = z.infer<typeof ContentEventSchema>;
 export type CameraState = z.infer<typeof CameraStateSchema>;
 export type CameraMove = z.infer<typeof CameraMoveSchema>;

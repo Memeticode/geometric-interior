@@ -234,13 +234,40 @@ export function removeImageFromAnimProfiles(imageName) {
  * ---------------------------
  */
 
+/** Flatten all sections into { "Display Name": { seed, controls, commentary, generated } } */
 export function loadPortraits() {
-    const { order, ...profiles } = starterProfiles;
-    return structuredClone(profiles);
+    const result = {};
+    for (const sectionKey of starterProfiles['section-order']) {
+        const section = starterProfiles.sections[sectionKey];
+        if (!section) continue;
+        for (const portrait of Object.values(section.portraits)) {
+            result[portrait.name] = structuredClone(portrait);
+        }
+    }
+    return result;
 }
 
+/** Return all portrait display names in section order. */
 export function getPortraitNames() {
-    return starterProfiles.order ?? Object.keys(starterProfiles);
+    const names = [];
+    for (const sectionKey of starterProfiles['section-order']) {
+        const section = starterProfiles.sections[sectionKey];
+        if (!section) continue;
+        for (const portrait of Object.values(section.portraits)) {
+            names.push(portrait.name);
+        }
+    }
+    return names;
+}
+
+/** Return sections with display names and portrait lists for gallery rendering. */
+export function loadPortraitSections() {
+    return starterProfiles['section-order'].map(key => {
+        const section = starterProfiles.sections[key];
+        if (!section) return null;
+        const portraitNames = Object.values(section.portraits).map(p => p.name);
+        return { key, name: section.name, portraitNames };
+    }).filter(Boolean);
 }
 
 export function ensureStarterProfiles() {
@@ -249,10 +276,12 @@ export function ensureStarterProfiles() {
     const profiles = loadProfiles();
     const portraitNames = getPortraitNames();
     let changed = false;
+    const portraits = loadPortraits();
     for (const name of portraitNames) {
         if (profiles[name]) {
             const p = profiles[name];
-            const s = starterProfiles[name];
+            const s = portraits[name];
+            if (!s) continue;
             const identical = JSON.stringify(p.seed) === JSON.stringify(s.seed) &&
                 JSON.stringify(p.controls) === JSON.stringify(s.controls);
             if (identical) {

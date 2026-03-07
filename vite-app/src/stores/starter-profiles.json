@@ -1,38 +1,80 @@
 {
-  "order": ["Meditation", "Shadow Lattice", "Dark Crystal", "Night Sapphire", "Night Bloom", "Chartreuse Current", "Tempest"],
-  "Meditation": {
-    "seed": [1, 3, 2],
-    "controls": { "topology": "flow-field", "density": 0.03, "luminosity": 0.50, "bloom": 0.45, "fracture": 0.25, "coherence": 0.90, "hue": 0.60, "spectrum": 0.10, "chroma": 0.20, "scale": 0.40, "division": 0.5, "faceting": 0.35, "flow": 0.5 },
-    "commentary": "Contemplative stillness (sparse, achromatic, scattered starpoints)"
-  },
-  "Shadow Lattice": {
-    "seed": [5, 1, 0],
-    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.10, "bloom": 0.15, "fracture": 0.20, "coherence": 0.90, "hue": 0.56, "spectrum": 0.05, "chroma": 0.12, "scale": 0.55, "division": 0.5, "faceting": 0.20, "flow": 1.0 },
-    "commentary": "Wide web of silvery lines against darkness"
-  },
-  "Dark Crystal": {
-    "seed": [9, 1, 0],
-    "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.10, "bloom": 0.15, "fracture": 0.20, "coherence": 0.90, "hue": 0.56, "spectrum": 0.05, "chroma": 0.12, "scale": 0.55, "division": 0.5, "faceting": 0.20, "flow": 1.0 },
-    "commentary": "Vertical crystalline monolith from darkness (same params as Shadow Lattice, different seed)"
-  },
-  "Night Sapphire": {
-    "seed": [9, 5, 5],
-    "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.10, "bloom": 0.75, "fracture": 0.45, "coherence": 0.80, "hue": 0.625, "spectrum": 0.22, "chroma": 0.70, "scale": 0.50, "division": 0.5, "faceting": 0.45, "flow": 0.30 },
-    "commentary": "Deep blue-purple gem in darkness"
-  },
-  "Night Bloom": {
-    "seed": [13, 5, 9],
-    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.12, "bloom": 0.80, "fracture": 0.45, "coherence": 0.82, "hue": 0.94, "spectrum": 0.25, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.28 },
-    "commentary": "Rose bloom in moonlit darkness"
-  },
-  "Chartreuse Current": {
-    "seed": [5, 5, 11],
-    "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.50, "bloom": 0.35, "fracture": 0.50, "coherence": 0.82, "hue": 0.30, "spectrum": 0.24, "chroma": 0.78, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0 },
-    "commentary": "Breakthrough vivid lime green (the one vivid, bright piece)"
-  },
-  "Tempest": {
-    "seed": [0, 13, 8],
-    "controls": { "topology": "flow-field", "density": 0.25, "luminosity": 0.40, "bloom": 0.55, "fracture": 0.70, "coherence": 0.15, "hue": 0.56, "spectrum": 0.40, "chroma": 0.55, "scale": 0.70, "division": 0.5, "faceting": 0.55, "flow": 0.85 },
-    "commentary": "Turbulent teal storm (maximum kinetic energy)"
+  "section-order": ["an-awakening-mind"],
+  "sections": {
+    "an-awakening-mind": {
+      "name": "An Awakening Mind",
+      "portraits": {
+        "meditation": {
+          "name": "Meditation",
+          "commentary": "Contemplative stillness (sparse, achromatic, scattered starpoints)",
+          "seed": [1, 3, 2],
+          "controls": { "topology": "flow-field", "density": 0.03, "luminosity": 0.50, "bloom": 0.45, "fracture": 0.25, "coherence": 0.90, "hue": 0.60, "spectrum": 0.10, "chroma": 0.20, "scale": 0.40, "division": 0.5, "faceting": 0.35, "flow": 0.5 },
+          "generated": {
+            "title": "Cobalt Tempered Structure",
+            "alt-text": "Poised, folded, still.\nLuminous geometry fills the field with steady radiance, forms visible through spreading halos.\nA hushed cobalt tone pervades the composition, evoking aged surface more than emitted light.\nSparse fragments are carefully placed at readable scale, each form individually distinct.\nForms follow a coherent flowing pattern, creating visible directional structure.\nCompact geometry with mixed crystal character, smooth panels alongside angular faces, anchored by 122 luminous points."
+          }
+        },
+        "shadow-lattice": {
+          "name": "Shadow Lattice",
+          "commentary": "Wide web of silvery lines against darkness",
+          "seed": [5, 1, 0],
+          "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.10, "bloom": 0.15, "fracture": 0.20, "coherence": 0.90, "hue": 0.56, "spectrum": 0.05, "chroma": 0.12, "scale": 0.55, "division": 0.5, "faceting": 0.20, "flow": 1.0 },
+          "generated": {
+            "title": "Tempered Teal Lattice",
+            "alt-text": "Balanced, draped, frozen.\nPrecious concentrated light surfaces from near-blackness, each point a gem against the void.\nPure achromatic structure in silver and white, geometry without chromatic identity.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nOrbital bands wrap around the form, arcs of geometry spiraling with architectural discipline.\nCompact geometry with mixed crystal character, smooth panels alongside angular faces, anchored by 164 luminous points."
+          }
+        },
+        "dark-crystal": {
+          "name": "Dark Crystal",
+          "commentary": "Vertical crystalline monolith from darkness (same params as Shadow Lattice, different seed)",
+          "seed": [9, 1, 0],
+          "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.10, "bloom": 0.15, "fracture": 0.20, "coherence": 0.90, "hue": 0.56, "spectrum": 0.05, "chroma": 0.12, "scale": 0.55, "division": 0.5, "faceting": 0.20, "flow": 1.0 },
+          "generated": {
+            "title": "Spatial Cerulean Lattice",
+            "alt-text": "Flowing, draped, frozen.\nPrecious concentrated light surfaces from near-blackness, each point a gem against the void.\nPure achromatic structure in silver and white, geometry without chromatic identity.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nOrbital bands wrap around the form, arcs of geometry spiraling with architectural discipline.\nCompact geometry with mixed crystal character, smooth panels alongside angular faces, anchored by 164 luminous points."
+          }
+        },
+        "night-sapphire": {
+          "name": "Night Sapphire",
+          "commentary": "Deep blue-purple gem in darkness",
+          "seed": [9, 5, 5],
+          "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.10, "bloom": 0.75, "fracture": 0.45, "coherence": 0.80, "hue": 0.625, "spectrum": 0.22, "chroma": 0.70, "scale": 0.50, "division": 0.5, "faceting": 0.45, "flow": 0.30 },
+          "generated": {
+            "title": "Dim Sapphire Manifold",
+            "alt-text": "Flowing, woven, dim.\nHalf-seen forms breathe through darkness, their light dissolving into atmospheric haze.\nRich cobalt dominates with vivid accents from adjacent hues adding chromatic depth.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nForms follow a coherent flowing pattern, creating visible directional structure.\nMixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 178 luminous points."
+          }
+        },
+        "night-bloom": {
+          "name": "Night Bloom",
+          "commentary": "Rose bloom in moonlit darkness",
+          "seed": [13, 5, 9],
+          "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.12, "bloom": 0.80, "fracture": 0.45, "coherence": 0.82, "hue": 0.94, "spectrum": 0.25, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.28 },
+          "generated": {
+            "title": "Field Distilled Plane",
+            "alt-text": "Rushing, woven, warm.\nHalf-seen forms breathe through darkness, their light dissolving into atmospheric haze.\nRuby tones deepen and lighten across the geometry, shifting into neighboring hues.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nOrdered elements emanate radially, a starburst of crystal planes diverging from the center.\nMixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 192 luminous points."
+          }
+        },
+        "chartreuse-current": {
+          "name": "Chartreuse Current",
+          "commentary": "Breakthrough vivid lime green (the one vivid, bright piece)",
+          "seed": [5, 5, 11],
+          "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.50, "bloom": 0.35, "fracture": 0.50, "coherence": 0.82, "hue": 0.30, "spectrum": 0.24, "chroma": 0.78, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0 },
+          "generated": {
+            "title": "Layered Malachite Lattice",
+            "alt-text": "Balanced, woven, bright.\nLuminous geometry fills the field with steady radiance, forms visible through spreading halos.\nRich emerald dominates with vivid accents from adjacent hues adding chromatic depth.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nOrdered elements emanate radially, a starburst of crystal planes diverging from the center.\nMixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 192 luminous points."
+          }
+        },
+        "tempest": {
+          "name": "Tempest",
+          "commentary": "Turbulent teal storm (maximum kinetic energy)",
+          "seed": [0, 13, 8],
+          "controls": { "topology": "flow-field", "density": 0.25, "luminosity": 0.40, "bloom": 0.55, "fracture": 0.70, "coherence": 0.15, "hue": 0.56, "spectrum": 0.40, "chroma": 0.55, "scale": 0.70, "division": 0.5, "faceting": 0.55, "flow": 0.85 },
+          "generated": {
+            "title": "Scattered Cerulean Lattice",
+            "alt-text": "Anchored, shattered, mild.\nLuminous geometry fills the field with steady radiance, forms visible through spreading halos.\nCerulean tones deepen and lighten across the geometry, shifting into neighboring hues.\nHundreds of fine particles swarm, individual elements dissolving into dense atmospheric haze.\nA turbulent storm of scattered geometry, orbital currents overwhelmed by disorder.\nShattered geometry disperses in every direction, smooth and angular fragments intermixed, anchored by 430 luminous points."
+          }
+        }
+      }
+    }
   }
 }
