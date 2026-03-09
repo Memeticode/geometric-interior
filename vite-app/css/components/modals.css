@@ -11,7 +11,7 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: 0.5rem 0.25rem;
+    padding: 0.375rem 0.25rem;
     background: none;
     border: none;
     color: var(--text-muted);
@@ -179,7 +179,7 @@
     align-items: flex-start;
     justify-content: center;
     z-index: 1000;
-    padding: 3vh 0.75rem 0.75rem;
+    padding: 0.75rem;
 }
 
 .modal-overlay.modal-entering {
@@ -233,7 +233,7 @@
 .modal-box {
     background: var(--modal-bg);
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 14px;
     max-width: 42.5rem;
     width: 100%;
     max-height: 96vh;
@@ -247,10 +247,11 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 1rem 1.25rem;
+    padding: 1rem 3.25rem 1rem 1.25rem;
     border-bottom: 1px solid var(--border);
     position: relative;
     text-align: center;
+    background: var(--modal-bg);
 }
 
 .modal-title {
@@ -260,7 +261,7 @@
 }
 
 .modal-tabs {
-    display: flex;
+    display: none;
     gap: 0.25rem;
 }
 
@@ -308,8 +309,94 @@
 }
 
 .modal-tab-select {
-    display: none;
+    display: block;
     position: relative;
+}
+
+.modal-tab-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent);
+    border-radius: 999px;
+    color: var(--text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    font-family: inherit;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.modal-tab-select-trigger:hover {
+    background: var(--accent-bg);
+    border-color: var(--accent-text);
+}
+
+.modal-tab-select-chevron {
+    font-size: 1rem;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transform: rotate(-90deg);
+    transition: transform 0.3s ease;
+}
+
+.modal-tab-select.open .modal-tab-select-chevron {
+    transform: rotate(0deg);
+}
+
+.modal-tab-select-menu {
+    position: absolute;
+    top: calc(100% + 0.375rem);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 100%;
+    background: var(--modal-bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    padding: 0.25rem;
+    z-index: 10;
+    box-shadow: 0 8px 24px var(--shadow-color);
+    opacity: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.modal-tab-select-menu.closing {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.97);
+    pointer-events: none;
+}
+
+.modal-tab-select-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: inherit;
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.modal-tab-select-item:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+
+.modal-tab-select-item.active {
+    background: var(--accent-bg);
+    color: var(--text);
+    font-weight: 600;
 }
 
 .modal-close {
@@ -366,6 +453,7 @@
     padding: 1.25rem;
     flex: 0 1 auto;
     min-height: 0;
+    background: var(--modal-bg);
 }
 
 .confirm-actions {
@@ -450,7 +538,7 @@
     background: var(--modal-bg);
     border: 1px solid var(--border);
     border-radius: 14px;
-    max-width: 25rem;
+    max-width: 90vw;
     width: 100%;
     padding: 1.25rem;
     position: relative;

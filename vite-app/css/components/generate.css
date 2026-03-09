@@ -12,6 +12,7 @@
 
 .gen-body {
     display: flex;
+    flex-direction: column;
     gap: 1.5rem;
 }
 
@@ -31,8 +32,8 @@
 
 .gen-identity {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
     gap: 0.5rem;
     width: 100%;
     padding: 0.375rem 0.25rem 0.625rem;
@@ -156,9 +157,9 @@
     padding: 0.25rem 0.75rem 0.5rem;
 }
 .gen-commentary-field {
-    font-size: 0.8125rem;
+    font-size: 0.6875rem;
     color: var(--text);
-    background: transparent;
+    background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 6px;
     padding: 0.25rem 0.375rem;
@@ -183,10 +184,11 @@
 /* ── Config column ── */
 
 .generate-config {
-    flex: 0 0 280px;
-    max-width: 280px;
+    flex: none;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
+    perspective: 600px;
 }
 
 /* Override control-group margin when used in generate config */
@@ -215,31 +217,41 @@
 /* ── Headings (Parameters) ── */
 
 .gen-heading {
-    display: flex;
-    align-items: center;
+    display: block;
     font-size: 0.6875rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--text-muted);
-    padding: 0.5rem 0.5rem 0.375rem;
-    margin-left: -0.5rem;
-    margin-right: -0.5rem;
+    perspective: 600px;
+}
+.gen-heading-fold-up-area {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.5rem 0rem 0.375rem;
     position: relative;
-    transform-origin: bottom center;
+    border-radius: 0 0 4px 4px;
+    transform-origin: top center;
     transition: transform 0.3s ease;
 }
-.gen-heading:hover {
-    transform: perspective(800px) rotateX(-2deg);
+.gen-heading:hover > .gen-heading-fold-up-area {
+    transform: perspective(600px) rotateX(45deg);
+    border-top: 1px solid var(--border);
+    border-right: 2px solid var(--border);
+    border-bottom: 2px solid var(--border);
+    border-left: 2px solid var(--border);
 }
-/* Shadow below the fold line when gen-heading is hovered + expanded */
-.gen-heading:hover::after {
+/* Shadow below the fold line when gen-heading is hovered */
+.gen-heading:hover > .gen-heading-fold-up-area::after {
     content: '';
     position: absolute;
     left: 0;
     right: 0;
     bottom: -1px;
     height: 6px;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), transparent);
+    background: linear-gradient(to bottom, var(--shadow-color), transparent);
     pointer-events: none;
 }
 .gen-heading + .gen-heading {
@@ -288,7 +300,7 @@
     right: 0;
     bottom: -1px;
     height: 6px;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2), transparent);
+    background: linear-gradient(to bottom, var(--shadow-color), transparent);
     pointer-events: none;
 }
 .gen-section-label {
@@ -300,14 +312,16 @@
 
 /* ── Collapsible toggle ── */
 
-.gen-collapsible-toggle {
+.gen-collapsible-toggle,
+.gen-heading-fold-up-area {
     display: flex;
     align-items: center;
     gap: 0.25rem;
     cursor: pointer;
 }
 
-.gen-heading .gen-collapsible-toggle {
+.gen-heading .gen-collapsible-toggle,
+.gen-heading .gen-heading-fold-up-area {
     font-weight: 600;
 }
 
@@ -317,7 +331,8 @@
     transition: transform 0.25s ease;
     flex-shrink: 0;
 }
-.gen-collapsible-toggle[aria-expanded="false"] .gen-chevron {
+.gen-collapsible-toggle[aria-expanded="false"] .gen-chevron,
+.gen-heading-fold-up-area[aria-expanded="false"] .gen-chevron {
     transform: rotate(-90deg);
 }
 
@@ -566,8 +581,8 @@
 /* ── Queue list ── */
 
 .gen-queue {
-    flex: 0 0 280px;
-    max-width: 280px;
+    flex: none;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
@@ -649,29 +664,7 @@
     background: var(--accent-bg);
 }
 
-/* ── Responsive ── */
-
-
-@media (max-width: 900px) {
-    .gen-body {
-        flex-direction: column;
-    }
-    .generate-config {
-        flex: none;
-        max-width: 100%;
-    }
-    .gen-queue {
-        flex: none;
-        max-width: 100%;
-    }
-    .gen-identity {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .gen-controls-stack {
-        align-self: flex-end;
-    }
-}
+/* ── Responsive — viewport overrides in responsive.css ── */
 
 @container gen-preview (max-width: 500px) {
     .gen-identity {

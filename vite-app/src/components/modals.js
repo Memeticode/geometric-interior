@@ -88,7 +88,7 @@ export function initModals({ infoModal, infoModalTitle, infoModalBody, infoModal
         const labelInfo = e.target.closest('.label-info');
         if (!labelInfo) return;
         // Skip if inside a collapsible toggle — those handle their own clicks
-        if (labelInfo.closest('.gen-collapsible-toggle')) return;
+        if (labelInfo.closest('.gen-collapsible-toggle, .gen-heading-fold-up-area')) return;
         const title = labelInfo.getAttribute('data-label') || '';
         const body = labelInfo.getAttribute('data-tooltip') || '';
         openInfoModal(title, body);

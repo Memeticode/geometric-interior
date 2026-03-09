@@ -119,7 +119,11 @@ export function initStatementModal(dom) {
         /* Hide scrollbar for the entire transition (flip-out + flip-in) */
         modalBody.style.overflow = 'hidden';
 
-        /* Flip the modal body (content area), keeping the header/tabs static */
+        /* Make modal-box bg transparent so the body flip is visible
+           against the dark overlay backdrop */
+        modalBox.style.background = 'transparent';
+
+        /* Flip the entire modal body */
         modalBody.classList.add('coin-flip-out');
 
         setTimeout(() => {
@@ -144,6 +148,7 @@ export function initStatementModal(dom) {
             const cleanup = () => {
                 modalBody.classList.remove('coin-flip-in');
                 modalBody.style.overflow = '';
+                modalBox.style.background = '';
                 statementFlipping = false;
             };
             modalBody.addEventListener('animationend', cleanup, { once: true });

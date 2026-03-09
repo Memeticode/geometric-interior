@@ -68,30 +68,47 @@
 /* ── App body ── */
 .app-body {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
     flex: 1;
     min-height: 0;
 }
 
-/* ── Panel ── */
+/* ── Panel (mobile-first: fixed overlay, full-width) ── */
 .panel {
-    width: 25rem;
+    position: fixed;
+    top: var(--header-h, 0px);
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    max-height: none;
     padding: 0.5rem;
-    border-right: 1px solid var(--border);
-    background: var(--bg-panel);
-    overflow: auto;
+    background: var(--bg);
+    border-right: none;
+    border-bottom: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 500;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
-    transition: width 0.3s ease, padding 0.3s ease, opacity 0.2s ease, border-color 0.3s ease;
+    transform: translateX(0);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s ease,
+                visibility 0.3s;
+    opacity: 1;
+    visibility: visible;
+    box-shadow: none;
 }
 
 .panel.panel-collapsed {
-    width: 0;
-    padding: 0;
+    transform: translateX(-100%);
     opacity: 0;
-    overflow: hidden;
-    border-right-color: transparent;
+    visibility: hidden;
+    width: 100vw;
+    max-height: none;
+    padding: 0.5rem;
+    box-shadow: none;
 }
 
 .panel.morph-locked {
@@ -99,9 +116,25 @@
     opacity: 0.7;
 }
 
-/* ── Panel drawer backdrop (tablet/mobile only) ── */
+/* ── Panel drawer backdrop (visible on mobile/tablet) ── */
 .panel-backdrop {
-    display: none;
+    display: block;
+    position: fixed;
+    top: var(--header-h, 0px);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 499;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.panel-backdrop.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 .sub {
@@ -150,13 +183,13 @@ input[type="range"]::-webkit-slider-thumb {
     border-radius: 50%;
     background: var(--accent-text);
     border: 2px solid var(--bg);
-    box-shadow: 0 0 8px var(--accent), 0 0 2px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 8px var(--accent), 0 0 2px var(--shadow-color);
     cursor: pointer;
     transition: box-shadow 0.2s, transform 0.15s;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
-    box-shadow: 0 0 14px var(--accent), 0 0 4px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 14px var(--accent), 0 0 4px var(--shadow-color);
     transform: scale(1.15);
 }
 
@@ -166,6 +199,6 @@ input[type="range"]::-moz-range-thumb {
     border-radius: 50%;
     background: var(--accent-text);
     border: 2px solid var(--bg);
-    box-shadow: 0 0 8px var(--accent), 0 0 2px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 0 8px var(--accent), 0 0 2px var(--shadow-color);
     cursor: pointer;
 }

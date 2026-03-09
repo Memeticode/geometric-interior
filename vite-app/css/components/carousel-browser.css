@@ -20,7 +20,7 @@ carousel-dropdown-browser-card,
 carousel-dropdown-browser-section { display: none; }
 
 :root {
-    --card-w: 180px;
+    --card-w: 75px;
 }
 
 /* ── Strip layout ── */
@@ -192,7 +192,7 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
 }
 
 .cdb-track:not(.cdb-dragging):not(.cdb-transitioning) .cdb-card.cdb-hovered .cdb-card-frame {
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 14px var(--shadow-color);
     transform: translateY(calc(-1 * var(--hover-lift, 0px)))
                translateX(var(--hover-cx, 0px))
                perspective(1200px)
@@ -402,10 +402,10 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 }
 
 .cdb-grid {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    gap: 0.5rem;
 }
 
 .cdb-grid-card {
@@ -543,30 +543,3 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     padding-top: 0;
 }
 
-/* ── Responsive ── */
-@media (min-width: 1440px) {
-    :root { --card-w: 210px; }
-}
-@media (min-width: 1920px) {
-    :root { --card-w: 240px; }
-}
-@media (min-width: 2560px) {
-    :root { --card-w: 280px; }
-}
-
-@media (max-width: 1023px) {
-    :root { --card-w: 160px; }
-}
-
-@media (max-width: 767px) {
-    :root { --card-w: 110px; }
-    .cdb-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
-}
-@media (max-width: 479px) {
-    :root { --card-w: 90px; }
-    .cdb-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); padding: 0.5rem 0.75rem; }
-}
-@media (max-width: 374px) {
-    :root { --card-w: 75px; }
-    .cdb-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
-}

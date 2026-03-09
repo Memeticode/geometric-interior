@@ -1612,7 +1612,7 @@ function initGenerate() {
     });
 
     // Wire up static collapsible toggles in the generate config
-    generatePanelEl.querySelectorAll('.gen-collapsible-toggle[data-target]').forEach(toggle => {
+    generatePanelEl.querySelectorAll('.gen-collapsible-toggle[data-target], .gen-heading-fold-up-area[data-target]').forEach(toggle => {
         toggle.addEventListener('click', () => {
             const expanded = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!expanded));
