@@ -76,12 +76,14 @@ export function initGalleryWorker(canvas) {
                     break;
                 case 'error':
                     console.error('[gallery-worker] Worker error:', msg.error);
+                    if (messageHandlers.error) messageHandlers.error(msg);
                     break;
             }
         };
 
         worker.onerror = (err) => {
             console.error('[gallery-worker] Worker error:', err.message);
+            if (messageHandlers.error) messageHandlers.error({ error: err.message });
         };
 
         const rect = canvas.getBoundingClientRect();
@@ -97,6 +99,7 @@ export function initGalleryWorker(canvas) {
         const initTimer = setTimeout(() => {
             if (!ready) {
                 console.warn('[gallery-worker] Init timed out');
+                if (messageHandlers.error) messageHandlers.error({ error: 'Worker init timed out' });
             }
         }, INIT_TIMEOUT_MS);
 

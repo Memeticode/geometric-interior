@@ -199,8 +199,8 @@
     border: 1px solid var(--border);
     color: var(--text-muted);
     border-radius: 50%;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -209,8 +209,8 @@
     transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
 }
 .gallery-arrow svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     flex-shrink: 0;
 }
 .gallery-arrow:hover:not(:disabled) {
@@ -335,23 +335,15 @@
     opacity: 0;
 }
 @media (max-width: 767px) {
-    .gallery-arrow { width: 24px; height: 24px; }
-    .gallery-arrow svg { width: 14px; height: 14px; }
+    .selected-header {
+        flex-direction: column-reverse;
+        align-items: center;
+        gap: 1rem;
+    }
+    .selected-header-text { text-align: center; }
     .selected-header-nav { gap: 0.125rem; }
-    .selected-name { font-size: 0.65rem; }
-    .selected-seed { font-size: 0.5625rem; }
-}
-@media (min-width: 1440px) {
-    .gallery-arrow { width: 32px; height: 32px; }
-    .gallery-arrow svg { width: 18px; height: 18px; }
-}
-@media (min-width: 1920px) {
-    .gallery-arrow { width: 36px; height: 36px; }
-    .gallery-arrow svg { width: 20px; height: 20px; }
-}
-@media (min-width: 2560px) {
-    .gallery-arrow { width: 40px; height: 40px; }
-    .gallery-arrow svg { width: 22px; height: 22px; }
+    .gallery-arrow { width: 20px; height: 20px; }
+    .gallery-arrow svg { width: 12px; height: 12px; }
 }
 
 /* ── Label info wrapper + tooltip ── */
@@ -689,9 +681,10 @@
     border-radius: 6px;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 0.25rem 0.375rem;
+    padding: 0.1875rem 0.3rem;
     display: flex;
     align-items: center;
+    align-self: center;
     flex-shrink: 0;
     transition: color 0.3s ease, border-color 0.3s ease;
 }
@@ -701,8 +694,8 @@
 }
 .site-menu-toggle .panel-toggle-icon {
     position: relative;
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
 }
 .site-menu-toggle .panel-toggle-icon .bar {
     position: absolute;

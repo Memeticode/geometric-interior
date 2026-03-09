@@ -50,6 +50,7 @@
 .gen-header-nav {
     display: flex;
     align-items: center;
+    align-self: flex-end;
     gap: 0.25rem;
     flex-shrink: 0;
 }
@@ -64,8 +65,8 @@
     border: 1px solid var(--border);
     color: var(--text-muted);
     border-radius: 50%;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -74,8 +75,8 @@
     transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
 }
 .gen-action-btn svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     flex-shrink: 0;
 }
 .gen-action-btn:hover:not(:disabled) {
@@ -183,6 +184,15 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    transform-origin: top center;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+.generate-config:has(> .gen-sliders:not(.collapsed)):hover {
+    border-color: var(--accent);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(180, 130, 255, 0.12);
+    transform: perspective(800px) rotateX(-1.5deg);
 }
 
 /* Override control-group margin when used in generate config */
@@ -234,6 +244,15 @@
     margin-left: -0.5rem;
     margin-right: -0.5rem;
     padding: 0 0.5rem;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    transform-origin: top center;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+}
+.gen-section:has(> .gen-section-rows:not(.collapsed)):hover {
+    border-color: var(--accent);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35), 0 2px 6px rgba(180, 130, 255, 0.12);
+    transform: perspective(800px) rotateX(-1.5deg);
 }
 .gen-section + .gen-section {
     margin-top: 0.5rem;
@@ -244,7 +263,7 @@
 .gen-section-header {
     display: flex;
     align-items: center;
-    gap: 0.375rem;
+    gap: 0.25rem;
     font-size: 0.625rem;
     text-transform: uppercase;
     letter-spacing: 0.4px;
@@ -253,11 +272,6 @@
     margin-right: -0.5rem;
     border-bottom: 1px solid var(--border);
     margin-bottom: 0.25rem;
-    border-radius: 6px 6px 0 0;
-    transition: background-color 0.2s;
-}
-.gen-section-header:hover {
-    background: var(--surface-hover);
 }
 .gen-section-label {
     font-size: 0.625rem;
@@ -269,11 +283,18 @@
 /* ── Collapsible toggle ── */
 
 .gen-collapsible-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
     cursor: pointer;
 }
 
+.gen-heading .gen-collapsible-toggle {
+    font-weight: 600;
+}
+
 .gen-chevron {
-    font-size: 0.6875rem;
+    font-size: 0.8125rem;
     color: var(--text-muted);
     transition: transform 0.25s ease;
     flex-shrink: 0;
@@ -288,7 +309,7 @@
     overflow: hidden;
     transition: max-height 0.35s ease, opacity 0.25s ease;
     opacity: 1;
-    padding-left: 0.375rem;
+    padding-left: 0.25rem;
 }
 .gen-section-rows.collapsed {
     max-height: 0 !important;
@@ -306,6 +327,11 @@
     overflow: hidden;
     transition: max-height 0.35s ease, opacity 0.25s ease;
     opacity: 1;
+}
+.gen-sliders.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    pointer-events: none;
 }
 .gen-slider-row {
     display: flex;
@@ -484,6 +510,25 @@
 @keyframes gen-spin {
     to { transform: rotate(360deg); }
 }
+.gen-error-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
+    z-index: 2;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 1rem;
+}
+.gen-error-overlay.hidden {
+    display: none;
+}
 
 /* ── Queue list ── */
 
@@ -573,18 +618,6 @@
 
 /* ── Responsive ── */
 
-@media (min-width: 1440px) {
-    .gen-action-btn { width: 32px; height: 32px; }
-    .gen-action-btn svg { width: 18px; height: 18px; }
-}
-@media (min-width: 1920px) {
-    .gen-action-btn { width: 36px; height: 36px; }
-    .gen-action-btn svg { width: 20px; height: 20px; }
-}
-@media (min-width: 2560px) {
-    .gen-action-btn { width: 40px; height: 40px; }
-    .gen-action-btn svg { width: 22px; height: 22px; }
-}
 
 @media (max-width: 900px) {
     .gen-body {

@@ -12,6 +12,9 @@
     initial-value: 100px;
 }
 
+/* Host element must be block to form a proper containing block for phantoms */
+carousel-dropdown-browser { display: block; position: relative; }
+
 /* Hide data elements */
 carousel-dropdown-browser-card,
 carousel-dropdown-browser-section { display: none; }
@@ -153,6 +156,7 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
     width: 100%;
     border-radius: 8px;
     overflow: hidden;
+    border: 2px solid var(--border);
     background: var(--bg);
     display: flex;
     flex-direction: column;
@@ -164,6 +168,13 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
     transition: transform 0.15s ease,
                 box-shadow 0.2s ease;
     transform-style: preserve-3d;
+}
+
+.cdb-card.active .cdb-card-frame {
+    border-top-color: rgba(180, 130, 255, 0.6);
+    border-bottom-color: rgba(180, 130, 255, 0.6);
+    border-left-color: transparent;
+    border-right-color: transparent;
 }
 
 .cdb-card-img {
@@ -398,6 +409,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     flex-direction: column;
     cursor: pointer;
     position: relative;
+    border: 2px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
     background: var(--bg);
@@ -418,7 +430,10 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 }
 
 .cdb-grid-card.selected {
-    border-color: rgba(180, 130, 255, 0.6);
+    border-top-color: rgba(180, 130, 255, 0.6);
+    border-bottom-color: rgba(180, 130, 255, 0.6);
+    border-left-color: transparent;
+    border-right-color: transparent;
 }
 
 .cdb-grid-card-actions {

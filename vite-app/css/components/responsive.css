@@ -66,11 +66,11 @@
 /* ── Responsive: Mobile ── */
 @media (max-width: 767px) {
     .app-header {
-        padding: 0.625rem 0.75rem;
+        padding: 0.625rem 0.75rem 0;
     }
 
     .header-brand h1 {
-        font-size: 0.75rem;
+        font-size: 0.6rem;
     }
 
     .header-links {
@@ -78,7 +78,13 @@
     }
 
     .header-link {
-        padding: 0.25rem 0.25rem;
+        font-size: 0.6rem;
+        padding: 0.25rem 0.25rem 0.125rem;
+    }
+
+    .header-sep {
+        font-size: 1.725rem;
+        margin-bottom: 0.1rem;
     }
 
     .lang-select {

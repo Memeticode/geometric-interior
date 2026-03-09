@@ -3,6 +3,8 @@ To-Do
 -- create sampler-image generation workflow (not just parameter space exploration workflow)
 
 -- carousel
+    -- clips out top on iphone se dimensions
+    -- apply multi-masking to all titles, so title can mask and be masked at the same time
     -- review functionality when:
         -- button is above/below
         -- titles are there/not in different presentations (grid/carousel)

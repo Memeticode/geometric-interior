@@ -212,6 +212,7 @@ const genUndoBtn = document.getElementById('genUndoBtn');
 const genRedoBtn = document.getElementById('genRedoBtn');
 const genFullscreenBtn = document.getElementById('genFullscreenBtn');
 const genLoadingOverlay = document.getElementById('genLoadingOverlay');
+const genErrorOverlay = document.getElementById('genErrorOverlay');
 const genProgressOverlay = document.getElementById('genProgressOverlay');
 const genProgressFill = document.getElementById('genProgressFill');
 const genProgressLabel = document.getElementById('genProgressLabel');
@@ -1319,8 +1320,23 @@ if (workerBridge) {
             setGenNavEnabled(true);
         }
     });
+    workerBridge.on('error', () => {
+        showGenError();
+    });
 }
 let snapshotUrl = null;
+let webglFailed = false;
+
+/** Show the WebGL error overlay and disable generate controls. */
+function showGenError() {
+    if (webglFailed) return;
+    webglFailed = true;
+    genErrorOverlay?.classList.remove('hidden');
+    genLoadingOverlay?.classList.add('hidden');
+    setGenNavEnabled(false);
+    if (genSaveBtn) genSaveBtn.disabled = true;
+    if (genRandomizeBtn) genRandomizeBtn.disabled = true;
+}
 
 /** Enable/disable all generate panel nav buttons. */
 function setGenNavEnabled(enabled) {
@@ -1434,7 +1450,7 @@ function initGenerate() {
     generateInitialized = true;
 
     if (!workerBridge) {
-        toast('WebGL worker not available');
+        showGenError();
         return;
     }
 

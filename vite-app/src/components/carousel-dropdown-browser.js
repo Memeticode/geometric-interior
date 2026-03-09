@@ -92,6 +92,13 @@ const PERSPECTIVE_D = 1200;      // matches CSS perspective(1200px)
 const DEG = Math.PI / 180;       // degrees-to-radians multiplier
 const HOVER_ZONE_DELAY = 900;    // ms delay before recomputing hover zones after layout
 
+// ── Responsive arc-y ──
+const ARC_Y_BREAKPOINTS = [
+    { query: '(max-width: 374px)', arcY: 15 },
+    { query: '(max-width: 767px)', arcY: 25 },
+];
+const ARC_Y_DEFAULT = 43;
+
 // ── Card geometry ──
 const ARC_Z_MAX_RAD    = 1.2;    // max total arc angle in radians (at arc-z=50)
 const ARC_Z_RANGE      = 50;     // arc-z slider range
@@ -176,7 +183,8 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     // ── Configuration ──
     #arcZ = 24;
-    #arcY = 38;
+    #arcY = ARC_Y_DEFAULT;
+    #arcYMediaListeners = [];
     #flipDuration = 1500;
     #controlsPosition = 'above'; // 'above' | 'below'
     #infinite = true;              // wrap around or clamp at edges
@@ -445,6 +453,14 @@ class CarouselDropdownBrowser extends HTMLElement {
         const offScreenBaseDelay = Math.min(sorted.length, 3) * staggerDelay;
 
         // ── Precompute targets ──
+        // Image-center alignment: compensate for scaled title offset (see collapse)
+        let expandTitleH = 0;
+        if (t.vAlign === 'above' || t.vAlign === 'below') {
+            const sample = this.#cards[0]?.element.querySelector('.cdb-card-title');
+            if (sample) expandTitleH = sample.offsetHeight;
+        }
+        const expandTitleSign = t.vAlign === 'above' ? 1 : t.vAlign === 'below' ? -1 : 0;
+
         const visibleTargets = [];
         for (let i = 0; i < sorted.length; i++) {
             const { element } = sorted[i];
@@ -453,12 +469,14 @@ class CarouselDropdownBrowser extends HTMLElement {
             if (!gridRect) continue;
             const gridCX = gridRect.left + gridRect.width / 2;
             const gridCY = gridRect.top + gridRect.height / 2;
+            const sc = gridRect.width / cardW;
+            const cyAdj = expandTitleH > 0 ? expandTitleSign * expandTitleH * (1 - sc) / 2 : 0;
             visibleTargets.push({
                 element,
                 img: element.querySelector('.cdb-card-frame'),
                 cx: gridCX - trackCX,
-                cy: gridCY - trackCY,
-                sc: gridRect.width / cardW,
+                cy: gridCY - trackCY + cyAdj,
+                sc,
                 delay: i * staggerDelay
             });
         }
@@ -469,12 +487,14 @@ class CarouselDropdownBrowser extends HTMLElement {
             if (!gridRect) continue;
             const gridCX = gridRect.left + gridRect.width / 2;
             const gridCY = gridRect.top + gridRect.height / 2;
+            const sc = gridRect.width / cardW;
+            const cyAdj = expandTitleH > 0 ? expandTitleSign * expandTitleH * (1 - sc) / 2 : 0;
             offScreenTargets.push({
                 element,
                 img: element.querySelector('.cdb-card-frame'),
                 cx: gridCX - trackCX,
-                cy: gridCY - trackCY,
-                sc: gridRect.width / cardW
+                cy: gridCY - trackCY + cyAdj,
+                sc
             });
         }
 
@@ -537,8 +557,9 @@ class CarouselDropdownBrowser extends HTMLElement {
             if (!item) continue;
             const secLabel = sectionLabelRects.get(item.sectionIndex);
             const headerRect = h.getBoundingClientRect();
+            const headerPT = parseFloat(getComputedStyle(h).paddingTop) || 0;
             if (secLabel) {
-                const dy = secLabel.rect.top - headerRect.top;
+                const dy = secLabel.rect.top - (headerRect.top + headerPT);
                 const dx = secLabel.rect.left - headerRect.left;
                 h.style.transform = `translate(${dx}px, ${dy}px)`;
                 h.style.opacity = '1';
@@ -700,9 +721,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                     sec.element.style.opacity = '0';
                 }
 
-                // ── Capture grid header rects while still at original positions ──
-                const gridHeaderRects = this.#captureGridHeaderRects();
-
                 // ── Hide grid content BEFORE un-flatten to prevent visible shift ──
                 this.#dropdown.style.transition = 'none';
                 for (const card of gridCards) card.style.opacity = '0';
@@ -714,13 +732,46 @@ class CarouselDropdownBrowser extends HTMLElement {
                 // ── Capture controls position before un-flatten ──
                 const ctrlBefore = this.#controls.getBoundingClientRect();
 
+                // ── Capture grid header rects while still at original positions ──
+                const gridHeaderRects = this.#captureGridHeaderRects();
+
+                // [CDB-DEBUG] Capture positions before un-flatten
+                const _dbgHostBefore = this.getBoundingClientRect();
+                const _dbgScrollParent = this.closest('.gallery-main') || this.parentElement;
+                const _dbgScrollBefore = _dbgScrollParent ? _dbgScrollParent.scrollTop : 0;
+                console.log('[CDB-DEBUG] PRE-UNFLATTEN hostRect.top:', _dbgHostBefore.top,
+                    'scrollTop:', _dbgScrollBefore);
+                for (const [secIdx, hdr] of gridHeaderRects) {
+                    console.log(`[CDB-DEBUG] gridHeader[${secIdx}] rect.top:`, hdr.rect.top,
+                        'paddingTop:', hdr.paddingTop, 'text:', hdr.text);
+                }
+
                 // ── Un-flatten carousel (invisible — grid already hidden) ──
                 this.#strip.classList.remove('cdb-flattened');
+
+                // [CDB-DEBUG] Capture positions after un-flatten
+                const _dbgHostAfter = this.getBoundingClientRect();
+                const _dbgScrollAfter = _dbgScrollParent ? _dbgScrollParent.scrollTop : 0;
+                console.log('[CDB-DEBUG] POST-UNFLATTEN hostRect.top:', _dbgHostAfter.top,
+                    'scrollTop:', _dbgScrollAfter,
+                    'hostTop delta:', _dbgHostAfter.top - _dbgHostBefore.top,
+                    'scroll delta:', _dbgScrollAfter - _dbgScrollBefore);
 
                 // ── Position carousel cards at grid positions ──
                 const trackRect = this.#track.getBoundingClientRect();
                 const trackCX = trackRect.left + trackRect.width / 2;
                 const trackCY = trackRect.top + trackRect.height / 2;
+
+                // Image-center alignment: the carousel card's frame has scale(sc)
+                // which shrinks the title visually, shifting the image center relative
+                // to the card center. Correct so images align, not bounding-box centers.
+                const titlePos = this.#parseTitlePos(this.#cardTitle);
+                let titleH = 0;
+                if (titlePos.vAlign === 'above' || titlePos.vAlign === 'below') {
+                    const sample = this.#cards[0]?.element.querySelector('.cdb-card-title');
+                    if (sample) titleH = sample.offsetHeight;
+                }
+                const titleSign = titlePos.vAlign === 'above' ? 1 : titlePos.vAlign === 'below' ? -1 : 0;
 
                 // Position off-screen cards at grid positions (for "from" state)
                 for (const { element } of this.#cards) {
@@ -732,11 +783,14 @@ class CarouselDropdownBrowser extends HTMLElement {
                     }
                     const gridCX = gridRect.left + gridRect.width / 2;
                     const gridCY = gridRect.top + gridRect.height / 2;
+                    const sc = gridRect.width / cardW;
+                    const cyAdj = titleH > 0 ? titleSign * titleH * (1 - sc) / 2 : 0;
                     element.style.setProperty('--cx', (gridCX - trackCX) + 'px');
-                    element.style.setProperty('--cy', (gridCY - trackCY) + 'px');
+                    element.style.setProperty('--cy', (gridCY - trackCY + cyAdj) + 'px');
                     element.style.setProperty('--ry', '0deg');
+                    element.style.setProperty('--rx', '0deg');
                     element.style.setProperty('--tz', '0px');
-                    element.style.setProperty('--sc', String(gridRect.width / cardW));
+                    element.style.setProperty('--sc', String(sc));
                     // Leave --card-opacity at 0 — Web Animation fill:'both' handles
                     // opacity, keeping cards invisible until animation starts.
                     element.style.zIndex = '5';
@@ -924,8 +978,13 @@ class CarouselDropdownBrowser extends HTMLElement {
                         this.#sectionLabelContainer.style.transform = '';
                     }
 
-                    // Position cards but keep labels hidden — phantoms still active during FLIP
-                    this.#positionCards();
+                    // Position cards using the SAME layout computed at animation start,
+                    // avoiding a snap from viewport-width changes (scrollbar appearing/
+                    // disappearing when the dropdown collapses).
+                    this.#isTransitioning = true;
+                    this.#track.classList.add('cdb-transitioning');
+                    this.#resetHoverState();
+                    this.#applyLayout(frame);
                     for (const sec of this.#sectionLabels) {
                         sec.element.style.opacity = '0';
                     }
@@ -970,7 +1029,7 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     attributeChangedCallback(name, _old, val) {
         if (name === 'arc-z') { this.#arcZ = Math.round(parseFloat(val)) || 24; if (this.#domBuilt) this.#positionCards(); }
-        if (name === 'arc-y') { this.#arcY = parseFloat(val) ?? 38; this.#syncArcYExtra(); if (this.#domBuilt) this.#positionCards(); }
+        if (name === 'arc-y') { this.#arcY = parseFloat(val) ?? ARC_Y_DEFAULT; this.#syncArcYExtra(); if (this.#domBuilt) this.#positionCards(); }
         if (name === 'flip-duration') this.#flipDuration = parseInt(val, 10) || 450;
         if (name === 'controls-position') {
             this.#controlsPosition = val === 'below' ? 'below' : 'above';
@@ -1054,6 +1113,28 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.style.setProperty('--arc-y-extra', Math.abs(this.#arcY) + 'px');
     }
 
+    #initResponsiveArcY() {
+        if (this.hasAttribute('arc-y')) return;
+        for (const bp of ARC_Y_BREAKPOINTS) {
+            const mql = window.matchMedia(bp.query);
+            const handler = () => this.#applyResponsiveArcY();
+            mql.addEventListener('change', handler);
+            this.#arcYMediaListeners.push({ mql, handler });
+        }
+        this.#applyResponsiveArcY();
+    }
+
+    #applyResponsiveArcY() {
+        if (this.hasAttribute('arc-y')) return;
+        let arcY = ARC_Y_DEFAULT;
+        for (const bp of ARC_Y_BREAKPOINTS) {
+            if (window.matchMedia(bp.query).matches) { arcY = bp.arcY; break; }
+        }
+        this.#arcY = arcY;
+        this.#syncArcYExtra();
+        if (this.#domBuilt) this.#positionCards();
+    }
+
     #updateEasing() {
         const b = this.#bounce;
         // bounce=0: cubic-bezier(0.25, 0.1, 0.25, 1) — smooth, no overshoot
@@ -1079,6 +1160,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#updateEasing();
         this.#syncArcYExtra();
         this.#applyTitleClasses();
+        this.#initResponsiveArcY();
         this.#attachResizeObserver();
         this.#attachMutationObserver();
         // Collect any data children already present
@@ -1086,6 +1168,10 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     disconnectedCallback() {
+        for (const { mql, handler } of this.#arcYMediaListeners) {
+            mql.removeEventListener('change', handler);
+        }
+        this.#arcYMediaListeners = [];
         this.#cancelFlipAnimations();
         if (this.#scrollRaf) { cancelAnimationFrame(this.#scrollRaf); this.#scrollRaf = null; }
         if (this.#resizeObs) {
@@ -1625,7 +1711,8 @@ class CarouselDropdownBrowser extends HTMLElement {
             const item = this.#items.find(it => it.section === h.textContent && it.sectionIndex >= secIdx);
             if (item) {
                 const rect = h.getBoundingClientRect();
-                rects.set(item.sectionIndex, { rect, underlineWidth: rect.width, text: h.textContent });
+                const pt = parseFloat(getComputedStyle(h).paddingTop) || 0;
+                rects.set(item.sectionIndex, { rect, underlineWidth: rect.width, text: h.textContent, paddingTop: pt });
                 secIdx = item.sectionIndex + 1;
             }
         }
@@ -1652,7 +1739,8 @@ class CarouselDropdownBrowser extends HTMLElement {
 
         // Position phantoms relative to the component so they scroll with content
         const hostRect = this.getBoundingClientRect();
-        this.style.position = this.style.position || 'relative';
+
+        console.log('[CDB-DEBUG] morphSectionLabels hostRect.top:', hostRect.top, 'hostRect.left:', hostRect.left);
 
         for (const [secIdx, from] of fromRects) {
             if (!from) continue;
@@ -1661,13 +1749,23 @@ class CarouselDropdownBrowser extends HTMLElement {
             const phantom = document.createElement('div');
             phantom.className = 'cdb-section-phantom';
             phantom.textContent = from.text;
+            const fromPT = from.paddingTop || 0;
+            const phantomTop = from.rect.top + fromPT - hostRect.top;
+            const phantomLeft = from.rect.left - hostRect.left;
             phantom.style.cssText = `
                 position: absolute; z-index: 1000; pointer-events: none;
-                left: ${from.rect.left - hostRect.left}px; top: ${from.rect.top - hostRect.top}px;
+                left: ${phantomLeft}px; top: ${phantomTop}px;
                 font-size: ${fromStyle.fontSize}; text-transform: uppercase;
                 letter-spacing: ${fromStyle.letterSpacing};
                 color: var(--text-muted); white-space: nowrap; padding-bottom: 0.25rem;
             `;
+
+            console.log(`[CDB-DEBUG] phantom[${secIdx}] "${from.text}"`,
+                'from.rect.top:', from.rect.top, 'fromPT:', fromPT,
+                'phantomTop:', phantomTop,
+                'to.rect.top:', to?.rect.top,
+                'expected viewport Y:', hostRect.top + phantomTop,
+                'grid text was at viewport Y:', from.rect.top + fromPT);
 
             const fromUW = from.underlineWidth || from.rect.width;
             const bar = document.createElement('div');
@@ -1684,8 +1782,9 @@ class CarouselDropdownBrowser extends HTMLElement {
             if (to) {
                 // Morph from source to target position
                 const toUW = to.underlineWidth || to.rect.width;
+                const toPT = to.paddingTop || 0;
                 const dx = to.rect.left - from.rect.left;
-                const dy = to.rect.top - from.rect.top;
+                const dy = (to.rect.top + toPT) - (from.rect.top + fromPT);
 
                 phantom.animate([
                     { transform: 'translate(0, 0)', opacity: 1 },

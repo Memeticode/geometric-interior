@@ -146,7 +146,7 @@
                 </div>
             </div>
             <div class="gallery-content" id="galleryContent">
-                <carousel-dropdown-browser id="carouselBrowser" controls-position="above" infinite="false" bounce="0.35" debug-show-controls></carousel-dropdown-browser>
+                <carousel-dropdown-browser id="carouselBrowser" controls-position="above" infinite="false" bounce="0.35"></carousel-dropdown-browser>
                 <!-- Animations -->
                 <div class="gallery-section" id="animSection" style="display:none">
                     <div class="gallery-section-header" data-target="animGallery" aria-expanded="true">
@@ -163,7 +163,10 @@
                     <div class="generate-config" id="generateConfig">
                         <!-- Configure Image -->
                         <div class="gen-heading">
-                            <span data-i18n="generate.configureImage">Configure Image</span>
+                            <div class="gen-collapsible-toggle" data-target="genSliders" aria-expanded="true">
+                                <span class="gen-chevron">&#9662;</span>
+                                <span data-i18n="generate.configureImage">Configure Image</span>
+                            </div>
                             <div class="gen-identity-actions">
                                 <button id="genSaveBtn" class="gen-action-btn" disabled data-tooltip="Save as user profile (local storage)" data-i18n-tooltip="profile.save.tooltip">
                                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/><path d="M5 1v4h6V1"/><rect x="4" y="9" width="8" height="4"/></svg>
@@ -238,6 +241,10 @@
                                 <div class="gen-progress-label" id="genProgressLabel"></div>
                             </div>
                             <div class="gen-loading-overlay hidden" id="genLoadingOverlay"><div class="gen-spinner"></div></div>
+                            <div class="gen-error-overlay hidden" id="genErrorOverlay">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+                                <span>WebGL unavailable — enable hardware acceleration in browser settings</span>
+                            </div>
                         </div>
                         <div class="gen-identity-commentary">
                             <label class="gen-identity-label" data-tooltip="User-provided commentary (optional)" data-i18n-tooltip="control.commentary.tooltip" data-i18n="control.commentary">Commentary<span id="genCommentaryCounter" class="gen-char-count">0/500</span></label>
