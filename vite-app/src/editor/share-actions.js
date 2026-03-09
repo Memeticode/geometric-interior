@@ -4,13 +4,11 @@
  */
 
 import { encodeStateToURL } from '../stores/url-state.js';
-import { packageStillZip, packageStillZipFromBlob } from '../export/export.js';
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
-import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
 import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
 import { profileToConfig } from '@geometric-interior/core/config-schema.js';
 import { downloadBlob, toIsoLocalish, safeName } from '../export/export.js';
-import { hideTooltip } from '../components/tooltips.js';
+import { hideTooltip, refreshTooltip } from '../components/tooltips.js';
 import { toast } from '../components/toast.js';
 import { t } from '../i18n/locale.js';
 
@@ -49,18 +47,27 @@ export function initShareActions({ el, getCurrentSeed, readControlsFromUI, readC
         hideTooltip();
         el.sharePopover.classList.toggle('hidden');
         el.settingsPopover.classList.add('hidden');
+        const open = !el.sharePopover.classList.contains('hidden');
+        el.shareBtn.setAttribute('data-tooltip', open ? 'Close share' : 'Share');
+        refreshTooltip(el.shareBtn);
     });
 
     el.settingsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         hideTooltip();
         el.settingsPopover.classList.toggle('hidden');
-        el.sharePopover.classList.add('hidden');
+        closeSharePopover();
     });
+
+    function closeSharePopover() {
+        el.sharePopover.classList.add('hidden');
+        el.shareBtn.setAttribute('data-tooltip', 'Share');
+        refreshTooltip(el.shareBtn);
+    }
 
     document.addEventListener('click', (e) => {
         if (!el.sharePopover.contains(e.target) && e.target !== el.shareBtn) {
-            el.sharePopover.classList.add('hidden');
+            closeSharePopover();
         }
         if (!el.settingsPopover.contains(e.target) && e.target !== el.settingsBtn) {
             el.settingsPopover.classList.add('hidden');
@@ -70,7 +77,7 @@ export function initShareActions({ el, getCurrentSeed, readControlsFromUI, readC
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (!el.sharePopover.classList.contains('hidden')) {
-                el.sharePopover.classList.add('hidden');
+                closeSharePopover();
                 el.shareBtn.focus();
             }
             if (!el.settingsPopover.classList.contains('hidden')) {
@@ -121,42 +128,7 @@ export function initShareActions({ el, getCurrentSeed, readControlsFromUI, readC
             document.body.removeChild(ta);
             toast(t('toast.linkCopiedShort'));
         }
-        el.sharePopover.classList.add('hidden');
-    });
-
-    /* ── Download visual (ZIP) ── */
-
-    document.getElementById('shareDownloadPng').addEventListener('click', async () => {
-        if (!isStillRendered()) { toast(t('toast.renderFirst')); return; }
-        if (!window.JSZip) { toast(t('toast.jszipMissing')); return; }
-        el.sharePopover.classList.add('hidden');
-
-        const seed = getCurrentSeed();
-        const controls = readControlsFromUI();
-        const name = el.profileNameField.value.trim() || 'Untitled';
-        const titleRng = mulberry32(xmur3(seed + ':title')());
-        const title = generateTitle(controls, titleRng);
-        const altText = generateAltText(controls, getNodeCount(), title, 'en', seed);
-        const meta = { title, altText, nodeCount: getNodeCount() };
-
-        try {
-            if (bridge.isWorker()) {
-                const blob = await bridge.exportCanvas();
-                const canvas = bridge.getCanvas();
-                const rect = canvas.getBoundingClientRect();
-                await packageStillZipFromBlob(blob, {
-                    seed, controls, name, meta,
-                    canvasWidth: Math.round(rect.width * window.devicePixelRatio),
-                    canvasHeight: Math.round(rect.height * window.devicePixelRatio),
-                });
-            } else {
-                await packageStillZip(bridge.getCanvas(), { seed, controls, name, meta });
-            }
-            toast(t('toast.visualExported'));
-        } catch (err) {
-            console.error(err);
-            toast(t('toast.visualExportFailed'));
-        }
+        closeSharePopover();
     });
 
     /* ── Social share buttons ── */
@@ -164,7 +136,7 @@ export function initShareActions({ el, getCurrentSeed, readControlsFromUI, readC
     function openShare(urlFn) {
         const shareURL = buildShareURL();
         urlFn(shareURL);
-        el.sharePopover.classList.add('hidden');
+        closeSharePopover();
     }
 
     document.getElementById('shareTwitter').addEventListener('click', () => {

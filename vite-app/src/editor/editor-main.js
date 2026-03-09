@@ -12,7 +12,7 @@
  *   text-display.js, import-handler.js, share-actions.js, profile-gallery.js
  */
 
-import { createHeader } from '../components/create-header.js';
+import { createHeader, populateShareWrap } from '../components/create-header.js';
 import { createFooter } from '../components/create-footer.js';
 import { initApp } from '../components/app-init.js';
 import { TAG_LIST_LENGTH } from '@geometric-interior/core/text-generation/seed-tags.js';
@@ -56,6 +56,9 @@ if (canvas.dataset.transferred) {
     canvas.replaceWith(fresh);
     canvas = fresh;
 }
+
+/* ── Populate share button from shared source ── */
+populateShareWrap(document.getElementById('shareWrap'), { disabled: true });
 
 /* ── DOM refs ── */
 const el = {
@@ -203,6 +206,7 @@ function setMorphLocked(locked) {
     document.getElementById('configRandomizeBtn').disabled = locked;
     if (locked) {
         el.sharePopover.classList.add('hidden');
+        el.shareBtn.setAttribute('data-tooltip', 'Share');
         el.settingsPopover.classList.add('hidden');
     }
     const panelEl = document.querySelector('.panel');

@@ -481,7 +481,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-section-label-container {
     position: relative;
     width: 100%;
-    height: var(--cdb-label-height, 1.1rem);
+    height: var(--cdb-label-height, 1.4rem);
     margin-bottom: 0.25rem;
     overflow: hidden;
     pointer-events: none;

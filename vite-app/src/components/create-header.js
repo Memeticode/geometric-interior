@@ -54,17 +54,9 @@ export function createHeader(headerEl, { page }) {
     const linksHTML = allLinks.join('<span class="header-sep">&middot;</span>');
 
     // ── Header actions (gallery only: share button + popover) ──
-    const actionsHTML = isGallery ? `
-        <div class="header-actions">
-            <div class="share-btn-wrap">
-                <button id="shareBtn" class="header-link" data-tooltip="Share" data-i18n-tooltip="stage.share">
-                    ${SHARE_ICON}
-                </button>
-                <div id="sharePopover" class="share-popover hidden">
-                    ${sharePopoverContent()}
-                </div>
-            </div>
-        </div>` : '';
+    const actionsHTML = isGallery
+        ? `<div class="header-actions"><div class="share-btn-wrap" id="shareWrap"></div></div>`
+        : '';
 
     // ── Assemble ──
     headerEl.innerHTML = `
@@ -74,6 +66,10 @@ export function createHeader(headerEl, { page }) {
             <div class="header-links">${linksHTML}</div>
         </div>
         ${actionsHTML}`;
+
+    // Populate share button from shared source
+    const shareWrap = headerEl.querySelector('#shareWrap');
+    if (shareWrap) populateShareWrap(shareWrap, { btnClass: 'header-link' });
 
     return {
         panelToggle: headerEl.querySelector('#panelToggle'),
@@ -99,10 +95,6 @@ const LINK_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" st
     <path d="M9.5 6.5a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24l1-1"/>
 </svg>`;
 
-const DOWNLOAD_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-    <path d="M8 2v9M4.5 8L8 11.5 11.5 8"/><path d="M2.5 13.5h11"/>
-</svg>`;
-
 const EMAIL_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
     <rect x="1.5" y="3" width="13" height="10" rx="2"/><path d="M1.5 5l6.5 4 6.5-4"/>
 </svg>`;
@@ -122,7 +114,6 @@ const TWITTER_ICON = `<svg viewBox="0 0 16 16" fill="currentColor" width="14" he
 function sharePopoverContent() {
     return `
         <button class="share-option" id="shareCopyLink">${LINK_ICON}<span data-i18n="share.copyLink">Copy Link</span></button>
-        <button class="share-option" id="shareDownloadPng">${DOWNLOAD_ICON}<span data-i18n="share.downloadVisual">Download Visual</span></button>
         <div class="share-sep"></div>
         <button class="share-option" id="shareBluesky">${BLUESKY_ICON}<span data-i18n="share.bluesky">Bluesky</span></button>
         <button class="share-option" id="shareFacebook">${FACEBOOK_ICON}<span data-i18n="share.facebook">Facebook</span></button>
@@ -132,4 +123,21 @@ function sharePopoverContent() {
         <button class="share-option" id="shareTwitter">${TWITTER_ICON}<span>X</span></button>
         <div class="share-sep"></div>
         <button class="share-option" id="shareEmail">${EMAIL_ICON}<span data-i18n="share.email">Email</span></button>`;
+}
+
+/**
+ * Populate a share-btn-wrap container with the share button + popover.
+ * @param {HTMLElement} wrapEl - An empty <div class="share-btn-wrap"> element
+ * @param {{ btnClass?: string, disabled?: boolean }} [opts]
+ */
+export function populateShareWrap(wrapEl, { btnClass = '', disabled = false } = {}) {
+    const cls = btnClass ? ` class="${btnClass}"` : '';
+    const dis = disabled ? ' disabled' : '';
+    wrapEl.innerHTML = `
+        <button id="shareBtn"${cls} data-tooltip="Share" data-i18n-tooltip="stage.share" data-tooltip-pos="left"${dis}>
+            ${SHARE_ICON}
+        </button>
+        <div id="sharePopover" class="share-popover hidden">
+            ${sharePopoverContent()}
+        </div>`;
 }

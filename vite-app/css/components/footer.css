@@ -140,7 +140,9 @@
 .custom-dropdown-trigger {
     display: inline-flex;
     align-items: center;
-    text-align: left;
+    justify-content: center;
+    text-align: center;
+    min-width: 3.5rem;
 }
 
 .custom-dropdown-menu {
@@ -212,5 +214,11 @@
 .custom-dropdown-item.active {
     background: var(--accent-bg);
     color: var(--accent-text);
+}
+
+.custom-dropdown-item.disabled {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
 }
 

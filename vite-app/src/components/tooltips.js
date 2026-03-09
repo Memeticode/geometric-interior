@@ -37,8 +37,8 @@ export function showTooltip(el, mouseX, mouseY) {
         const overlayHeight = paramTooltip.offsetHeight;
         paramTooltip.style.left = (rect.left + inset) + 'px';
         paramTooltip.style.top = (rect.top + (rect.height - overlayHeight) / 2) + 'px';
-    } else if (pos === 'right' || (!pos && el.closest('.panel'))) {
-        /* Element-anchored positioning (panel items) */
+    } else if (pos === 'right' || pos === 'left' || (!pos && el.closest('.panel'))) {
+        /* Element-anchored positioning (panel items, share button, etc.) */
         const rect = el.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;
@@ -48,11 +48,12 @@ export function showTooltip(el, mouseX, mouseY) {
         const fitsBelow = rect.bottom + gap + th <= vh - gap;
 
         let left, top;
-        if (fitsRight) {
-            left = rect.right + gap;
+        const preferLeft = pos === 'left';
+        if (preferLeft ? fitsLeft : fitsRight) {
+            left = preferLeft ? rect.left - gap - tw : rect.right + gap;
             top = cy - th / 2;
-        } else if (fitsLeft) {
-            left = rect.left - gap - tw;
+        } else if (preferLeft ? fitsRight : fitsLeft) {
+            left = preferLeft ? rect.right + gap : rect.left - gap - tw;
             top = cy - th / 2;
         } else if (fitsBelow) {
             left = cx - tw / 2;

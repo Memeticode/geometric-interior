@@ -260,9 +260,15 @@ export function initGalleryWorker(canvas) {
             terminate() {
                 if (renderTimer) clearTimeout(renderTimer);
                 clearTimeout(initTimer);
-                if (worker) worker.terminate();
+                if (worker) {
+                    worker.onmessage = null;
+                    worker.onerror = null;
+                    worker.terminate();
+                }
                 worker = null;
                 ready = false;
+                messageHandlers = {};
+                pendingPreview = null;
             },
         };
 

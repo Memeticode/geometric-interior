@@ -551,6 +551,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         }, crossFadeDelay);
 
         // ── Section headers: FLIP-translate from carousel label positions ──
+        const expandBars = [];
         let headerSecIdx = 0;
         for (const h of headers) {
             const item = this.#items.find(it => it.section === h.textContent && it.sectionIndex >= headerSecIdx);
@@ -561,6 +562,18 @@ class CarouselDropdownBrowser extends HTMLElement {
             if (secLabel) {
                 const dy = secLabel.rect.top - (headerRect.top + headerPT);
                 const dx = secLabel.rect.left - headerRect.left;
+                // Hide native border — animate a temporary bar instead
+                h.style.borderBottomColor = 'transparent';
+                const bar = document.createElement('div');
+                bar.style.cssText = `position:absolute;bottom:0;left:0;height:1px;background:var(--border);width:${secLabel.underlineWidth}px;`;
+                h.style.position = 'relative';
+                h.appendChild(bar);
+                expandBars.push({ header: h, bar });
+                bar.animate([
+                    { width: secLabel.underlineWidth + 'px' },
+                    { width: headerRect.width + 'px' }
+                ], { duration: dur, easing, fill: 'both' });
+
                 h.style.transform = `translate(${dx}px, ${dy}px)`;
                 h.style.opacity = '1';
                 void h.offsetHeight;
@@ -642,6 +655,14 @@ class CarouselDropdownBrowser extends HTMLElement {
                 const img = element.querySelector('.cdb-card-frame');
                 if (img) img.style.transition = '';
             }
+            // Remove expand underline bars, restore native border
+            for (const { header, bar } of expandBars) {
+                bar.getAnimations().forEach(a => a.cancel());
+                bar.remove();
+                header.style.borderBottomColor = '';
+                header.style.position = '';
+            }
+
             this.#cleanupGridAnimationStyles();
 
             // Clear inline mask overrides so CSS masks work normally again
@@ -735,27 +756,8 @@ class CarouselDropdownBrowser extends HTMLElement {
                 // ── Capture grid header rects while still at original positions ──
                 const gridHeaderRects = this.#captureGridHeaderRects();
 
-                // [CDB-DEBUG] Capture positions before un-flatten
-                const _dbgHostBefore = this.getBoundingClientRect();
-                const _dbgScrollParent = this.closest('.gallery-main') || this.parentElement;
-                const _dbgScrollBefore = _dbgScrollParent ? _dbgScrollParent.scrollTop : 0;
-                console.log('[CDB-DEBUG] PRE-UNFLATTEN hostRect.top:', _dbgHostBefore.top,
-                    'scrollTop:', _dbgScrollBefore);
-                for (const [secIdx, hdr] of gridHeaderRects) {
-                    console.log(`[CDB-DEBUG] gridHeader[${secIdx}] rect.top:`, hdr.rect.top,
-                        'paddingTop:', hdr.paddingTop, 'text:', hdr.text);
-                }
-
                 // ── Un-flatten carousel (invisible — grid already hidden) ──
                 this.#strip.classList.remove('cdb-flattened');
-
-                // [CDB-DEBUG] Capture positions after un-flatten
-                const _dbgHostAfter = this.getBoundingClientRect();
-                const _dbgScrollAfter = _dbgScrollParent ? _dbgScrollParent.scrollTop : 0;
-                console.log('[CDB-DEBUG] POST-UNFLATTEN hostRect.top:', _dbgHostAfter.top,
-                    'scrollTop:', _dbgScrollAfter,
-                    'hostTop delta:', _dbgHostAfter.top - _dbgHostBefore.top,
-                    'scroll delta:', _dbgScrollAfter - _dbgScrollBefore);
 
                 // ── Position carousel cards at grid positions ──
                 const trackRect = this.#track.getBoundingClientRect();
@@ -998,6 +1000,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                         // Remove phantoms, then reveal real labels at final positions
                         for (const o of sectionPhantoms) o.remove();
                         this.#positionCards();
+                        // Flush opacity change before restoring transitions so
+                        // the browser doesn't animate the opacity 0 → 1 switch.
+                        void this.#sectionLabelContainer.offsetHeight;
                         for (const sec of this.#sectionLabels) {
                             sec.element.style.transition = '';
                         }
@@ -1740,8 +1745,6 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Position phantoms relative to the component so they scroll with content
         const hostRect = this.getBoundingClientRect();
 
-        console.log('[CDB-DEBUG] morphSectionLabels hostRect.top:', hostRect.top, 'hostRect.left:', hostRect.left);
-
         for (const [secIdx, from] of fromRects) {
             if (!from) continue;
             const to = toRects.get(secIdx);
@@ -1759,13 +1762,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                 letter-spacing: ${fromStyle.letterSpacing};
                 color: var(--text-muted); white-space: nowrap; padding-bottom: 0.25rem;
             `;
-
-            console.log(`[CDB-DEBUG] phantom[${secIdx}] "${from.text}"`,
-                'from.rect.top:', from.rect.top, 'fromPT:', fromPT,
-                'phantomTop:', phantomTop,
-                'to.rect.top:', to?.rect.top,
-                'expected viewport Y:', hostRect.top + phantomTop,
-                'grid text was at viewport Y:', from.rect.top + fromPT);
 
             const fromUW = from.underlineWidth || from.rect.width;
             const bar = document.createElement('div');
@@ -2379,12 +2375,12 @@ class CarouselDropdownBrowser extends HTMLElement {
 
             if (!skipOpacity) sec.element.style.opacity = '';
             sec.element.style.transform = `translateX(${clampedLeft}px)`;
-            sec.element.style.setProperty('--underline-width', spanWidth + 'px');
-
-            // Apply fade mask if the label text would be meaningfully clipped
             const textWidth = sec.element.scrollWidth;
-            const MASK_TOLERANCE = 20;
-            if (availableWidth < textWidth - MASK_TOLERANCE && availableWidth > 0) {
+            const underlineWidth = Math.min(textWidth, availableWidth);
+            sec.element.style.setProperty('--underline-width', underlineWidth + 'px');
+
+            // Always apply right-edge fade mask at the section boundary
+            if (availableWidth > 0) {
                 const fadeStart = Math.max(0, availableWidth - FADE_PX);
                 const mask = `linear-gradient(to right, black ${fadeStart}px, transparent ${availableWidth}px)`;
                 sec.element.style.maskImage = mask;

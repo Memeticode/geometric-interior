@@ -52,7 +52,7 @@ export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSele
     // Item selection
     menu.addEventListener('click', (e) => {
         const item = e.target.closest('.custom-dropdown-item');
-        if (!item) return;
+        if (!item || item.classList.contains('disabled')) return;
         const value = item.dataset.value;
         label.textContent = item.textContent;
         syncActive(menu, value);

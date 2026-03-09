@@ -7,14 +7,15 @@ import { initCustomDropdown } from '../components/custom-dropdown.js';
 const STORAGE_KEY = 'geo-self-portrait-resolution';
 
 const PRESETS = [
-    { key: 'sd',  w: 840,  h: 540,  label: 'SD'  },
-    { key: 'hd',  w: 1400, h: 900,  label: 'HD'  },
-    { key: 'fhd', w: 1680, h: 1080, label: 'FHD' },
-    { key: 'qhd', w: 2520, h: 1620, label: 'QHD' },
-    { key: '4k',  w: 3360, h: 2160, label: '4K'  },
+    { key: 'pre',   w: 420,  h: 270,  label: 'Pre'   },
+    { key: 'sd',    w: 840,  h: 540,  label: 'SD'    },
+    { key: 'hd',    w: 1400, h: 900,  label: 'HD'    },
+    { key: 'fhd',   w: 1680, h: 1080, label: 'FHD'   },
+    { key: 'qhd',   w: 2520, h: 1620, label: 'QHD'   },
+    { key: '4k',    w: 3360, h: 2160, label: '4K'    },
 ];
 
-const DEFAULT_KEY = 'hd';
+const DEFAULT_KEY = 'sd';
 
 export function getPresets() { return PRESETS; }
 
@@ -53,10 +54,10 @@ export function initResolutionSelector(dropdownEl) {
     });
 }
 
-/* ── Generate-panel resolution (independent, defaults to SD) ── */
+/* ── Generate-panel resolution (independent, defaults to Pre) ── */
 
 const GEN_STORAGE_KEY = 'geo-gen-resolution';
-const GEN_DEFAULT_KEY = 'sd';
+const GEN_DEFAULT_KEY = 'pre';
 
 export function getGenResolution() {
     try {
@@ -90,6 +91,22 @@ export function initGenResolutionSelector(dropdownEl) {
 
     document.addEventListener('genresolutionchange', (e) => {
         syncDropdown(dropdownEl, e.detail.key);
+    });
+}
+
+/**
+ * Enable/disable resolution items in a dropdown based on available keys.
+ * Items whose data-value is in `enabledKeys` are enabled; others are disabled.
+ * @param {HTMLElement} dropdownEl
+ * @param {Set<string>|string[]} enabledKeys
+ */
+export function setEnabledResolutions(dropdownEl, enabledKeys) {
+    if (!dropdownEl) return;
+    const keys = enabledKeys instanceof Set ? enabledKeys : new Set(enabledKeys);
+    dropdownEl.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        const enabled = keys.has(item.dataset.value);
+        item.classList.toggle('disabled', !enabled);
+        item.setAttribute('aria-disabled', String(!enabled));
     });
 }
 

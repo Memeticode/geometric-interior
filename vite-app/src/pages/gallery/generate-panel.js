@@ -80,6 +80,8 @@ const SLIDER_GRADIENTS = {
  * @param {HTMLButtonElement} [opts.historyForwardBtn] — next randomized image
  * @param {HTMLButtonElement} [opts.undoBtn] — undo parameter tweak
  * @param {HTMLButtonElement} [opts.redoBtn] — redo parameter tweak
+ * @param {HTMLButtonElement} [opts.duplicateBtn] — duplicate locked config for editing
+ * @param {Function} [opts.onDuplicate] — () => void
  */
 export function initGeneratePanel(opts) {
     const {
@@ -88,11 +90,14 @@ export function initGeneratePanel(opts) {
         onControlChange, onRender, onSave, nameTooltipEl, commentaryField,
         previewCanvas, nameCounter, nameError, commentaryCounter,
         historyBackBtn, historyForwardBtn, undoBtn, redoBtn,
+        duplicateBtn, onDuplicate,
     } = opts;
 
     const sliderInputs = {};
     const cameraInputs = {};
     let userEditedName = false;
+    let locked = false;       // true when viewing a saved (immutable) profile
+    let savedName = null;     // name of the saved profile (null = unsaved draft)
 
     // ── Two-tier history ──
     // imageHistory: array of randomized image entries, each with its own undo stack
@@ -201,19 +206,19 @@ export function initGeneratePanel(opts) {
         }
         if (state.controls) {
             for (const key of SLIDER_KEYS) {
-                if (state.controls[key] !== undefined && sliderInputs[key]) {
-                    sliderInputs[key].value = String(state.controls[key]);
-                    const valueEl = sliderInputs[key].closest('.gen-slider-row')?.querySelector('.gen-slider-value');
-                    if (valueEl) valueEl.value = parseFloat(String(state.controls[key])).toFixed(2);
+                const ref = sliderInputs[key];
+                if (state.controls[key] !== undefined && ref) {
+                    ref.range.value = String(state.controls[key]);
+                    ref.valueEl.value = parseFloat(String(state.controls[key])).toFixed(2);
                 }
             }
         }
         if (state.camera) {
             for (const cam of CAMERA_SLIDERS) {
-                if (state.camera[cam.key] !== undefined && cameraInputs[cam.key]) {
-                    cameraInputs[cam.key].value = String(state.camera[cam.key]);
-                    const valueEl = cameraInputs[cam.key].closest('.gen-slider-row')?.querySelector('.gen-slider-value');
-                    if (valueEl) valueEl.value = formatValue(parseFloat(String(state.camera[cam.key])), cam.format, cam.step);
+                const ref = cameraInputs[cam.key];
+                if (state.camera[cam.key] !== undefined && ref) {
+                    ref.range.value = String(state.camera[cam.key]);
+                    ref.valueEl.value = formatValue(parseFloat(String(state.camera[cam.key])), cam.format, cam.step);
                 }
             }
         }
@@ -235,8 +240,57 @@ export function initGeneratePanel(opts) {
         if (historyBackBtn) historyBackBtn.disabled = imageIndex <= 0;
         if (historyForwardBtn) historyForwardBtn.disabled = imageIndex >= imageHistory.length - 1;
         const entry = imageHistory[imageIndex];
-        if (undoBtn) undoBtn.disabled = !entry || entry.undoIndex <= 0;
-        if (redoBtn) redoBtn.disabled = !entry || entry.undoIndex >= entry.undoStack.length - 1;
+        if (undoBtn) undoBtn.disabled = locked || !entry || entry.undoIndex <= 0;
+        if (redoBtn) redoBtn.disabled = locked || !entry || entry.undoIndex >= entry.undoStack.length - 1;
+        updateActionButtons();
+    }
+
+    /** Update Save/Render/Duplicate button states based on lock status. */
+    function updateActionButtons() {
+        if (saveBtn) saveBtn.disabled = locked || !nameField.value.trim();
+        if (renderBtn) renderBtn.disabled = !locked;
+        if (resetBtn) resetBtn.disabled = locked;
+        if (duplicateBtn) {
+            duplicateBtn.classList.toggle('hidden', !locked);
+            duplicateBtn.disabled = !locked;
+        }
+    }
+
+    /** Lock the panel (saved profile — immutable). */
+    function setLocked(name) {
+        locked = true;
+        savedName = name || null;
+        // Disable all inputs
+        for (const key of SLIDER_KEYS) {
+            if (sliderInputs[key]) sliderInputs[key].range.disabled = true;
+        }
+        for (const cam of CAMERA_SLIDERS) {
+            if (cameraInputs[cam.key]) cameraInputs[cam.key].range.disabled = true;
+        }
+        tagArrEl.disabled = true;
+        tagStrEl.disabled = true;
+        tagDetEl.disabled = true;
+        nameField.disabled = true;
+        if (commentaryField) commentaryField.disabled = true;
+        updateActionButtons();
+    }
+
+    /** Unlock the panel (draft — editable). */
+    function setUnlocked() {
+        locked = false;
+        savedName = null;
+        for (const key of SLIDER_KEYS) {
+            if (sliderInputs[key]) sliderInputs[key].range.disabled = false;
+        }
+        for (const cam of CAMERA_SLIDERS) {
+            if (cameraInputs[cam.key]) cameraInputs[cam.key].range.disabled = false;
+        }
+        tagArrEl.disabled = false;
+        tagStrEl.disabled = false;
+        tagDetEl.disabled = false;
+        nameField.disabled = false;
+        if (commentaryField) commentaryField.disabled = false;
+        updateActionButtons();
     }
 
     if (historyBackBtn) historyBackBtn.addEventListener('click', () => navigateImage(-1));
@@ -383,7 +437,7 @@ export function initGeneratePanel(opts) {
             if (e.key === 'Enter') { e.preventDefault(); commitValueInput(); valueInput.blur(); }
         });
 
-        targetMap[key] = input;
+        targetMap[key] = { range: input, valueEl: valueInput, format, step };
 
         sliderWrap.appendChild(input);
         row.appendChild(labelWrap);
@@ -409,16 +463,16 @@ export function initGeneratePanel(opts) {
     function readControls() {
         const controls = { topology: 'flow-field' };
         for (const key of SLIDER_KEYS) {
-            controls[key] = parseFloat(sliderInputs[key].value);
+            controls[key] = parseFloat(sliderInputs[key].range.value);
         }
         return controls;
     }
 
     function readCamera() {
         return {
-            rotation: parseFloat(cameraInputs.rotation.value),
-            elevation: parseFloat(cameraInputs.elevation.value),
-            zoom: parseFloat(cameraInputs.zoom.value),
+            rotation: parseFloat(cameraInputs.rotation.range.value),
+            elevation: parseFloat(cameraInputs.elevation.range.value),
+            zoom: parseFloat(cameraInputs.zoom.range.value),
         };
     }
 
@@ -501,6 +555,7 @@ export function initGeneratePanel(opts) {
         userEditedName = nameField.value.trim().length > 0;
         updateSlugDisplay();
         updateNameCounter();
+        updateActionButtons();
     });
 
     if (commentaryField) {
@@ -510,22 +565,23 @@ export function initGeneratePanel(opts) {
     // ── Randomize ──
 
     function randomize() {
+        if (locked) setUnlocked();
         tagArrEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));
         tagStrEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));
         tagDetEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));
 
         for (const key of SLIDER_KEYS) {
+            const ref = sliderInputs[key];
             const val = Math.random();
-            sliderInputs[key].value = val.toFixed(2);
-            const valueEl = sliderInputs[key].closest('.gen-slider-row').querySelector('.gen-slider-value');
-            if (valueEl) valueEl.value = val.toFixed(2);
+            ref.range.value = val.toFixed(2);
+            ref.valueEl.value = val.toFixed(2);
         }
 
         // Reset camera to defaults
         for (const cam of CAMERA_SLIDERS) {
-            cameraInputs[cam.key].value = String(cam.defaultVal);
-            const valueEl = cameraInputs[cam.key].closest('.gen-slider-row').querySelector('.gen-slider-value');
-            if (valueEl) valueEl.value = formatValue(cam.defaultVal, cam.format, cam.step);
+            const ref = cameraInputs[cam.key];
+            ref.range.value = String(cam.defaultVal);
+            ref.valueEl.value = formatValue(cam.defaultVal, cam.format, cam.step);
         }
 
         // Reset name to auto-generated
@@ -552,7 +608,26 @@ export function initGeneratePanel(opts) {
 
     if (saveBtn) {
         saveBtn.addEventListener('click', () => {
-            if (onSave) onSave(readSeed(), readControls(), readCamera(), readName());
+            const name = readName();
+            if (onSave) onSave(readSeed(), readControls(), readCamera(), name, readCommentary());
+            setLocked(name);
+        });
+    }
+
+    // ── Duplicate ──
+
+    if (duplicateBtn) {
+        duplicateBtn.addEventListener('click', () => {
+            setUnlocked();
+            // Clear name so user must pick a new one
+            nameField.value = '';
+            userEditedName = false;
+            updateAutoName();
+            updateSlugDisplay();
+            updateNameCounter();
+            pushImageHistory();
+            if (onDuplicate) onDuplicate();
+            if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
         });
     }
 
@@ -570,6 +645,7 @@ export function initGeneratePanel(opts) {
     updateAltText();
     updateNameCounter();
     updateCommentaryCounter();
+    updateActionButtons();
     pushImageHistory();
 
     // ── Public API ──
@@ -586,6 +662,9 @@ export function initGeneratePanel(opts) {
         readCommentary,
         randomize,
         pushImageHistory,
+        setLocked,
+        setUnlocked,
+        get locked() { return locked; },
 
         /** Set all controls + seed + camera + name from external data. */
         setValues(seed, controls, camera, name) {
@@ -596,19 +675,19 @@ export function initGeneratePanel(opts) {
             }
             if (controls) {
                 for (const key of SLIDER_KEYS) {
-                    if (controls[key] !== undefined && sliderInputs[key]) {
-                        sliderInputs[key].value = String(controls[key]);
-                        const valueEl = sliderInputs[key].closest('.gen-slider-row').querySelector('.gen-slider-value');
-                        if (valueEl) valueEl.value = parseFloat(String(controls[key])).toFixed(2);
+                    const ref = sliderInputs[key];
+                    if (controls[key] !== undefined && ref) {
+                        ref.range.value = String(controls[key]);
+                        ref.valueEl.value = parseFloat(String(controls[key])).toFixed(2);
                     }
                 }
             }
             if (camera) {
                 for (const cam of CAMERA_SLIDERS) {
-                    if (camera[cam.key] !== undefined && cameraInputs[cam.key]) {
-                        cameraInputs[cam.key].value = String(camera[cam.key]);
-                        const valueEl = cameraInputs[cam.key].closest('.gen-slider-row').querySelector('.gen-slider-value');
-                        if (valueEl) valueEl.value = formatValue(parseFloat(String(camera[cam.key])), cam.format, cam.step);
+                    const ref = cameraInputs[cam.key];
+                    if (camera[cam.key] !== undefined && ref) {
+                        ref.range.value = String(camera[cam.key]);
+                        ref.valueEl.value = formatValue(parseFloat(String(camera[cam.key])), cam.format, cam.step);
                     }
                 }
             }

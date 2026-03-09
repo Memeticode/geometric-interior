@@ -20,7 +20,7 @@ import { initTheme } from '../../stores/theme.js';
 import { initLangSelector } from '../../i18n/lang-selector.js';
 import { initResolutionSelector, getResolution, getGenResolution, initGenResolutionSelector } from '../../stores/resolution.js';
 import { t, getLocale } from '../../i18n/locale.js';
-import { loadProfiles, loadPortraits, getPortraitNames, loadPortraitSections, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder } from '../../stores/profiles.js';
+import { loadProfiles, loadPortraits, getPortraitNames, loadPortraitSections, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder, saveProfiles } from '../../stores/profiles.js';
 import { getAllThumbs, deleteThumb } from '../../stores/thumb-cache.js';
 import { getAllAssets, getAsset, deleteAsset, getAllAnimAssets, deleteAnimAsset } from '../../stores/asset-store.js';
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
@@ -52,10 +52,23 @@ initResolutionSelector(document.getElementById('resolutionDropdown'));
 initGenResolutionSelector(document.getElementById('genResolutionDropdown'));
 initCustomDropdown(document.getElementById('slideshowDropdown'), {
     initialValue: '2',
-    onSelect() {
+    onSelect(value) {
+        // Sync gen slideshow dropdown to same interval
+        syncGenSlideshowInterval(value);
         if (slideshowPlaying) {
             restartRingAnimation();
-            // Restart the timer with new duration
+            if (slideshowTimer) { clearTimeout(slideshowTimer); slideshowTimer = null; }
+            scheduleNextSlide();
+        }
+    },
+});
+initCustomDropdown(document.getElementById('genSlideshowDropdown'), {
+    initialValue: '2',
+    onSelect(value) {
+        // Sync gallery slideshow dropdown to same interval
+        syncGallerySlideshowInterval(value);
+        if (slideshowPlaying) {
+            restartRingAnimation();
             if (slideshowTimer) { clearTimeout(slideshowTimer); slideshowTimer = null; }
             scheduleNextSlide();
         }
@@ -197,14 +210,15 @@ const genTagStrEl = document.getElementById('genTagStr');
 const genTagDetEl = document.getElementById('genTagDet');
 const genNameField = document.getElementById('genNameField');
 const genSaveBtn = document.getElementById('genSaveBtn');
-const genResetBtn = document.getElementById('genResetBtn');
 const genRandomizeBtn = document.getElementById('genRandomizeBtn');
+const genRenderBtn = document.getElementById('genRenderBtn');
+const genDuplicateBtn = document.getElementById('genDuplicateBtn');
 const genNameLabel = document.getElementById('genNameLabel');
 const genCommentaryField = document.getElementById('genCommentaryField');
 const genNameCounter = document.getElementById('genNameCounter');
 const genNameError = document.getElementById('genNameError');
 const genCommentaryCounter = document.getElementById('genCommentaryCounter');
-const genPreviewCanvas = document.getElementById('genPreviewCanvas');
+let genPreviewCanvas = document.getElementById('genPreviewCanvas');
 const genPreviewWrap = document.getElementById('genPreviewWrap');
 const genHistoryBack = document.getElementById('genHistoryBack');
 const genHistoryForward = document.getElementById('genHistoryForward');
@@ -213,12 +227,15 @@ const genRedoBtn = document.getElementById('genRedoBtn');
 const genFullscreenBtn = document.getElementById('genFullscreenBtn');
 const genLoadingOverlay = document.getElementById('genLoadingOverlay');
 const genErrorOverlay = document.getElementById('genErrorOverlay');
+const genRetryBtn = document.getElementById('genRetryBtn');
 const genProgressOverlay = document.getElementById('genProgressOverlay');
 const genProgressFill = document.getElementById('genProgressFill');
 const genProgressLabel = document.getElementById('genProgressLabel');
 const genQueueEl = document.getElementById('genQueue');
 const animSectionEl = document.getElementById('animSection');
 const animGalleryEl = document.getElementById('animGallery');
+
+if (genRetryBtn) genRetryBtn.addEventListener('click', retryGenerate);
 
 /* ── Generated text toggle ── */
 selectedGenToggle.addEventListener('click', () => {
@@ -227,8 +244,13 @@ selectedGenToggle.addEventListener('click', () => {
     selectedGenAlt.classList.toggle('expanded', !expanded);
 });
 
+let resizeRaf;
 window.addEventListener('resize', () => {
-    positionMenuSlider(false);
+    if (resizeRaf) return;
+    resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = null;
+        positionMenuSlider(false);
+    });
 });
 
 /* ── State ── */
@@ -244,6 +266,8 @@ let carouselList = [];       // [{name, profile, isPortrait, assetId?}] — port
 /* ── Slideshow ── */
 const slideshowBtn = document.getElementById('slideshowBtn');
 const slideshowDropdown = document.getElementById('slideshowDropdown');
+const genSlideshowBtn = document.getElementById('genSlideshowBtn');
+const genSlideshowDropdown = document.getElementById('genSlideshowDropdown');
 let slideshowTimer = null;
 let slideshowPlaying = false;
 
@@ -296,6 +320,30 @@ function scheduleNextSlide() {
         restartRingAnimation();
         scheduleNextSlide();
     }, ms);
+}
+
+/** Sync interval dropdown selection between gallery and gen slideshow */
+function syncGenSlideshowInterval(value) {
+    const menu = genSlideshowDropdown?.querySelector('.custom-dropdown-menu');
+    const label = genSlideshowDropdown?.querySelector('.custom-dropdown-label');
+    if (!menu) return;
+    menu.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        const isActive = item.dataset.value === value;
+        item.classList.toggle('active', isActive);
+        item.setAttribute('aria-selected', String(isActive));
+        if (isActive && label) label.textContent = item.textContent;
+    });
+}
+function syncGallerySlideshowInterval(value) {
+    const menu = slideshowDropdown?.querySelector('.custom-dropdown-menu');
+    const label = slideshowDropdown?.querySelector('.custom-dropdown-label');
+    if (!menu) return;
+    menu.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        const isActive = item.dataset.value === value;
+        item.classList.toggle('active', isActive);
+        item.setAttribute('aria-selected', String(isActive));
+        if (isActive && label) label.textContent = item.textContent;
+    });
 }
 
 slideshowBtn.addEventListener('click', () => {
@@ -810,6 +858,17 @@ function applySelection(name, profile, isPortrait, assetId) {
             selectedGenToggle.classList.remove('portrait-static');
             selectedGenAlt.classList.remove('expanded');
             selectedGenToggle.setAttribute('aria-expanded', 'false');
+        } else if (profile.commentary) {
+            // User-saved profile with commentary
+            const { title, altText } = generateProfileText(profile);
+            selectedGenTitle.textContent = '';
+            selectedGenAlt.textContent = profile.commentary;
+            selectedGenAlt.classList.add('expanded');
+            selectedGenToggle.style.display = '';
+            selectedGenToggle.classList.add('portrait-static');
+            selectedImage.alt = `${name} — ${title}`;
+            selectedImage.setAttribute('data-tooltip', altText || title);
+            selectedImage.setAttribute('data-tooltip-pos', 'overlay');
         } else {
             const { title, altText } = generateProfileText(profile);
             selectedGenTitle.textContent = title;
@@ -1297,33 +1356,8 @@ function buildSimpleAnimation(seed, controls) {
     };
 }
 
-// Eagerly init worker bridge so snapshots work in gallery mode
-workerBridge = initGalleryWorker(genPreviewCanvas);
 let pendingFullscreenCaptureId = null;
 let pendingResizeRender = false;
-if (workerBridge) {
-    workerBridge.on('snapshot-complete', (msg) => {
-        if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
-        snapshotUrl = URL.createObjectURL(msg.blob);
-        selectedImage.src = snapshotUrl;
-    });
-    workerBridge.on('frame-captured', (msg) => {
-        if (pendingFullscreenCaptureId && msg.requestId === pendingFullscreenCaptureId) {
-            pendingFullscreenCaptureId = null;
-            if (msg.blob) showGenFullscreenImage(msg.blob);
-        }
-    });
-    workerBridge.on('rendered', () => {
-        if (pendingResizeRender) {
-            pendingResizeRender = false;
-            genLoadingOverlay.classList.add('hidden');
-            setGenNavEnabled(true);
-        }
-    });
-    workerBridge.on('error', () => {
-        showGenError();
-    });
-}
 let snapshotUrl = null;
 let webglFailed = false;
 
@@ -1331,11 +1365,35 @@ let webglFailed = false;
 function showGenError() {
     if (webglFailed) return;
     webglFailed = true;
+    generateInitialized = false;          // allow retry
     genErrorOverlay?.classList.remove('hidden');
     genLoadingOverlay?.classList.add('hidden');
     setGenNavEnabled(false);
     if (genSaveBtn) genSaveBtn.disabled = true;
     if (genRandomizeBtn) genRandomizeBtn.disabled = true;
+    if (genRenderBtn) genRenderBtn.disabled = true;
+}
+
+/** Hide the error overlay and re-attempt worker init. */
+function retryGenerate() {
+    webglFailed = false;
+    genErrorOverlay?.classList.add('hidden');
+    if (workerBridge) {
+        workerBridge.terminate();
+        workerBridge = null;
+    }
+    // transferControlToOffscreen() can only be called once per canvas —
+    // replace it with a fresh clone so the worker can claim control.
+    if (genPreviewCanvas?.dataset.transferred) {
+        const fresh = document.createElement('canvas');
+        fresh.id = genPreviewCanvas.id;
+        fresh.className = genPreviewCanvas.className;
+        fresh.width = genPreviewCanvas.width;
+        fresh.height = genPreviewCanvas.height;
+        genPreviewCanvas.replaceWith(fresh);
+        genPreviewCanvas = fresh;
+    }
+    initGenerate();
 }
 
 /** Enable/disable all generate panel nav buttons. */
@@ -1449,8 +1507,58 @@ function initGenerate() {
     if (generateInitialized) return;
     generateInitialized = true;
 
+    // Create worker bridge on first generate entry (deferred from page load)
+    workerBridge = initGalleryWorker(genPreviewCanvas);
+    if (workerBridge) {
+        workerBridge.on('snapshot-complete', (msg) => {
+            if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
+            snapshotUrl = URL.createObjectURL(msg.blob);
+            selectedImage.src = snapshotUrl;
+        });
+        workerBridge.on('frame-captured', (msg) => {
+            if (pendingFullscreenCaptureId && msg.requestId === pendingFullscreenCaptureId) {
+                pendingFullscreenCaptureId = null;
+                if (msg.blob) showGenFullscreenImage(msg.blob);
+            }
+        });
+        workerBridge.on('rendered', () => {
+            if (pendingResizeRender) {
+                pendingResizeRender = false;
+                genLoadingOverlay.classList.add('hidden');
+                setGenNavEnabled(true);
+            }
+        });
+        workerBridge.on('error', () => {
+            showGenError();
+        });
+    }
+
     if (!workerBridge) {
         showGenError();
+        return;
+    }
+
+    if (genPanel) {
+        // Retry path — panel already exists, just reconnect worker
+        workerBridge.onReady(() => {
+            renderQueue = createRenderQueue({
+                workerBridge,
+                onUpdate(jobs) {
+                    renderQueueUI(genQueueEl, jobs, {
+                        onCancel: (id) => renderQueue.cancel(id),
+                    });
+                },
+                onComplete: onGenerateComplete,
+                onAnimComplete: onAnimGenerateComplete,
+            });
+            const seed = genPanel.readSeed();
+            const controls = genPanel.readControls();
+            const camera = genPanel.readCamera();
+            workerBridge.sendRenderImmediate(seed, controls, getLocale());
+            workerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
+            genLoadingOverlay.classList.add('hidden');
+            setGenNavEnabled(true);
+        });
         return;
     }
 
@@ -1461,9 +1569,10 @@ function initGenerate() {
         tagDetEl: genTagDetEl,
         nameField: genNameField,
         saveBtn: genSaveBtn,
-        resetBtn: genResetBtn,
+        resetBtn: null,
         randomizeBtn: genRandomizeBtn,
-        renderBtn: null,
+        renderBtn: genRenderBtn,
+        duplicateBtn: genDuplicateBtn,
         nameTooltipEl: genNameLabel?.querySelector('.label-info'),
         commentaryField: genCommentaryField,
         previewCanvas: genPreviewCanvas,
@@ -1483,12 +1592,21 @@ function initGenerate() {
         onRender(seed, controls, camera, name) {
             if (!renderQueue) return;
             if (activeType === 'animation') {
-                // Build a simple animation from the current config
                 const animation = buildSimpleAnimation(seed, controls);
                 renderQueue.enqueueAnimation(animation);
             } else {
                 renderQueue.enqueue(seed, controls, name);
             }
+        },
+        onSave(seed, controls, camera, name, commentary) {
+            const profiles = loadProfiles();
+            const entry = { seed, controls };
+            if (commentary) entry.commentary = commentary;
+            profiles[name] = entry;
+            saveProfiles(profiles);
+            // Refresh gallery to show the new profile
+            refreshGallery();
+            toast(`Saved "${name}"`);
         },
     });
 
@@ -1591,6 +1709,13 @@ function showGenerateMode() {
         if (entry?.profile?.seed && entry.profile.controls) {
             genPanel.setValues(entry.profile.seed, entry.profile.controls, undefined, entry.name);
             genPanel.pushImageHistory();
+            // Lock panel for saved user profiles (not portraits, not generated assets)
+            const isSavedUserProfile = !entry.isPortrait && !entry.assetId;
+            if (isSavedUserProfile) {
+                genPanel.setLocked(entry.name);
+            } else {
+                genPanel.setUnlocked();
+            }
             // On re-entry (worker already ready), trigger render with loaded values.
             // On first init, onReady() reads panel values and renders automatically.
             if (wasInitialized && workerBridge?.ready) {
@@ -1742,27 +1867,13 @@ document.addEventListener('localechange', () => {
     }
 });
 
-getAllThumbs().then(persisted => {
-    thumbCache = persisted;
-    if (activeType === 'image') refreshGallery();
-}).catch(err => {
-    console.warn('[gallery] IndexedDB thumb cache unavailable:', err);
-});
-
-// Load generated assets from IndexedDB
-getAllAssets().then(assets => {
-    generatedAssets = assets;
-    if (activeType === 'image' && assets.length > 0) refreshGallery();
-}).catch(err => {
-    console.warn('[gallery] IndexedDB asset store unavailable:', err);
-});
-
-// Load animation assets from IndexedDB
-getAllAnimAssets().then(assets => {
-    animAssets = assets;
-    if (activeType === 'animation' && assets.length > 0) refreshGallery();
-}).catch(err => {
-    console.warn('[gallery] IndexedDB animation store unavailable:', err);
+// Load all IndexedDB data, then refresh gallery once
+Promise.allSettled([
+    getAllThumbs().then(persisted => { thumbCache = persisted; }),
+    getAllAssets().then(assets => { generatedAssets = assets; }),
+    getAllAnimAssets().then(assets => { animAssets = assets; }),
+]).then(() => {
+    refreshGallery();
 });
 
 /* ── Share ── */
@@ -1783,20 +1894,28 @@ shareBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     hideTooltip();
     sharePopover.classList.toggle('hidden');
-    shareBtn.classList.toggle('share-open', !sharePopover.classList.contains('hidden'));
+    const open = !sharePopover.classList.contains('hidden');
+    shareBtn.classList.toggle('share-open', open);
+    shareBtn.setAttribute('data-tooltip', open ? 'Close share' : 'Share');
+    refreshTooltip(shareBtn);
 });
+
+function closeSharePopover() {
+    sharePopover.classList.add('hidden');
+    shareBtn.classList.remove('share-open');
+    shareBtn.setAttribute('data-tooltip', 'Share');
+    refreshTooltip(shareBtn);
+}
 
 document.addEventListener('click', (e) => {
     if (!sharePopover.contains(e.target) && e.target !== shareBtn) {
-        sharePopover.classList.add('hidden');
-        shareBtn.classList.remove('share-open');
+        closeSharePopover();
     }
 });
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && !sharePopover.classList.contains('hidden')) {
-        sharePopover.classList.add('hidden');
-        shareBtn.classList.remove('share-open');
+        closeSharePopover();
         shareBtn.focus();
     }
 });
@@ -1817,59 +1936,46 @@ document.getElementById('shareCopyLink').addEventListener('click', async () => {
         document.body.removeChild(ta);
         toast(t('toast.linkCopiedShort') || 'Copied');
     }
-    sharePopover.classList.add('hidden');
-});
-
-document.getElementById('shareDownloadPng').addEventListener('click', () => {
-    const img = selectedImage;
-    if (!img || !img.src) { toast('No image selected'); return; }
-    const a = document.createElement('a');
-    a.href = img.src;
-    a.download = `${selectedName.textContent.trim() || 'image'}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    toast(t('toast.visualExported') || 'Image downloaded');
-    sharePopover.classList.add('hidden');
+    closeSharePopover();
 });
 
 document.getElementById('shareTwitter').addEventListener('click', () => {
     const url = getShareURL();
     const title = getShareTitle();
     window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank', 'noopener,width=550,height=420');
-    sharePopover.classList.add('hidden');
+    closeSharePopover();
 });
 
 document.getElementById('shareFacebook').addEventListener('click', () => {
     const url = getShareURL();
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'noopener,width=555,height=525');
-    sharePopover.classList.add('hidden');
+    closeSharePopover();
 });
 
 document.getElementById('shareBluesky').addEventListener('click', () => {
     const url = getShareURL();
     const title = getShareTitle();
     window.open(`https://bsky.app/intent/compose?text=${encodeURIComponent(`${title}\n${url}`)}`, '_blank', 'noopener,width=600,height=500');
-    sharePopover.classList.add('hidden');
+    closeSharePopover();
 });
 
 document.getElementById('shareReddit').addEventListener('click', () => {
     const url = getShareURL();
     const title = getShareTitle();
     window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank', 'noopener,width=700,height=600');
-    sharePopover.classList.add('hidden');
+    closeSharePopover();
 });
 
 document.getElementById('shareGoogle').addEventListener('click', () => {
     const url = getShareURL();
     window.open(`https://plus.google.com/share?url=${encodeURIComponent(url)}`, '_blank', 'noopener,width=600,height=500');
-    sharePopover.classList.add('hidden');
+    closeSharePopover();
 });
 
 document.getElementById('shareLinkedIn').addEventListener('click', () => {
     const url = getShareURL();
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'noopener,width=600,height=550');
-    sharePopover.classList.add('hidden');
+    closeSharePopover();
 });
 
 document.getElementById('shareEmail').addEventListener('click', () => {
@@ -1877,5 +1983,5 @@ document.getElementById('shareEmail').addEventListener('click', () => {
     const title = getShareTitle();
     const body = `Check out this generative artwork:\n\n${url}`;
     window.open(`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`);
-    sharePopover.classList.add('hidden');
+    closeSharePopover();
 });
