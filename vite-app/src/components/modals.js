@@ -86,11 +86,12 @@ export function initModals({ infoModal, infoModalTitle, infoModalBody, infoModal
     /* Click delegation for .label-info elements (opens info modal) */
     document.addEventListener('click', (e) => {
         const labelInfo = e.target.closest('.label-info');
-        if (labelInfo) {
-            const title = labelInfo.getAttribute('data-label') || '';
-            const body = labelInfo.getAttribute('data-tooltip') || '';
-            openInfoModal(title, body);
-        }
+        if (!labelInfo) return;
+        // Skip if inside a collapsible toggle — those handle their own clicks
+        if (labelInfo.closest('.gen-collapsible-toggle')) return;
+        const title = labelInfo.getAttribute('data-label') || '';
+        const body = labelInfo.getAttribute('data-tooltip') || '';
+        openInfoModal(title, body);
     });
 
     /* Escape key — try each handler in order */

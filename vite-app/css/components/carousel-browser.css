@@ -91,6 +91,43 @@ carousel-dropdown-browser.cdb-ct-below .cdb-track {
     opacity: 0.15;
     pointer-events: none;
 }
+.cdb-sec-arrow {
+    font-size: 1.1em;
+    letter-spacing: -0.05em;
+}
+
+/* ── Debug controls ── */
+.cdb-debug-controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+    opacity: 0.6;
+}
+.cdb-debug-controls label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+.cdb-debug-controls input[type="number"] {
+    width: 52px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: inherit;
+    padding: 0.1rem 0.2rem;
+    border-radius: 3px;
+    font-size: inherit;
+}
+.cdb-debug-controls select {
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: inherit;
+    font-size: inherit;
+    border-radius: 3px;
+}
 
 /* ── Carousel cards ── */
 
@@ -118,6 +155,7 @@ carousel-dropdown-browser.cdb-ct-below .cdb-track {
     border-radius: 8px;
     overflow: visible;
     transform: perspective(1200px)
+               rotateX(var(--rx, 0deg))
                rotateY(var(--ry, 0deg))
                translateZ(var(--tz, 0px))
                scale(var(--sc, 1));
@@ -135,6 +173,7 @@ carousel-dropdown-browser.cdb-ct-below .cdb-track {
     transform: translateY(calc(-1 * var(--hover-lift, 0px)))
                translateX(var(--hover-cx, 0px))
                perspective(1200px)
+               rotateX(var(--rx, 0deg))
                rotateY(calc(var(--ry, 0deg) - var(--hover-ry, 0deg)))
                translateZ(calc(var(--tz, 0px) + var(--hover-tz, 25px)))
                scale(calc(var(--sc, 1) + var(--hover-sc, 0.08)));
@@ -175,7 +214,7 @@ carousel-dropdown-browser.cdb-ct-below .cdb-track {
     z-index: 2;
     font-size: 0.75rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -237,7 +276,7 @@ carousel-dropdown-browser.cdb-ct-h-right .cdb-card-title { text-align: right; }
     padding: 0.2rem 0.3rem;
     font-size: 0.65rem;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--text);
     white-space: nowrap;
     text-overflow: ellipsis;
     transition: opacity 0.3s ease, max-height 0.3s ease;
@@ -503,7 +542,7 @@ carousel-dropdown-browser.cdb-gt-h-right .cdb-grid-card-name { text-align: right
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--text-muted);
     padding-bottom: 0.25rem;
     transition: transform var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
                 opacity 0.85s ease,
@@ -517,7 +556,7 @@ carousel-dropdown-browser.cdb-gt-h-right .cdb-grid-card-name { text-align: right
     left: 0;
     width: var(--underline-width, 100px);
     height: 1px;
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--border);
 }
 
 /* ── Section morph phantoms (temporary overlays during expand/collapse) ── */
@@ -534,9 +573,9 @@ carousel-dropdown-browser.cdb-gt-h-right .cdb-grid-card-name { text-align: right
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: rgba(255, 255, 255, 0.35);
+    color: var(--text-muted);
     padding: 0.75rem 0 0.25rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid var(--border);
     margin-bottom: 0.25rem;
 }
 .cdb-grid-section-header:first-child {

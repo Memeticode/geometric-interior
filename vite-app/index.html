@@ -145,43 +145,7 @@
                 </div>
             </div>
             <div class="gallery-content" id="galleryContent">
-                <div class="title-toggle-controls" style="display: flex; gap: 0.75rem; align-items: center; font-size: 0.75rem; color: var(--text-muted); padding: 0.25rem 0; flex-wrap: wrap;">
-                    <label>Carousel titles:
-                        <select id="carouselTitlePos">
-                            <option value="none" selected>None</option>
-                            <option value="above">Above</option>
-                            <option value="top">Top</option>
-                            <option value="center">Center</option>
-                            <option value="bottom">Bottom</option>
-                            <option value="below">Below</option>
-                        </select>
-                    </label>
-                    <label>Grid titles:
-                        <select id="gridTitlePos">
-                            <option value="none" selected>None</option>
-                            <option value="above">Above</option>
-                            <option value="top">Top</option>
-                            <option value="center">Center</option>
-                            <option value="bottom">Bottom</option>
-                            <option value="below">Below</option>
-                        </select>
-                    </label>
-                    <label>Title align:
-                        <select id="titleAlign">
-                            <option value="left">Left</option>
-                            <option value="center" selected>Center</option>
-                            <option value="right">Right</option>
-                        </select>
-                    </label>
-                    <label>Buttons:
-                        <select id="controlsPos">
-                            <option value="above" selected>Above</option>
-                            <option value="below">Below</option>
-                        </select>
-                    </label>
-                    <label><input type="checkbox" id="infiniteToggle"> Infinite</label>
-                </div>
-                <carousel-dropdown-browser id="carouselBrowser" controls-position="above" infinite="false" bounce="0.35"></carousel-dropdown-browser>
+                <carousel-dropdown-browser id="carouselBrowser" controls-position="above" infinite="false" bounce="0.35" debug-show-controls></carousel-dropdown-browser>
                 <!-- Animations -->
                 <div class="gallery-section" id="animSection" style="display:none">
                     <div class="gallery-section-header" data-target="animGallery" aria-expanded="true">
@@ -196,39 +160,40 @@
             <div class="generate-panel hidden" id="generatePanel">
                 <div class="gen-body">
                     <div class="generate-config" id="generateConfig">
-                        <!-- Config Utility: Save / Reset / Randomize (icon-only) -->
-                        <div class="control-group control-group-utility">
-                            <button id="genSaveBtn" disabled data-tooltip="Save as user profile (local storage)" data-i18n-tooltip="profile.save.tooltip">
-                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/><path d="M5 1v4h6V1"/><rect x="4" y="9" width="8" height="4"/></svg>
-                            </button>
-                            <button id="genResetBtn" disabled data-tooltip="Reset changes" data-i18n-tooltip="profile.reset.tooltip">
-                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 3v4h4"/><path d="M2.5 10.5a6 6 0 1 0 1.5-6.5L1 7"/></svg>
-                            </button>
-                            <button id="genRandomizeBtn" data-tooltip="Randomize image" data-i18n-tooltip="stage.randomize">
-                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M13.5 2.5v3.5h-3.5"/><path d="M2.5 8a5.5 5.5 0 0 1 9.37-3.9l1.63 1.9"/><path d="M2.5 13.5V10h3.5"/><path d="M13.5 8a5.5 5.5 0 0 1-9.37 3.9L2.5 10"/></svg>
-                            </button>
-                        </div>
-                        <!-- Parameters -->
-                        <div class="gen-heading gen-collapsible-toggle" aria-expanded="true" data-target="genSliders">
-                            <span class="label-info" data-tooltip="" data-i18n="generate.parameters" data-i18n-tooltip="generate.parameters.tooltip"><span class="info-icon">i</span>Parameters</span>
-                            <span class="gen-chevron">&#9662;</span>
+                        <!-- Configure Image -->
+                        <div class="gen-heading">
+                            <span data-i18n="generate.configureImage">Configure Image</span>
                         </div>
                         <div class="gen-sliders" id="genSliders"></div>
-                        <!-- Render button -->
-                        <div class="gen-render-action">
-                            <button id="genRenderBtn" class="gen-render-btn" data-i18n="generate.render">Render</button>
-                        </div>
                     </div>
                     <div class="gen-preview-col" id="genPreviewCol">
-                        <!-- Name + Seed above image -->
+                        <!-- Name + Seed + Utility buttons above image -->
                         <div class="gen-identity">
                             <div class="gen-identity-name">
-                                <label class="gen-identity-label"><span class="label-info" data-tooltip="A name for this arrangement of light and form." data-i18n="control.name" data-i18n-tooltip="control.name.tooltip"><span class="info-icon">i</span>Name</span></label>
+                                <div class="gen-identity-name-header">
+                                    <label class="gen-identity-label"><span class="label-info" data-tooltip="A name for this arrangement of light and form." data-i18n="control.name" data-i18n-tooltip="control.name.tooltip">Name<span class="info-icon">i</span></span></label>
+                                    <div class="gen-identity-actions">
+                                        <button id="genSaveBtn" class="gen-action-btn" disabled data-tooltip="Save as user profile (local storage)" data-i18n-tooltip="profile.save.tooltip">
+                                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/><path d="M5 1v4h6V1"/><rect x="4" y="9" width="8" height="4"/></svg>
+                                        </button>
+                                        <button id="genResetBtn" class="gen-action-btn" disabled data-tooltip="Reset changes" data-i18n-tooltip="profile.reset.tooltip">
+                                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 3v4h4"/><path d="M2.5 10.5a6 6 0 1 0 1.5-6.5L1 7"/></svg>
+                                        </button>
+                                        <button id="genRandomizeBtn" class="gen-action-btn" data-tooltip="Randomize image" data-i18n-tooltip="stage.randomize">
+                                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M13.5 2.5v3.5h-3.5"/><path d="M2.5 8a5.5 5.5 0 0 1 9.37-3.9l1.63 1.9"/><path d="M2.5 13.5V10h3.5"/><path d="M13.5 8a5.5 5.5 0 0 1-9.37 3.9L2.5 10"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
                                 <textarea id="genNameField" class="auto-grow gen-name-field" rows="1" maxlength="40"
                                     placeholder="Auto-generated title" data-i18n-placeholder="control.name.placeholder"></textarea>
+                                <div class="gen-field-footer">
+                                    <span id="genSlugDisplay" class="gen-slug-display" data-tooltip="Unique identifier (auto-generated, url-safe)" data-i18n-tooltip="control.slug.tooltip"></span>
+                                    <span id="genNameCounter" class="gen-char-count">0/40</span>
+                                </div>
+                                <div id="genNameError" class="gen-field-error hidden"></div>
                             </div>
                             <div class="gen-identity-seed">
-                                <label class="gen-identity-label"><span class="label-info" data-tooltip="A three-word compositional seed. Each word controls an independent random stream and visual bias." data-i18n="control.seed" data-i18n-tooltip="control.seed.tooltip"><span class="info-icon">i</span>Seed</span></label>
+                                <label class="gen-identity-label"><span class="label-info" data-tooltip="A three-word compositional seed. Each word controls an independent random stream and visual bias." data-i18n="control.seed" data-i18n-tooltip="control.seed.tooltip">Seed<span class="info-icon">i</span></span></label>
                                 <div class="gen-seed-row" id="genSeedRow">
                                     <select id="genTagArr" class="select-base seed-tag-select"></select>
                                     <span class="seed-tag-sep">&middot;</span>
@@ -244,6 +209,19 @@
                                 <div class="gen-progress-bar"><div class="gen-progress-fill" id="genProgressFill"></div></div>
                                 <div class="gen-progress-label" id="genProgressLabel"></div>
                             </div>
+                        </div>
+                        <div class="gen-identity-commentary">
+                            <label class="gen-identity-label" data-tooltip="User-provided commentary (optional)" data-i18n-tooltip="control.commentary.tooltip" data-i18n="control.commentary">Commentary</label>
+                            <textarea id="genCommentaryField" class="auto-grow gen-commentary-field" rows="2" maxlength="500"
+                                placeholder="Write any commentary here (optional)" data-i18n-placeholder="control.commentary.placeholder"></textarea>
+                            <div class="gen-field-footer">
+                                <span></span>
+                                <span id="genCommentaryCounter" class="gen-char-count">0/500</span>
+                            </div>
+                        </div>
+                        <div class="gen-identity-alttext">
+                            <label class="gen-identity-label" data-tooltip="Descriptive alt-text (auto-generated)" data-i18n-tooltip="control.alttext.tooltip" data-i18n="control.alttext">Alt-text</label>
+                            <div id="genAltTextField" class="gen-alt-text-display"></div>
                         </div>
                     </div>
                     <div class="gen-queue" id="genQueue"></div>

@@ -188,39 +188,6 @@ const selectedFooter = document.querySelector('.selected-footer');
 const carouselBrowser = document.getElementById('carouselBrowser');
 const galleryMainEl = document.querySelector('.gallery-main');
 
-/* ── Title position toggles ── */
-const carouselTitleSel = document.getElementById('carouselTitlePos');
-const gridTitleSel = document.getElementById('gridTitlePos');
-const titleAlignSel = document.getElementById('titleAlign');
-
-function updateTitleAttrs() {
-    const hAlign = titleAlignSel ? titleAlignSel.value : 'center';
-    if (carouselTitleSel) {
-        const v = carouselTitleSel.value;
-        carouselBrowser.setAttribute('carousel-title', v === 'none' ? 'none' : `${v} ${hAlign}`);
-    }
-    if (gridTitleSel) {
-        const v = gridTitleSel.value;
-        carouselBrowser.setAttribute('grid-title', v === 'none' ? 'none' : `${v} ${hAlign}`);
-    }
-}
-
-if (carouselTitleSel) carouselTitleSel.addEventListener('change', updateTitleAttrs);
-if (gridTitleSel) gridTitleSel.addEventListener('change', updateTitleAttrs);
-if (titleAlignSel) titleAlignSel.addEventListener('change', updateTitleAttrs);
-
-const controlsPosSel = document.getElementById('controlsPos');
-if (controlsPosSel) controlsPosSel.addEventListener('change', () => {
-    carouselBrowser.setAttribute('controls-position', controlsPosSel.value);
-});
-
-const infiniteToggle = document.getElementById('infiniteToggle');
-if (infiniteToggle) {
-    infiniteToggle.checked = carouselBrowser.getAttribute('infinite') === 'true';
-    infiniteToggle.addEventListener('change', () => {
-        carouselBrowser.setAttribute('infinite', infiniteToggle.checked ? 'true' : 'false');
-    });
-}
 
 /* ── Generate panel DOM refs ── */
 const generatePanelEl = document.getElementById('generatePanel');
@@ -232,7 +199,12 @@ const genNameField = document.getElementById('genNameField');
 const genSaveBtn = document.getElementById('genSaveBtn');
 const genResetBtn = document.getElementById('genResetBtn');
 const genRandomizeBtn = document.getElementById('genRandomizeBtn');
-const genRenderBtn = document.getElementById('genRenderBtn');
+const genSlugDisplay = document.getElementById('genSlugDisplay');
+const genCommentaryField = document.getElementById('genCommentaryField');
+const genAltTextField = document.getElementById('genAltTextField');
+const genNameCounter = document.getElementById('genNameCounter');
+const genNameError = document.getElementById('genNameError');
+const genCommentaryCounter = document.getElementById('genCommentaryCounter');
 const genPreviewCanvas = document.getElementById('genPreviewCanvas');
 const genProgressOverlay = document.getElementById('genProgressOverlay');
 const genProgressFill = document.getElementById('genProgressFill');
@@ -1316,7 +1288,13 @@ function initGenerate() {
         saveBtn: genSaveBtn,
         resetBtn: genResetBtn,
         randomizeBtn: genRandomizeBtn,
-        renderBtn: genRenderBtn,
+        renderBtn: null,
+        slugDisplay: genSlugDisplay,
+        commentaryField: genCommentaryField,
+        altTextField: genAltTextField,
+        nameCounter: genNameCounter,
+        nameError: genNameError,
+        commentaryCounter: genCommentaryCounter,
         onControlChange(seed, controls, camera) {
             if (workerBridge && workerBridge.ready) {
                 workerBridge.sendRender(seed, controls, getLocale());
@@ -1341,7 +1319,25 @@ function initGenerate() {
             const expanded = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!expanded));
             const target = document.getElementById(toggle.dataset.target);
-            if (target) target.classList.toggle('collapsed', expanded);
+            if (!target) return;
+
+            if (expanded) {
+                // Collapse: freeze current height, then animate to 0
+                target.style.maxHeight = target.scrollHeight + 'px';
+                requestAnimationFrame(() => {
+                    target.classList.add('collapsed');
+                    target.style.maxHeight = '0';
+                });
+            } else {
+                // Expand: remove collapsed, animate to scrollHeight, then clear
+                target.classList.remove('collapsed');
+                target.style.maxHeight = target.scrollHeight + 'px';
+                const onEnd = () => {
+                    target.style.maxHeight = '';
+                    target.removeEventListener('transitionend', onEnd);
+                };
+                target.addEventListener('transitionend', onEnd);
+            }
         });
     });
 

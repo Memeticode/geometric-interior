@@ -374,6 +374,7 @@
     vertical-align: middle;
     border: 1px solid var(--border);
     flex-shrink: 0;
+    order: -1;
 }
 
 /* ── Profile gallery ── */
@@ -1018,7 +1019,7 @@
     cursor: pointer;
     user-select: none;
 }
-.settings-group-header:hover .settings-group-title {
+.settings-group-header:not(.menu-nav-header):hover .settings-group-title {
     color: var(--text);
 }
 .settings-group-chevron {

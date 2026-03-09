@@ -77,6 +77,19 @@ export default {
     'generate.seed.tooltip': 'Una semilla compositiva de tres palabras. Cada palabra controla un flujo aleatorio independiente y un sesgo visual \u2014 disposici\u00f3n gobierna el flujo espacial, estructura gobierna el car\u00e1cter geom\u00e9trico, y detalle gobierna la luz y energ\u00eda crom\u00e1tica. Las mismas tres palabras siempre producen la misma composici\u00f3n.',
     'generate.parameters': 'Par\u00e1metros',
     'generate.parameters.tooltip': 'Doce par\u00e1metros continuos, cada uno un eje de escala de 0 a 1. Juntos definen un espacio creativo de 12 dimensiones donde cada punto produce una composici\u00f3n \u00fanica de formas geom\u00e9tricas luminosas.',
+    'generate.configureImage': 'Configurar Imagen',
+
+    /* ── Comentario, texto alternativo, slug ── */
+    'control.commentary': 'Comentario',
+    'control.commentary.tooltip': 'Comentario del usuario (opcional)',
+    'control.commentary.placeholder': 'Escribe un comentario aqu\u00ed (opcional)',
+    'control.alttext': 'Texto alternativo',
+    'control.alttext.tooltip': 'Texto alternativo descriptivo (auto-generado)',
+    'control.slug.tooltip': 'Identificador \u00fanico (auto-generado, seguro para URL)',
+
+    /* ── Validaci\u00f3n ── */
+    'validation.underscoresNotAllowed': 'No se permiten guiones bajos en los nombres.',
+    'validation.nameRequired': 'Se requiere un nombre.',
 
     /* ── Parameter sections ── */
     'params.heading': 'Par\u00e1metros',

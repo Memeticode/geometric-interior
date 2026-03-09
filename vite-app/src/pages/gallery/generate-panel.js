@@ -10,6 +10,8 @@ import {
 } from '@geometric-interior/core/text-generation/seed-tags.js';
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
 import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
+import { slugify, validateProfileName } from '../../components/slugify.js';
+import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
 
 /** Slider grouping: matches the 4 parameter sections from docs/parameters.md */
 const SLIDER_GROUPS = [
@@ -29,6 +31,30 @@ const CAMERA_SLIDERS = [
     { key: 'zoom',      min: 0,    max: 1,    step: 0.01, defaultVal: 0.38, format: '' },
 ];
 
+/** Per-parameter track gradients (subtle, thematic). */
+const SLIDER_GRADIENTS = {
+    // Geometry
+    density:   'linear-gradient(to right, transparent, rgba(180,130,255,0.4))',
+    fracture:  'linear-gradient(to right, rgba(100,160,255,0.3), rgba(255,100,80,0.4))',
+    scale:     'linear-gradient(to right, rgba(180,130,255,0.2), rgba(180,130,255,0.5))',
+    division:  'linear-gradient(to right, rgba(140,180,255,0.25), rgba(200,140,255,0.45))',
+    faceting:  'linear-gradient(to right, rgba(160,200,255,0.25), rgba(220,180,255,0.45))',
+    // Light
+    luminosity:'linear-gradient(to right, rgba(20,10,40,0.5), rgba(255,240,200,0.5))',
+    bloom:     'linear-gradient(to right, transparent, rgba(255,200,255,0.45))',
+    // Color
+    hue:       'linear-gradient(to right, rgba(255,80,80,0.4), rgba(255,200,50,0.4), rgba(80,255,80,0.4), rgba(80,200,255,0.4), rgba(180,130,255,0.4), rgba(255,80,80,0.4))',
+    spectrum:  'linear-gradient(to right, rgba(180,130,255,0.3), rgba(255,180,100,0.3), rgba(100,200,255,0.3))',
+    chroma:    'linear-gradient(to right, rgba(160,160,160,0.3), rgba(255,100,200,0.45))',
+    // Space
+    coherence: 'linear-gradient(to right, rgba(255,120,80,0.35), rgba(100,180,255,0.35))',
+    flow:      'linear-gradient(to right, rgba(140,140,180,0.3), rgba(100,220,200,0.4))',
+    // Camera
+    rotation:  'linear-gradient(to right, rgba(180,130,255,0.3), rgba(130,180,255,0.3), rgba(180,130,255,0.3))',
+    elevation: 'linear-gradient(to right, rgba(100,130,200,0.3), rgba(200,160,255,0.4))',
+    zoom:      'linear-gradient(to right, rgba(130,130,180,0.25), rgba(180,130,255,0.45))',
+};
+
 /**
  * Initialize the generate panel.
  * @param {Object} opts
@@ -44,12 +70,19 @@ const CAMERA_SLIDERS = [
  * @param {Function} opts.onControlChange   — (seed, controls, camera) => void
  * @param {Function} opts.onRender          — (seed, controls, camera, name) => void
  * @param {Function} [opts.onSave]          — (seed, controls, camera, name) => void
+ * @param {HTMLElement} [opts.slugDisplay]  — element to show URL-safe slug
+ * @param {HTMLTextAreaElement} [opts.commentaryField] — commentary textarea
+ * @param {HTMLElement} [opts.altTextField] — element to show auto-generated alt-text
+ * @param {HTMLElement} [opts.nameCounter] — char counter for name
+ * @param {HTMLElement} [opts.nameError] — validation error for name
+ * @param {HTMLElement} [opts.commentaryCounter] — char counter for commentary
  */
 export function initGeneratePanel(opts) {
     const {
         slidersEl, tagArrEl, tagStrEl, tagDetEl,
         nameField, saveBtn, resetBtn, randomizeBtn, renderBtn,
-        onControlChange, onRender, onSave,
+        onControlChange, onRender, onSave, slugDisplay, commentaryField,
+        altTextField, nameCounter, nameError, commentaryCounter,
     } = opts;
 
     const sliderInputs = {};
@@ -103,24 +136,16 @@ export function initGeneratePanel(opts) {
         header.setAttribute('data-target', sectionId);
 
         const headerLabel = document.createElement('span');
-        headerLabel.className = 'label-info';
-        headerLabel.setAttribute('data-tooltip', t(`section.${sectionKey}.tooltip`));
+        headerLabel.className = 'gen-section-label';
         headerLabel.setAttribute('data-i18n', `section.${sectionKey}`);
-        headerLabel.setAttribute('data-i18n-tooltip', `section.${sectionKey}.tooltip`);
-
-        const headerIcon = document.createElement('span');
-        headerIcon.className = 'info-icon';
-        headerIcon.textContent = 'i';
-        headerLabel.appendChild(headerIcon);
-        headerLabel.appendChild(document.createTextNode(t(`section.${sectionKey}`)));
+        headerLabel.textContent = t(`section.${sectionKey}`);
 
         const chevron = document.createElement('span');
         chevron.className = 'gen-chevron';
         chevron.innerHTML = '&#9662;';
 
-        header.appendChild(headerLabel);
         header.appendChild(chevron);
-        slidersEl.appendChild(header);
+        header.appendChild(headerLabel);
 
         // Collapsible rows container
         const rowsWrap = document.createElement('div');
@@ -131,14 +156,12 @@ export function initGeneratePanel(opts) {
             buildSliderRow(def.key, def.min, def.max, def.step, def.defaultVal, def.format, targetMap, rowsWrap);
         }
 
-        slidersEl.appendChild(rowsWrap);
-
-        // Toggle click
-        header.addEventListener('click', () => {
-            const expanded = header.getAttribute('aria-expanded') === 'true';
-            header.setAttribute('aria-expanded', String(!expanded));
-            rowsWrap.classList.toggle('collapsed', expanded);
-        });
+        // Wrapper: header + rows nested together for hover highlight
+        const section = document.createElement('div');
+        section.className = 'gen-section';
+        section.appendChild(header);
+        section.appendChild(rowsWrap);
+        slidersEl.appendChild(section);
     }
 
     /**
@@ -160,15 +183,16 @@ export function initGeneratePanel(opts) {
         const icon = document.createElement('span');
         icon.className = 'info-icon';
         icon.textContent = 'i';
-        labelText.appendChild(icon);
         labelText.appendChild(document.createTextNode(t(`control.${key}`)));
+        labelText.appendChild(icon);
 
-        const valueSpan = document.createElement('span');
-        valueSpan.className = 'gen-slider-value';
-        valueSpan.textContent = formatValue(defaultVal, format, step);
+        const valueInput = document.createElement('input');
+        valueInput.type = 'text';
+        valueInput.className = 'gen-slider-value';
+        valueInput.value = formatValue(defaultVal, format, step);
 
         labelWrap.appendChild(labelText);
-        labelWrap.appendChild(valueSpan);
+        labelWrap.appendChild(valueInput);
 
         const sliderWrap = document.createElement('div');
         sliderWrap.className = 'gen-slider-track';
@@ -181,9 +205,27 @@ export function initGeneratePanel(opts) {
         input.value = String(defaultVal);
         input.id = 'gen-' + key;
 
+        if (SLIDER_GRADIENTS[key]) input.style.background = SLIDER_GRADIENTS[key];
+
         input.addEventListener('input', () => {
-            valueSpan.textContent = formatValue(parseFloat(input.value), format, step);
+            valueInput.value = formatValue(parseFloat(input.value), format, step);
             fireControlChange();
+        });
+
+        function commitValueInput() {
+            let raw = valueInput.value.replace(/°/g, '').trim();
+            let num = parseFloat(raw);
+            if (isNaN(num)) num = parseFloat(input.value);
+            num = Math.min(max, Math.max(min, num));
+            num = Math.round(num / step) * step;
+            input.value = String(num);
+            valueInput.value = formatValue(num, format, step);
+            fireControlChange();
+        }
+
+        valueInput.addEventListener('blur', commitValueInput);
+        valueInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commitValueInput(); valueInput.blur(); }
         });
 
         targetMap[key] = input;
@@ -242,8 +284,49 @@ export function initGeneratePanel(opts) {
         nameField.value = autoName(seed, controls);
     }
 
+    function updateSlugDisplay() {
+        if (slugDisplay) slugDisplay.textContent = slugify(readName());
+    }
+
+    function updateAltText() {
+        if (!altTextField) return;
+        const controls = readControls();
+        const nodeCount = Math.round(80 + (controls.density || 0.5) * 1400);
+        const seed = readSeed();
+        altTextField.textContent = generateAltText(controls, nodeCount, readName(), locale, seed);
+    }
+
+    function updateNameCounter() {
+        const len = nameField.value.length;
+        const max = parseInt(nameField.maxLength, 10) || 40;
+        if (nameCounter) {
+            nameCounter.textContent = len + '/' + max;
+            nameCounter.classList.toggle('over-limit', len > max);
+        }
+        if (nameError) {
+            const val = validateProfileName(nameField.value);
+            if (!val.valid && nameField.value.trim().length > 0) {
+                nameError.textContent = t('validation.underscoresNotAllowed');
+                nameError.classList.remove('hidden');
+            } else {
+                nameError.classList.add('hidden');
+            }
+        }
+    }
+
+    function updateCommentaryCounter() {
+        if (!commentaryCounter || !commentaryField) return;
+        const len = commentaryField.value.length;
+        const max = parseInt(commentaryField.maxLength, 10) || 500;
+        commentaryCounter.textContent = len + '/' + max;
+        commentaryCounter.classList.toggle('over-limit', len > max);
+    }
+
     function fireControlChange() {
         updateAutoName();
+        updateSlugDisplay();
+        updateAltText();
+        updateNameCounter();
         if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
     }
 
@@ -253,7 +336,13 @@ export function initGeneratePanel(opts) {
 
     nameField.addEventListener('input', () => {
         userEditedName = nameField.value.trim().length > 0;
+        updateSlugDisplay();
+        updateNameCounter();
     });
+
+    if (commentaryField) {
+        commentaryField.addEventListener('input', updateCommentaryCounter);
+    }
 
     // ── Randomize ──
 
@@ -265,15 +354,15 @@ export function initGeneratePanel(opts) {
         for (const key of SLIDER_KEYS) {
             const val = Math.random();
             sliderInputs[key].value = val.toFixed(2);
-            const valueSpan = sliderInputs[key].closest('.gen-slider-row').querySelector('.gen-slider-value');
-            if (valueSpan) valueSpan.textContent = val.toFixed(2);
+            const valueEl = sliderInputs[key].closest('.gen-slider-row').querySelector('.gen-slider-value');
+            if (valueEl) valueEl.value = val.toFixed(2);
         }
 
         // Reset camera to defaults
         for (const cam of CAMERA_SLIDERS) {
             cameraInputs[cam.key].value = String(cam.defaultVal);
-            const valueSpan = cameraInputs[cam.key].closest('.gen-slider-row').querySelector('.gen-slider-value');
-            if (valueSpan) valueSpan.textContent = formatValue(cam.defaultVal, cam.format, cam.step);
+            const valueEl = cameraInputs[cam.key].closest('.gen-slider-row').querySelector('.gen-slider-value');
+            if (valueEl) valueEl.value = formatValue(cam.defaultVal, cam.format, cam.step);
         }
 
         // Reset name to auto-generated
@@ -285,9 +374,11 @@ export function initGeneratePanel(opts) {
 
     // ── Render ──
 
-    renderBtn.addEventListener('click', () => {
-        if (onRender) onRender(readSeed(), readControls(), readCamera(), readName());
-    });
+    if (renderBtn) {
+        renderBtn.addEventListener('click', () => {
+            if (onRender) onRender(readSeed(), readControls(), readCamera(), readName());
+        });
+    }
 
     // ── Save ──
 
@@ -305,16 +396,25 @@ export function initGeneratePanel(opts) {
         });
     }
 
-    // ── Generate initial auto-name ──
+    // ── Generate initial state ──
     updateAutoName();
+    updateSlugDisplay();
+    updateAltText();
+    updateNameCounter();
+    updateCommentaryCounter();
 
     // ── Public API ──
+
+    function readCommentary() {
+        return commentaryField ? commentaryField.value.trim() : '';
+    }
 
     return {
         readSeed,
         readControls,
         readCamera,
         readName,
+        readCommentary,
         randomize,
 
         /** Set all controls + seed + camera + name from external data. */
@@ -328,8 +428,8 @@ export function initGeneratePanel(opts) {
                 for (const key of SLIDER_KEYS) {
                     if (controls[key] !== undefined && sliderInputs[key]) {
                         sliderInputs[key].value = String(controls[key]);
-                        const valueSpan = sliderInputs[key].closest('.gen-slider-row').querySelector('.gen-slider-value');
-                        if (valueSpan) valueSpan.textContent = parseFloat(String(controls[key])).toFixed(2);
+                        const valueEl = sliderInputs[key].closest('.gen-slider-row').querySelector('.gen-slider-value');
+                        if (valueEl) valueEl.value = parseFloat(String(controls[key])).toFixed(2);
                     }
                 }
             }
@@ -337,8 +437,8 @@ export function initGeneratePanel(opts) {
                 for (const cam of CAMERA_SLIDERS) {
                     if (camera[cam.key] !== undefined && cameraInputs[cam.key]) {
                         cameraInputs[cam.key].value = String(camera[cam.key]);
-                        const valueSpan = cameraInputs[cam.key].closest('.gen-slider-row').querySelector('.gen-slider-value');
-                        if (valueSpan) valueSpan.textContent = formatValue(parseFloat(String(camera[cam.key])), cam.format, cam.step);
+                        const valueEl = cameraInputs[cam.key].closest('.gen-slider-row').querySelector('.gen-slider-value');
+                        if (valueEl) valueEl.value = formatValue(parseFloat(String(camera[cam.key])), cam.format, cam.step);
                     }
                 }
             }
@@ -349,11 +449,15 @@ export function initGeneratePanel(opts) {
                 userEditedName = false;
                 updateAutoName();
             }
+            updateSlugDisplay();
+            updateAltText();
+            updateNameCounter();
+            updateCommentaryCounter();
         },
 
         /** Enable or disable the render button. */
         setRenderEnabled(enabled) {
-            renderBtn.disabled = !enabled;
+            if (renderBtn) renderBtn.disabled = !enabled;
         },
     };
 }

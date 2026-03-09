@@ -77,6 +77,19 @@ export default {
     'generate.seed.tooltip': 'A three-word compositional seed. Each word controls an independent random stream and visual bias \u2014 arrangement governs spatial flow, structure governs geometric character, and detail governs light and color energy. Same three words always produce the same composition.',
     'generate.parameters': 'Parameters',
     'generate.parameters.tooltip': 'Twelve continuous parameters, each a 0\u20131 scaling axis. Together they define a 12-dimensional creative space where every point produces a unique composition of luminous geometric forms.',
+    'generate.configureImage': 'Configure Image',
+
+    /* ── Commentary, alt-text, slug ── */
+    'control.commentary': 'Commentary',
+    'control.commentary.tooltip': 'User-provided commentary (optional)',
+    'control.commentary.placeholder': 'Write any commentary here (optional)',
+    'control.alttext': 'Alt-text',
+    'control.alttext.tooltip': 'Descriptive alt-text (auto-generated)',
+    'control.slug.tooltip': 'Unique identifier (auto-generated, url-safe)',
+
+    /* ── Validation ── */
+    'validation.underscoresNotAllowed': 'Underscores are not allowed in names.',
+    'validation.nameRequired': 'Name is required.',
 
     /* ── Parameter sections ── */
     'params.heading': 'Parameters',

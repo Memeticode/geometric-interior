@@ -87,7 +87,7 @@ const ARROW_LEFT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" s
 const ARROW_RIGHT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 3l5 5-5 5"/></svg>`;
 
 // ── Layout constants ──
-const SECTION_GAP = 0.4;         // extra card-widths of spacing at section boundaries
+const SECTION_GAP = 0.2;         // extra card-widths of spacing at section boundaries
 const PERSPECTIVE_D = 1200;      // matches CSS perspective(1200px)
 const DEG = Math.PI / 180;       // degrees-to-radians multiplier
 const HOVER_ZONE_DELAY = 900;    // ms delay before recomputing hover zones after layout
@@ -137,16 +137,17 @@ function readCard(el) {
 // ── Main component ──
 
 class CarouselDropdownBrowser extends HTMLElement {
-    static observedAttributes = ['arc-angle', 'smile-px', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'carousel-title', 'grid-title'];
+    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'carousel-title', 'grid-title', 'debug-show-controls'];
 
     // ── Configuration ──
-    #arcAngle = 0.85;
-    #smilePx = 20;
+    #arcZ = 24;
+    #arcY = 38;
     #flipDuration = 1500;
     #controlsPosition = 'above'; // 'above' | 'below'
     #infinite = true;              // wrap around or clamp at edges
     #bounce = 0.35;                // overshoot amount (0 = smooth, 1 = pronounced bounce)
     #expandable = true;            // whether the grid-expand toggle is available
+    #debugShowControls = false;     // show debug controls panel
     #animatingExpand = false;       // guard against overlapping expand/collapse
     #isFirstRender = true;          // fade-in on initial load
 
@@ -167,6 +168,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     #dragJustEnded = false;
     #numCardsVisibleLeft = 0;
     #numCardsVisibleRight = 0;
+    #secNavLeft = null;
+    #secNavRight = null;
 
     // ── Drag state ──
     #isDragging = false;
@@ -203,6 +206,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     #flipAnimations = [];  // Web Animations created by #animateCardsWA
     #sectionLabelContainer = null;
     #sectionLabels = [];
+    #debugPanel = null;
 
 
     // ── MutationObserver ──
@@ -275,6 +279,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#navLeft.disabled = true;
         this.#navRight.disabled = true;
         this.#toggle.disabled = true;
+        this.#toggle.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
 
         // Animate carousel cards to grid positions via CSS transitions
         // Clear hover/mask state and force-remove any residual masks from images
@@ -449,9 +454,9 @@ class CarouselDropdownBrowser extends HTMLElement {
             const from = this.#readCardFromState(t.element);
             waTargets.push({
                 element: t.element, img: t.img,
-                fromCx: from.cx, fromCy: from.cy, fromRy: from.ry,
+                fromCx: from.cx, fromCy: from.cy, fromRy: from.ry, fromRx: from.rx,
                 fromTz: from.tz, fromSc: from.sc, fromOpacity: from.opacity,
-                toCx: t.cx, toCy: t.cy, toRy: 0, toTz: 0, toSc: t.sc, toOpacity: 1,
+                toCx: t.cx, toCy: t.cy, toRy: 0, toRx: 0, toTz: 0, toSc: t.sc, toOpacity: 1,
                 duration: dur, delay: t.delay, easing,
             });
         }
@@ -467,6 +472,17 @@ class CarouselDropdownBrowser extends HTMLElement {
             });
         }
         this.#animateCardsWA(waTargets);
+
+        // Fade out carousel titles during expand
+        for (const { element } of this.#cards) {
+            const title = element.querySelector('.cdb-card-title');
+            if (title) {
+                this.#flipAnimations.push(title.animate(
+                    [{ opacity: 1 }, { opacity: 0 }],
+                    { duration: dur * 0.3, easing: 'ease-in', fill: 'both' }
+                ));
+            }
+        }
 
         const totalDur = Math.max(dur + maxVisibleDelay,
             offScreenCards.length > 0 ? dur + offScreenBaseDelay : 0);
@@ -592,6 +608,12 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#navRight.disabled = false;
             this.#toggle.disabled = false;
             this.#toggle.setAttribute('data-tooltip', 'Collapse');
+            if (this.#toggle.matches(':hover')) {
+                const r = this.#toggle.getBoundingClientRect();
+                this.#toggle.dispatchEvent(new MouseEvent('mouseover', {
+                    bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2,
+                }));
+            }
 
             this.#animatingExpand = false;
             this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: true } }));
@@ -606,6 +628,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#navLeft.disabled = true;
         this.#navRight.disabled = true;
         this.#toggle.disabled = true;
+        this.#toggle.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
 
         const dur = this.#flipDuration;
         const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
@@ -731,9 +754,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                     const from = this.#readCardFromState(element);
                     waTargets.push({
                         element, img: element.querySelector('.cdb-card-img'),
-                        fromCx: from.cx, fromCy: from.cy, fromRy: from.ry,
+                        fromCx: from.cx, fromCy: from.cy, fromRy: from.ry, fromRx: from.rx,
                         fromTz: from.tz, fromSc: from.sc, fromOpacity: 1,
-                        toCx: layout.cx, toCy: layout.cy, toRy: layout.ry,
+                        toCx: layout.cx, toCy: layout.cy, toRy: layout.ry, toRx: layout.rx,
                         toTz: layout.tz, toSc: layout.sc, toOpacity: layout.opacity,
                         duration: dur, delay: i * staggerDelay, easing,
                     });
@@ -758,9 +781,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                     const from = this.#readCardFromState(element);
                     waTargets.push({
                         element, img: element.querySelector('.cdb-card-img'),
-                        fromCx: from.cx, fromCy: from.cy, fromRy: from.ry,
+                        fromCx: from.cx, fromCy: from.cy, fromRy: from.ry, fromRx: from.rx,
                         fromTz: from.tz, fromSc: from.sc, fromOpacity: 1,
-                        toCx: edge.cx, toCy: edge.cy, toRy: edge.ry,
+                        toCx: edge.cx, toCy: edge.cy, toRy: edge.ry, toRx: edge.rx,
                         toTz: edge.tz, toSc: edge.sc, toOpacity: 0,
                         duration: dur, delay: offScreenBaseDelay, easing,
                         opacityDuration: Math.round(dur * 0.6), opacityEasing: 'ease',
@@ -768,6 +791,17 @@ class CarouselDropdownBrowser extends HTMLElement {
                     element.style.zIndex = '0';
                 }
                 this.#animateCardsWA(waTargets);
+
+                // Fade in carousel titles during collapse
+                for (const { element } of this.#cards) {
+                    const title = element.querySelector('.cdb-card-title');
+                    if (title) {
+                        this.#flipAnimations.push(title.animate(
+                            [{ opacity: 0 }, { opacity: 1 }],
+                            { duration: dur * 0.4, delay: dur * 0.5, easing: 'ease-out', fill: 'both' }
+                        ));
+                    }
+                }
 
                 const totalDur = Math.max(dur + maxVisibleDelay, dur + offScreenBaseDelay);
 
@@ -808,6 +842,7 @@ class CarouselDropdownBrowser extends HTMLElement {
 
                     // ── Collapse dropdown — compensate scroll for layout shift ──
                     const ctrlBefore2 = this.#controls.getBoundingClientRect();
+                    const lblBefore2 = this.#sectionLabelContainer.getBoundingClientRect();
                     const scrollParent = this.closest('.gallery-main') || this.parentElement;
                     const scrollBefore = scrollParent ? scrollParent.scrollTop : 0;
                     const rectBefore = this.getBoundingClientRect();
@@ -839,23 +874,41 @@ class CarouselDropdownBrowser extends HTMLElement {
                         this.#controls.style.transform = '';
                     }
 
+                    // FLIP section label container for dropdown collapse shift
+                    const lblAfter2 = this.#sectionLabelContainer.getBoundingClientRect();
+                    const lblDy = lblBefore2.top - lblAfter2.top;
+                    if (Math.abs(lblDy) > 1) {
+                        this.#sectionLabelContainer.style.transition = 'none';
+                        this.#sectionLabelContainer.style.transform = `translateY(${lblDy}px)`;
+                        void this.#sectionLabelContainer.offsetHeight;
+                        this.#sectionLabelContainer.style.transition = 'transform 0.3s ease';
+                        this.#sectionLabelContainer.style.transform = '';
+                    }
+
                     // positionCards sets correct label opacity via applySectionLabels
                     this.#positionCards();
+
                     // Remove phantoms only after real labels are restored
                     for (const o of sectionPhantoms) o.remove();
                     for (const sec of this.#sectionLabels) {
                         sec.element.style.transition = '';
                     }
 
-                    // Clear controls FLIP styles and re-enable
+                    // Clear FLIP styles and re-enable
                     setTimeout(() => {
                         this.#controls.style.transition = '';
                         this.#controls.style.transform = '';
+                        this.#sectionLabelContainer.style.transition = '';
+                        this.#sectionLabelContainer.style.transform = '';
                     }, 350);
-                    this.#navLeft.disabled = false;
-                    this.#navRight.disabled = false;
                     this.#toggle.disabled = false;
                     this.#toggle.setAttribute('data-tooltip', 'Expand');
+                    if (this.#toggle.matches(':hover')) {
+                        const r = this.#toggle.getBoundingClientRect();
+                        this.#toggle.dispatchEvent(new MouseEvent('mouseover', {
+                            bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2,
+                        }));
+                    }
 
                     resolve();
                 }, totalDur + 50);
@@ -874,8 +927,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     // ── Attributes ──
 
     attributeChangedCallback(name, _old, val) {
-        if (name === 'arc-angle') this.#arcAngle = parseFloat(val) || 0.85;
-        if (name === 'smile-px') this.#smilePx = parseFloat(val) || 20;
+        if (name === 'arc-z') { this.#arcZ = Math.round(parseFloat(val)) || 24; if (this.#domBuilt) this.#positionCards(); }
+        if (name === 'arc-y') { this.#arcY = parseFloat(val) ?? 38; if (this.#domBuilt) this.#positionCards(); }
         if (name === 'flip-duration') this.#flipDuration = parseInt(val, 10) || 450;
         if (name === 'controls-position') {
             this.#controlsPosition = val === 'below' ? 'below' : 'above';
@@ -899,6 +952,10 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (name === 'grid-title') {
             this.#gridTitle = val || 'none';
             this.#applyTitleClasses();
+        }
+        if (name === 'debug-show-controls') {
+            this.#debugShowControls = val !== null && val !== 'false';
+            if (this.#debugPanel) this.#debugPanel.style.display = this.#debugShowControls ? '' : 'none';
         }
     }
 
@@ -1059,9 +1116,23 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#navRight.setAttribute('data-tooltip', 'Scroll right');
         this.#navRight.innerHTML = ARROW_RIGHT;
 
+        this.#secNavLeft = document.createElement('button');
+        this.#secNavLeft.className = 'gallery-arrow cdb-arrow cdb-sec-arrow';
+        this.#secNavLeft.setAttribute('aria-label', 'Previous section');
+        this.#secNavLeft.setAttribute('data-tooltip', 'Scroll (previous section)');
+        this.#secNavLeft.textContent = '\u00AB';
+
+        this.#secNavRight = document.createElement('button');
+        this.#secNavRight.className = 'gallery-arrow cdb-arrow cdb-sec-arrow';
+        this.#secNavRight.setAttribute('aria-label', 'Next section');
+        this.#secNavRight.setAttribute('data-tooltip', 'Scroll (next section)');
+        this.#secNavRight.textContent = '\u00BB';
+
+        this.#controls.appendChild(this.#secNavLeft);
         this.#controls.appendChild(this.#navLeft);
         this.#controls.appendChild(this.#toggle);
         this.#controls.appendChild(this.#navRight);
+        this.#controls.appendChild(this.#secNavRight);
 
         // Container > Viewport > Track
         this.#container = document.createElement('div');
@@ -1104,6 +1175,109 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#flipLayout.appendChild(this.#grid);
         this.#dropdown.appendChild(this.#flipLayout);
 
+        // Debug controls panel (only visible with debug-show-controls attribute)
+        this.#debugPanel = document.createElement('div');
+        this.#debugPanel.className = 'cdb-debug-controls';
+        this.#debugPanel.style.display = this.#debugShowControls ? '' : 'none';
+
+        const mkLabel = (text, input) => {
+            const lbl = document.createElement('label');
+            lbl.textContent = text + ' ';
+            lbl.appendChild(input);
+            return lbl;
+        };
+
+        // Controls position select
+        const posSelect = document.createElement('select');
+        for (const v of ['above', 'below']) {
+            const opt = document.createElement('option');
+            opt.value = v; opt.textContent = v.charAt(0).toUpperCase() + v.slice(1);
+            if (v === this.#controlsPosition) opt.selected = true;
+            posSelect.appendChild(opt);
+        }
+        posSelect.addEventListener('change', () => {
+            this.#controlsPosition = posSelect.value === 'below' ? 'below' : 'above';
+            this.#appendStripChildren();
+        });
+        this.#debugPanel.appendChild(mkLabel('Buttons:', posSelect));
+
+        // Infinite checkbox
+        const infCheck = document.createElement('input');
+        infCheck.type = 'checkbox';
+        infCheck.checked = this.#infinite;
+        infCheck.addEventListener('change', () => { this.#infinite = infCheck.checked; });
+        this.#debugPanel.appendChild(mkLabel('Infinite', infCheck));
+
+        // Number input helper
+        const mkNum = (value, min, max, step, onInput) => {
+            const inp = document.createElement('input');
+            inp.type = 'number'; inp.min = min; inp.max = max; inp.step = step;
+            inp.value = value;
+            inp.addEventListener('input', () => {
+                const v = parseFloat(inp.value);
+                if (isNaN(v)) return;
+                onInput(Math.max(parseFloat(min), Math.min(parseFloat(max), v)));
+            });
+            inp.addEventListener('change', () => {
+                const v = parseFloat(inp.value);
+                if (isNaN(v)) { inp.value = value; return; }
+                const clamped = Math.max(parseFloat(min), Math.min(parseFloat(max), v));
+                inp.value = clamped;
+            });
+            return inp;
+        };
+
+        // Arc-Z
+        this.#debugPanel.appendChild(mkLabel('Arc-Z:', mkNum(this.#arcZ, '0', '50', '1', (v) => {
+            this.#arcZ = v;
+            if (this.#domBuilt) this.#positionCards();
+        })));
+
+        // Arc-Y
+        this.#debugPanel.appendChild(mkLabel('Arc-Y:', mkNum(this.#arcY, '-50', '50', '1', (v) => {
+            this.#arcY = v;
+            if (this.#domBuilt) this.#positionCards();
+        })));
+
+        // Bounce
+        this.#debugPanel.appendChild(mkLabel('Bounce:', mkNum(this.#bounce, '0', '1', '0.05', (v) => {
+            this.#bounce = v;
+            this.#updateEasing();
+        })));
+
+        // Select helper
+        const mkSelect = (options, selected, onChange) => {
+            const sel = document.createElement('select');
+            for (const [val, text] of options) {
+                const opt = document.createElement('option');
+                opt.value = val; opt.textContent = text;
+                if (val === selected) opt.selected = true;
+                sel.appendChild(opt);
+            }
+            sel.addEventListener('change', onChange);
+            return sel;
+        };
+
+        // Title controls
+        const titleOpts = [['none','None'],['above','Above'],['top','Top'],['center','Center'],['bottom','Bottom'],['below','Below']];
+        const alignOpts = [['left','Left'],['center','Center'],['right','Right']];
+
+        const carouselTitleSel = mkSelect(titleOpts, 'none', () => updateTitles());
+        const gridTitleSel = mkSelect(titleOpts, 'none', () => updateTitles());
+        const titleAlignSel = mkSelect(alignOpts, 'center', () => updateTitles());
+
+        const updateTitles = () => {
+            const hAlign = titleAlignSel.value;
+            const cv = carouselTitleSel.value;
+            const gv = gridTitleSel.value;
+            this.setAttribute('carousel-title', cv === 'none' ? 'none' : `${cv} ${hAlign}`);
+            this.setAttribute('grid-title', gv === 'none' ? 'none' : `${gv} ${hAlign}`);
+        };
+
+        this.#debugPanel.appendChild(mkLabel('Carousel title:', carouselTitleSel));
+        this.#debugPanel.appendChild(mkLabel('Grid title:', gridTitleSel));
+        this.#debugPanel.appendChild(mkLabel('Title align:', titleAlignSel));
+
         // Append rendered DOM — dropdown inside strip so controls-position="below" flows smoothly
         this.#appendStripChildren();
         this.appendChild(this.#strip);
@@ -1114,6 +1288,8 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#setupDrag();
         this.#setupArrow(this.#navLeft, 1);
         this.#setupArrow(this.#navRight, -1);
+        this.#setupSectionArrow(this.#secNavLeft, -1);
+        this.#setupSectionArrow(this.#secNavRight, 1);
         this.#track.addEventListener('dragstart', (e) => e.preventDefault());
     }
 
@@ -1139,6 +1315,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
         this.#positionCards();
         this.#updateToggleVisibility();
+        this.#updateSectionNavVisibility();
         if (this.expanded) {
             this.collapse();
         }
@@ -1409,7 +1586,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 position: absolute; z-index: 1000; pointer-events: none;
                 left: ${from.rect.left - hostRect.left}px; top: ${from.rect.top - hostRect.top}px;
                 font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.15em;
-                color: rgba(255, 255, 255, 0.3); white-space: nowrap;
+                color: var(--text-muted); white-space: nowrap;
             `;
 
             const fromUW = from.underlineWidth || from.rect.width;
@@ -1418,7 +1595,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             bar.style.cssText = `
                 position: absolute; bottom: 0; left: 0;
                 width: ${fromUW}px; height: 1px;
-                background: rgba(255, 255, 255, 0.08);
+                background: var(--border);
             `;
             phantom.appendChild(bar);
             this.appendChild(phantom);
@@ -1441,13 +1618,13 @@ class CarouselDropdownBrowser extends HTMLElement {
                 ], { duration, easing, fill: 'both' });
 
                 phantom.animate([
-                    { fontSize: '0.65rem', color: 'rgba(255, 255, 255, 0.3)' },
-                    { fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.35)' }
+                    { fontSize: '0.65rem', color: 'var(--text-muted)' },
+                    { fontSize: '0.7rem', color: 'var(--text-muted)' }
                 ], { duration, easing, fill: 'both' });
             } else {
                 // No matching carousel label — drift in the average direction while fading
-                const driftDx = avgDx * 0.6 || 0;
-                const driftDy = avgDy * 0.6 || -30;
+                const driftDx = avgDx || 0;
+                const driftDy = avgDy || -30;
                 phantom.animate([
                     { transform: 'translate(0, 0)', opacity: 1 },
                     { transform: `translate(${driftDx}px, ${driftDy}px)`, opacity: 0 }
@@ -1477,9 +1654,9 @@ class CarouselDropdownBrowser extends HTMLElement {
      * @param {Array<{
      *   element: HTMLElement,
      *   img?: HTMLElement,
-     *   fromCx: number, fromCy: number, fromRy: number, fromTz: number,
+     *   fromCx: number, fromCy: number, fromRy: number, fromRx?: number, fromTz: number,
      *   fromSc: number, fromOpacity: number,
-     *   toCx: number, toCy: number, toRy: number, toTz: number,
+     *   toCx: number, toCy: number, toRy: number, toRx?: number, toTz: number,
      *   toSc: number, toOpacity: number,
      *   duration: number, delay?: number, easing: string,
      *   opacityDuration?: number, opacityEasing?: string,
@@ -1512,8 +1689,8 @@ class CarouselDropdownBrowser extends HTMLElement {
             // Card-img wrapper: 3D perspective transform
             if (t.img) {
                 this.#flipAnimations.push(t.img.animate([
-                    { transform: `perspective(1200px) rotateY(${t.fromRy}deg) translateZ(${t.fromTz}px) scale(${t.fromSc})` },
-                    { transform: `perspective(1200px) rotateY(${t.toRy}deg) translateZ(${t.toTz}px) scale(${t.toSc})` }
+                    { transform: `perspective(1200px) rotateX(${t.fromRx || 0}deg) rotateY(${t.fromRy}deg) translateZ(${t.fromTz}px) scale(${t.fromSc})` },
+                    { transform: `perspective(1200px) rotateX(${t.toRx || 0}deg) rotateY(${t.toRy}deg) translateZ(${t.toTz}px) scale(${t.toSc})` }
                 ], { duration: t.duration, delay, easing: t.easing, fill: 'both' }));
             }
 
@@ -1522,6 +1699,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             t.element.style.setProperty('--cx', t.toCx + 'px');
             t.element.style.setProperty('--cy', t.toCy + 'px');
             t.element.style.setProperty('--ry', t.toRy + 'deg');
+            t.element.style.setProperty('--rx', (t.toRx || 0) + 'deg');
             t.element.style.setProperty('--tz', t.toTz + 'px');
             t.element.style.setProperty('--sc', String(t.toSc));
             t.element.style.setProperty('--card-opacity', String(t.toOpacity));
@@ -1540,6 +1718,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             cx: parseFloat(element.style.getPropertyValue('--cx')) || 0,
             cy: parseFloat(element.style.getPropertyValue('--cy')) || 0,
             ry: parseFloat(element.style.getPropertyValue('--ry')) || 0,
+            rx: parseFloat(element.style.getPropertyValue('--rx')) || 0,
             tz: parseFloat(element.style.getPropertyValue('--tz')) || 0,
             sc: parseFloat(element.style.getPropertyValue('--sc')) || 1,
             opacity: parseFloat(element.style.getPropertyValue('--card-opacity')) ?? 1,
@@ -1612,6 +1791,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#strip.appendChild(this.#container);
             this.#strip.appendChild(this.#dropdown);
         }
+        if (this.#debugPanel) this.#strip.prepend(this.#debugPanel);
     }
 
     // ═══════════════════════════════════════════════════════
@@ -1625,18 +1805,42 @@ class CarouselDropdownBrowser extends HTMLElement {
         ) || 180;
     }
 
-    /** Compute arc parameters from viewport and card width. Replaces #getArcParams + #getVisibleCount. */
+    /** Compute arc parameters fitted to available viewport width. */
     #computeArcParams(cardW) {
         const viewportW = this.#viewport ? this.#viewport.clientWidth : window.innerWidth;
-        const spacing = cardW * 0.55;
-        const halfCount = Math.floor((viewportW - cardW) / (2 * spacing));
+
+        // 1. Arc angle and mode
+        const totalAngle = this.#arcZ * (1.2 / 50); // 0-50 → 0-1.2 rad
+        const linearMode = totalAngle < 0.01;
+
+        // 2. Adaptive spacing: flat cards need more room, arc cards compress
+        const arcFraction = Math.min(totalAngle / 1.2, 1);
+        const minSpacing = cardW * (0.58 - 0.08 * arcFraction); // 0.58 flat → 0.50 arc
+
+        // 3. Visible count from available space
+        const halfCount = Math.floor((viewportW - cardW) / (2 * minSpacing));
         const visibleCount = Math.max(3, 2 * Math.max(1, halfCount) + 1);
         const half = Math.floor(visibleCount / 2);
-        const dTheta = half > 0 ? this.#arcAngle / half : 0.25;
-        const R = this.#arcAngle > 0.01
-            ? viewportW / (2 * Math.sin(Math.min(this.#arcAngle, Math.PI / 2 - 0.05)))
-            : viewportW;
-        return { R, dTheta, half, visibleCount };
+
+        // 4. Estimate outermost card's projected half-width to prevent overflow
+        const outerSc = Math.max(0.70, 1 - half * 0.08);
+        const outerTz = -half * 15;
+        const outerRyRad = linearMode ? 0 : totalAngle;
+        const outerHalfW = Math.abs(projOuterEdge(cardW, outerSc, outerTz, outerRyRad, PERSPECTIVE_D, 1));
+        const margin = 8;
+        const maxCx = viewportW / 2 - outerHalfW - margin;
+
+        // 5. Spacing and arc geometry
+        const spacing = half > 0 ? maxCx / half : minSpacing;
+        let R, dTheta;
+        if (linearMode) {
+            R = viewportW;
+            dTheta = 0;
+        } else {
+            R = maxCx / Math.sin(totalAngle);
+            dTheta = half > 0 ? totalAngle / half : 0;
+        }
+        return { R, dTheta, half, visibleCount, spacing, linearMode, maxCx, outerHalfW };
     }
 
     /**
@@ -1644,7 +1848,7 @@ class CarouselDropdownBrowser extends HTMLElement {
      * Returns CardLayout object or null if fully hidden (|visualOffset| > half + 2).
      */
     #computeCardGeometry(index, element, centerIdx, arcParams, cardW, hasSections) {
-        const { R, dTheta, half } = arcParams;
+        const { R, dTheta, half, spacing, linearMode } = arcParams;
         const total = this.#items.length;
 
         const wrapOff = (o) => {
@@ -1677,27 +1881,36 @@ class CarouselDropdownBrowser extends HTMLElement {
         const abs = Math.abs(visualOffset);
         if (abs > half + 2) return null;
 
-        let cx, cy, ry, tz, sc, opacity, zone;
+        let cx, cy, ry, rx, tz, sc, opacity, zone;
 
         if (abs <= half) {
             zone = 1;
-            const angle = visualOffset * dTheta;
-            cx = R * Math.sin(angle);
-            ry = Math.sign(visualOffset) * Math.min(Math.abs(angle) / DEG, 50);
-            tz = -abs * 20;
-            sc = Math.max(0.65, 1 - abs * 0.1);
+            if (linearMode) {
+                cx = visualOffset * spacing;
+                ry = 0;
+            } else {
+                const angle = visualOffset * dTheta;
+                cx = R * Math.sin(angle);
+                ry = Math.sign(visualOffset) * Math.min(Math.abs(angle) / DEG, 50);
+            }
+            tz = -abs * 15;
+            sc = Math.max(0.70, 1 - abs * 0.08);
             opacity = 1;
             const t = half > 0 ? abs / half : 0;
-            cy = -this.#smilePx * t * t;
+            cy = -this.#arcY * t * t;
+            rx = this.#arcY !== 0 ? 0.5 * Math.atan2(-cy, PERSPECTIVE_D) / DEG : 0;
         } else {
             zone = 2;
             const t = Math.min((abs - half) / 2, 1);
-            cx = R * Math.sin(half * dTheta) * Math.sign(visualOffset);
-            ry = Math.sign(visualOffset) * (50 + t * 40);
-            tz = -half * 20 - t * 30;
-            sc = 0.65 * (1 - t);
+            cx = linearMode
+                ? half * spacing * Math.sign(visualOffset)
+                : R * Math.sin(half * dTheta) * Math.sign(visualOffset);
+            ry = linearMode ? 0 : Math.sign(visualOffset) * (50 + t * 40);
+            tz = -half * 15 - t * 30;
+            sc = 0.70 * (1 - t);
             opacity = abs > half + 0.5 ? 0 : 1;
-            cy = -this.#smilePx;
+            cy = -this.#arcY;
+            rx = this.#arcY !== 0 ? 0.5 * Math.atan2(this.#arcY, PERSPECTIVE_D) / DEG : 0;
         }
 
         // Hover parameters
@@ -1728,7 +1941,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             index, element,
             sectionIndex: this.#items[index].sectionIndex,
             offset, visualOffset, zone,
-            cx, cy, ry, tz, sc, opacity,
+            cx, cy, ry, rx, tz, sc, opacity,
             zIndex: Math.max(0, 10 - Math.round(abs)),
             hoverLift, hoverTzBoost, hoverScBoost, hoverRyOffset, hoverCxShift,
             projLeftRest, projRightRest,
@@ -1826,15 +2039,10 @@ class CarouselDropdownBrowser extends HTMLElement {
             else if (off > 0) span.extendsRight = true;
         }
 
-        // Projected edges of a hypothetical card at the arc boundary (visualOffset = ±half).
-        // Used as pin points for section labels instead of the raw viewport edge.
-        const { R, dTheta } = arcParams;
-        const bCx = R * Math.sin(half * dTheta);
-        const bRy = Math.min(half * dTheta / DEG, 50);
-        const bTz = -half * 20;
-        const bSc = Math.max(0.65, 1 - half * 0.1);
-        const arcBoundaryLeft  = -bCx + projOuterEdge(cardW, bSc, bTz, -bRy * DEG, PERSPECTIVE_D, -1);
-        const arcBoundaryRight =  bCx + projOuterEdge(cardW, bSc, bTz,  bRy * DEG, PERSPECTIVE_D, +1);
+        // Stable section label boundaries from arc geometry (constant for a given arc-z)
+        const theoreticalEdge = arcParams.maxCx + arcParams.outerHalfW;
+        const arcBoundaryLeft = -theoreticalEdge;
+        const arcBoundaryRight = theoreticalEdge;
 
         const frame = {
             ...arcParams, cardW,
@@ -1843,19 +2051,52 @@ class CarouselDropdownBrowser extends HTMLElement {
             arcBoundaryLeft, arcBoundaryRight,
             arrowLeftDisabled: !this.#infinite && centerIdx <= 0,
             arrowRightDisabled: !this.#infinite && centerIdx >= this.#items.length - 1,
+            secNavLeftDisabled: false,
+            secNavRightDisabled: false,
         };
+
+        // Section nav disabled state
+        const curSecIdx = this.#items[centerIdx]?.sectionIndex ?? -1;
+        if (!this.#infinite && curSecIdx >= 0) {
+            const hasPrev = this.#items.some(it => it.sectionIndex >= 0 && it.sectionIndex < curSecIdx);
+            const hasNext = this.#items.some(it => it.sectionIndex >= 0 && it.sectionIndex > curSecIdx);
+            frame.secNavLeftDisabled = !hasPrev;
+            frame.secNavRightDisabled = !hasNext;
+        } else if (!this.#infinite) {
+            frame.secNavLeftDisabled = true;
+            frame.secNavRightDisabled = true;
+        }
         this.#lastFrame = frame;
         return frame;
     }
 
     /** Apply computed layout to DOM elements. */
     #applyLayout(frame) {
-        for (const { element } of this.#cards) {
+        const { R, half, dTheta, spacing, linearMode } = frame;
+        const offScreenCx = linearMode
+            ? half * spacing + 200
+            : R * Math.sin(half * dTheta) + 200;
+
+        for (const { element, index } of this.#cards) {
             const layout = this.#cardLayout.get(element);
 
             element.classList.remove('active');
 
             if (!layout) {
+                // Push off-screen in the correct direction so CSS transition scrolls them out
+                const total = this.#items.length;
+                let off = index - this.#centerIdx;
+                if (total > 1 && this.#infinite) {
+                    if (off > total / 2) off -= total;
+                    if (off < -total / 2) off += total;
+                }
+                const side = off >= 0 ? 1 : -1;
+                element.style.setProperty('--cx', (side * offScreenCx) + 'px');
+                element.style.setProperty('--ry', (side * 90) + 'deg');
+                element.style.setProperty('--tz', (-half * 20 - 30) + 'px');
+                element.style.setProperty('--sc', '0');
+                element.style.setProperty('--cy', (-this.#arcY) + 'px');
+                element.style.setProperty('--rx', '0deg');
                 element.style.setProperty('--card-opacity', '0');
                 element.style.pointerEvents = 'none';
                 element.style.zIndex = '0';
@@ -1865,6 +2106,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             element.style.setProperty('--cx', layout.cx + 'px');
             element.style.setProperty('--cy', layout.cy + 'px');
             element.style.setProperty('--ry', layout.ry + 'deg');
+            element.style.setProperty('--rx', layout.rx + 'deg');
             element.style.setProperty('--tz', layout.tz + 'px');
             element.style.setProperty('--sc', String(layout.sc));
             element.style.setProperty('--card-opacity', String(layout.opacity));
@@ -1885,6 +2127,8 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Arrow state
         this.#navLeft.disabled = frame.arrowLeftDisabled;
         this.#navRight.disabled = frame.arrowRightDisabled;
+        if (this.#secNavLeft) this.#secNavLeft.disabled = frame.secNavLeftDisabled;
+        if (this.#secNavRight) this.#secNavRight.disabled = frame.secNavRightDisabled;
         this.#numCardsVisibleLeft = frame.numVisibleLeft;
         this.#numCardsVisibleRight = frame.numVisibleRight;
 
@@ -2375,12 +2619,81 @@ class CarouselDropdownBrowser extends HTMLElement {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (holdJustEnded) return;
-            // Right arrow (direction=-1): jump by numCardsVisibleLeft
-            // Left arrow (direction=1): jump by numCardsVisibleRight
+            // Right arrow (direction=-1): rightmost visible → center
+            // Left arrow (direction=1): leftmost visible → center
             const jump = direction < 0
-                ? this.#numCardsVisibleLeft
-                : this.#numCardsVisibleRight;
+                ? this.#numCardsVisibleRight
+                : this.#numCardsVisibleLeft;
             navBy(-direction * Math.max(1, jump));
+        });
+    }
+
+    #updateSectionNavVisibility() {
+        const sectionCount = new Set(this.#items.filter(it => it.sectionIndex >= 0).map(it => it.sectionIndex)).size;
+        const show = sectionCount > 1;
+        if (this.#secNavLeft) this.#secNavLeft.style.display = show ? '' : 'none';
+        if (this.#secNavRight) this.#secNavRight.style.display = show ? '' : 'none';
+    }
+
+    // ── Section arrow navigation ──
+
+    #setupSectionArrow(btn, direction) {
+        if (!btn) return;
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const items = this.#items;
+            const total = items.length;
+            if (total <= 1) return;
+
+            const curSecIdx = items[this.#centerIdx]?.sectionIndex ?? -1;
+            let targetIdx = -1;
+
+            if (direction > 0) {
+                // Next section: find first item with sectionIndex > current
+                for (let i = 0; i < total; i++) {
+                    if (items[i].sectionIndex > curSecIdx && items[i].sectionIndex >= 0) {
+                        targetIdx = i;
+                        break;
+                    }
+                }
+                // Infinite wrap: go to first section
+                if (targetIdx < 0 && this.#infinite) {
+                    targetIdx = items.findIndex(it => it.sectionIndex >= 0);
+                }
+            } else {
+                // Previous section: find first item of the section before current
+                let prevSecIdx = -1;
+                for (let i = 0; i < total; i++) {
+                    const si = items[i].sectionIndex;
+                    if (si >= 0 && si < curSecIdx) prevSecIdx = si;
+                }
+                if (prevSecIdx >= 0) {
+                    targetIdx = items.findIndex(it => it.sectionIndex === prevSecIdx);
+                } else if (this.#infinite) {
+                    // Wrap to last section
+                    let maxSec = -1;
+                    for (const it of items) {
+                        if (it.sectionIndex > maxSec) maxSec = it.sectionIndex;
+                    }
+                    if (maxSec >= 0) {
+                        targetIdx = items.findIndex(it => it.sectionIndex === maxSec);
+                    }
+                }
+            }
+
+            if (targetIdx < 0 || targetIdx === this.#centerIdx) return;
+
+            if (this.#momentumRaf) {
+                cancelAnimationFrame(this.#momentumRaf);
+                this.#momentumRaf = null;
+            }
+            this.#resetHoverState();
+            this.#centerIdx = targetIdx;
+            this.#track.classList.add('cdb-dragging');
+            this.#container.style.setProperty('--carousel-speed', '0.85s');
+            this.#positionCards();
+            this.#emitCenterChange();
+            setTimeout(() => this.#track.classList.remove('cdb-dragging'), 900);
         });
     }
 
@@ -2389,6 +2702,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     #flattenCards() {
         for (const { element } of this.#cards) {
             element.style.setProperty('--ry', '0deg');
+            element.style.setProperty('--rx', '0deg');
             element.style.setProperty('--tz', '0px');
             element.style.setProperty('--cy', '0px');
             element.style.setProperty('--sc', '0.45');
