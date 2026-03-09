@@ -169,6 +169,7 @@ export const StarterPortraitSchema = z.object({
     commentary: z.string().optional(),
     seed: SeedTagSchema,
     controls: ControlsSchema,
+    camera: CameraConfigSchema.optional(),
     generated: StarterGeneratedSchema,
 });
 

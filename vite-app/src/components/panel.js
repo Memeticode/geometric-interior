@@ -1,6 +1,6 @@
 /**
  * Panel toggle / drawer logic.
- * Manages open/close of the sidebar panel, backdrop, and header-height sync.
+ * Manages open/close of the sidebar panel and header-height sync.
  */
 
 import { refreshTooltip } from './tooltips.js';
@@ -8,7 +8,6 @@ import { t } from '../i18n/locale.js';
 
 let panelEl = null;
 let panelToggleBtn = null;
-let panelBackdrop = null;
 
 /* Keep --header-h in sync so the tablet/mobile panel sits below the header */
 function syncHeaderHeight() {
@@ -24,7 +23,6 @@ export function openPanel() {
     if (!panelEl) return;
     panelEl.classList.remove('panel-collapsed');
     panelEl.setAttribute('aria-hidden', 'false');
-    if (panelBackdrop) panelBackdrop.classList.remove('hidden');
     if (panelToggleBtn) {
         panelToggleBtn.classList.add('panel-open');
         panelToggleBtn.setAttribute('data-tooltip', t('panel.closeMenu'));
@@ -38,7 +36,6 @@ export function closePanel() {
     if (!panelEl) return;
     panelEl.classList.add('panel-collapsed');
     panelEl.setAttribute('aria-hidden', 'true');
-    if (panelBackdrop) panelBackdrop.classList.add('hidden');
     if (panelToggleBtn) {
         panelToggleBtn.classList.remove('panel-open');
         panelToggleBtn.setAttribute('data-tooltip', t('panel.openMenu'));
@@ -55,8 +52,6 @@ export function closePanel() {
 export function initPanel() {
     panelEl = document.querySelector('.panel');
     panelToggleBtn = document.getElementById('panelToggle');
-    panelBackdrop = document.getElementById('panelBackdrop');
-
     syncHeaderHeight();
     window.addEventListener('resize', syncHeaderHeight);
 
@@ -77,8 +72,4 @@ export function initPanel() {
         else openPanel();
     });
 
-    // Close drawer when clicking backdrop
-    if (panelBackdrop) {
-        panelBackdrop.addEventListener('click', closePanel);
-    }
 }

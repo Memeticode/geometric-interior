@@ -160,7 +160,7 @@
     font-size: 0.6875rem;
     color: var(--text);
     background: var(--bg);
-    border: 1px solid var(--border);
+    border: 1px solid transparent;
     border-radius: 6px;
     padding: 0.25rem 0.375rem;
     font-family: inherit;
@@ -170,6 +170,9 @@
     transition: border-color 0.2s;
     field-sizing: content;
     min-height: 2.5em;
+}
+.gen-commentary-field:hover {
+    border-color: var(--border);
 }
 .gen-commentary-field:focus {
     border-color: var(--accent);
@@ -223,6 +226,7 @@
     letter-spacing: 0.5px;
     color: var(--text-muted);
     perspective: 600px;
+    position: relative;
 }
 .gen-heading-fold-up-area {
     display: flex;
@@ -232,27 +236,70 @@
     box-sizing: border-box;
     padding: 0.5rem 0rem 0.375rem;
     position: relative;
+    z-index: 1;
+    background: var(--bg);
+    border-top: 1px solid transparent;
+    border-right: 2px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-left: 2px solid transparent;
     border-radius: 0 0 4px 4px;
     transform-origin: top center;
-    transition: transform 0.3s ease;
+    transition: transform 0.3s ease, border-color 0.3s ease;
 }
-.gen-heading:hover > .gen-heading-fold-up-area {
+.gen-heading:hover > .gen-heading-fold-up-area,
+.gen-heading.fold-active > .gen-heading-fold-up-area {
     transform: perspective(600px) rotateX(45deg);
-    border-top: 1px solid var(--border);
-    border-right: 2px solid var(--border);
-    border-bottom: 2px solid var(--border);
-    border-left: 2px solid var(--border);
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
 }
-/* Shadow below the fold line when gen-heading is hovered */
-.gen-heading:hover > .gen-heading-fold-up-area::after {
+/* Tapered left/right borders: 1px at top, 2px at bottom */
+.gen-heading:hover > .gen-heading-fold-up-area::before,
+.gen-heading.fold-active > .gen-heading-fold-up-area::before {
     content: '';
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: 6px;
-    background: linear-gradient(to bottom, var(--shadow-color), transparent);
+    inset: 0;
+    border-left: 2px solid var(--border);
+    border-right: 2px solid var(--border);
+    border-radius: 0 0 4px 4px;
+    clip-path: polygon(
+        1px 0,                  /* top-left: 1px inset */
+        calc(100% - 1px) 0,     /* top-right: 1px inset */
+        100% 100%,              /* bottom-right: full 2px */
+        0 100%                  /* bottom-left: full 2px */
+    );
     pointer-events: none;
+}
+/* Shadow cast on the page below the folded-up area.
+   Simulates light blocked by the panel as it folds up from its top edge. */
+.gen-heading::after {
+    content: '';                    /* pseudo-element for the shadow layer */
+    position: absolute;             /* positioned relative to .gen-heading */
+    top: 0;                         /* starts at the fold/hinge line */
+    left: -25%;                     /* extra width so trapezoid edges can expand beyond the panel */
+    width: 150%;                    /* wider than panel to accommodate the spreading clip-path */
+    height: 100%;                   /* starts matching gen-heading height */
+    background: radial-gradient(    /* elliptical fade: darkest at center-top, fading outward */
+        ellipse 80% 100% at 50% 0%,
+        var(--shadow-color) 0%,
+        transparent 70%
+    );
+    clip-path: polygon(             /* starts as a rectangle matching panel width */
+        16.67% 0%, 83.33% 0%,      /* top-left, top-right = panel width */
+        83.33% 100%, 16.67% 100%   /* bottom-right, bottom-left = panel width (no spread yet) */
+    );
+    pointer-events: none;           /* clicks pass through to elements below */
+    z-index: 0;                     /* sits behind the fold-up area (z-index: 1) */
+    opacity: 0;                     /* hidden by default */
+    transition: opacity 0.3s ease, clip-path 0.3s ease-in, height 0.3s ease-in;
+}
+.gen-heading:hover::after,
+.gen-heading.fold-active::after {
+    opacity: 1;
+    height: calc(100% + 30px);     /* grows to extend 30px below onto the page */
+    clip-path: polygon(             /* expands to full trapezoid with the fold */
+        16.67% 0%, 83.33% 0%,      /* top-left, top-right = panel width */
+        90% 100%, 10% 100%         /* bottom-right, bottom-left = panel + ~20% each side */
+    );
 }
 .gen-heading + .gen-heading {
     margin-top: 0.375rem;
@@ -358,12 +405,14 @@
     gap: 0.375rem;
     max-height: 5000px;
     overflow: hidden;
-    transition: max-height 0.35s ease, opacity 0.25s ease;
+    transform: translateY(0);
+    transition: max-height 0.35s ease, opacity 0.25s ease, transform 0.35s ease;
     opacity: 1;
 }
 .gen-sliders.collapsed {
     max-height: 0 !important;
     opacity: 0;
+    transform: translateY(-100%);
     pointer-events: none;
 }
 .gen-slider-row {

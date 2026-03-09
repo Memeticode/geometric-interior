@@ -71,20 +71,36 @@ for (const cfg of configs) {
     const outPath = resolve(outputDir, filename);
 
     try {
-        const result = await page.evaluate(({ controls, seed, w, h }) => {
+        const result = await page.evaluate(({ controls, seed, camera, w, h }) => {
             const canvas = document.getElementById('renderCanvas');
             const renderer = window._renderer;
+            renderer.clearCameraState();
             renderer.resize(w, h);
             const meta = renderer.renderWith(seed, controls);
-            return { dataUrl: canvas.toDataURL('image/png'), nodes: meta?.nodeCount ?? '?' };
-        }, { controls: cfg.controls, seed: cfg.seed, w: width, h: height });
+            if (camera) {
+                const dist = Math.pow(3, 0.6 - 1.6 * (camera.zoom ?? 0.5));
+                renderer.setCameraState(dist, camera.rotation ?? 0, camera.elevation ?? 0);
+            }
+            renderer.setFoldImmediate(1.0);
+            renderer.updateTime(3.0);
+            renderer.renderFrame();
+            return {
+                dataUrl: canvas.toDataURL('image/png'),
+                nodes: meta?.nodeCount ?? '?',
+                title: meta?.title ?? '',
+                altText: meta?.altText ?? '',
+            };
+        }, { controls: cfg.controls, seed: cfg.seed, camera: cfg.camera || null, w: width, h: height });
 
         const base64 = result.dataUrl.replace(/^data:image\/png;base64,/, '');
         writeFileSync(outPath, Buffer.from(base64, 'base64'));
         rendered++;
 
         const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-        console.log(`  ${name} [${cfg.seed.join(',')}] nodes=${result.nodes} -> ${filename} (${elapsed}s)`);
+        const camLabel = cfg.camera ? ` cam=[r${cfg.camera.rotation},e${cfg.camera.elevation},z${cfg.camera.zoom}]` : '';
+        console.log(`  ${name} [${cfg.seed.join(',')}]${camLabel} nodes=${result.nodes} -> ${filename} (${elapsed}s)`);
+        if (result.title) console.log(`    title: ${result.title}`);
+        if (result.altText) console.log(`    alt: ${result.altText.substring(0, 120)}...`);
     } catch (err) {
         failed++;
         console.error(`  ${name}: ERROR ${err.message}`);

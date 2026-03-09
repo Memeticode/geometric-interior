@@ -723,7 +723,7 @@ function findProfileBySlug(slug, source) {
         if (asset) {
             return {
                 name: asset.name,
-                profile: { seed: asset.meta.seed, controls: asset.meta.controls },
+                profile: { seed: asset.meta.seed, controls: asset.meta.controls, camera: asset.meta.camera },
                 isPortrait: false,
                 isGenerated: true,
                 assetId: asset.id,
@@ -1061,7 +1061,7 @@ function showImageGallery() {
     for (const asset of generatedAssets) {
         carouselList.push({
             name: asset.name,
-            profile: { seed: asset.meta.seed, controls: asset.meta.controls },
+            profile: { seed: asset.meta.seed, controls: asset.meta.controls, camera: asset.meta.camera },
             isPortrait: false,
             assetId: asset.id
         });
@@ -1619,6 +1619,16 @@ function initGenerate() {
             const target = document.getElementById(toggle.dataset.target);
             if (!target) return;
 
+            // Keep fold-up active during the collapse/expand animation
+            const heading = toggle.closest('.gen-heading');
+            if (heading) heading.classList.add('fold-active');
+
+            const removeFold = () => {
+                if (heading) heading.classList.remove('fold-active');
+                target.removeEventListener('transitionend', removeFold);
+            };
+            target.addEventListener('transitionend', removeFold);
+
             if (expanded) {
                 // Collapse: freeze current height, then animate to 0
                 target.style.maxHeight = target.scrollHeight + 'px';
@@ -1708,7 +1718,7 @@ function showGenerateMode() {
             p.assetId ? p.assetId === selected.assetId : p.name === selected.name,
         );
         if (entry?.profile?.seed && entry.profile.controls) {
-            genPanel.setValues(entry.profile.seed, entry.profile.controls, undefined, entry.name);
+            genPanel.setValues(entry.profile.seed, entry.profile.controls, entry.profile.camera, entry.name);
             genPanel.pushImageHistory();
             // Lock panel for saved user profiles (not portraits, not generated assets)
             const isSavedUserProfile = !entry.isPortrait && !entry.assetId;

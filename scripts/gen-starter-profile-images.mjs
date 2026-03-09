@@ -69,7 +69,7 @@ async function main() {
     for (const sectionKey of data['section-order']) {
         const section = data.sections[sectionKey];
         for (const [, portrait] of Object.entries(section.portraits)) {
-            allProfiles.push({ slug: slugify(portrait.name), name: portrait.name, seed: portrait.seed, controls: portrait.controls });
+            allProfiles.push({ slug: slugify(portrait.name), name: portrait.name, seed: portrait.seed, controls: portrait.controls, camera: portrait.camera || null });
         }
     }
 
@@ -133,16 +133,21 @@ async function main() {
         console.log(`  ${profile.name} (${profile.slug}):`);
 
         for (const size of sizes) {
-            const dataUrl = await page.evaluate(({ seed, controls, w, h }) => {
+            const dataUrl = await page.evaluate(({ seed, controls, camera, w, h }) => {
                 const renderer = window._renderer;
                 const canvas = document.getElementById('renderCanvas');
+                renderer.clearCameraState();
                 renderer.resize(w, h);
                 renderer.renderWith(seed, controls);
+                if (camera) {
+                    const dist = Math.pow(3, 0.6 - 1.6 * (camera.zoom ?? 0.5));
+                    renderer.setCameraState(dist, camera.rotation ?? 0, camera.elevation ?? 0);
+                }
                 renderer.setFoldImmediate(1.0);
                 renderer.updateTime(3.0);
                 renderer.renderFrame();
                 return canvas.toDataURL('image/png');
-            }, { seed: profile.seed, controls: profile.controls, w: size.width, h: size.height });
+            }, { seed: profile.seed, controls: profile.controls, camera: profile.camera, w: size.width, h: size.height });
 
             const png = Buffer.from(dataUrl.split(',')[1], 'base64');
             const filename = `${profile.slug}-${size.label}.png`;

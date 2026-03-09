@@ -353,7 +353,7 @@
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.25s ease;
-    box-shadow: 0 4px 16px var(--shadow-color);
+    box-shadow: 0 0 3px var(--shadow-color);
     z-index: 9999;
     white-space: pre-line;
 }
@@ -736,7 +736,6 @@
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.3s ease,
                 visibility 0.3s;
-    box-shadow: 4px 0 24px var(--shadow-color);
 }
 .site-menu.site-menu-closed {
     transform: translateX(calc(-100% - max(0px, (100vw - 100rem) / 2)));
@@ -753,7 +752,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--modal-backdrop);
     z-index: 499;
     opacity: 1;
     visibility: visible;

@@ -1,10 +1,12 @@
 {
   "section-order": [
-    "an-awakening-mind"
+    "an-awakening-mind",
+    "the-luminous-interior",
+    "depths-of-field"
   ],
   "sections": {
     "an-awakening-mind": {
-      "name": "An Awakening Mind",
+      "name": "Small Hours",
       "portraits": {
         "meditation": {
           "name": "Meditation",
@@ -29,6 +31,7 @@
             "faceting": 0.35,
             "flow": 0.5
           },
+          "camera": { "rotation": 0, "elevation": 0, "zoom": 0.38 },
           "generated": {
             "title": "Tempered Cobalt Lattice",
             "alt-text": "122 luminous points anchor isolated broad achromatic geometric forms that follow a coherent flow against darkness, with gentle glow.\n\nExpanded Description: A gently lit field holds these geometric planes in readable suspension, light extending noticeably beyond every edge. Only a handful of translucent surfaces cluster tightly, each individually legible, surfaces mostly smooth with occasional angular interruptions. A legible organic current carries every element in the same purposeful direction. The forms carry no color — only gradations of luminous silver, pearl, and shadow. 122 luminous points scatter amongst the geometry like stars in a constellation, their halos softly visible. The structure recalls a mineral cathedral, ancient and still, its layers stacked with quiet architectural purpose. Each element an island of intention in a sea of void, the atmosphere suggests dusk — the last light held in geometric suspension."
@@ -57,6 +60,7 @@
             "faceting": 0.2,
             "flow": 1
           },
+          "camera": { "rotation": 0, "elevation": 0, "zoom": 0.38 },
           "generated": {
             "title": "Spatial Cerulean Lattice",
             "alt-text": "164 luminous points anchor sparse broad achromatic geometric forms that wrap in orbital bands against darkness, with concentrated light.\n\nExpanded Description: Against near-total darkness, the faintest geometric traces resolve at the threshold of visibility, light pooling closely around each surface with contained radiance. A few bold geometric planes hold together in close crystalline formation, surfaces mostly smooth with occasional angular interruptions. Orbital bands wrap around the form, arcs of geometry spiraling with architectural discipline. Pure achromatic structure in silver and white pervades the composition, geometry without chromatic identity. 164 concentrated points of light punctuate the composition like bright pins holding the structure in place. The image evokes a sanctuary built from pure geometry, a place of quiet intention, surfaces draped rather than constructed. Precious and contained, a jewel-box geometry visible only to those who look closely, the scene carries the silence of deep ice, geometry preserved in absolute zero."
@@ -85,6 +89,7 @@
             "faceting": 0.2,
             "flow": 1
           },
+          "camera": { "rotation": 0, "elevation": 0, "zoom": 0.38 },
           "generated": {
             "title": "Subdued Aquamarine Manifold",
             "alt-text": "164 luminous points anchor isolated soft-edged achromatic geometric planes that orbit in arcs against darkness, with precise light.\n\nExpanded Description: Against near-total darkness, the faintest geometric traces resolve at the threshold of visibility, light pooling closely around each surface with contained radiance. Only a handful of translucent surfaces cluster tightly, each individually legible, surfaces mostly smooth with occasional angular interruptions. Orbital bands wrap around the form, arcs of geometry spiraling with architectural discipline. Pure achromatic structure in silver and white pervades the composition, geometry without chromatic identity. 164 concentrated points of light punctuate the composition like bright pins holding the structure in place. The composition suggests water crystallized at the moment of movement, surfaces draped rather than constructed. Geometry so dark it must be found rather than seen, the scene carries the silence of deep ice, geometry preserved in absolute zero."
@@ -113,6 +118,7 @@
             "faceting": 0.45,
             "flow": 0.3
           },
+          "camera": { "rotation": 0, "elevation": 0, "zoom": 0.38 },
           "generated": {
             "title": "Dim Cobalt Manifold",
             "alt-text": "178 luminous points anchor sparse mixed cobalt geometric planes that radiate from center against darkness, with spreading light.\n\nExpanded Description: Against near-total darkness, the faintest geometric traces resolve at the threshold of visibility, spreading aureoles of light merging between adjacent surfaces. A small number of geometric forms drift apart at readable distances, a blend of flowing curves and crystalline edges. Ordered elements emanate radially, a starburst of planes diverging from the center. Cobalt dominates completely — a concentrated, unwavering chromatic statement across every plane. 178 luminous orbs scatter through the structure, each casting visible light into the surrounding geometry. The structure recalls an ocean wave rendered in translucent geometry, perpetually about to break, geometry layered with the patience of sediment. Light arriving not from outside but from somewhere inside the geometry, the air itself seems to hold its breath, light arriving through distance and fog."
@@ -141,6 +147,7 @@
             "faceting": 0.5,
             "flow": 0.28
           },
+          "camera": { "rotation": 0, "elevation": 0, "zoom": 0.38 },
           "generated": {
             "title": "Carmine Subdued Structure",
             "alt-text": "192 luminous points anchor sparse translucent ruby geometric planes that radiate from center against darkness, in radiant haze.\n\nExpanded Description: Against near-total darkness, the faintest geometric traces resolve at the threshold of visibility, atmospheric radiance softening every geometric boundary. Sparse translucent planes are placed deliberately with moderate separation between them, a blend of flowing curves and crystalline edges. Precise radial symmetry governs the arrangement, every form aligned to the center. Quiet, desaturated ruby washes through every plane, suggesting patina rather than illumination. 192 points of white light diffuse broadly through the composition, each orb dissolving into atmospheric radiance. The image evokes a storm system rendered in geometric abstraction, its planes interlaced like warp and weft. Glowing from within its own darkness like a deep-sea creature, the scene glows with the warmth of something that has been held close, light as tenderness."
@@ -169,6 +176,7 @@
             "faceting": 0.5,
             "flow": 0
           },
+          "camera": { "rotation": 0, "elevation": 0, "zoom": 0.38 },
           "generated": {
             "title": "Curling Distilled Plane",
             "alt-text": "192 luminous points anchor isolated mixed emerald geometric planes that radiate from center against darkness, with contained glow.\n\nExpanded Description: Moderate illumination fills the space, geometry neither hidden nor fully exposed, a subtle glow surrounding the most luminous surfaces. A small number of geometric forms drift apart at readable distances, surfaces mixing smooth panels and angular faces in equal measure. Precise radial symmetry governs the arrangement, every form aligned to the center. Intense emerald saturates every surface with bold singular chromatic identity. 192 points of light are scattered through the geometry, each surrounded by a small contained halo. The image evokes a sanctuary built from pure geometry, a place of quiet intention, its planes interlaced like warp and weft. A single hue raised to the intensity of conviction, the geometry carries its own daylight, bright without source, warm without heat."
@@ -197,9 +205,258 @@
             "faceting": 0.55,
             "flow": 0.85
           },
+          "camera": { "rotation": 0, "elevation": 0, "zoom": 0.38 },
           "generated": {
             "title": "Particulate Field Geometry",
             "alt-text": "430 luminous points anchor scattered translucent cerulean geometric fragments that tumble in disorder against darkness, with soft halos.\n\nExpanded Description: Subdued illumination reveals geometry in tonal whispers rather than declarations, light extending noticeably beyond every edge. Scattered geometric fragments spread across the field in widening dispersal, surfaces mixing smooth panels and angular faces in equal measure. A turbulent storm of geometry overwhelms any orbital structure with disorder. A restrained cerulean spectrum moves quietly through the geometry, colors felt rather than seen. 430 luminous points scatter amongst the geometry like stars in a constellation, their halos softly visible. The composition suggests a geode viewed from within, shattered into crystalline fragments that still hold formation. Order shattered past the point of recognition, the scene glows with the warmth of something that has been held close, light as tenderness."
+          }
+        }
+      }
+    },
+    "the-luminous-interior": {
+      "name": "The Luminous Interior",
+      "portraits": {
+        "the-threshold": {
+          "name": "The Threshold",
+          "commentary": "Warm amber radiance through translucent geometry — the first light one encounters upon entering",
+          "seed": [11, 5, 8],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.06, "luminosity": 0.55, "bloom": 0.32,
+            "fracture": 0.28, "coherence": 0.82,
+            "hue": 0.05, "spectrum": 0.15, "chroma": 0.65,
+            "scale": 0.40, "division": 0.5, "faceting": 0.42, "flow": 0.0
+          },
+          "camera": { "rotation": 16, "elevation": 0, "zoom": 0.46 },
+          "generated": {
+            "title": "Drifting Minimal Plane",
+            "alt-text": "129 luminous points anchor sparse translucent ruby geometric forms that radiate from center against darkness, with tight glow.\n\nExpanded Description: Moderate illumination fills the space, geometry neither hidden nor fully exposed, a subtle glow surrounding the most luminous surfaces. A few bold geometric planes hold together in close crystalline formation, surfaces mostly smooth with occasional angular interruptions. Precise radial symmetry governs the arrangement, every form aligned to the center. Vivid ruby saturates every surface with bold singular chromatic identity. 129 concentrated points of light punctuate the composition like bright pins holding the structure in place. The structure recalls a mineral cathedral, ancient and still, its layers stacked with quiet architectural purpose. Amber light arriving as invitation, the geometry carries its own daylight, bright without source, warm without heat."
+          }
+        },
+        "the-clerestory": {
+          "name": "The Clerestory",
+          "commentary": "Golden light pouring downward through crystalline planes, seen from below as if looking up through a luminous ceiling",
+          "seed": [2, 10, 6],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.10, "luminosity": 0.78, "bloom": 0.62,
+            "fracture": 0.35, "coherence": 0.70,
+            "hue": 0.10, "spectrum": 0.30, "chroma": 0.42,
+            "scale": 0.48, "division": 0.5, "faceting": 0.45, "flow": 0.05
+          },
+          "camera": { "rotation": 8, "elevation": -25, "zoom": 0.46 },
+          "generated": {
+            "title": "Golden Radiant Structure",
+            "alt-text": "160 luminous points anchor sparse mixed amber geometric planes that emanate radially against darkness, with spreading light.\n\nExpanded Description: Strong illumination saturates the space, geometry fully exposed and radiant, spreading aureoles of light merging between adjacent surfaces. A small number of geometric forms drift apart at readable distances, surfaces mostly smooth with occasional angular interruptions. Ordered elements emanate radially, a starburst of planes diverging from the center. A muted amber spectrum washes through the geometry, colors warm but restrained. 160 luminous orbs scatter through the structure, each casting visible light into the surrounding geometry. The composition suggests light condensing into architecture, every plane a captured moment of radiance. Bright without source, warm without heat, the atmosphere recalls sunlight through stained glass — ancient and golden."
+          }
+        },
+        "rose-window": {
+          "name": "Rose Window",
+          "commentary": "Prismatic light fractured through crystalline shards — every color the geometry can hold, viewed from an oblique angle",
+          "seed": [14, 3, 9],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.10, "luminosity": 0.52, "bloom": 0.18,
+            "fracture": 0.65, "coherence": 0.60,
+            "hue": 0.72, "spectrum": 0.85, "chroma": 0.65,
+            "scale": 0.45, "division": 0.5, "faceting": 0.65, "flow": 0.10
+          },
+          "camera": { "rotation": 45, "elevation": 10, "zoom": 0.52 },
+          "generated": {
+            "title": "Cobalt Sparse Field",
+            "alt-text": "147 luminous points anchor isolated crystalline cobalt geometric planes that spread from center against darkness, with precise light.\n\nExpanded Description: Moderate illumination fills the space, geometry neither hidden nor fully exposed, light pooling closely around each surface with contained radiance. Only a handful of translucent surfaces cluster tightly, each individually legible, with angular crystalline character throughout. Loosely organized elements spread from a central region without strong directional structure. A full prismatic spectrum refracts through the geometry — violet, teal, green, rose — every face a different wavelength. 147 concentrated points of light punctuate the composition like bright pins holding the structure in place. The image evokes stained glass shattered and suspended mid-air, each shard still holding its color. Light arriving not from outside but from somewhere inside the geometry, the scene carries the precision of cut crystal."
+          }
+        },
+        "the-vault": {
+          "name": "The Vault",
+          "commentary": "Teal crystal viewed at intimate distance — sharp facets catching what little light exists, a jeweler's perspective",
+          "seed": [10, 2, 1],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.06, "luminosity": 0.20, "bloom": 0.15,
+            "fracture": 0.22, "coherence": 0.88,
+            "hue": 0.52, "spectrum": 0.10, "chroma": 0.55,
+            "scale": 0.32, "division": 0.5, "faceting": 0.85, "flow": 0.48
+          },
+          "camera": { "rotation": -12, "elevation": 10, "zoom": 0.70 },
+          "generated": {
+            "title": "Field Minimal Plane",
+            "alt-text": "147 luminous points anchor isolated sharp cerulean geometric planes that stream in formation against darkness, with precise light.\n\nExpanded Description: Against near-total darkness, the faintest geometric traces resolve at the threshold of visibility, light pooling closely around each surface with contained radiance. Only a handful of translucent surfaces cluster tightly, each individually legible, with angular crystalline character throughout — aggressive folds, sharp edges, tight spiraling facets. A legible organic current carries every element in the same purposeful direction. A concentrated teal pervades the composition, geometry colored like deep water. 147 concentrated points of light punctuate the composition like bright pins holding the structure in place. The composition suggests a gemstone viewed from within, each facet a window onto the same cold light. Precious and contained, a jewel-box geometry visible only to those who look closely, the scene carries the silence of deep ice."
+          }
+        },
+        "the-ambulatory": {
+          "name": "The Ambulatory",
+          "commentary": "Lavender haze thick with particle geometry — the corridor between spaces, where structure dissolves into atmosphere",
+          "seed": [1, 12, 7],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.20, "luminosity": 0.30, "bloom": 0.75,
+            "fracture": 0.45, "coherence": 0.58,
+            "hue": 0.75, "spectrum": 0.15, "chroma": 0.30,
+            "scale": 0.83, "division": 0.5, "faceting": 0.28, "flow": 0.52
+          },
+          "camera": { "rotation": -30, "elevation": -3, "zoom": 0.38 },
+          "generated": {
+            "title": "Subdued Drifting Interior",
+            "alt-text": "252 luminous points anchor scattered soft-edged achromatic geometric points that flow loosely against darkness, with luminous haze.\n\nExpanded Description: Subdued illumination reveals geometry in tonal whispers rather than declarations, atmospheric radiance softening every geometric boundary. Scattered geometric particles spread across the field in widening dispersal, surfaces mostly smooth with occasional angular interruptions. A loose organic drift carries elements without urgency or direction. Quiet lavender washes through every plane, suggesting atmosphere rather than color. 252 points of white light diffuse broadly through the composition, each orb dissolving into atmospheric radiance. The image evokes a passage through luminous fog, geometry dissolving at the edges of perception. Walking through a space where structure becomes weather, the air itself seems to hold its breath, light arriving through distance and fog."
+          }
+        },
+        "the-nave": {
+          "name": "The Nave",
+          "commentary": "Three luminous cores seen from above — the grand central space where the structure reveals its triple symmetry",
+          "seed": [6, 8, 13],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.14, "luminosity": 0.62, "bloom": 0.40,
+            "fracture": 0.42, "coherence": 0.78,
+            "hue": 0.52, "spectrum": 0.50, "chroma": 0.58,
+            "scale": 0.48, "division": 0.95, "faceting": 0.55, "flow": 0.25
+          },
+          "camera": { "rotation": 0, "elevation": 35, "zoom": 0.35 },
+          "generated": {
+            "title": "Cerulean Minimal Field",
+            "alt-text": "188 luminous points anchor isolated translucent cerulean geometric forms that radiate from center against darkness, with gentle glow.\n\nExpanded Description: Moderate-to-strong illumination fills the space, geometry fully visible and structurally legible, light extending noticeably beyond every edge. A moderate number of geometric forms drift apart at readable distances, surfaces mixing smooth panels and angular faces in equal measure. Elements distribute across three distinct lobes, a triangular arrangement of luminous cores. A teal-to-violet spectrum spreads through the geometry, colors shifting across the structure. 188 luminous points scatter amongst the geometry like stars in a constellation, their halos softly visible. The composition suggests a cathedral floor plan rendered in light — three naves converging at a central crossing. The grandest vantage point, seen from above, where the architecture reveals its governing logic."
+          }
+        },
+        "the-apse": {
+          "name": "The Apse",
+          "commentary": "Rose-violet geometry wrapping in orbital bands — the final chamber, where light curves back upon itself",
+          "seed": [3, 15, 11],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.15, "luminosity": 0.50, "bloom": 0.52,
+            "fracture": 0.38, "coherence": 0.80,
+            "hue": 0.90, "spectrum": 0.28, "chroma": 0.55,
+            "scale": 0.50, "division": 0.55, "faceting": 0.52, "flow": 0.92
+          },
+          "camera": { "rotation": 35, "elevation": 12, "zoom": 0.52 },
+          "generated": {
+            "title": "Drifting Minimal Plane",
+            "alt-text": "196 luminous points anchor isolated mixed amethyst geometric forms that wrap in orbital bands against darkness, with gentle glow.\n\nExpanded Description: Moderate illumination fills the space, geometry neither hidden nor fully exposed, a subtle glow surrounding the most luminous surfaces. A small number of geometric forms drift apart at readable distances, surfaces mixing smooth panels and angular faces in equal measure. Orbital bands wrap around the form, arcs of geometry spiraling with architectural discipline. A quiet amethyst spectrum washes through every plane, warm and devotional. 196 luminous points scatter amongst the geometry like stars in a constellation, their halos softly visible. The image evokes a reliquary of light, geometry spiraling inward toward something held precious at the center. Where light curves back upon itself, the scene glows with the warmth of something that has been held close, light as tenderness."
+          }
+        }
+      }
+    },
+    "depths-of-field": {
+      "name": "Depths of Field",
+      "portraits": {
+        "shard": {
+          "name": "Shard",
+          "commentary": "Teal planes converging at sharp angles — geometry as architecture, seen from deep inside the crystalline structure",
+          "seed": [11, 3, 1],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.05, "luminosity": 0.32, "bloom": 0.12,
+            "fracture": 0.18, "coherence": 0.94,
+            "hue": 0.48, "spectrum": 0.06, "chroma": 0.58,
+            "scale": 0.24, "division": 0.5, "faceting": 0.90, "flow": 0.55
+          },
+          "camera": { "rotation": 30, "elevation": -10, "zoom": 0.95 },
+          "generated": {
+            "title": "Marine Distilled Field",
+            "alt-text": "125 luminous points anchor isolated angular cerulean geometric plates that follow a coherent flow against darkness, with concentrated light.\n\nExpanded Description: A dim interior suspends these forms in quiet twilight, surfaces catching residual light, illumination held in tight architectural precision at every edge. Only a handful of translucent surfaces cluster tightly, each individually legible, bristling with tight angular geometry and hard crystalline edges. A legible organic current carries every element in the same purposeful direction. A hushed cerulean tone pervades the composition, evoking aged surface more than emitted light. Among the structure, 125 points of white light appear as precise luminous anchors, each sharply defined against the geometry. The structure recalls a gyroscope caught between forces, rotation held in suspension, built from carefully folded planes of light. Each element an island of intention in a sea of void, the scene carries the silence of deep ice, geometry preserved in absolute zero."
+          }
+        },
+        "flare": {
+          "name": "Flare",
+          "commentary": "Crimson light cutting through faceted planes — a starburst caught at the moment of ignition",
+          "seed": [16, 3, 16],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.05, "luminosity": 0.62, "bloom": 0.22,
+            "fracture": 0.18, "coherence": 0.92,
+            "hue": 0.98, "spectrum": 0.05, "chroma": 0.82,
+            "scale": 0.28, "division": 0.5, "faceting": 0.78, "flow": 0.08
+          },
+          "camera": { "rotation": -15, "elevation": 5, "zoom": 0.93 },
+          "generated": {
+            "title": "Sweeping Crimson Lattice",
+            "alt-text": "131 luminous points anchor isolated faceted ruby geometric plates that radiate from center against darkness, with tight radiance.\n\nExpanded Description: Steady luminosity defines every geometric surface with quiet clarity, light pooling closely around each surface with contained radiance. A few bold geometric planes hold together in close crystalline formation, their faces sharply faceted with defined crystal character. Ordered elements emanate radially, a starburst of planes diverging from the center. Ruby dominates completely — a concentrated, unwavering chromatic statement across every plane. 131 points of light are scattered through the geometry, each surrounded by a small contained halo. The structure recalls the birth of a star, matter and energy still deciding what to become, its layers stacked with quiet architectural purpose. Each element an island of intention in a sea of void, the scene has crossed beyond illumination into pure radiance, geometry as fire itself."
+          }
+        },
+        "prism": {
+          "name": "Prism",
+          "commentary": "Every wavelength the geometry can hold — fractured planes refracting light into a full prismatic field",
+          "seed": [14, 2, 9],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.10, "luminosity": 0.55, "bloom": 0.22,
+            "fracture": 0.65, "coherence": 0.52,
+            "hue": 0.65, "spectrum": 0.85, "chroma": 0.65,
+            "scale": 0.42, "division": 0.5, "faceting": 0.68, "flow": 0.18
+          },
+          "camera": { "rotation": 45, "elevation": 10, "zoom": 0.92 },
+          "generated": {
+            "title": "Warm Indigo Manifold",
+            "alt-text": "141 luminous points anchor sparse crystalline cobalt geometric forms that spread from center against darkness, with tight radiance.\n\nExpanded Description: A gently lit field holds these geometric planes in readable suspension, faint halos barely visible at the brightest edges. A small number of geometric forms drift apart at readable distances, their faces sharply faceted with defined crystal character. A relaxed radial tendency organizes the forms without insisting upon it. A desaturated rainbow drifts through the forms, every hue present but none asserting itself. Across the structure, 141 luminous points glow with restrained radiance, their light staying close. The image evokes an explosion frozen at its most beautiful instant, its layers stacked with quiet architectural purpose. Carried by forces older than light, the scene glows with the warmth of something that has been held close, light as tenderness."
+          }
+        },
+        "crevasse": {
+          "name": "Crevasse",
+          "commentary": "Deep cobalt crystal at maximum proximity — razor-sharp peaks rising from shadow like a glacial interior",
+          "seed": [15, 1, 8],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.04, "luminosity": 0.42, "bloom": 0.20,
+            "fracture": 0.15, "coherence": 0.95,
+            "hue": 0.58, "spectrum": 0.08, "chroma": 0.52,
+            "scale": 0.22, "division": 0.5, "faceting": 0.85, "flow": 0.62
+          },
+          "camera": { "rotation": 22, "elevation": -8, "zoom": 0.97 },
+          "generated": {
+            "title": "Steady Streaming Interior",
+            "alt-text": "127 luminous points anchor isolated angular cerulean geometric plates that follow a coherent flow against darkness, with contained glow.\n\nExpanded Description: In low ambient light, the geometric planes become visible through gentle self-luminescence, faint halos barely visible at the brightest edges. A few bold geometric planes hold together in close crystalline formation, every surface a razor-sharp crystal face with maximum angular precision. A legible organic current carries every element in the same purposeful direction. Quiet, desaturated cerulean washes through every plane, suggesting patina rather than illumination. 127 points of light are scattered through the geometry, each surrounded by a small contained halo. The structure recalls a detonation rendered in stained glass, violence become stillness, its geometry woven from translucent silk. So few forms, and yet each one placed with absolute certainty, warmth radiates from within, the geometry alive with internal fire."
+          }
+        },
+        "blush": {
+          "name": "Blush",
+          "commentary": "Rose-pink radiance refracting through crystalline facets — the geometry seen from within its own warmth",
+          "seed": [8, 14, 5],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.08, "luminosity": 0.58, "bloom": 0.28,
+            "fracture": 0.28, "coherence": 0.86,
+            "hue": 0.92, "spectrum": 0.14, "chroma": 0.75,
+            "scale": 0.34, "division": 0.5, "faceting": 0.82, "flow": 0.12
+          },
+          "camera": { "rotation": -8, "elevation": 5, "zoom": 0.92 },
+          "generated": {
+            "title": "Glowing Ruby Manifold",
+            "alt-text": "142 luminous points anchor isolated sharp ruby geometric plates that radiate from center against darkness, with contained glow.\n\nExpanded Description: Steady luminosity defines every geometric surface with quiet clarity, faint halos barely visible at the brightest edges. Only a handful of translucent surfaces cluster tightly, each individually legible, every surface a razor-sharp crystal face with maximum angular precision. Ordered elements emanate radially, a starburst of planes diverging from the center. Intense ruby saturates every surface with bold singular chromatic identity. 142 points of light are scattered through the geometry, each surrounded by a small contained halo. The composition suggests water crystallized at the moment of movement, every edge a blade of crystallized radiance. Color so concentrated it becomes a material, not merely a quality, the air itself seems to hold its breath, light arriving through distance and fog."
+          }
+        },
+        "veil": {
+          "name": "Veil",
+          "commentary": "Violet crystalline planes streaming through twilight — structure dissolving into atmosphere at close range",
+          "seed": [2, 13, 11],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.08, "luminosity": 0.35, "bloom": 0.45,
+            "fracture": 0.38, "coherence": 0.75,
+            "hue": 0.80, "spectrum": 0.18, "chroma": 0.58,
+            "scale": 0.40, "division": 0.5, "faceting": 0.62, "flow": 0.40
+          },
+          "camera": { "rotation": -32, "elevation": -5, "zoom": 0.94 },
+          "generated": {
+            "title": "Spatial Streaming Geometry",
+            "alt-text": "155 luminous points anchor sparse crystalline amethyst geometric forms that stream in formation against darkness, with gentle glow.\n\nExpanded Description: A dim interior suspends these forms in quiet twilight, surfaces catching residual light, light extending noticeably beyond every edge. Sparse translucent planes are placed deliberately with moderate separation between them, angular surfaces catching light at distinct geometric angles. A legible organic current carries every element in the same purposeful direction. A hushed amethyst tone pervades the composition, evoking aged surface more than emitted light. 155 luminous points scatter amongst the geometry like stars in a constellation, their halos softly visible. The composition suggests architecture suspended in thought, shattered into crystalline fragments that still hold formation. Held in place by quiet mass, the geometry carries its own daylight, bright without source, warm without heat."
+          }
+        },
+        "chlorophyll": {
+          "name": "Chlorophyll",
+          "commentary": "Vivid emerald geometry radiating from within — the only green in the collection, color as material intensity",
+          "seed": [5, 5, 11],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.08, "luminosity": 0.52, "bloom": 0.32,
+            "fracture": 0.48, "coherence": 0.80,
+            "hue": 0.30, "spectrum": 0.22, "chroma": 0.75,
+            "scale": 0.45, "division": 0.5, "faceting": 0.52, "flow": 0.02
+          },
+          "camera": { "rotation": 5, "elevation": -3, "zoom": 0.92 },
+          "generated": {
+            "title": "Dimensional Jade Lattice",
+            "alt-text": "138 luminous points anchor isolated mixed emerald geometric forms that radiate from center against darkness, with contained glow.\n\nExpanded Description: A gently lit field holds these geometric planes in readable suspension, a subtle glow surrounding the most luminous surfaces. Sparse translucent planes are placed deliberately with moderate separation between them, a blend of flowing curves and crystalline edges. Precise radial symmetry governs the arrangement, every form aligned to the center. Intense emerald saturates every surface with bold singular chromatic identity. 138 points of light are scattered through the geometry, each surrounded by a small contained halo. The structure recalls an altar of translucent planes, purpose without liturgy, its planes interlaced like warp and weft. A single hue raised to the intensity of conviction, the geometry carries its own daylight, bright without source, warm without heat."
           }
         }
       }

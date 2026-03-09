@@ -1,0 +1,16 @@
+[
+    
+  {
+    "name": "Rose R2c violet wide",
+    "seed": [14, 3, 9],
+    "controls": {
+      "topology": "flow-field",
+      "density": 0.10, "luminosity": 0.52, "bloom": 0.18,
+      "fracture": 0.65, "coherence": 0.60,
+      "hue": 0.72, "spectrum": 0.85, "chroma": 0.65,
+      "scale": 0.45, "division": 0.5, "faceting": 0.65, "flow": 0.10
+    },
+    "camera": { "rotation": 45, "elevation": 10, "zoom": 0.52 }
+  }
+
+]
