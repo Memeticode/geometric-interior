@@ -1,12 +1,12 @@
 /**
- * Panel tests: open/close, persistence, control visibility, mobile backdrop.
+ * Sidebar tests: open/close, persistence, control visibility, mobile backdrop.
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
 import { waitForStillRendered } from './helpers/waits.mjs';
 import { assertVisible, assertHasClass, assertNotHasClass } from './helpers/assertions.mjs';
-import { getPanelCollapsedState } from './helpers/profiles.mjs';
+import { getSidebarCollapsedState } from './helpers/profiles.mjs';
 
 export async function runTests(page, errors) {
     let passed = 0, failed = 0;
@@ -23,61 +23,61 @@ export async function runTests(page, errors) {
         }
     }
 
-    console.log('\n=== Panel Tests ===\n');
+    console.log('\n=== Sidebar Tests ===\n');
 
     await waitForStillRendered(page);
 
-    async function isPanelOpen() {
+    async function isSidebarOpen() {
         return page.evaluate(() => {
-            const panel = document.querySelector('.panel');
-            return panel && !panel.classList.contains('panel-collapsed');
+            const sidebar = document.querySelector('.sidebar');
+            return sidebar && !sidebar.classList.contains('sidebar-collapsed');
         });
     }
 
-    // ── Test: Panel opens on toggle click ──
-    await test('Panel opens when toggle is clicked', async () => {
-        const open = await isPanelOpen();
+    // ── Test: Sidebar opens on toggle click ──
+    await test('Sidebar opens when toggle is clicked', async () => {
+        const open = await isSidebarOpen();
         if (open) {
-            await page.click('#panelToggle');
+            await page.click('#sidebarToggle');
             await page.waitForTimeout(400);
         }
-        await page.click('#panelToggle');
+        await page.click('#sidebarToggle');
         await page.waitForTimeout(400);
-        const nowOpen = await isPanelOpen();
-        if (!nowOpen) throw new Error('Panel did not open after click');
+        const nowOpen = await isSidebarOpen();
+        if (!nowOpen) throw new Error('Sidebar did not open after click');
     });
 
-    // ── Test: Panel closes on second toggle click ──
-    await test('Panel closes when toggle is clicked again', async () => {
-        if (!(await isPanelOpen())) {
-            await page.click('#panelToggle');
+    // ── Test: Sidebar closes on second toggle click ──
+    await test('Sidebar closes when toggle is clicked again', async () => {
+        if (!(await isSidebarOpen())) {
+            await page.click('#sidebarToggle');
             await page.waitForTimeout(400);
         }
-        await page.click('#panelToggle');
+        await page.click('#sidebarToggle');
         await page.waitForTimeout(400);
-        const nowOpen = await isPanelOpen();
-        if (nowOpen) throw new Error('Panel did not close after second click');
+        const nowOpen = await isSidebarOpen();
+        if (nowOpen) throw new Error('Sidebar did not close after second click');
     });
 
-    // ── Test: Panel state persists to localStorage ──
-    await test('Panel state persists to localStorage', async () => {
-        if (!(await isPanelOpen())) {
-            await page.click('#panelToggle');
+    // ── Test: Sidebar state persists to localStorage ──
+    await test('Sidebar state persists to localStorage', async () => {
+        if (!(await isSidebarOpen())) {
+            await page.click('#sidebarToggle');
             await page.waitForTimeout(400);
         }
-        const openState = await getPanelCollapsedState(page);
-        if (openState === 'true') throw new Error('localStorage says collapsed when panel is open');
+        const openState = await getSidebarCollapsedState(page);
+        if (openState === 'true') throw new Error('localStorage says collapsed when sidebar is open');
 
-        await page.click('#panelToggle');
+        await page.click('#sidebarToggle');
         await page.waitForTimeout(400);
-        const closedState = await getPanelCollapsedState(page);
+        const closedState = await getSidebarCollapsedState(page);
         if (closedState !== 'true') throw new Error(`Expected localStorage collapsed=true, got "${closedState}"`);
     });
 
-    // ── Test: Sliders visible when panel is open and config expanded ──
-    await test('Sliders are visible when panel is open and config expanded', async () => {
-        if (!(await isPanelOpen())) {
-            await page.click('#panelToggle');
+    // ── Test: Sliders visible when sidebar is open and config expanded ──
+    await test('Sliders are visible when sidebar is open and config expanded', async () => {
+        if (!(await isSidebarOpen())) {
+            await page.click('#sidebarToggle');
             await page.waitForTimeout(400);
         }
         await ensureConfigExpanded(page);
@@ -88,24 +88,24 @@ export async function runTests(page, errors) {
                 const r = el.getBoundingClientRect();
                 return r.width > 0 && r.height > 0;
             });
-            if (!visible) throw new Error(`Slider #${id} is not visible when panel is open`);
+            if (!visible) throw new Error(`Slider #${id} is not visible when sidebar is open`);
         }
     });
 
-    // ── Test: Panel toggle works on mobile viewport ──
-    await test('Panel toggle works on mobile viewport', async () => {
+    // ── Test: Sidebar toggle works on mobile viewport ──
+    await test('Sidebar toggle works on mobile viewport', async () => {
         await page.setViewportSize({ width: 768, height: 900 });
         await page.waitForTimeout(300);
 
-        if (!(await isPanelOpen())) {
-            await page.click('#panelToggle');
+        if (!(await isSidebarOpen())) {
+            await page.click('#sidebarToggle');
             await page.waitForTimeout(400);
         }
-        if (!(await isPanelOpen())) throw new Error('Panel did not open on mobile');
+        if (!(await isSidebarOpen())) throw new Error('Sidebar did not open on mobile');
 
-        await page.click('#panelToggle');
+        await page.click('#sidebarToggle');
         await page.waitForTimeout(400);
-        if (await isPanelOpen()) throw new Error('Panel did not close on mobile');
+        if (await isSidebarOpen()) throw new Error('Sidebar did not close on mobile');
 
         // Restore viewport
         await page.setViewportSize({ width: 1400, height: 900 });
@@ -122,7 +122,7 @@ if (process.argv[1] && process.argv[1].replace(/\\/g, '/').endsWith(path.basenam
     const { page, errors, cleanup } = await createTestContext();
     try {
         const r = await runTests(page, errors);
-        console.log(`\nPanel: ${r.passed} passed, ${r.failed} failed\n`);
+        console.log(`\nSidebar: ${r.passed} passed, ${r.failed} failed\n`);
         process.exit(r.failed > 0 ? 1 : 0);
     } finally {
         await cleanup();

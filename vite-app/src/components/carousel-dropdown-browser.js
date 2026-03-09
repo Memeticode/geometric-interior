@@ -85,6 +85,8 @@ customElements.define('carousel-dropdown-browser-section', CarouselDropdownBrows
 
 const ARROW_LEFT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M10 3l-5 5 5 5"/></svg>`;
 const ARROW_RIGHT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 3l5 5-5 5"/></svg>`;
+const DBL_ARROW_LEFT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M11 3l-5 5 5 5"/><path d="M6 3l-5 5 5 5"/></svg>`;
+const DBL_ARROW_RIGHT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 3l5 5-5 5"/><path d="M10 3l5 5-5 5"/></svg>`;
 
 // ── Layout constants ──
 const SECTION_GAP = 0.2;         // extra card-widths of spacing at section boundaries
@@ -1344,13 +1346,13 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#secNavLeft.className = 'gallery-arrow cdb-arrow cdb-sec-arrow';
         this.#secNavLeft.setAttribute('aria-label', 'Previous section');
         this.#secNavLeft.setAttribute('data-tooltip', 'Scroll (previous section)');
-        this.#secNavLeft.textContent = '\u00AB';
+        this.#secNavLeft.innerHTML = DBL_ARROW_LEFT;
 
         this.#secNavRight = document.createElement('button');
         this.#secNavRight.className = 'gallery-arrow cdb-arrow cdb-sec-arrow';
         this.#secNavRight.setAttribute('aria-label', 'Next section');
         this.#secNavRight.setAttribute('data-tooltip', 'Scroll (next section)');
-        this.#secNavRight.textContent = '\u00BB';
+        this.#secNavRight.innerHTML = DBL_ARROW_RIGHT;
 
         this.#controls.appendChild(this.#secNavLeft);
         this.#controls.appendChild(this.#navLeft);

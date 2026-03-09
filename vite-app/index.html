@@ -26,8 +26,8 @@
                     <span class="settings-group-title" data-i18n="menu.gallery">Gallery</span>
                 </div>
                 <div class="settings-group-body">
-                    <button class="menu-nav-link active" id="menuGalleryImages" data-nav-type="image" data-nav-mode="gallery" data-i18n="menu.images">Images</button>
-                    <button class="menu-nav-link" id="menuGalleryAnimations" data-nav-type="animation" data-nav-mode="gallery" data-i18n="menu.animations">Animations</button>
+                    <button class="menu-nav-link active" data-nav-type="image" data-nav-mode="gallery" data-i18n="menu.images">Images</button>
+                    <button class="menu-nav-link" data-nav-type="animation" data-nav-mode="gallery" data-i18n="menu.animations">Animations</button>
                 </div>
             </div>
             <div class="settings-group">
@@ -35,8 +35,8 @@
                     <span class="settings-group-title" data-i18n="menu.generate">Generate</span>
                 </div>
                 <div class="settings-group-body">
-                    <button class="menu-nav-link" id="menuGenerateImages" data-nav-type="image" data-nav-mode="generate" data-i18n="menu.generateImages">Images</button>
-                    <button class="menu-nav-link" id="menuGenerateAnimations" data-nav-type="animation" data-nav-mode="generate" data-i18n="menu.generateAnimations">Animations</button>
+                    <button class="menu-nav-link" data-nav-type="image" data-nav-mode="generate" data-i18n="menu.generateImages">Images</button>
+                    <button class="menu-nav-link" data-nav-type="animation" data-nav-mode="generate" data-i18n="menu.generateAnimations">Animations</button>
                 </div>
             </div>
             <!-- Render queue (pinned to bottom of menu, expands upward) -->
@@ -163,13 +163,13 @@
                 <div class="gen-body">
                     <div class="generate-config" id="generateConfig">
                         <!-- Configure Image -->
-                        <div class="gen-heading">
-                            <div class="gen-heading-fold-up-area" data-target="genSliders" aria-expanded="true">
+                        <div class="gen-heading fold-up-container">
+                            <div class="gen-heading-fold-up-area fold-up-area" data-target="genSliders" aria-expanded="true">
                                 <span class="gen-chevron">&#9662;</span>
                                 <span data-i18n="generate.configureImage">Configure Image</span>
                             </div>
                         </div>
-                        <div class="gen-sliders" id="genSliders"></div>
+                        <div class="gen-sliders fold-up-content" id="genSliders"></div>
                     </div>
                     <div class="gen-preview-col" id="genPreviewCol">
                         <!-- Name + Seed + Nav controls above image -->
@@ -177,8 +177,11 @@
                             <div class="gen-identity-text">
                                 <div class="gen-identity-name">
                                     <label class="gen-identity-label" id="genNameLabel"><span class="label-info" data-tooltip="A name for this arrangement of light and form." data-i18n="control.name" data-i18n-tooltip="control.name.tooltip">Name<span class="info-icon">i</span></span><span id="genNameCounter" class="gen-char-count">0/40</span></label>
-                                    <textarea id="genNameField" class="auto-grow gen-name-field" rows="1" maxlength="40"
-                                        placeholder="Auto-generated title" data-i18n-placeholder="control.name.placeholder"></textarea>
+                                    <div class="gen-field-wrap">
+                                        <svg class="gen-field-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="12" height="12"><path d="M3 6l5-4 5 4-5 9z"/><path d="M5.5 10L8 15.5l2.5-5.5z" fill="currentColor" stroke="none"/></svg>
+                                        <textarea id="genNameField" class="auto-grow gen-name-field" rows="1" maxlength="40"
+                                            placeholder="Auto-generated title" data-i18n-placeholder="control.name.placeholder"></textarea>
+                                    </div>
                                     <div id="genNameError" class="gen-field-error hidden"></div>
                                 </div>
                                 <div class="gen-identity-seed">
@@ -241,13 +244,13 @@
                                 <!-- Generation controls (visible in generate mode only) -->
                                 <div class="generation-controls" id="generationControls">
                                     <button id="genSaveBtn" class="gen-action-btn" disabled data-tooltip="Save" data-i18n-tooltip="profile.save.tooltip" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/><path d="M5 1v4h6V1"/><rect x="4" y="9" width="8" height="4"/></svg>
+                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><path d="M2 2h8l4 4v8H2z"/><path d="M10 2v4h4"/><rect x="5" y="2" width="4" height="3" rx="0.5" stroke-width="1"/><rect x="4.5" y="9" width="7" height="5" rx="0.5" stroke-width="1"/></svg>
                                     </button>
                                     <button id="genDuplicateBtn" class="gen-action-btn" disabled data-tooltip="Save as copy" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><rect x="5" y="5" width="9" height="9" rx="1"/><path d="M2 11V2a1 1 0 0 1 1-1h9"/></svg>
+                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><path d="M5.5 1l3 3-3 4.5-3-4.5z"/><path d="M10.5 5.5l3 3-3 4.5-3-4.5z"/></svg>
                                     </button>
                                     <button id="genRenderBtn" class="gen-action-btn" disabled data-tooltip="Render image at selected resolution" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><polygon points="5,3 13,8 5,13"/></svg>
+                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><path d="M8 2.5l4.5 5-4.5 6-4.5-6z"/><path d="M14 4.5a6 6 0 1 1-4.5-3" stroke-linecap="round"/><path d="M12 1.5l-2.5 0 1 2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                                     </button>
                                     <span class="header-nav-pipe">|</span>
                                     <button id="genUndoBtn" class="gen-action-btn" disabled aria-label="Undo" data-tooltip="Undo" data-tooltip-pos="above">
@@ -258,7 +261,7 @@
                                     </button>
                                     <span class="header-nav-pipe">|</span>
                                     <button id="genRandomizeBtn" class="gen-action-btn" data-tooltip="Randomize image" data-i18n-tooltip="stage.randomize" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M13.5 2.5v3.5h-3.5"/><path d="M2.5 8a5.5 5.5 0 0 1 9.37-3.9l1.63 1.9"/><path d="M2.5 13.5V10h3.5"/><path d="M13.5 8a5.5 5.5 0 0 1-9.37 3.9L2.5 10"/></svg>
+                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/></svg>
                                     </button>
                                 </div>
                             </div>
@@ -280,7 +283,10 @@
                             </div>
                             <div class="gen-identity-commentary">
                                 <label class="gen-identity-label"><span class="label-info" data-tooltip="User-provided commentary (optional)" data-i18n="control.commentary" data-i18n-tooltip="control.commentary.tooltip">Commentary<span class="info-icon">i</span></span><span id="genCommentaryCounter" class="gen-char-count">0/500</span></label>
-                                <textarea id="genCommentaryField" class="auto-grow gen-commentary-field" rows="2" maxlength="500"></textarea>
+                                <div class="gen-field-wrap">
+                                    <svg class="gen-field-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="12" height="12"><path d="M3 6l5-4 5 4-5 9z"/><path d="M5.5 10L8 15.5l2.5-5.5z" fill="currentColor" stroke="none"/></svg>
+                                    <textarea id="genCommentaryField" class="auto-grow gen-commentary-field" rows="2" maxlength="500"></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>

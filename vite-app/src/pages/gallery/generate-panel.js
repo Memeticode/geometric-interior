@@ -338,11 +338,15 @@ export function initGeneratePanel(opts) {
     function buildSection(sectionKey, sliderDefs, targetMap) {
         const sectionId = 'genSection_' + sectionKey;
 
-        // Collapsible header
+        // Outer header (stable hover target)
         const header = document.createElement('div');
-        header.className = 'gen-section-header gen-collapsible-toggle';
-        header.setAttribute('aria-expanded', 'true');
-        header.setAttribute('data-target', sectionId);
+        header.className = 'gen-section-header fold-up-container';
+
+        // Inner fold-up area (rotates on hover)
+        const foldArea = document.createElement('div');
+        foldArea.className = 'fold-up-area';
+        foldArea.setAttribute('aria-expanded', 'true');
+        foldArea.setAttribute('data-target', sectionId);
 
         const headerLabel = document.createElement('span');
         headerLabel.className = 'gen-section-label';
@@ -353,12 +357,13 @@ export function initGeneratePanel(opts) {
         chevron.className = 'gen-chevron';
         chevron.innerHTML = '&#9662;';
 
-        header.appendChild(chevron);
-        header.appendChild(headerLabel);
+        foldArea.appendChild(chevron);
+        foldArea.appendChild(headerLabel);
+        header.appendChild(foldArea);
 
         // Collapsible rows container
         const rowsWrap = document.createElement('div');
-        rowsWrap.className = 'gen-section-rows';
+        rowsWrap.className = 'gen-section-rows fold-up-content';
         rowsWrap.id = sectionId;
 
         for (const def of sliderDefs) {
@@ -461,7 +466,7 @@ export function initGeneratePanel(opts) {
     }
 
     function readControls() {
-        const controls = { topology: 'flow-field' };
+        const controls = {};
         for (const key of SLIDER_KEYS) {
             controls[key] = parseFloat(sliderInputs[key].range.value);
         }
@@ -600,7 +605,7 @@ export function initGeneratePanel(opts) {
 
     if (renderBtn) {
         renderBtn.addEventListener('click', () => {
-            if (onRender) onRender(readSeed(), readControls(), readCamera(), readName());
+            if (onRender) onRender(readSeed(), readControls(), readCamera(), readName(), readCommentary());
         });
     }
 
@@ -666,8 +671,8 @@ export function initGeneratePanel(opts) {
         setUnlocked,
         get locked() { return locked; },
 
-        /** Set all controls + seed + camera + name from external data. */
-        setValues(seed, controls, camera, name) {
+        /** Set all controls + seed + camera + name + commentary from external data. */
+        setValues(seed, controls, camera, name, commentary) {
             if (seed && Array.isArray(seed)) {
                 tagArrEl.value = String(seed[0]);
                 tagStrEl.value = String(seed[1]);
@@ -697,6 +702,9 @@ export function initGeneratePanel(opts) {
             } else {
                 userEditedName = false;
                 updateAutoName();
+            }
+            if (commentaryField) {
+                commentaryField.value = commentary || '';
             }
             updateSlugDisplay();
             updateAltText();

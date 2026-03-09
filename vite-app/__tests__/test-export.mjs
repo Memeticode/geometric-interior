@@ -4,7 +4,7 @@
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { ensurePanelOpen, ensureConfigExpanded, scrollToElement, reloadPage } from './helpers/browser.mjs';
+import { ensureSidebarOpen, ensureConfigExpanded, scrollToElement, reloadPage } from './helpers/browser.mjs';
 import { readControlsFromPage, readSeed, setSlider } from './helpers/controls.mjs';
 import { waitForStillRendered, sleep } from './helpers/waits.mjs';
 import { assertDisabled, assertEnabled, assertNoPageErrors } from './helpers/assertions.mjs';
@@ -27,7 +27,7 @@ export async function runTests(page, errors) {
 
     console.log('\n=== Export Tests ===\n');
 
-    await ensurePanelOpen(page);
+    await ensureSidebarOpen(page);
     await ensureConfigExpanded(page);
 
     // ── Test: Export button enabled after render ──
@@ -113,7 +113,7 @@ export async function runTests(page, errors) {
 
     // ── Test: Export button disables after slider change ──
     await test('Export button disables after slider change (stillRendered = false)', async () => {
-        await ensurePanelOpen(page);
+        await ensureSidebarOpen(page);
         await ensureConfigExpanded(page);
         await scrollToElement(page, '#density');
         await setSlider(page, 'density', 0.92);
@@ -127,7 +127,7 @@ export async function runTests(page, errors) {
         await reloadPage(page);
         await waitForStillRendered(page);
 
-        await ensurePanelOpen(page);
+        await ensureSidebarOpen(page);
         await ensureConfigExpanded(page);
         await waitForStillRendered(page);
         await scrollToElement(page, '#exportBtn');

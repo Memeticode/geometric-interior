@@ -1069,18 +1069,20 @@
     font-family: inherit;
     font-size: 0.75rem;
     color: var(--text-muted);
+    opacity: 0.6;
     text-align: left;
     cursor: pointer;
     border-radius: 6px;
-    transition: color 0.2s ease;
+    transition: opacity 0.2s ease, color 0.2s ease;
 }
 .menu-nav-link:hover {
-    background: var(--surface-hover);
-    color: var(--text);
+    background: none;
+    opacity: 1;
 }
 .menu-nav-link.active {
     color: var(--accent-text);
     font-weight: 600;
+    opacity: 1;
     background: none;
 }
 .menu-nav-link.active:hover {

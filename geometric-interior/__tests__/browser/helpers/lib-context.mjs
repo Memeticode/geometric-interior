@@ -52,7 +52,6 @@ export async function createLibTestContext() {
 
 /** Standard midpoint controls for tests. */
 export const MID_CONTROLS = {
-    topology: 'flow-field',
     palette: 'violet-depth',
     density: 0.5,
     luminosity: 0.5,

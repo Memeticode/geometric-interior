@@ -171,7 +171,6 @@ test('profileToConfig does not emit seedTag for string seed', () => {
 
 test('ControlsSchema.parse({}) produces valid defaults', () => {
     const c = ControlsSchema.parse({});
-    assert(c.topology === 'flow-field', `expected topology "flow-field", got "${c.topology}"`);
     assert(c.hue === 0.5, `expected hue 0.5, got ${c.hue}`);
     assert(c.density === 0.5, `expected density 0.5, got ${c.density}`);
     assert(c.bloom === 0.5, `expected bloom 0.5, got ${c.bloom}`);
@@ -204,7 +203,7 @@ test('ImageAssetMetaSchema accepts full meta with config', () => {
     const meta = {
         title: 'Test', altText: 'desc', commentary: 'notes',
         seed: [3, 5, 7],
-        controls: { topology: 'flow-field', hue: 0.5, spectrum: 0.5, chroma: 0.5, density: 0.5, fracture: 0.5, coherence: 0.5, luminosity: 0.5, bloom: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
+        controls: { hue: 0.5, spectrum: 0.5, chroma: 0.5, density: 0.5, fracture: 0.5, coherence: 0.5, luminosity: 0.5, bloom: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
         nodeCount: 42, width: 1920, height: 1080,
     };
     const parsed = ImageAssetMetaSchema.parse(meta);

@@ -848,17 +848,28 @@ function applySelection(name, profile, isPortrait, assetId) {
             selectedImage.setAttribute('data-tooltip-pos', 'overlay');
         } else if (assetId) {
             const asset = generatedAssets.find(a => a.id === assetId);
-            if (asset && asset.meta) {
+            if (asset && asset.meta && asset.meta.commentary) {
+                // Commentary exists — display like sampler portraits
+                selectedGenTitle.textContent = '';
+                selectedGenAlt.textContent = asset.meta.commentary;
+                selectedGenAlt.classList.add('expanded');
+                selectedGenToggle.style.display = '';
+                selectedGenToggle.classList.add('portrait-static');
+                selectedImage.alt = `${name} — ${asset.meta.title || ''}`;
+                selectedImage.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
+                selectedImage.setAttribute('data-tooltip-pos', 'overlay');
+            } else if (asset && asset.meta) {
+                // No commentary — show title + collapsible alt-text
                 selectedGenTitle.textContent = asset.meta.title || '';
                 selectedGenAlt.textContent = asset.meta.altText || '';
                 selectedImage.alt = asset.meta.title || name;
                 selectedImage.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
                 selectedImage.setAttribute('data-tooltip-pos', 'overlay');
+                selectedGenToggle.style.display = '';
+                selectedGenToggle.classList.remove('portrait-static');
+                selectedGenAlt.classList.remove('expanded');
+                selectedGenToggle.setAttribute('aria-expanded', 'false');
             }
-            selectedGenToggle.style.display = '';
-            selectedGenToggle.classList.remove('portrait-static');
-            selectedGenAlt.classList.remove('expanded');
-            selectedGenToggle.setAttribute('aria-expanded', 'false');
         } else if (profile.commentary) {
             // User-saved profile with commentary
             const { title, altText } = generateProfileText(profile);
@@ -1590,13 +1601,13 @@ function initGenerate() {
                 workerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
             }
         },
-        onRender(seed, controls, camera, name) {
+        onRender(seed, controls, camera, name, commentary) {
             if (!renderQueue) return;
             if (activeType === 'animation') {
                 const animation = buildSimpleAnimation(seed, controls);
                 renderQueue.enqueueAnimation(animation);
             } else {
-                renderQueue.enqueue(seed, controls, name);
+                renderQueue.enqueue(seed, controls, name, commentary);
             }
         },
         onSave(seed, controls, camera, name, commentary) {
@@ -1611,8 +1622,8 @@ function initGenerate() {
         },
     });
 
-    // Wire up static collapsible toggles in the generate config
-    generatePanelEl.querySelectorAll('.gen-collapsible-toggle[data-target], .gen-heading-fold-up-area[data-target]').forEach(toggle => {
+    // Wire up fold-up collapsible toggles in the generate config
+    generatePanelEl.querySelectorAll('.fold-up-area[data-target]').forEach(toggle => {
         toggle.addEventListener('click', () => {
             const expanded = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!expanded));
@@ -1620,11 +1631,11 @@ function initGenerate() {
             if (!target) return;
 
             // Keep fold-up active during the collapse/expand animation
-            const heading = toggle.closest('.gen-heading');
-            if (heading) heading.classList.add('fold-active');
+            const container = toggle.closest('.fold-up-container');
+            if (container) container.classList.add('fold-active');
 
             const removeFold = () => {
-                if (heading) heading.classList.remove('fold-active');
+                if (container) container.classList.remove('fold-active');
                 target.removeEventListener('transitionend', removeFold);
             };
             target.addEventListener('transitionend', removeFold);
@@ -1718,7 +1729,8 @@ function showGenerateMode() {
             p.assetId ? p.assetId === selected.assetId : p.name === selected.name,
         );
         if (entry?.profile?.seed && entry.profile.controls) {
-            genPanel.setValues(entry.profile.seed, entry.profile.controls, entry.profile.camera, entry.name);
+            const displayName = entry.isPortrait ? entry.name + ' (User Version)' : entry.name;
+            genPanel.setValues(entry.profile.seed, entry.profile.controls, entry.profile.camera, displayName, entry.profile.commentary);
             genPanel.pushImageHistory();
             // Lock panel for saved user profiles (not portraits, not generated assets)
             const isSavedUserProfile = !entry.isPortrait && !entry.assetId;

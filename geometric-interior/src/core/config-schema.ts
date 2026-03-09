@@ -15,7 +15,6 @@ export function configToProfile(config: StillConfig): { name: string; profile: P
         profile: {
             seed,
             controls: {
-                topology: 'flow-field',
                 hue: config.color.hue,
                 spectrum: config.color.spectrum,
                 chroma: config.color.chroma,

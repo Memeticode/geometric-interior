@@ -126,7 +126,7 @@ export function createRenderQueue({ workerBridge, onUpdate, locale }) {
             meta: {
                 title: msg.meta.title || job.name,
                 altText: msg.meta.altText || altText,
-                commentary: '',
+                commentary: job.commentary || '',
                 seed: job.seed,
                 controls: job.controls,
                 nodeCount,
@@ -274,13 +274,14 @@ export function createRenderQueue({ workerBridge, onUpdate, locale }) {
          * @param {string} [name] — optional override name
          * @returns {string} job ID
          */
-        enqueue(seed, controls, name) {
+        enqueue(seed, controls, name, commentary) {
             const id = generateAssetId();
             const job = {
                 id,
                 name: name || autoName(seed, controls),
                 seed,
                 controls: { ...controls },
+                commentary: commentary || '',
                 status: 'queued',
                 progress: 0,
                 label: 'Queued',

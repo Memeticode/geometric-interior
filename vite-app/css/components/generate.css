@@ -121,6 +121,28 @@
     gap: 0.625rem;
     margin-bottom: 0;
 }
+/* ── Inline edit icon for text fields ── */
+
+.gen-field-wrap {
+    position: relative;
+}
+.gen-field-icon {
+    position: absolute;
+    left: 0.375rem;
+    top: 0.45rem;
+    width: 12px;
+    height: 12px;
+    color: var(--text-muted);
+    opacity: 0.4;
+    pointer-events: none;
+    flex-shrink: 0;
+    transform: rotate(30deg);
+    transition: opacity 0.2s;
+}
+.gen-field-wrap textarea {
+    padding-left: 1.375rem;
+}
+
 .gen-name-field {
     font-size: 0.875rem;
     font-weight: 600;
@@ -192,6 +214,7 @@
     display: flex;
     flex-direction: column;
     perspective: 600px;
+    clip-path: inset(0 -9999px -9999px -9999px);
 }
 
 /* Override control-group margin when used in generate config */
@@ -217,24 +240,21 @@
     user-select: none;
 }
 
-/* ── Headings (Parameters) ── */
+/* ── Fold-up shared mechanics ── */
 
-.gen-heading {
+.fold-up-container {
     display: block;
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-muted);
     perspective: 600px;
     position: relative;
+    z-index: 2;
 }
-.gen-heading-fold-up-area {
+.fold-up-area {
     display: flex;
     align-items: center;
     gap: 0.25rem;
+    cursor: pointer;
     width: 100%;
     box-sizing: border-box;
-    padding: 0.5rem 0rem 0.375rem;
     position: relative;
     z-index: 1;
     background: var(--bg);
@@ -246,15 +266,15 @@
     transform-origin: top center;
     transition: transform 0.3s ease, border-color 0.3s ease;
 }
-.gen-heading:hover > .gen-heading-fold-up-area,
-.gen-heading.fold-active > .gen-heading-fold-up-area {
+.fold-up-container:hover > .fold-up-area,
+.fold-up-container.fold-active > .fold-up-area {
     transform: perspective(600px) rotateX(45deg);
     border-top-color: var(--border);
     border-bottom-color: var(--border);
 }
 /* Tapered left/right borders: 1px at top, 2px at bottom */
-.gen-heading:hover > .gen-heading-fold-up-area::before,
-.gen-heading.fold-active > .gen-heading-fold-up-area::before {
+.fold-up-container:hover > .fold-up-area::before,
+.fold-up-container.fold-active > .fold-up-area::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -271,13 +291,13 @@
 }
 /* Shadow cast on the page below the folded-up area.
    Simulates light blocked by the panel as it folds up from its top edge. */
-.gen-heading::after {
+.fold-up-container::after {
     content: '';                    /* pseudo-element for the shadow layer */
-    position: absolute;             /* positioned relative to .gen-heading */
+    position: absolute;             /* positioned relative to container */
     top: 0;                         /* starts at the fold/hinge line */
     left: -25%;                     /* extra width so trapezoid edges can expand beyond the panel */
     width: 150%;                    /* wider than panel to accommodate the spreading clip-path */
-    height: 100%;                   /* starts matching gen-heading height */
+    height: 100%;                   /* starts matching container height */
     background: radial-gradient(    /* elliptical fade: darkest at center-top, fading outward */
         ellipse 80% 100% at 50% 0%,
         var(--shadow-color) 0%,
@@ -292,14 +312,46 @@
     opacity: 0;                     /* hidden by default */
     transition: opacity 0.3s ease, clip-path 0.3s ease-in, height 0.3s ease-in;
 }
-.gen-heading:hover::after,
-.gen-heading.fold-active::after {
+.fold-up-container:hover::after,
+.fold-up-container.fold-active::after {
     opacity: 1;
     height: calc(100% + 30px);     /* grows to extend 30px below onto the page */
     clip-path: polygon(             /* expands to full trapezoid with the fold */
         16.67% 0%, 83.33% 0%,      /* top-left, top-right = panel width */
         90% 100%, 10% 100%         /* bottom-right, bottom-left = panel + ~20% each side */
     );
+}
+/* Collapsible content that slides under the fold-up */
+.fold-up-content {
+    overflow: visible;
+    position: relative;
+    z-index: 0;
+    transform: translateY(0);
+    transition: max-height 0.35s ease, opacity 0.25s ease, transform 0.35s ease;
+    opacity: 1;
+}
+.fold-up-content.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    transform: translateY(-100%);
+    pointer-events: none;
+}
+
+.fold-up-area[aria-expanded="false"] .gen-chevron {
+    transform: rotate(-90deg);
+}
+
+/* ── Headings (Parameters) ── */
+
+.gen-heading {
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+}
+.gen-heading-fold-up-area {
+    padding: 0.5rem 0rem 0.375rem;
+    font-weight: 600;
 }
 .gen-heading + .gen-heading {
     margin-top: 0.375rem;
@@ -313,42 +365,25 @@
     margin-left: -0.5rem;
     margin-right: -0.5rem;
     padding: 0 0.5rem;
+    clip-path: inset(0 -9999px -9999px -9999px);
 }
 .gen-section + .gen-section {
-    margin-top: 0.5rem;
+    margin-top: 0;
 }
 
 /* ── Section headers ── */
 
 .gen-section-header {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
     font-size: 0.625rem;
     text-transform: uppercase;
     letter-spacing: 0.4px;
-    padding: 0.375rem 0.5rem 0.25rem;
+    color: var(--text-muted);
     margin-left: -0.5rem;
     margin-right: -0.5rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 0.25rem;
-    position: relative;
-    transform-origin: bottom center;
-    transition: transform 0.3s ease;
+    margin-bottom: 0;
 }
-.gen-section:has(> .gen-section-rows:not(.collapsed)):hover > .gen-section-header {
-    transform: perspective(800px) rotateX(-2deg);
-}
-/* Shadow below the fold line when parent section is hovered + expanded */
-.gen-section:has(> .gen-section-rows:not(.collapsed)):hover > .gen-section-header::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: -1px;
-    height: 6px;
-    background: linear-gradient(to bottom, var(--shadow-color), transparent);
-    pointer-events: none;
+.gen-section-header > .fold-up-area {
+    padding: 0.375rem 0.5rem 0.25rem;
 }
 .gen-section-label {
     font-size: 0.625rem;
@@ -357,20 +392,7 @@
     color: var(--text-muted);
 }
 
-/* ── Collapsible toggle ── */
-
-.gen-collapsible-toggle,
-.gen-heading-fold-up-area {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    cursor: pointer;
-}
-
-.gen-heading .gen-collapsible-toggle,
-.gen-heading .gen-heading-fold-up-area {
-    font-weight: 600;
-}
+/* ── Chevron ── */
 
 .gen-chevron {
     font-size: 0.8125rem;
@@ -378,23 +400,11 @@
     transition: transform 0.25s ease;
     flex-shrink: 0;
 }
-.gen-collapsible-toggle[aria-expanded="false"] .gen-chevron,
-.gen-heading-fold-up-area[aria-expanded="false"] .gen-chevron {
-    transform: rotate(-90deg);
-}
 
-/* ── Collapsible section rows ── */
+/* ── Section rows ── */
 
 .gen-section-rows {
-    overflow: hidden;
-    transition: max-height 0.35s ease, opacity 0.25s ease;
-    opacity: 1;
     padding-left: 0.25rem;
-}
-.gen-section-rows.collapsed {
-    max-height: 0 !important;
-    opacity: 0;
-    pointer-events: none;
 }
 
 /* ── Sliders ── */
@@ -402,23 +412,11 @@
 .gen-sliders {
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
     max-height: 5000px;
-    overflow: hidden;
-    transform: translateY(0);
-    transition: max-height 0.35s ease, opacity 0.25s ease, transform 0.35s ease;
-    opacity: 1;
-}
-.gen-sliders.collapsed {
-    max-height: 0 !important;
-    opacity: 0;
-    transform: translateY(-100%);
-    pointer-events: none;
 }
 .gen-slider-row {
     display: flex;
     flex-direction: column;
-    gap: 0.125rem;
 }
 .gen-slider-label {
     display: flex;
@@ -431,7 +429,7 @@
 .gen-slider-name {
     font-weight: 500;
 }
-.gen-slider-value {
+input.gen-slider-value {
     font-size: 0.625rem;
     font-variant-numeric: tabular-nums;
     opacity: 0.75;
@@ -440,7 +438,7 @@
     border-radius: 3px;
     color: inherit;
     font-family: inherit;
-    text-align: right;
+    text-align: center;
     width: 2.5rem;
     flex: 0 0 2.5rem;
     padding: 0 0.125rem;

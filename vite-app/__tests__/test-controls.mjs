@@ -3,7 +3,7 @@
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { screenshotCanvas, ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { screenshotCanvas, ensureSidebarOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
 import { setSlider, setSeed, setProfileName, readControlsFromPage } from './helpers/controls.mjs';
 import { waitForRender, waitForStillRendered, sleep } from './helpers/waits.mjs';
 import { assertScreenshotsDiffer, assertNoPageErrors } from './helpers/assertions.mjs';
@@ -28,7 +28,7 @@ export async function runTests(page, errors) {
     console.log('\n=== Controls Tests ===\n');
 
     await waitForStillRendered(page);
-    await ensurePanelOpen(page);
+    await ensureSidebarOpen(page);
     await ensureConfigExpanded(page);
 
     // ── Test: Each slider change affects render output ──

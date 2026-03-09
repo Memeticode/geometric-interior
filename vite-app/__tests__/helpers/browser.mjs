@@ -131,15 +131,15 @@ export async function screenshotCanvas(page) {
 }
 
 /**
- * Open the panel if it's collapsed. Clicks the panel toggle button.
+ * Open the sidebar if it's collapsed. Clicks the sidebar toggle button.
  */
-export async function ensurePanelOpen(page) {
+export async function ensureSidebarOpen(page) {
     const isOpen = await page.evaluate(() => {
-        const p = document.querySelector('.panel');
-        return p && !p.classList.contains('panel-collapsed');
+        const s = document.querySelector('.sidebar');
+        return s && !s.classList.contains('sidebar-collapsed');
     });
     if (!isOpen) {
-        await page.click('#panelToggle');
+        await page.click('#sidebarToggle');
         await page.waitForTimeout(400);
     }
 }

@@ -1,5 +1,5 @@
-/* ── Panel toggle ── */
-.panel-toggle-btn {
+/* ── Sidebar toggle ── */
+.sidebar-toggle-btn {
     background: none;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -12,7 +12,7 @@
     flex-shrink: 0;
 }
 
-.panel-toggle-btn:hover {
+.sidebar-toggle-btn:hover {
     color: var(--text);
     border-color: var(--border-strong);
 }
@@ -42,26 +42,26 @@
 .bar-bot { transform: translateY(4px) rotate(0deg) scaleX(1); }
 
 /* Open state — morph to X */
-.panel-toggle-btn.panel-open .bar-top {
+.sidebar-toggle-btn.sidebar-open .bar-top {
     transform: translateY(0px) rotate(45deg) scaleX(1);
 }
 
-.panel-toggle-btn.panel-open .bar-mid {
+.sidebar-toggle-btn.sidebar-open .bar-mid {
     opacity: 0;
     transform: translateY(0px) rotate(0deg) scaleX(0);
 }
 
-.panel-toggle-btn.panel-open .bar-bot {
+.sidebar-toggle-btn.sidebar-open .bar-bot {
     transform: translateY(0px) rotate(-45deg) scaleX(1);
 }
 
 /* Accent highlight when open */
-.panel-toggle-btn.panel-open {
+.sidebar-toggle-btn.sidebar-open {
     border-color: var(--accent);
     color: var(--accent-text);
 }
 
-.panel-toggle-btn.panel-open:hover {
+.sidebar-toggle-btn.sidebar-open:hover {
     border-color: var(--accent-text);
 }
 
@@ -74,8 +74,8 @@
     min-height: 0;
 }
 
-/* ── Panel (mobile-first: fixed overlay, full-width) ── */
-.panel {
+/* ── Sidebar (mobile-first: fixed overlay, full-width) ── */
+.sidebar {
     position: fixed;
     top: var(--header-h, 0px);
     left: 0;
@@ -101,7 +101,7 @@
     box-shadow: none;
 }
 
-.panel.panel-collapsed {
+.sidebar.sidebar-collapsed {
     transform: translateX(-100%);
     opacity: 0;
     visibility: hidden;
@@ -111,27 +111,27 @@
     box-shadow: none;
 }
 
-.panel.morph-locked {
+.sidebar.morph-locked {
     pointer-events: none;
     opacity: 0.7;
 }
 
-/* ── Panel drawer backdrop (visible on mobile/tablet) ── */
-.panel-backdrop {
+/* ── Sidebar drawer backdrop (visible on mobile/tablet) ── */
+.sidebar-backdrop {
     display: block;
     position: fixed;
     top: var(--header-h, 0px);
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--modal-backdrop);
     z-index: 499;
     opacity: 1;
     visibility: visible;
     transition: opacity 0.3s ease, visibility 0.3s;
 }
 
-.panel-backdrop.hidden {
+.sidebar-backdrop.hidden {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;

@@ -3,7 +3,7 @@
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { ensureSidebarOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
 import { setSlider, readControlsFromPage } from './helpers/controls.mjs';
 import { waitForStillRendered, waitForMorphComplete, sleep } from './helpers/waits.mjs';
 import { assertEnabled, assertInRange, assertNoPageErrors } from './helpers/assertions.mjs';
@@ -47,7 +47,7 @@ export async function runTests(page, errors) {
     console.log('\n=== Morph Tests ===\n');
 
     await waitForStillRendered(page);
-    await ensurePanelOpen(page);
+    await ensureSidebarOpen(page);
     await ensureConfigExpanded(page);
 
     const portraits = await page.$$eval(

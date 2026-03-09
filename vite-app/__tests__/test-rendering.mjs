@@ -4,7 +4,7 @@
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { screenshotCanvas, ensurePanelOpen, ensureConfigExpanded, reloadPage } from './helpers/browser.mjs';
+import { screenshotCanvas, ensureSidebarOpen, ensureConfigExpanded, reloadPage } from './helpers/browser.mjs';
 import { setAllControls, triggerRender } from './helpers/controls.mjs';
 import { waitForRender, waitForStillRendered } from './helpers/waits.mjs';
 import { assertCanvasNonEmpty, assertScreenshotsDiffer, assertNoPageErrors } from './helpers/assertions.mjs';
@@ -74,7 +74,7 @@ export async function runTests(page, errors) {
     // ── Test: Deterministic rendering ──
     await test('Deterministic rendering (same seed+controls = same screenshot)', async () => {
         const fullSetup = async () => {
-            await ensurePanelOpen(page);
+            await ensureSidebarOpen(page);
             await ensureConfigExpanded(page);
             await setAllControls(page, {
                 seed: 'determinism-check',

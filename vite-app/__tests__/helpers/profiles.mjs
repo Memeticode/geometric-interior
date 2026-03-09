@@ -5,7 +5,7 @@
 const PROFILES_KEY = 'geo_self_portrait_profiles_v3';
 const ORDER_KEY = 'geo_self_portrait_profile_order_v1';
 const ANIM_KEY = 'geo_self_portrait_anim_profiles_v1';
-const PANEL_KEY = 'geo-self-portrait-panel-collapsed';
+const SIDEBAR_KEY = 'geo-sidebar-collapsed';
 
 export async function clearAllStorage(page) {
     await page.evaluate(() => localStorage.clear());
@@ -26,8 +26,8 @@ export async function getProfileOrder(page) {
         JSON.parse(localStorage.getItem(key) || '[]'), ORDER_KEY);
 }
 
-export async function getPanelCollapsedState(page) {
-    return page.evaluate((key) => localStorage.getItem(key), PANEL_KEY);
+export async function getSidebarCollapsedState(page) {
+    return page.evaluate((key) => localStorage.getItem(key), SIDEBAR_KEY);
 }
 
 export async function countProfileCards(page, galleryId) {

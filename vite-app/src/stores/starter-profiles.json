@@ -17,7 +17,6 @@
             2
           ],
           "controls": {
-            "topology": "flow-field",
             "density": 0.03,
             "luminosity": 0.5,
             "bloom": 0.45,
@@ -46,7 +45,6 @@
             0
           ],
           "controls": {
-            "topology": "flow-field",
             "density": 0.06,
             "luminosity": 0.1,
             "bloom": 0.15,
@@ -75,7 +73,6 @@
             0
           ],
           "controls": {
-            "topology": "flow-field",
             "density": 0.06,
             "luminosity": 0.1,
             "bloom": 0.15,
@@ -104,7 +101,6 @@
             5
           ],
           "controls": {
-            "topology": "flow-field",
             "density": 0.07,
             "luminosity": 0.1,
             "bloom": 0.75,
@@ -133,7 +129,6 @@
             9
           ],
           "controls": {
-            "topology": "flow-field",
             "density": 0.08,
             "luminosity": 0.12,
             "bloom": 0.8,
@@ -162,7 +157,6 @@
             11
           ],
           "controls": {
-            "topology": "flow-field",
             "density": 0.08,
             "luminosity": 0.5,
             "bloom": 0.35,
@@ -191,7 +185,6 @@
             8
           ],
           "controls": {
-            "topology": "flow-field",
             "density": 0.25,
             "luminosity": 0.4,
             "bloom": 0.55,
@@ -221,7 +214,6 @@
           "commentary": "Warm amber radiance through translucent geometry — the first light one encounters upon entering",
           "seed": [11, 5, 8],
           "controls": {
-            "topology": "flow-field",
             "density": 0.06, "luminosity": 0.55, "bloom": 0.32,
             "fracture": 0.28, "coherence": 0.82,
             "hue": 0.05, "spectrum": 0.15, "chroma": 0.65,
@@ -238,7 +230,6 @@
           "commentary": "Golden light pouring downward through crystalline planes, seen from below as if looking up through a luminous ceiling",
           "seed": [2, 10, 6],
           "controls": {
-            "topology": "flow-field",
             "density": 0.10, "luminosity": 0.78, "bloom": 0.62,
             "fracture": 0.35, "coherence": 0.70,
             "hue": 0.10, "spectrum": 0.30, "chroma": 0.42,
@@ -255,7 +246,6 @@
           "commentary": "Prismatic light fractured through crystalline shards — every color the geometry can hold, viewed from an oblique angle",
           "seed": [14, 3, 9],
           "controls": {
-            "topology": "flow-field",
             "density": 0.10, "luminosity": 0.52, "bloom": 0.18,
             "fracture": 0.65, "coherence": 0.60,
             "hue": 0.72, "spectrum": 0.85, "chroma": 0.65,
@@ -272,7 +262,6 @@
           "commentary": "Teal crystal viewed at intimate distance — sharp facets catching what little light exists, a jeweler's perspective",
           "seed": [10, 2, 1],
           "controls": {
-            "topology": "flow-field",
             "density": 0.06, "luminosity": 0.20, "bloom": 0.15,
             "fracture": 0.22, "coherence": 0.88,
             "hue": 0.52, "spectrum": 0.10, "chroma": 0.55,
@@ -289,7 +278,6 @@
           "commentary": "Lavender haze thick with particle geometry — the corridor between spaces, where structure dissolves into atmosphere",
           "seed": [1, 12, 7],
           "controls": {
-            "topology": "flow-field",
             "density": 0.20, "luminosity": 0.30, "bloom": 0.75,
             "fracture": 0.45, "coherence": 0.58,
             "hue": 0.75, "spectrum": 0.15, "chroma": 0.30,
@@ -306,7 +294,6 @@
           "commentary": "Three luminous cores seen from above — the grand central space where the structure reveals its triple symmetry",
           "seed": [6, 8, 13],
           "controls": {
-            "topology": "flow-field",
             "density": 0.14, "luminosity": 0.62, "bloom": 0.40,
             "fracture": 0.42, "coherence": 0.78,
             "hue": 0.52, "spectrum": 0.50, "chroma": 0.58,
@@ -323,7 +310,6 @@
           "commentary": "Rose-violet geometry wrapping in orbital bands — the final chamber, where light curves back upon itself",
           "seed": [3, 15, 11],
           "controls": {
-            "topology": "flow-field",
             "density": 0.15, "luminosity": 0.50, "bloom": 0.52,
             "fracture": 0.38, "coherence": 0.80,
             "hue": 0.90, "spectrum": 0.28, "chroma": 0.55,
@@ -345,7 +331,6 @@
           "commentary": "Teal planes converging at sharp angles — geometry as architecture, seen from deep inside the crystalline structure",
           "seed": [11, 3, 1],
           "controls": {
-            "topology": "flow-field",
             "density": 0.05, "luminosity": 0.32, "bloom": 0.12,
             "fracture": 0.18, "coherence": 0.94,
             "hue": 0.48, "spectrum": 0.06, "chroma": 0.58,
@@ -362,7 +347,6 @@
           "commentary": "Crimson light cutting through faceted planes — a starburst caught at the moment of ignition",
           "seed": [16, 3, 16],
           "controls": {
-            "topology": "flow-field",
             "density": 0.05, "luminosity": 0.62, "bloom": 0.22,
             "fracture": 0.18, "coherence": 0.92,
             "hue": 0.98, "spectrum": 0.05, "chroma": 0.82,
@@ -379,7 +363,6 @@
           "commentary": "Every wavelength the geometry can hold — fractured planes refracting light into a full prismatic field",
           "seed": [14, 2, 9],
           "controls": {
-            "topology": "flow-field",
             "density": 0.10, "luminosity": 0.55, "bloom": 0.22,
             "fracture": 0.65, "coherence": 0.52,
             "hue": 0.65, "spectrum": 0.85, "chroma": 0.65,
@@ -396,7 +379,6 @@
           "commentary": "Deep cobalt crystal at maximum proximity — razor-sharp peaks rising from shadow like a glacial interior",
           "seed": [15, 1, 8],
           "controls": {
-            "topology": "flow-field",
             "density": 0.04, "luminosity": 0.42, "bloom": 0.20,
             "fracture": 0.15, "coherence": 0.95,
             "hue": 0.58, "spectrum": 0.08, "chroma": 0.52,
@@ -413,7 +395,6 @@
           "commentary": "Rose-pink radiance refracting through crystalline facets — the geometry seen from within its own warmth",
           "seed": [8, 14, 5],
           "controls": {
-            "topology": "flow-field",
             "density": 0.08, "luminosity": 0.58, "bloom": 0.28,
             "fracture": 0.28, "coherence": 0.86,
             "hue": 0.92, "spectrum": 0.14, "chroma": 0.75,
@@ -430,7 +411,6 @@
           "commentary": "Violet crystalline planes streaming through twilight — structure dissolving into atmosphere at close range",
           "seed": [2, 13, 11],
           "controls": {
-            "topology": "flow-field",
             "density": 0.08, "luminosity": 0.35, "bloom": 0.45,
             "fracture": 0.38, "coherence": 0.75,
             "hue": 0.80, "spectrum": 0.18, "chroma": 0.58,
@@ -444,10 +424,9 @@
         },
         "chlorophyll": {
           "name": "Chlorophyll",
-          "commentary": "Vivid emerald geometry radiating from within — the only green in the collection, color as material intensity",
+          "commentary": "Vivid emerald radiating from within — light converted to substance, color carrying the weight of something alive",
           "seed": [5, 5, 11],
           "controls": {
-            "topology": "flow-field",
             "density": 0.08, "luminosity": 0.52, "bloom": 0.32,
             "fracture": 0.48, "coherence": 0.80,
             "hue": 0.30, "spectrum": 0.22, "chroma": 0.75,

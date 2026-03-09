@@ -3,7 +3,7 @@
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { BASE_URL, navigateToURL, ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { BASE_URL, navigateToURL, ensureSidebarOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
 import { readControlsFromPage, readSeed, readProfileName, setSlider } from './helpers/controls.mjs';
 import { waitForStillRendered, sleep } from './helpers/waits.mjs';
 import { assertNoPageErrors, assertEnabled, assertDisabled, assertHidden, assertVisible } from './helpers/assertions.mjs';
@@ -191,7 +191,7 @@ export async function runTests(page, errors) {
         await assertEnabled(page, '#shareBtn');
 
         // Slider change sets stillRendered = false
-        await ensurePanelOpen(page);
+        await ensureSidebarOpen(page);
         await ensureConfigExpanded(page);
         await scrollToElement(page, '#density');
         await setSlider(page, 'density', 0.42);

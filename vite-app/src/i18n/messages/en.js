@@ -38,9 +38,6 @@ export default {
     'control.name': 'Name',
     'control.name.tooltip': 'A name for this arrangement of light and form.',
     'control.name.placeholder': 'e.g. Violet Crystalline',
-    'control.intentSeed': 'Intent (seed)',
-    'control.intentSeed.tooltip': 'A word that conjures this exact arrangement. Same whisper, same world. (Deterministic seed phrase.)',
-    'control.intentSeed.placeholder': 'e.g. light arriving through crystal',
     'control.palette': 'Palette',
     'control.palette.tooltip': 'The chromatic atmosphere. Double-click a preset to customize.',
     'control.density': 'Density',
@@ -69,8 +66,6 @@ export default {
     'control.faceting.tooltip': 'Crystal character \u2014 the quality of individual geometric faces. Controls the ratio of broad quads to sharp triangles, the dihedral fold angle between successive faces, and the contraction rate. Determines whether shards read as smooth panels or angular crystals.',
     'control.flow': 'Flow',
     'control.flow.tooltip': 'Spatial pattern \u2014 the shape of the directional field. At 0, radial starburst emanating from the center. At 0.5, chaotic Perlin noise (organic, no preferred direction). At 1, orbital bands wrapping around the form. Flow defines the shape of organization; coherence defines its strength.',
-    'control.topology': 'Topology',
-    'control.topology.tooltip': 'The spatial architecture \u2014 how planes are arranged through the void.',
 
     /* ── Generate panel headings ── */
     'generate.seed': 'Seed',
@@ -94,7 +89,7 @@ export default {
     /* ── Parameter sections ── */
     'params.heading': 'Parameters',
     'section.geometry': 'Geometry',
-    'section.geometry.tooltip': 'The physical character of forms \u2014 their abundance, fragmentation, granularity, topology, and crystal quality.',
+    'section.geometry.tooltip': 'The physical character of forms \u2014 their abundance, fragmentation, granularity, and crystal quality.',
     'section.light': 'Light',
     'section.light.tooltip': 'The energy and emanation of the scene \u2014 how bright, and how far light reaches.',
     'section.color': 'Color',
@@ -133,12 +128,6 @@ export default {
     'palette.range.tooltip': 'How far color is allowed to wander from its origin.',
     'palette.saturation': 'Saturation',
     'palette.saturation.tooltip': 'The purity of pigment \u2014 dusty whisper to liquid jewel.',
-
-    /* ── Topology labels ── */
-    'topology.flow': 'Flow',
-    'topology.crystal': 'Crystal',
-    'topology.mobius': 'M\u00f6bius',
-    'topology.attractor': 'Attractor',
 
     /* ── Config IO ── */
     'config.export': 'Export',

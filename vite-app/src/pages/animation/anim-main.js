@@ -6,7 +6,7 @@
 import { createHeader } from '../../components/create-header.js';
 import { createFooter } from '../../components/create-footer.js';
 import { initApp } from '../../components/app-init.js';
-import { initPanel } from '../../components/panel.js';
+import { initSidebar } from '../../components/sidebar.js';
 import { toast } from '../../components/toast.js';
 import { initPageSettings } from '../../stores/page-settings.js';
 import { t, getLocale } from '../../i18n/locale.js';
@@ -63,7 +63,7 @@ const footerRefs = createFooter(document.querySelector('.app-footer'), { page: '
 
 // ── Init shared UI ──
 initApp({ page: 'animation' });
-initPanel();
+initSidebar();
 initPageSettings(footerRefs.pageSettingsBtn, footerRefs.pageSettingsPopover);
 
 // ── Worker ──

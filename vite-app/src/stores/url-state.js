@@ -94,7 +94,6 @@ export function decodeStateFromURL(href) {
     return {
         seed: parsedTag || rawSeed,
         controls: {
-            topology: 'flow-field',
             density:    clampFloat(p.get(PARAM_DENSITY),    0, 1, 0.5),
             luminosity: clampFloat(p.get(PARAM_LUMINOSITY), 0, 1, 0.5),
             fracture:   clampFloat(p.get(PARAM_FRACTURE),   0, 1, 0.5),
@@ -147,7 +146,6 @@ function decodeLegacyURL(p) {
     return {
         seed: p.get(PARAM_SEED),
         controls: {
-            topology: 'flow-field',
             density:    clampFloat(p.get(PARAM_DENSITY),    0, 1, 0.5),
             luminosity: clampFloat(p.get(PARAM_LUMINOSITY), 0, 1, 0.5),
             fracture:   clampFloat(p.get(PARAM_FRACTURE),   0, 1, 0.5),

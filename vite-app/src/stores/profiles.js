@@ -44,7 +44,6 @@ function migrateProfile(p) {
 
     // Build new controls
     const newControls = {
-        topology: c.topology || 'flow-field',
         density: c.density ?? 0.5,
         luminosity: c.luminosity ?? 0.5,
         fracture: c.fracture ?? 0.5,
@@ -354,7 +353,7 @@ export function renderLoopList(listEl, landmarks, profiles, callbacks, renderThu
             summary.textContent = t('profile.details');
             const sub = document.createElement('div');
             sub.className = 'subline';
-            sub.textContent = `${c.topology} \u00b7 den ${c.density.toFixed(2)} \u00b7 lum ${c.luminosity.toFixed(2)} \u00b7 frc ${c.fracture.toFixed(2)} \u00b7 coh ${c.coherence.toFixed(2)} \u00b7 hue ${c.hue.toFixed(2)} \u00b7 spc ${(c.spectrum ?? 0).toFixed(2)} \u00b7 chr ${(c.chroma ?? 0).toFixed(2)} \u00b7 scl ${(c.scale ?? 0.5).toFixed(2)} \u00b7 flw ${(c.flow ?? 0.5).toFixed(2)}`;
+            sub.textContent = `den ${c.density.toFixed(2)} \u00b7 lum ${c.luminosity.toFixed(2)} \u00b7 frc ${c.fracture.toFixed(2)} \u00b7 coh ${c.coherence.toFixed(2)} \u00b7 hue ${c.hue.toFixed(2)} \u00b7 spc ${(c.spectrum ?? 0).toFixed(2)} \u00b7 chr ${(c.chroma ?? 0).toFixed(2)} \u00b7 scl ${(c.scale ?? 0.5).toFixed(2)} \u00b7 flw ${(c.flow ?? 0.5).toFixed(2)}`;
             detailsEl.appendChild(summary);
             detailsEl.appendChild(sub);
         } else {

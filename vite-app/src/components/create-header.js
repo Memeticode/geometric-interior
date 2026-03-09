@@ -19,7 +19,7 @@ export function createHeader(headerEl, { page }) {
                </div>
                <span class="rq-badge hidden" id="renderQueueBadge"></span>
            </button>`
-        : `<button id="panelToggle" class="panel-toggle-btn" aria-label="Open menu" data-tooltip="Open menu" data-i18n-aria="panel.openMenu" data-i18n-tooltip="panel.openMenu" data-tooltip-pos="right">
+        : `<button id="sidebarToggle" class="sidebar-toggle-btn" aria-label="Open menu" data-tooltip="Open menu" data-i18n-aria="panel.openMenu" data-i18n-tooltip="panel.openMenu" data-tooltip-pos="right">
                <div class="panel-toggle-icon">
                    <span class="bar bar-top"></span>
                    <span class="bar bar-mid"></span>
@@ -72,7 +72,7 @@ export function createHeader(headerEl, { page }) {
     if (shareWrap) populateShareWrap(shareWrap, { btnClass: 'header-link' });
 
     return {
-        panelToggle: headerEl.querySelector('#panelToggle'),
+        sidebarToggle: headerEl.querySelector('#sidebarToggle'),
         siteMenuToggle: headerEl.querySelector('#siteMenuToggle'),
         renderQueueBadge: headerEl.querySelector('#renderQueueBadge'),
         shareBtn: headerEl.querySelector('#shareBtn'),
@@ -86,8 +86,8 @@ export function createHeader(headerEl, { page }) {
 // ── SVG icons ──
 
 const SHARE_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-    <circle cx="12" cy="3" r="2"/><circle cx="4" cy="8" r="2"/><circle cx="12" cy="13" r="2"/>
-    <path d="M5.7 9.2l4.6 2.6M10.3 4.2L5.7 6.8"/>
+    <circle class="sd sd-r" cx="12" cy="3" r="2"/><circle class="sd sd-l" cx="4" cy="8" r="2"/><circle class="sd sd-r" cx="12" cy="13" r="2"/>
+    <path class="sd sd-line" d="M5.7 9.2l4.6 2.6M10.3 4.2L5.7 6.8"/>
 </svg>`;
 
 const LINK_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">

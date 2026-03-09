@@ -36,21 +36,21 @@
 
     <div class="app-body">
         <script>
-            if (localStorage.getItem('geo-self-portrait-panel-collapsed') === 'false') {
-                document.write('<aside class="panel no-transition" aria-label="Controls panel" aria-hidden="false">');
+            if (localStorage.getItem('geo-sidebar-collapsed') === 'false') {
+                document.write('<aside class="sidebar no-transition" aria-label="Controls panel" aria-hidden="false">');
             } else {
-                document.write('<aside class="panel panel-collapsed no-transition" aria-label="Controls panel" aria-hidden="true">');
+                document.write('<aside class="sidebar sidebar-collapsed no-transition" aria-label="Controls panel" aria-hidden="true">');
             }
         </script>
             <section id="imageModeSection">
                 <!-- Group 1: Import/Export Config (general purpose) -->
                 <div class="control-group control-group-io">
                     <button id="importBtn" data-tooltip="Import configuration (json)" data-i18n-tooltip="config.import.tooltip">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 12v2h12v-2"/></svg>
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><path d="M8 1l3 3-3 4.5-3-4.5z"/><path d="M8 8.5v2.5"/><path d="M3 13l2-2h6l2 2"/></svg>
                         <span data-i18n="config.import">Import Config</span>
                     </button>
                     <button id="exportBtn" disabled data-tooltip="Export configuration (json)" data-i18n-tooltip="config.export.tooltip">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M8 10V2M4 5l4-4 4 4"/><path d="M2 12v2h12v-2"/></svg>
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><path d="M8 15l3-3-3-4.5-3 4.5z"/><path d="M8 7.5V5"/><path d="M3 3l2 2h6l2-2"/></svg>
                         <span data-i18n="config.export">Export Config</span>
                     </button>
                 </div>
@@ -58,13 +58,13 @@
                 <!-- Group 2: Config Utility (general purpose, icon-only) -->
                 <div class="control-group control-group-utility">
                     <button id="saveProfile" disabled data-tooltip="Save as user profile (local storage)" data-i18n-tooltip="profile.save.tooltip">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/><path d="M5 1v4h6V1"/><rect x="4" y="9" width="8" height="4"/></svg>
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><path d="M2 2h8l4 4v8H2z"/><path d="M10 2v4h4"/><rect x="5" y="2" width="4" height="3" rx="0.5" stroke-width="1"/><rect x="4.5" y="9" width="7" height="5" rx="0.5" stroke-width="1"/></svg>
                     </button>
                     <button id="resetProfile" disabled data-tooltip="Reset changes" data-i18n-tooltip="profile.reset.tooltip">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M1 3v4h4"/><path d="M2.5 10.5a6 6 0 1 0 1.5-6.5L1 7"/></svg>
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><path d="M8 4.5l2.5 2.5L8 10 5.5 7z"/><path d="M2 8a6 6 0 1 1 2 4.5" stroke-linecap="round"/><path d="M1 10l1 2.5 2.5-1" stroke-linecap="round"/></svg>
                     </button>
                     <button id="panelRandomizeBtn" data-tooltip="Randomize image" data-i18n-tooltip="stage.randomize">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M13.5 2.5v3.5h-3.5"/><path d="M2.5 8a5.5 5.5 0 0 1 9.37-3.9l1.63 1.9"/><path d="M2.5 13.5V10h3.5"/><path d="M13.5 8a5.5 5.5 0 0 1-9.37 3.9L2.5 10"/></svg>
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/></svg>
                     </button>
                 </div>
 
@@ -90,7 +90,7 @@
 
                 <!-- ── Geometry ── -->
                 <div class="param-section-header" data-target="geometryRows" aria-expanded="true">
-                    <span class="label-info" data-tooltip="The physical character of forms &mdash; their abundance, fragmentation, granularity, topology, and crystal quality." data-i18n="section.geometry" data-i18n-tooltip="section.geometry.tooltip"><span class="info-icon">i</span>Geometry</span>
+                    <span class="label-info" data-tooltip="The physical character of forms &mdash; their abundance, fragmentation, granularity, and crystal quality." data-i18n="section.geometry" data-i18n-tooltip="section.geometry.tooltip"><span class="info-icon">i</span>Geometry</span>
                     <span class="collapsible-chevron">&#9662;</span>
                 </div>
                 <div class="param-section-rows" id="geometryRows">
@@ -256,50 +256,6 @@
 
                 </div>
 
-                <div class="row" style="display:none">
-                    <label><span class="label-info" data-tooltip="The spatial architecture — how planes are arranged through the void." data-label="Topology" data-i18n="control.topology" data-i18n-tooltip="control.topology.tooltip" data-i18n-label="control.topology"><span class="info-icon">i</span>Topology</span></label>
-                    <input type="hidden" id="topology" value="flow-field" />
-                    <div class="topology-selector" id="topologySelector">
-                        <div class="topo-tile active" data-value="flow-field">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M3 17c3-4 6-2 9-6s6-2 9-6" stroke-linecap="round"/>
-                                <path d="M3 12c3-3 6-1 9-5s6-1 9-5" stroke-linecap="round" opacity="0.5"/>
-                                <path d="M3 22c3-4 6-2 9-6s6-2 9-6" stroke-linecap="round" opacity="0.3"/>
-                            </svg>
-                            <span class="topo-label" data-i18n="topology.flow">Flow</span>
-                        </div>
-                        <div class="topo-tile" data-value="icosahedral">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <polygon points="12,2 22,8 22,16 12,22 2,16 2,8" stroke-linejoin="round"/>
-                                <line x1="12" y1="2" x2="12" y2="22" opacity="0.4"/>
-                                <line x1="2" y1="8" x2="22" y2="16" opacity="0.4"/>
-                                <line x1="22" y1="8" x2="2" y2="16" opacity="0.4"/>
-                            </svg>
-                            <span class="topo-label" data-i18n="topology.crystal">Crystal</span>
-                        </div>
-                        <div class="topo-tile" data-value="mobius">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <path d="M4 12c0-4 3-7 8-7s8 3 8 7-3 7-8 7-8-3-8-7" stroke-linecap="round"/>
-                                <path d="M8 9c2 2 4 4 8 2" stroke-linecap="round" opacity="0.5"/>
-                                <path d="M8 15c2-2 4-4 8-2" stroke-linecap="round" opacity="0.5"/>
-                            </svg>
-                            <span class="topo-label" data-i18n="topology.mobius">Möbius</span>
-                        </div>
-                        <div class="topo-tile" data-value="multi-attractor">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                                <circle cx="7" cy="7" r="2.5" opacity="0.8"/>
-                                <circle cx="17" cy="8" r="2" opacity="0.6"/>
-                                <circle cx="10" cy="17" r="2.5" opacity="0.8"/>
-                                <circle cx="18" cy="17" r="1.5" opacity="0.4"/>
-                                <line x1="7" y1="7" x2="17" y2="8" stroke-dasharray="2 2" opacity="0.3"/>
-                                <line x1="7" y1="7" x2="10" y2="17" stroke-dasharray="2 2" opacity="0.3"/>
-                                <line x1="17" y1="8" x2="10" y2="17" stroke-dasharray="2 2" opacity="0.3"/>
-                            </svg>
-                            <span class="topo-label" data-i18n="topology.attractor">Attractor</span>
-                        </div>
-                    </div>
-                </div>
-
                 </div>
 
                 <div class="gallery-wrapper">
@@ -330,7 +286,7 @@
             </section>
 
         </aside>
-        <div class="panel-backdrop hidden" id="panelBackdrop"></div>
+        <div class="sidebar-backdrop hidden" id="sidebarBackdrop"></div>
 
         <main class="stage">
             <div class="stage-content">
@@ -347,11 +303,14 @@
                         </button>
                         <button class="config-randomize-btn" id="configRandomizeBtn"
                                 data-tooltip="Randomize image" data-i18n-tooltip="stage.randomize">
-                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-                                <path d="M13.5 2.5v3.5h-3.5"/>
-                                <path d="M2.5 8a5.5 5.5 0 0 1 9.37-3.9l1.63 1.9"/>
-                                <path d="M2.5 13.5V10h3.5"/>
-                                <path d="M13.5 8a5.5 5.5 0 0 1-9.37 3.9L2.5 10"/>
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14">
+                                <rect x="2" y="2" width="12" height="12" rx="1.5"/>
+                                <circle cx="5.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/>
+                                <circle cx="5.5" cy="8" r="0.9" fill="currentColor" stroke="none"/>
+                                <circle cx="5.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/>
+                                <circle cx="10.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/>
+                                <circle cx="10.5" cy="8" r="0.9" fill="currentColor" stroke="none"/>
+                                <circle cx="10.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/>
                             </svg>
                         </button>
                         <button id="historyForwardBtn" data-tooltip="Next image (view history)" data-i18n-tooltip="stage.nextHistory" disabled>

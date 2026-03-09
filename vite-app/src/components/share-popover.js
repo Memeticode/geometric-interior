@@ -18,6 +18,17 @@ import { t } from '../i18n/locale.js';
 
 export function initSharePopover({ shareBtn, sharePopover, getShareURL, getShareTitle }) {
 
+    /* Move popover to body so it's not clipped by any container */
+    document.body.appendChild(sharePopover);
+
+    function positionPopover() {
+        const r = shareBtn.getBoundingClientRect();
+        const rightOffset = window.innerWidth - r.right;
+        sharePopover.style.top = `${r.bottom}px`;
+        sharePopover.style.right = `${rightOffset}px`;
+        sharePopover.style.setProperty('--off-right', `${rightOffset}px`);
+    }
+
     function close() {
         sharePopover.classList.add('hidden');
         shareBtn.classList.remove('share-open');
@@ -29,10 +40,11 @@ export function initSharePopover({ shareBtn, sharePopover, getShareURL, getShare
 
     shareBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        const willOpen = sharePopover.classList.contains('hidden');
+        if (willOpen) positionPopover();
         sharePopover.classList.toggle('hidden');
-        const open = !sharePopover.classList.contains('hidden');
-        shareBtn.classList.toggle('share-open', open);
-        shareBtn.setAttribute('data-tooltip', open ? 'Close share' : 'Open share');
+        shareBtn.classList.toggle('share-open', willOpen);
+        shareBtn.setAttribute('data-tooltip', willOpen ? 'Close share' : 'Open share');
         refreshTooltip(shareBtn);
     });
 

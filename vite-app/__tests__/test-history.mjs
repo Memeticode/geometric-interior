@@ -3,7 +3,7 @@
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { ensurePanelOpen, ensureConfigExpanded } from './helpers/browser.mjs';
+import { ensureSidebarOpen, ensureConfigExpanded } from './helpers/browser.mjs';
 import { readControlsFromPage, readSeed } from './helpers/controls.mjs';
 import { waitForStillRendered, waitForMorphComplete, sleep } from './helpers/waits.mjs';
 import { assertDisabled, assertEnabled, assertNoPageErrors } from './helpers/assertions.mjs';
@@ -47,7 +47,7 @@ export async function runTests(page, errors) {
     console.log('\n=== History Tests ===\n');
 
     await waitForStillRendered(page);
-    await ensurePanelOpen(page);
+    await ensureSidebarOpen(page);
     await ensureConfigExpanded(page);
 
     // ── Test: Back button disabled initially ──

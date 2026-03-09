@@ -3,7 +3,7 @@
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { ensureSidebarOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
 import { setSeed, setSlider, setProfileName, readControlsFromPage } from './helpers/controls.mjs';
 import { waitForStillRendered, waitForMorphComplete, sleep } from './helpers/waits.mjs';
 import { assertNoPageErrors } from './helpers/assertions.mjs';
@@ -64,7 +64,7 @@ export async function runTests(page, errors) {
     console.log('\n=== Profile Tests ===\n');
 
     await waitForStillRendered(page);
-    await ensurePanelOpen(page);
+    await ensureSidebarOpen(page);
     await ensureConfigExpanded(page);
 
     // ── Test: Starter portraits in gallery ──

@@ -9,17 +9,10 @@ import type { Controls } from './schemas.js';
 export const TIME_WARP_STRENGTH = 0.78;
 
 const NUMERIC_KEYS: (keyof Controls)[] = ['density', 'luminosity', 'fracture', 'coherence', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
-const DISCRETE_KEYS: (keyof Controls)[] = ['topology'];
 
 export function evalControlsAt(tNorm: number, landmarks: Array<{ controls: Controls }>): Controls | null {
     const n = landmarks.length;
     if (n < 2) return null;
-
-    const nearestIdx = Math.round(tNorm * n) % n;
-    const discrete: Partial<Controls> = {};
-    for (const key of DISCRETE_KEYS) {
-        (discrete as Record<string, unknown>)[key] = landmarks[nearestIdx].controls[key];
-    }
 
     if (n === 2) {
         const c0 = landmarks[0].controls;
@@ -29,7 +22,7 @@ export function evalControlsAt(tNorm: number, landmarks: Array<{ controls: Contr
         const warped = warpSegmentT(phase, TIME_WARP_STRENGTH * 0.55);
         const u = cosineEase(warped);
 
-        const result = { ...discrete } as Controls;
+        const result = {} as Controls;
         for (const key of NUMERIC_KEYS) {
             (result as unknown as Record<string, unknown>)[key] = lerp(c0[key] as number, c1[key] as number, u);
         }
@@ -53,7 +46,7 @@ export function evalControlsAt(tNorm: number, landmarks: Array<{ controls: Contr
     const C2 = landmarks[i2].controls;
     const C3 = landmarks[i3].controls;
 
-    const result = { ...discrete } as Controls;
+    const result = {} as Controls;
     for (const key of NUMERIC_KEYS) {
         (result as unknown as Record<string, unknown>)[key] = clamp01(
             catmullRom(C0[key] as number, C1[key] as number, C2[key] as number, C3[key] as number, t)

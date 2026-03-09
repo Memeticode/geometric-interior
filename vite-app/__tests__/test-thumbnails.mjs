@@ -3,7 +3,7 @@
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { ensurePanelOpen, ensureConfigExpanded } from './helpers/browser.mjs';
+import { ensureSidebarOpen, ensureConfigExpanded } from './helpers/browser.mjs';
 import { setSeed, setSlider, setProfileName } from './helpers/controls.mjs';
 import { waitForStillRendered, waitFor, sleep } from './helpers/waits.mjs';
 import { assertNoPageErrors } from './helpers/assertions.mjs';
@@ -26,7 +26,7 @@ export async function runTests(page, errors) {
     console.log('\n=== Thumbnail Tests ===\n');
 
     await waitForStillRendered(page);
-    await ensurePanelOpen(page);
+    await ensureSidebarOpen(page);
     await ensureConfigExpanded(page);
 
     // Poll for thumbnail queue to drain instead of fixed 10s sleep

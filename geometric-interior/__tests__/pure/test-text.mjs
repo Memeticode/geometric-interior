@@ -20,7 +20,6 @@ function mkRng(seed = 'test') {
 }
 
 const MID = {
-    topology: 'flow-field',
     density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, coherence: 0.5,
     hue: 0.783, spectrum: 0.239, chroma: 0.417,
     scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5,
@@ -225,7 +224,6 @@ test('generateAltText: 200 random configs produce ≥195 unique texts', () => {
     const texts = new Set();
     for (let i = 0; i < 200; i++) {
         const controls = {
-            topology: 'flow-field',
             hue: rng(), spectrum: rng(), chroma: rng(),
             density: rng(), fracture: rng(), coherence: rng(),
             luminosity: rng(), bloom: rng(), scale: rng(),

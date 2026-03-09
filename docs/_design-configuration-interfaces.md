@@ -46,8 +46,6 @@ The image editor panel (`image.html`, left sidebar) has:
 8. Camera (zoom, rotation)
 9. Export / Import
 
-The topology selector remains hidden (always `flow-field`).
-
 ### Design Direction: Remove Active Card
 
 The current implementation wraps the controls inside an "active card" with a thumbnail, status badge, chevron toggle, and collapsed/expanded states. Since the user always sees the full render on the canvas, this card abstraction is unnecessary. The panel should be a direct controls surface — open it, and all controls are immediately available. See `_design-ui-menus.md` Part 1 for the detailed layout.

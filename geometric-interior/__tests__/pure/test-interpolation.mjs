@@ -76,7 +76,6 @@ test('TIME_WARP_STRENGTH is a positive number', () => {
 // evalControlsAt
 const mkLandmark = (density, luminosity = 0.5) => ({
     controls: {
-        topology: 'flow-field',
         density, luminosity, bloom: 0.5, fracture: 0.5, coherence: 0.5,
         hue: 0.5, spectrum: 0.3, chroma: 0.4,
         scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5,
@@ -100,16 +99,6 @@ test('evalControlsAt with 2 landmarks blends at t=0.25', () => {
     // At t=0.25, the phase is 0.5 (swing), so it should be near the midpoint
     assert(result.density > 0.1 && result.density < 0.9,
         `expected blend, got density=${result.density}`);
-});
-
-test('evalControlsAt preserves discrete keys', () => {
-    const result = evalControlsAt(0.3, [
-        { controls: { topology: 'flow-field', density: 0, luminosity: 0, bloom: 0, fracture: 0, coherence: 0, hue: 0, spectrum: 0, chroma: 0, scale: 0, division: 0, faceting: 0, flow: 0 } },
-        { controls: { topology: 'flow-field', density: 1, luminosity: 1, bloom: 1, fracture: 1, coherence: 1, hue: 1, spectrum: 1, chroma: 1, scale: 1, division: 1, faceting: 1, flow: 1 } },
-    ]);
-    assert(result !== null);
-    assert(result.topology === 'flow-field',
-        `unexpected topology: ${result.topology}`);
 });
 
 test('evalControlsAt with 3+ landmarks produces values in [0,1]', () => {

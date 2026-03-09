@@ -11,7 +11,7 @@
  *   npx vite --port 5204   (dev server must be running)
  */
 import { PNG } from 'pngjs';
-import { ensurePanelOpen, screenshotCanvas, getCanvasBox } from './helpers/browser.mjs';
+import { ensureSidebarOpen, screenshotCanvas, getCanvasBox } from './helpers/browser.mjs';
 import { clickAnyProfileCard } from './helpers/profiles.mjs';
 import { waitForStillRendered, waitForMorphComplete, sleep } from './helpers/waits.mjs';
 import { assertNoPageErrors } from './helpers/assertions.mjs';
@@ -112,7 +112,7 @@ export async function runTests(page, errors) {
     console.log('\n=== Morph Smoothness Tests ===\n');
 
     await waitForStillRendered(page);
-    await ensurePanelOpen(page);
+    await ensureSidebarOpen(page);
 
     if (SAVE_FRAMES && !existsSync(FRAME_DIR)) {
         mkdirSync(FRAME_DIR, { recursive: true });

@@ -37,8 +37,8 @@ export function showTooltip(el, mouseX, mouseY) {
         const overlayHeight = paramTooltip.offsetHeight;
         paramTooltip.style.left = (rect.left + inset) + 'px';
         paramTooltip.style.top = (rect.top + (rect.height - overlayHeight) / 2) + 'px';
-    } else if (pos === 'right' || pos === 'left' || (!pos && el.closest('.panel'))) {
-        /* Element-anchored positioning (panel items, share button, etc.) */
+    } else if (pos === 'right' || pos === 'left' || (!pos && el.closest('.sidebar'))) {
+        /* Element-anchored positioning (sidebar items, share button, etc.) */
         const rect = el.getBoundingClientRect();
         const cx = rect.left + rect.width / 2;
         const cy = rect.top + rect.height / 2;

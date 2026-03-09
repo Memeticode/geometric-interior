@@ -24,7 +24,7 @@ import { loadProfiles, saveProfiles, ensureStarterProfiles, loadPortraits, getPo
 import { toast } from '../components/toast.js';
 import { autoGrow, initAutoGrowTextareas } from '../components/dom-utils.js';
 import { initCollapsibles } from '../components/collapsibles.js';
-import { initPanel, isPanelOpen, closePanel } from '../components/panel.js';
+import { initSidebar, isSidebarOpen, closeSidebar } from '../components/sidebar.js';
 import { showConfirm, initModals, closeInfoModal } from '../components/modals.js';
 import { validateProfileName } from '../components/slugify.js';
 import { t, getLocale } from '../i18n/locale.js';
@@ -71,8 +71,6 @@ const el = {
     zoomLabel: document.getElementById('zoomLabel'),
     rotationLabel: document.getElementById('rotationLabel'),
     elevationLabel: document.getElementById('elevationLabel'),
-    topology: document.getElementById('topology'),
-    topologySelector: document.getElementById('topologySelector'),
     density: document.getElementById('density'),
     luminosity: document.getElementById('luminosity'),
     bloom: document.getElementById('bloom'),
@@ -209,8 +207,8 @@ function setMorphLocked(locked) {
         if (shareActions) shareActions.close();
         el.settingsPopover.classList.add('hidden');
     }
-    const panelEl = document.querySelector('.panel');
-    if (panelEl) panelEl.classList.toggle('morph-locked', locked);
+    const sidebarEl = document.querySelector('.sidebar');
+    if (sidebarEl) sidebarEl.classList.toggle('morph-locked', locked);
 }
 
 /* ── Render dispatch ── */
@@ -567,8 +565,6 @@ function randomizeUI() {
     controls.setSeedInUI(seedTag);
     controls.setCameraInUI(controls.CAMERA_DEFAULTS);
     bridge.sendCameraState(controls.CAMERA_DEFAULTS.zoom, controls.CAMERA_DEFAULTS.rotation, controls.CAMERA_DEFAULTS.elevation);
-    controls.setTopologyUI('flow-field');
-
     for (const id of controls.SLIDER_KEYS) {
         el[id].value = Math.random().toFixed(2);
     }
@@ -786,15 +782,14 @@ initModals({
     escapeHandlers: [
         () => { if (!_infoModalRefs.infoModal.classList.contains('hidden')) { closeInfoModal(); return true; } },
         () => { if (!el.statementModal.classList.contains('hidden')) { closeStatementModal(); return true; } },
-        () => { if (isPanelOpen()) { closePanel(); return true; } },
+        () => { if (isSidebarOpen()) { closeSidebar(); return true; } },
     ],
 });
 
 /* ── UI init ── */
 
 initCollapsibles();
-initPanel();
-controls.initTopologySelector(onControlChange);
+initSidebar();
 controls.initSeedTagSelects();
 controls.updateCameraLabels(controls.CAMERA_DEFAULTS);
 initPageSettings(_footerRefs.pageSettingsBtn, _footerRefs.pageSettingsPopover);

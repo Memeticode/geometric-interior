@@ -57,8 +57,9 @@ export const CameraConfigSchema = z.object({
 // Controls (user-facing sliders)
 // ──────────────────────────────────────
 
+// Future topology ideas (removed — only flow-field was implemented):
+// icosahedral, möbius, multi-attractor
 export const ControlsSchema = z.object({
-    topology: z.literal('flow-field').default('flow-field'),
     hue: unit.default(0.5),
     spectrum: unit.default(0.5),
     chroma: unit.default(0.5),

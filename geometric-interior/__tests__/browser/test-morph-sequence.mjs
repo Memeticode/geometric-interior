@@ -69,8 +69,8 @@ export async function runTests(page, errors) {
     await test('Morph across different palettes does not crash', async () => {
         const ok = await page.evaluate(({ seedA, seedB }) => {
             const tl = (window).testLib;
-            const cA = { topology: 'flow-field', palette: 'violet-depth', density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5 };
-            const cB = { topology: 'flow-field', palette: 'warm-spectrum', density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5 };
+            const cA = { palette: 'violet-depth', density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5 };
+            const cB = { palette: 'warm-spectrum', density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, depth: 0.5, coherence: 0.5 };
             tl.resetPalette('violet-depth');
             tl.resetPalette('warm-spectrum');
             tl.morphPrepare(seedA, cA, seedB, cB);

@@ -33,10 +33,10 @@
 
     <div class="app-body">
         <script>
-            if (localStorage.getItem('geo-self-portrait-panel-collapsed') === 'false') {
-                document.write('<aside class="panel no-transition" aria-label="Scene list" aria-hidden="false">');
+            if (localStorage.getItem('geo-sidebar-collapsed') === 'false') {
+                document.write('<aside class="sidebar no-transition" aria-label="Scene list" aria-hidden="false">');
             } else {
-                document.write('<aside class="panel panel-collapsed no-transition" aria-label="Scene list" aria-hidden="true">');
+                document.write('<aside class="sidebar sidebar-collapsed no-transition" aria-label="Scene list" aria-hidden="true">');
             }
         </script>
             <div class="anim-panel-header">
@@ -77,7 +77,7 @@
                 </div>
             </div>
         </aside>
-        <div class="panel-backdrop hidden" id="panelBackdrop"></div>
+        <div class="sidebar-backdrop hidden" id="sidebarBackdrop"></div>
 
         <main class="stage">
             <div class="anim-stage-content">

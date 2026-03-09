@@ -3,7 +3,7 @@
  */
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { ensurePanelOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
+import { ensureSidebarOpen, ensureConfigExpanded, scrollToElement } from './helpers/browser.mjs';
 import { readControlsFromPage } from './helpers/controls.mjs';
 import { waitForModalOpen, waitForModalClosed, waitForStillRendered, sleep } from './helpers/waits.mjs';
 import { assertNoPageErrors } from './helpers/assertions.mjs';
@@ -26,7 +26,7 @@ export async function runTests(page, errors) {
     }
 
     async function openImport() {
-        await ensurePanelOpen(page);
+        await ensureSidebarOpen(page);
         await ensureConfigExpanded(page);
         await scrollToElement(page, '#importBtn');
         await page.click('#importBtn');
@@ -48,7 +48,7 @@ export async function runTests(page, errors) {
     console.log('\n=== Import Tests ===\n');
 
     await waitForStillRendered(page);
-    await ensurePanelOpen(page);
+    await ensureSidebarOpen(page);
     await ensureConfigExpanded(page);
 
     // ── Test: Import modal opens ──

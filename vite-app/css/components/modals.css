@@ -417,7 +417,7 @@
     border-color: var(--accent-text);
 }
 
-/* Base bar styles for modal close button (self-contained, no panel.css dependency) */
+/* Base bar styles for modal close button (self-contained, no sidebar.css dependency) */
 .modal-close .panel-toggle-icon {
     position: relative;
     width: 18px;

@@ -38,9 +38,6 @@ export default {
     'control.name': 'Nombre',
     'control.name.tooltip': 'Un nombre para esta composici\u00f3n de luz y forma.',
     'control.name.placeholder': 'ej. Cristalino Violeta',
-    'control.intentSeed': 'Intenci\u00f3n (semilla)',
-    'control.intentSeed.tooltip': 'Una palabra que invoca esta configuraci\u00f3n exacta. El mismo susurro, el mismo mundo. (Frase semilla determinista.)',
-    'control.intentSeed.placeholder': 'ej. luz llegando a trav\u00e9s del cristal',
     'control.palette': 'Paleta',
     'control.palette.tooltip': 'La atm\u00f3sfera crom\u00e1tica. Doble clic en un preset para personalizar.',
     'control.density': 'Densidad',
@@ -69,8 +66,6 @@ export default {
     'control.faceting.tooltip': 'Car\u00e1cter cristalino \u2014 la calidad de las caras geom\u00e9tricas individuales. Controla la proporci\u00f3n de quads amplios a tri\u00e1ngulos agudos, el \u00e1ngulo diedro de plegado entre caras sucesivas y la tasa de contracci\u00f3n. Determina si los fragmentos se leen como paneles suaves o cristales angulares.',
     'control.flow': 'Flujo',
     'control.flow.tooltip': 'Patr\u00f3n espacial \u2014 la forma del campo direccional. En 0, estallido radial emanando del centro. En 0.5, ruido Perlin ca\u00f3tico (org\u00e1nico, sin direcci\u00f3n preferente). En 1, bandas orbitales envolviendo la forma. El flujo define la forma de la organizaci\u00f3n; la coherencia define su intensidad.',
-    'control.topology': 'Topolog\u00eda',
-    'control.topology.tooltip': 'La arquitectura espacial \u2014 c\u00f3mo los planos se distribuyen en el vac\u00edo.',
 
     /* ── Generate panel headings ── */
     'generate.seed': 'Semilla',
@@ -94,7 +89,7 @@ export default {
     /* ── Parameter sections ── */
     'params.heading': 'Par\u00e1metros',
     'section.geometry': 'Geometr\u00eda',
-    'section.geometry.tooltip': 'El car\u00e1cter f\u00edsico de las formas \u2014 su abundancia, fragmentaci\u00f3n, granularidad, topolog\u00eda y calidad cristalina.',
+    'section.geometry.tooltip': 'El car\u00e1cter f\u00edsico de las formas \u2014 su abundancia, fragmentaci\u00f3n, granularidad y calidad cristalina.',
     'section.light': 'Luz',
     'section.light.tooltip': 'La energ\u00eda y emanaci\u00f3n de la escena \u2014 cu\u00e1n brillante, y cu\u00e1n lejos llega la luz.',
     'section.color': 'Color',
@@ -133,12 +128,6 @@ export default {
     'palette.range.tooltip': 'Hasta d\u00f3nde el color puede vagar desde su origen.',
     'palette.saturation': 'Saturaci\u00f3n',
     'palette.saturation.tooltip': 'La pureza del pigmento \u2014 susurro polvoriento a joya l\u00edquida.',
-
-    /* ── Topology labels ── */
-    'topology.flow': 'Flujo',
-    'topology.crystal': 'Cristal',
-    'topology.mobius': 'M\u00f6bius',
-    'topology.attractor': 'Atractor',
 
     /* ── Config IO ── */
     'config.export': 'Exportar',

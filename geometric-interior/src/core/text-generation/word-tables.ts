@@ -3,21 +3,6 @@
  * Supports locale-specific word tables (en, es).
  */
 
-export const TOPOLOGY_WORDS: Record<string, Record<string, string[]>> = {
-    en: {
-        'icosahedral': ['Faceted', 'Crystalline', 'Tessellated', 'Lattice'],
-        'mobius': ['Twisted', 'Continuous', 'Möbius', 'Flowing'],
-        'flow-field': ['Drifting', 'Curling', 'Streaming', 'Field'],
-        'multi-attractor': ['Converging', 'Radiant', 'Tensioned', 'Nucleated'],
-    },
-    es: {
-        'icosahedral': ['Facetado', 'Cristalino', 'Teselado', 'Reticular'],
-        'mobius': ['Torcido', 'Continuo', 'Möbius', 'Fluido'],
-        'flow-field': ['Ondulante', 'Serpenteante', 'Fluyente', 'Errante'],
-        'multi-attractor': ['Convergente', 'Radiante', 'Tensionado', 'Nucleado'],
-    },
-};
-
 /** Hue-based color words (replaces palette-based lookup). */
 export const HUE_WORD_MAP: Record<string, Array<{ max: number; words: string[] }>> = {
     en: [

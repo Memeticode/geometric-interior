@@ -71,13 +71,13 @@
         gap: 0.75rem;
     }
 
-    /* Panel — fixed overlay with border (tablet) */
-    .panel {
+    /* Sidebar — fixed overlay with border (tablet) */
+    .sidebar {
         width: min(25rem, 90vw);
         border-right: 1px solid var(--border);
         box-shadow: 4px 0 24px var(--shadow-color);
     }
-    .panel.panel-collapsed {
+    .sidebar.sidebar-collapsed {
         width: min(25rem, 90vw);
     }
 
@@ -116,10 +116,18 @@
     .menu-push .app-footer {
         margin-left: min(16rem, 85vw);
     }
-    .menu-push .site-menu-backdrop {
-        opacity: 0 !important;
-        visibility: hidden !important;
-        pointer-events: none !important;
+    /* No backdrop on desktop — menu pushes content, not overlays */
+    .site-menu-backdrop {
+        display: none;
+    }
+    /* Keep menu fully opaque on desktop — no fade, just slide + push */
+    .site-menu {
+        opacity: 1;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                    visibility 0.3s;
+    }
+    .site-menu.site-menu-closed {
+        opacity: 1;
     }
     .menu-push .site-menu {
         box-shadow: none;
@@ -172,8 +180,8 @@
         grid-template-columns: auto 1fr;
     }
 
-    /* Panel — inline sidebar (not overlay) */
-    .panel {
+    /* Sidebar — inline (not overlay) */
+    .sidebar {
         position: static;
         width: 25rem;
         max-height: unset;
@@ -188,7 +196,7 @@
         visibility: visible;
         box-shadow: none;
     }
-    .panel.panel-collapsed {
+    .sidebar.sidebar-collapsed {
         width: 0;
         padding: 0;
         opacity: 0;
@@ -197,7 +205,7 @@
         transform: none;
         visibility: visible;
     }
-    .panel-backdrop {
+    .sidebar-backdrop {
         display: none;
     }
 
@@ -205,6 +213,28 @@
     .app-container {
         border-left: 1px solid var(--border);
         border-right: 1px solid var(--border);
+    }
+
+    /* Larger icon buttons on desktop */
+    .gen-action-btn {
+        width: 30px;
+        height: 30px;
+    }
+    .gen-action-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+    .stage-header-btns button svg {
+        width: 18px;
+        height: 18px;
+    }
+    .gallery-arrow {
+        width: 30px;
+        height: 30px;
+    }
+    .gallery-arrow svg {
+        width: 18px;
+        height: 18px;
     }
 
     /* Generate — side-by-side layout */

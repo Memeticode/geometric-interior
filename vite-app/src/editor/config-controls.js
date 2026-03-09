@@ -1,5 +1,5 @@
 /**
- * Config controls — reads/writes seed tags, camera, sliders, and topology
+ * Config controls — reads/writes seed tags, camera, and sliders
  * from/to the editor UI. Pure UI layer with no rendering or state management.
  */
 
@@ -7,11 +7,10 @@ import { seedTagToLabel, parseSeed, getLocalizedWords } from '@geometric-interio
 import { getLocale } from '../i18n/locale.js';
 
 export const SLIDER_KEYS = ['density', 'luminosity', 'bloom', 'fracture', 'coherence', 'hue', 'spectrum', 'chroma', 'scale', 'division', 'faceting', 'flow'];
-export const TOPOLOGY_VALUES = ['flow-field', 'icosahedral', 'mobius', 'multi-attractor'];
 export const CAMERA_DEFAULTS = { zoom: 0.38, rotation: 0, elevation: 0 };
 
 /**
- * @param {object} el - DOM element refs (must include slider, seed tag, camera, topology elements)
+ * @param {object} el - DOM element refs (must include slider, seed tag, camera elements)
  */
 export function createConfigControls(el) {
 
@@ -76,33 +75,10 @@ export function createConfigControls(el) {
         el.elevationLabel.textContent = Math.round(camera.elevation ?? 0) + '\u00b0';
     }
 
-    /* ── Topology ── */
-
-    function setTopologyUI(value) {
-        el.topology.value = value;
-        const tiles = el.topologySelector.querySelectorAll('.topo-tile');
-        tiles.forEach(t => {
-            t.classList.toggle('active', t.dataset.value === value);
-        });
-    }
-
-    function initTopologySelector(onChange) {
-        const tiles = el.topologySelector.querySelectorAll('.topo-tile');
-        tiles.forEach(tile => {
-            tile.addEventListener('click', () => {
-                tiles.forEach(t => t.classList.remove('active'));
-                tile.classList.add('active');
-                el.topology.value = tile.dataset.value;
-                onChange();
-            });
-        });
-    }
-
     /* ── Slider controls ── */
 
     function readControlsFromUI() {
         return {
-            topology: 'flow-field',
             density: parseFloat(el.density.value),
             luminosity: parseFloat(el.luminosity.value),
             bloom: parseFloat(el.bloom.value),
@@ -128,7 +104,6 @@ export function createConfigControls(el) {
     }
 
     function setControlsInUI(controls) {
-        setTopologyUI(controls.topology || 'flow-field');
         for (const key of SLIDER_KEYS) {
             if (el[key] && controls[key] !== undefined) {
                 el[key].value = controls[key];
@@ -154,8 +129,6 @@ export function createConfigControls(el) {
         readControlsFromUI,
         updateSliderLabels,
         setControlsInUI,
-        setTopologyUI,
-        initTopologySelector,
         syncDisplayFields,
         SLIDER_KEYS,
         CAMERA_DEFAULTS,

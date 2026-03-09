@@ -37,9 +37,7 @@ export function circularLerp(a, b, t, period = 360) {
 export function interpolateState(from, to, tRaw) {
     const t = cosineEase(clamp01(tRaw));
 
-    const controls = {
-        topology: to.controls.topology,
-    };
+    const controls = {};
 
     // Numeric slider keys: eased lerp
     for (const key of NUMERIC_KEYS) {
