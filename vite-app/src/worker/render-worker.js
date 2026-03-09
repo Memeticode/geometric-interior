@@ -330,6 +330,10 @@ self.onmessage = function (e) {
         case 'snapshot':
             doSnapshot(msg);
             break;
+
+        case 'capture-frame':
+            doCaptureFrame(msg.requestId);
+            break;
     }
 };
 
@@ -340,6 +344,22 @@ async function doExport(requestId) {
         self.postMessage({ type: 'exported', requestId, blob });
     } catch (err) {
         self.postMessage({ type: 'export-error', requestId, error: err.message });
+    }
+}
+
+/* ── Capture current frame (no re-render) ── */
+
+async function doCaptureFrame(requestId) {
+    if (!offscreenCanvas) {
+        self.postMessage({ type: 'frame-captured', requestId, blob: null });
+        return;
+    }
+    try {
+        const blob = await offscreenCanvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
+        self.postMessage({ type: 'frame-captured', requestId, blob });
+    } catch (err) {
+        console.error('[render-worker] capture-frame error:', err);
+        self.postMessage({ type: 'frame-captured', requestId, blob: null });
     }
 }
 

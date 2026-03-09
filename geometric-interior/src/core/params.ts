@@ -123,7 +123,7 @@ export function deriveParams(controls: Controls): DerivedParams {
     const edgeOpacityFadeScale = cl(frac, 0.008, 0.015, 0.025);
     const crackExtendScale = cl(frac, 1.04, 1.12, 1.22);
 
-    const faceDensityAtten = cl(c.density, 0.90, 1.0, 2.5);
+    const faceDensityAtten = cl(c.density, 0.75, 1.9, 3.2);
     const backLightFactor = cl(c.luminosity, 1.2, 2.0, 2.8) / faceDensityAtten;
     const illuminationCap = cl(c.luminosity, 1.3, 1.8, 2.2) / faceDensityAtten;
     const ambientLight = cl(c.luminosity, 0.008, 0.02, 0.04) + cl(c.bloom, 0.0, 0.008, 0.02);
@@ -133,7 +133,7 @@ export function deriveParams(controls: Controls): DerivedParams {
 
     const atmosphericCount = Math.round(cl(c.density, 4, 8, 14) * tertiaryScale);
 
-    const densityScale = cl(c.density, 0.35, 1.0, 5.5);
+    const densityScale = cl(c.density, 0.30, 2.5, 6.0);
 
     // --- Dot config (scale applied to counts) ---
     const heroSpreadScale = cl(frac, 0.5, 1.0, 1.75);
@@ -197,10 +197,10 @@ export function deriveParams(controls: Controls): DerivedParams {
     };
 
     // --- Face opacity scale (density-dependent attenuation) ---
-    const faceOpacityScale = cl(c.density, 1.0, 1.0, 0.45);
+    const faceOpacityScale = cl(c.density, 1.0, 0.50, 0.30);
 
     // --- Postprocessing ---
-    const bloomDensityAtten = cl(c.density, 1.0, 1.0, 1.8);
+    const bloomDensityAtten = cl(c.density, 0.90, 1.6, 2.2);
     const bloomStrength = cl(c.bloom, 0.0, 0.18, 0.40) / bloomDensityAtten;
     const bloomThreshold = cl(c.bloom, 0.95, 0.70, 0.45);
     const chromaticAberration = cl(frac, 0.001, 0.002, 0.004);

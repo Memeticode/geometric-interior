@@ -1,0 +1,5 @@
+[
+  { "name": "low-chroma-wide-spectrum-density-0.1", "seed": [8, 1, 6], "controls": { "topology": "flow-field", "density": 0.1, "luminosity": 0.55, "fracture": 0.50, "coherence": 0.50, "hue": 0.40, "spectrum": 0.80, "chroma": 0.15, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 } },
+  { "name": "high-lum-high-chroma-density-0.6", "seed": [4, 11, 2], "controls": { "topology": "flow-field", "density": 0.6, "luminosity": 0.75, "fracture": 0.40, "coherence": 0.70, "hue": 0.30, "spectrum": 0.50, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 } },
+  { "name": "high-lum-high-chroma-density-1.0", "seed": [4, 11, 2], "controls": { "topology": "flow-field", "density": 1.0, "luminosity": 0.75, "fracture": 0.40, "coherence": 0.70, "hue": 0.30, "spectrum": 0.50, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 } }
+]

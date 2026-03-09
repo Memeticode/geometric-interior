@@ -71,6 +71,9 @@ export function initGalleryWorker(canvas) {
                 case 'snapshot-failed':
                     if (messageHandlers['snapshot-failed']) messageHandlers['snapshot-failed'](msg);
                     break;
+                case 'frame-captured':
+                    if (messageHandlers['frame-captured']) messageHandlers['frame-captured'](msg);
+                    break;
                 case 'error':
                     console.error('[gallery-worker] Worker error:', msg.error);
                     break;
@@ -224,6 +227,15 @@ export function initGalleryWorker(canvas) {
             cancelGenerateAnimation() {
                 if (!ready) return;
                 worker.postMessage({ type: 'generate-animation-cancel' });
+            },
+
+            /**
+             * Capture the current frame without re-rendering.
+             * @param {string} requestId
+             */
+            captureFrame(requestId) {
+                if (!ready) return;
+                worker.postMessage({ type: 'capture-frame', requestId });
             },
 
             /**

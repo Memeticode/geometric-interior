@@ -55,15 +55,15 @@ carousel-dropdown-browser-section { display: none; }
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: calc(var(--card-w) * 9 / 14 + 2.5rem);
+    min-height: calc(var(--card-w) * 9 / 14 + 1.25rem + var(--arc-y-extra, 0px));
     transition: min-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.4s ease;
 }
 
-/* Extra height when carousel titles sit outside the image */
-carousel-dropdown-browser.cdb-ct-above .cdb-track,
-carousel-dropdown-browser.cdb-ct-below .cdb-track {
-    min-height: calc(var(--card-w) * 9 / 14 + 2.5rem + 1.5em);
+/* Extra height when card titles sit outside the image */
+carousel-dropdown-browser.cdb-t-above .cdb-track,
+carousel-dropdown-browser.cdb-t-below .cdb-track {
+    min-height: calc(var(--card-w) * 9 / 14 + 1.25rem + 1.5em + var(--arc-y-extra, 0px));
 }
 
 /* Flattened state when grid is expanded */
@@ -148,15 +148,18 @@ carousel-dropdown-browser.cdb-ct-below .cdb-track {
     user-select: none;
 }
 
-.cdb-card-img {
+.cdb-card-frame {
     position: relative;
     width: 100%;
-    aspect-ratio: 14 / 9;
     border-radius: 8px;
-    overflow: visible;
+    overflow: hidden;
+    border: 2px solid red;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
     transform: perspective(1200px)
-               rotateX(var(--rx, 0deg))
                rotateY(var(--ry, 0deg))
+               rotateX(var(--rx, 0deg))
                translateZ(var(--tz, 0px))
                scale(var(--sc, 1));
     transition: transform 0.15s ease,
@@ -164,11 +167,17 @@ carousel-dropdown-browser.cdb-ct-below .cdb-track {
     transform-style: preserve-3d;
 }
 
-.cdb-track:not(.cdb-dragging) .cdb-card.cdb-hovered {
+.cdb-card-img {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 14 / 9;
+}
+
+.cdb-track:not(.cdb-dragging):not(.cdb-transitioning) .cdb-card.cdb-hovered {
     z-index: 20 !important;
 }
 
-.cdb-track:not(.cdb-dragging) .cdb-card.cdb-hovered .cdb-card-img {
+.cdb-track:not(.cdb-dragging):not(.cdb-transitioning) .cdb-card.cdb-hovered .cdb-card-frame {
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
     transform: translateY(calc(-1 * var(--hover-lift, 0px)))
                translateX(var(--hover-cx, 0px))
@@ -185,187 +194,120 @@ carousel-dropdown-browser.cdb-ct-below .cdb-track {
     object-fit: cover;
     display: block;
     pointer-events: none;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 2px solid transparent;
     background: var(--surface);
-    transition: border-color 0.2s ease, border-top-color 0.2s ease, border-bottom-color 0.2s ease;
 }
 
-.cdb-card.active .cdb-card-img img {
-    border-top-color: rgba(180, 130, 255, 0.6);
-    border-bottom-color: rgba(180, 130, 255, 0.6);
+/* ── Image error state (border + ×) ── */
+.cdb-img-error img {
+    visibility: hidden;
 }
-
-.cdb-track:not(.cdb-dragging) .cdb-card.active.cdb-hovered .cdb-card-img img {
-    border-top-color: rgba(180, 130, 255, 0.6);
-    border-bottom-color: rgba(180, 130, 255, 0.6);
+.cdb-card-img.cdb-img-error,
+.cdb-grid-card.cdb-img-error {
+    background: var(--surface);
 }
-
-/* ── Card titles (carousel) — inside .cdb-card-img for 3D transform ── */
-/* Uses unified top + translateY so positions are interpolatable for smooth transitions */
-.cdb-card-title {
-    display: block;
-    opacity: 0;
+.cdb-card-img.cdb-img-error::after,
+.cdb-grid-card.cdb-img-error::after {
+    content: '×';
     position: absolute;
-    left: 0;
-    right: 0;
-    top: 0;
-    z-index: 2;
-    font-size: 0.75rem;
-    font-weight: 500;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+/* ── Card titles (unified for carousel + grid) ── */
+.cdb-card-title,
+.cdb-grid-card-name {
+    display: none;
+    font-size: 0.7rem;
+    font-weight: 400;
     color: var(--text);
     white-space: nowrap;
-    overflow: hidden;
     text-overflow: ellipsis;
+    overflow: hidden;
     padding: 0.25rem 0.4rem;
     pointer-events: none;
-    transform: translateY(0);
-    transition: top 0.3s ease, transform 0.3s ease, background 0.3s ease, opacity 0.3s ease;
-}
-
-/* above: sits just above image */
-carousel-dropdown-browser.cdb-ct-above .cdb-card-title {
-    opacity: 1;
-    top: 0;
-    transform: translateY(-100%);
-    padding-bottom: 0.4rem;
-    background: none;
-}
-/* top: top of image, gradient background */
-carousel-dropdown-browser.cdb-ct-top .cdb-card-title {
-    opacity: 1;
-    top: 0;
-    transform: translateY(0);
-    background: linear-gradient(rgba(0, 0, 0, 0.55), transparent);
-}
-/* center: vertically centered, solid background */
-carousel-dropdown-browser.cdb-ct-center .cdb-card-title {
-    opacity: 1;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(0, 0, 0, 0.5);
-}
-/* bottom: bottom of image, gradient background */
-carousel-dropdown-browser.cdb-ct-bottom .cdb-card-title {
-    opacity: 1;
-    top: 100%;
-    transform: translateY(-100%);
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
-}
-/* below: sits just below image */
-carousel-dropdown-browser.cdb-ct-below .cdb-card-title {
-    opacity: 1;
-    top: 100%;
-    transform: translateY(0);
-    padding-top: 0.4rem;
-    background: none;
-}
-
-/* Horizontal alignment */
-carousel-dropdown-browser.cdb-ct-h-left .cdb-card-title { text-align: left; }
-carousel-dropdown-browser.cdb-ct-h-center .cdb-card-title { text-align: center; }
-carousel-dropdown-browser.cdb-ct-h-right .cdb-card-title { text-align: right; }
-
-/* ── Card titles (grid) ── */
-.cdb-grid-card-name {
-    display: block;
-    opacity: 0;
-    max-height: 0;
-    overflow: hidden;
-    padding: 0.2rem 0.3rem;
-    font-size: 0.65rem;
-    font-weight: 500;
-    color: var(--text);
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    transition: opacity 0.3s ease, max-height 0.3s ease;
 }
 
 /* above: static, sits above image via flex order */
-carousel-dropdown-browser.cdb-gt-above .cdb-grid-card-name {
-    opacity: 1;
-    max-height: 2em;
-    position: static;
-    padding-bottom: 0.4rem;
-    background: none;
+carousel-dropdown-browser.cdb-t-above .cdb-card-title,
+carousel-dropdown-browser.cdb-t-above .cdb-grid-card-name {
+    display: block;
     order: -1;
+    padding-bottom: 0.4rem;
 }
 /* top: absolute overlay at top of image */
-carousel-dropdown-browser.cdb-gt-top .cdb-grid-card-name {
-    opacity: 1;
-    max-height: none;
+carousel-dropdown-browser.cdb-t-top .cdb-card-title,
+carousel-dropdown-browser.cdb-t-top .cdb-grid-card-name {
+    display: block;
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     z-index: 2;
-    background: linear-gradient(rgba(0, 0, 0, 0.55), transparent);
+    background: var(--title-overlay);
 }
 /* center: absolute overlay centered on image */
-carousel-dropdown-browser.cdb-gt-center .cdb-grid-card-name {
-    opacity: 1;
-    max-height: none;
+carousel-dropdown-browser.cdb-t-center .cdb-card-title,
+carousel-dropdown-browser.cdb-t-center .cdb-grid-card-name {
+    display: block;
     position: absolute;
     top: 50%;
     left: 0;
     right: 0;
     transform: translateY(-50%);
     z-index: 2;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--title-overlay);
 }
 /* bottom: absolute overlay at bottom of image */
-carousel-dropdown-browser.cdb-gt-bottom .cdb-grid-card-name {
-    opacity: 1;
-    max-height: none;
+carousel-dropdown-browser.cdb-t-bottom .cdb-card-title,
+carousel-dropdown-browser.cdb-t-bottom .cdb-grid-card-name {
+    display: block;
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 2;
-    background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+    background: var(--title-overlay);
 }
-/* below: static, sits below image */
-carousel-dropdown-browser.cdb-gt-below .cdb-grid-card-name {
-    opacity: 1;
-    max-height: 2em;
-    position: static;
+/* below: static, sits below image (order pushes after image in flex) */
+carousel-dropdown-browser.cdb-t-below .cdb-card-title,
+carousel-dropdown-browser.cdb-t-below .cdb-grid-card-name {
+    display: block;
+    order: 1;
     padding-top: 0.4rem;
-    background: none;
 }
 
-carousel-dropdown-browser.cdb-gt-h-left .cdb-grid-card-name { text-align: left; }
-carousel-dropdown-browser.cdb-gt-h-center .cdb-grid-card-name { text-align: center; }
-carousel-dropdown-browser.cdb-gt-h-right .cdb-grid-card-name { text-align: right; }
+/* Horizontal alignment */
+carousel-dropdown-browser.cdb-t-h-left .cdb-card-title,
+carousel-dropdown-browser.cdb-t-h-left .cdb-grid-card-name { text-align: left; }
+carousel-dropdown-browser.cdb-t-h-center .cdb-card-title,
+carousel-dropdown-browser.cdb-t-h-center .cdb-grid-card-name { text-align: center; }
+carousel-dropdown-browser.cdb-t-h-right .cdb-card-title,
+carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right; }
 
 /* ── Adjacent card fade mask (when neighbor is hovered) ── */
-/* Mask the img element only so titles remain visible */
-.cdb-mask-left .cdb-card-img img {
+/* Masks the entire card frame (image + title + border) */
+.cdb-mask-left .cdb-card-frame {
     -webkit-mask-image: linear-gradient(to right, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
     mask-image: linear-gradient(to right, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
+    transition: transform 0.15s ease, --mask-size 0.075s ease, box-shadow 0.2s ease;
 }
-.cdb-mask-left .cdb-card-img {
-    transition: transform 0.15s ease, --mask-size 0.075s ease,
-                border-color 0.2s ease, border-top-color 0.2s ease,
-                border-bottom-color 0.2s ease, box-shadow 0.2s ease;
-}
-.cdb-mask-right .cdb-card-img img {
+.cdb-mask-right .cdb-card-frame {
     -webkit-mask-image: linear-gradient(to left, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
     mask-image: linear-gradient(to left, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
-}
-.cdb-mask-right .cdb-card-img {
-    transition: transform 0.15s ease, --mask-size 0.075s ease,
-                border-color 0.2s ease, border-top-color 0.2s ease,
-                border-bottom-color 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.15s ease, --mask-size 0.075s ease, box-shadow 0.2s ease;
 }
 
 /* Rest-state mask (center card during rotation) — matches carousel transition speed */
-.cdb-card.cdb-rest-mask.cdb-mask-left .cdb-card-img,
-.cdb-card.cdb-rest-mask.cdb-mask-right .cdb-card-img {
+.cdb-card.cdb-rest-mask.cdb-mask-left .cdb-card-frame,
+.cdb-card.cdb-rest-mask.cdb-mask-right .cdb-card-frame {
     transition: transform 0.15s ease,
                 --mask-size var(--carousel-speed, 0.85s) ease,
-                border-color 0.2s ease, border-top-color 0.2s ease,
-                border-bottom-color 0.2s ease, box-shadow 0.2s ease;
+                box-shadow 0.2s ease;
 }
 
 /* ── View All toggle ── */
@@ -457,6 +399,10 @@ carousel-dropdown-browser.cdb-gt-h-right .cdb-grid-card-name { text-align: right
     flex-direction: column;
     cursor: pointer;
     position: relative;
+    border: 2px solid red;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg);
     transition: transform 0.15s ease;
 }
 
@@ -471,13 +417,10 @@ carousel-dropdown-browser.cdb-gt-h-right .cdb-grid-card-name { text-align: right
     object-fit: cover;
     display: block;
     border-radius: 6px;
-    border: 2px solid transparent;
-    transition: border-color 0.15s;
 }
 
-.cdb-grid-card.selected img {
-    border-top-color: rgba(180, 130, 255, 0.6);
-    border-bottom-color: rgba(180, 130, 255, 0.6);
+.cdb-grid-card.selected {
+    border-color: rgba(180, 130, 255, 0.6);
 }
 
 .cdb-grid-card-actions {
@@ -526,6 +469,7 @@ carousel-dropdown-browser.cdb-gt-h-right .cdb-grid-card-name { text-align: right
     position: relative;
     width: 100%;
     height: var(--cdb-label-height, 1.1rem);
+    margin-bottom: 0.25rem;
     overflow: hidden;
     pointer-events: none;
 }
@@ -599,4 +543,13 @@ carousel-dropdown-browser.cdb-gt-h-right .cdb-grid-card-name { text-align: right
 
 @media (max-width: 767px) {
     :root { --card-w: 110px; }
+    .cdb-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; }
+}
+@media (max-width: 479px) {
+    :root { --card-w: 90px; }
+    .cdb-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); padding: 0.5rem 0.75rem; }
+}
+@media (max-width: 374px) {
+    :root { --card-w: 75px; }
+    .cdb-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
 }

@@ -1,0 +1,7 @@
+[
+  { "name": "violet-d000", "seed": [7, 6, 7], "controls": { "topology": "flow-field", "density": 0.00, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 } },
+  { "name": "violet-d005", "seed": [7, 6, 7], "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 } },
+  { "name": "violet-d010", "seed": [7, 6, 7], "controls": { "topology": "flow-field", "density": 0.10, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 } },
+  { "name": "violet-d015", "seed": [7, 6, 7], "controls": { "topology": "flow-field", "density": 0.15, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 } },
+  { "name": "violet-d020", "seed": [7, 6, 7], "controls": { "topology": "flow-field", "density": 0.20, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 } }
+]

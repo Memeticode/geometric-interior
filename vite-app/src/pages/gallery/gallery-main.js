@@ -18,12 +18,11 @@ import { createFooter } from '../../components/create-footer.js';
 import { initApp } from '../../components/app-init.js';
 import { initTheme } from '../../stores/theme.js';
 import { initLangSelector } from '../../i18n/lang-selector.js';
-import { initResolutionSelector } from '../../stores/resolution.js';
+import { initResolutionSelector, getResolution, getGenResolution, initGenResolutionSelector } from '../../stores/resolution.js';
 import { t, getLocale } from '../../i18n/locale.js';
 import { loadProfiles, loadPortraits, getPortraitNames, loadPortraitSections, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder } from '../../stores/profiles.js';
 import { getAllThumbs, deleteThumb } from '../../stores/thumb-cache.js';
 import { getAllAssets, getAsset, deleteAsset, getAllAnimAssets, deleteAnimAsset } from '../../stores/asset-store.js';
-import { getResolution } from '../../stores/resolution.js';
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
 import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
 import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
@@ -32,7 +31,7 @@ import { toast } from '../../components/toast.js';
 import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
 import { TRASH_SVG } from '../../components/icons.js';
-import { refreshTooltip, hideTooltip, showTooltip } from '../../components/tooltips.js';
+import { refreshTooltip, hideTooltip } from '../../components/tooltips.js';
 import { initGalleryWorker } from './gallery-worker-bridge.js';
 import { createRenderQueue } from './render-queue.js';
 import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
@@ -50,6 +49,7 @@ const { statement } = initApp({ page: 'gallery' });
 initTheme(footerRefs.themeSwitcher);
 initLangSelector(footerRefs.langDropdown);
 initResolutionSelector(document.getElementById('resolutionDropdown'));
+initGenResolutionSelector(document.getElementById('genResolutionDropdown'));
 initCustomDropdown(document.getElementById('slideshowDropdown'), {
     initialValue: '2',
     onSelect() {
@@ -199,13 +199,19 @@ const genNameField = document.getElementById('genNameField');
 const genSaveBtn = document.getElementById('genSaveBtn');
 const genResetBtn = document.getElementById('genResetBtn');
 const genRandomizeBtn = document.getElementById('genRandomizeBtn');
-const genSlugDisplay = document.getElementById('genSlugDisplay');
+const genNameLabel = document.getElementById('genNameLabel');
 const genCommentaryField = document.getElementById('genCommentaryField');
-const genAltTextField = document.getElementById('genAltTextField');
 const genNameCounter = document.getElementById('genNameCounter');
 const genNameError = document.getElementById('genNameError');
 const genCommentaryCounter = document.getElementById('genCommentaryCounter');
 const genPreviewCanvas = document.getElementById('genPreviewCanvas');
+const genPreviewWrap = document.getElementById('genPreviewWrap');
+const genHistoryBack = document.getElementById('genHistoryBack');
+const genHistoryForward = document.getElementById('genHistoryForward');
+const genUndoBtn = document.getElementById('genUndoBtn');
+const genRedoBtn = document.getElementById('genRedoBtn');
+const genFullscreenBtn = document.getElementById('genFullscreenBtn');
+const genLoadingOverlay = document.getElementById('genLoadingOverlay');
 const genProgressOverlay = document.getElementById('genProgressOverlay');
 const genProgressFill = document.getElementById('genProgressFill');
 const genProgressLabel = document.getElementById('genProgressLabel');
@@ -313,7 +319,7 @@ function computeContainedRect(aspectRatio) {
     return { top: (vh - h) / 2, left: (vw - w) / 2, width: w, height: h };
 }
 
-function openFullscreen() {
+async function openFullscreen() {
     if (fullscreenOverlay) return;
 
     const galleryRect = selectedImageWrap.getBoundingClientRect();
@@ -337,6 +343,8 @@ function openFullscreen() {
         media = document.createElement('img');
         media.src = selectedImage.src;
         media.alt = selectedImage.alt;
+        // Decode image before animating to avoid blank/slow first frame
+        try { await media.decode(); } catch { /* proceed anyway */ }
     }
     media.id = 'fullscreenMedia';
 
@@ -763,10 +771,11 @@ function applySelection(name, profile, isPortrait, assetId) {
     selected = { name, isPortrait, assetId };
     const fadeDuration = 250;
 
-    // Fade out text + image together
+    // Fade out text + image + alt-text overlay together
     selectedHeaderText.classList.add('fading');
     selectedFooter.classList.add('fading');
     selectedImage.style.opacity = '0';
+    fadeOutAltText();
 
     // Cancel any pending fade-in from a previous rapid selection
     clearTimeout(selectionFadeTimer);
@@ -812,6 +821,9 @@ function applySelection(name, profile, isPortrait, assetId) {
             selectedGenAlt.classList.remove('expanded');
             selectedGenToggle.setAttribute('aria-expanded', 'false');
         }
+
+        // Update alt-text overlay if visible
+        updateAltText(selectedImage.getAttribute('data-tooltip'));
 
         // Swap image src (old image is now fully hidden)
         if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
@@ -888,12 +900,8 @@ function updateArrowStates() {
     galleryArrowRight.setAttribute('data-tooltip', disabled ? '' : 'Next');
 }
 
-let tooltipClickTarget = null;
-
 function navigateArrow(direction) {
     if (navigableList.length <= 1) return;
-    hideTooltip();
-    tooltipClickTarget = null;
     let newIndex = currentIndex + direction;
     if (newIndex < 0) newIndex = navigableList.length - 1;
     if (newIndex >= navigableList.length) newIndex = 0;
@@ -904,26 +912,55 @@ function navigateArrow(direction) {
 galleryArrowLeft.addEventListener('click', () => { if (slideshowPlaying) stopSlideshow(); navigateArrow(-1); });
 galleryArrowRight.addEventListener('click', () => { if (slideshowPlaying) stopSlideshow(); navigateArrow(1); });
 
-/* ── Image alt-text click-to-toggle overlay ── */
+/* ── Alt-text overlays (independent of tooltip system) ── */
+// Suppress hover tooltips on these elements (they use dedicated overlays instead)
 selectedImage.setAttribute('data-tooltip-click', '');
+genPreviewCanvas.setAttribute('data-tooltip-click', '');
+
+const altTextOverlay = document.getElementById('altTextOverlay');
+const genAltTextOverlay = document.getElementById('genAltTextOverlay');
+let altTextVisible = false;
+let genAltTextVisible = false;
+
+function showAltText(overlay, text) {
+    overlay.textContent = text;
+    overlay.classList.add('visible');
+}
+function hideAltText(overlay) {
+    overlay.classList.remove('visible');
+}
+function fadeOutAltText() {
+    if (altTextVisible) altTextOverlay.classList.remove('visible');
+}
+function updateAltText(text) {
+    if (!altTextVisible) return;
+    altTextOverlay.textContent = text;
+    altTextOverlay.classList.add('visible');
+}
+
 selectedImage.addEventListener('click', () => {
     const text = selectedImage.getAttribute('data-tooltip');
     if (!text) return;
-    const isVisible = selectedImage === tooltipClickTarget;
-    hideTooltip();
-    tooltipClickTarget = null;
-    if (!isVisible) {
-        showTooltip(selectedImage);
-        tooltipClickTarget = selectedImage;
+    if (altTextVisible) {
+        hideAltText(altTextOverlay);
+        altTextVisible = false;
+    } else {
+        showAltText(altTextOverlay, text);
+        altTextVisible = true;
     }
 });
-// Dismiss overlay when clicking outside the image
-document.addEventListener('click', (e) => {
-    if (tooltipClickTarget && !tooltipClickTarget.contains(e.target)) {
-        hideTooltip();
-        tooltipClickTarget = null;
+
+genPreviewCanvas.addEventListener('click', () => {
+    const text = genPreviewCanvas.getAttribute('data-tooltip');
+    if (!text) return;
+    if (genAltTextVisible) {
+        hideAltText(genAltTextOverlay);
+        genAltTextVisible = false;
+    } else {
+        showAltText(genAltTextOverlay, text);
+        genAltTextVisible = true;
     }
-}, true);
+});
 
 function navigateToEditor() {
     const params = new URLSearchParams();
@@ -1246,7 +1283,7 @@ menuNavLinks.forEach(link => {
  * Used as the default animation when generating from the gallery panel.
  */
 function buildSimpleAnimation(seed, controls) {
-    const res = getResolution();
+    const res = getGenResolution();
     return {
         settings: { fps: 30, width: res.w, height: res.h },
         events: [
@@ -1261,14 +1298,136 @@ function buildSimpleAnimation(seed, controls) {
 
 // Eagerly init worker bridge so snapshots work in gallery mode
 workerBridge = initGalleryWorker(genPreviewCanvas);
+let pendingFullscreenCaptureId = null;
+let pendingResizeRender = false;
 if (workerBridge) {
     workerBridge.on('snapshot-complete', (msg) => {
         if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
         snapshotUrl = URL.createObjectURL(msg.blob);
         selectedImage.src = snapshotUrl;
     });
+    workerBridge.on('frame-captured', (msg) => {
+        if (pendingFullscreenCaptureId && msg.requestId === pendingFullscreenCaptureId) {
+            pendingFullscreenCaptureId = null;
+            if (msg.blob) showGenFullscreenImage(msg.blob);
+        }
+    });
+    workerBridge.on('rendered', () => {
+        if (pendingResizeRender) {
+            pendingResizeRender = false;
+            genLoadingOverlay.classList.add('hidden');
+            setGenNavEnabled(true);
+        }
+    });
 }
 let snapshotUrl = null;
+
+/** Enable/disable all generate panel nav buttons. */
+function setGenNavEnabled(enabled) {
+    // Don't force-enable buttons that should be disabled by history state
+    if (enabled && genPanel) {
+        // Let the panel's own button state logic handle disabled states
+        // Just remove our forced-disabled state
+        [genFullscreenBtn].forEach(btn => { if (btn) btn.disabled = false; });
+        // For history/undo buttons, trigger panel's update
+        return;
+    }
+    [genHistoryBack, genHistoryForward, genUndoBtn, genRedoBtn, genFullscreenBtn].forEach(btn => {
+        if (btn) btn.disabled = !enabled;
+    });
+}
+
+/* ── Generate preview fullscreen ── */
+let genFullscreenOverlay = null;
+
+function openGenFullscreen() {
+    if (genFullscreenOverlay) return;
+    if (!workerBridge || !workerBridge.ready) return;
+
+    pendingFullscreenCaptureId = 'fs-' + Date.now();
+    workerBridge.captureFrame(pendingFullscreenCaptureId);
+}
+
+async function showGenFullscreenImage(blob) {
+    const url = URL.createObjectURL(blob);
+    const canvasRect = genPreviewWrap.getBoundingClientRect();
+    const aspectRatio = canvasRect.width / canvasRect.height;
+    const finalRect = computeContainedRect(aspectRatio);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'fullscreen-overlay';
+
+    const media = document.createElement('img');
+    media.src = url;
+    media.id = 'fullscreenMedia';
+
+    // Decode image before animating to avoid blank frame
+    try { await media.decode(); } catch { /* proceed anyway */ }
+
+    media.style.top = finalRect.top + 'px';
+    media.style.left = finalRect.left + 'px';
+    media.style.width = finalRect.width + 'px';
+    media.style.height = finalRect.height + 'px';
+
+    const dx = canvasRect.left - finalRect.left;
+    const dy = canvasRect.top - finalRect.top;
+    const sx = canvasRect.width / finalRect.width;
+    const sy = canvasRect.height / finalRect.height;
+    media.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'fullscreen-close';
+    closeBtn.innerHTML = '\u00d7';
+    closeBtn.setAttribute('aria-label', 'Close fullscreen');
+    closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeGenFullscreen(); });
+
+    overlay.appendChild(media);
+    overlay.appendChild(closeBtn);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeGenFullscreen();
+    });
+
+    document.body.appendChild(overlay);
+    genFullscreenOverlay = overlay;
+    genFullscreenOverlay._blobUrl = url;
+
+    media.offsetHeight;
+    overlay.classList.add('fs-visible');
+    media.classList.add('fs-animating');
+    media.style.transform = 'none';
+}
+
+function closeGenFullscreen() {
+    if (!genFullscreenOverlay) return;
+    const overlay = genFullscreenOverlay;
+    genFullscreenOverlay = null;
+
+    const media = overlay.querySelector('#fullscreenMedia');
+    if (!media) { overlay.remove(); return; }
+
+    const canvasRect = genPreviewWrap.getBoundingClientRect();
+    const finalRect = {
+        top: parseFloat(media.style.top),
+        left: parseFloat(media.style.left),
+        width: parseFloat(media.style.width),
+        height: parseFloat(media.style.height),
+    };
+
+    const dx = canvasRect.left - finalRect.left;
+    const dy = canvasRect.top - finalRect.top;
+    const sx = canvasRect.width / finalRect.width;
+    const sy = canvasRect.height / finalRect.height;
+
+    overlay.classList.remove('fs-visible');
+    media.classList.remove('fs-animating');
+    media.classList.add('fs-closing');
+    media.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+
+    media.addEventListener('transitionend', () => {
+        if (overlay._blobUrl) URL.revokeObjectURL(overlay._blobUrl);
+        overlay.remove();
+    }, { once: true });
+}
 
 function initGenerate() {
     if (generateInitialized) return;
@@ -1289,12 +1448,16 @@ function initGenerate() {
         resetBtn: genResetBtn,
         randomizeBtn: genRandomizeBtn,
         renderBtn: null,
-        slugDisplay: genSlugDisplay,
+        nameTooltipEl: genNameLabel?.querySelector('.label-info'),
         commentaryField: genCommentaryField,
-        altTextField: genAltTextField,
+        previewCanvas: genPreviewCanvas,
         nameCounter: genNameCounter,
         nameError: genNameError,
         commentaryCounter: genCommentaryCounter,
+        historyBackBtn: genHistoryBack,
+        historyForwardBtn: genHistoryForward,
+        undoBtn: genUndoBtn,
+        redoBtn: genRedoBtn,
         onControlChange(seed, controls, camera) {
             if (workerBridge && workerBridge.ready) {
                 workerBridge.sendRender(seed, controls, getLocale());
@@ -1341,6 +1504,24 @@ function initGenerate() {
         });
     });
 
+    // ── Resize preview canvas when generation resolution changes ──
+    function resizeGenPreview() {
+        if (!workerBridge || !workerBridge.ready) return;
+        const res = getGenResolution();
+        pendingResizeRender = true;
+        genLoadingOverlay.classList.remove('hidden');
+        setGenNavEnabled(false);
+        workerBridge.resize(res.w, res.h);
+    }
+    document.addEventListener('genresolutionchange', resizeGenPreview);
+
+    if (genFullscreenBtn) {
+        genFullscreenBtn.addEventListener('click', () => {
+            if (genFullscreenOverlay) closeGenFullscreen();
+            else openGenFullscreen();
+        });
+    }
+
     workerBridge.onReady(() => {
         renderQueue = createRenderQueue({
             workerBridge,
@@ -1366,6 +1547,9 @@ function initGenerate() {
             locale: getLocale(),
         });
 
+        // Resize preview to current resolution
+        resizeGenPreview();
+
         // Send initial preview render + camera state
         const seed = genPanel.readSeed();
         const controls = genPanel.readControls();
@@ -1380,7 +1564,29 @@ let modeTransitioning = false;
 function showGenerateMode() {
     if (slideshowPlaying) stopSlideshow();
     if (modeTransitioning) return;
+    const wasInitialized = generateInitialized;
     initGenerate();
+
+    // Load the selected profile's config into the generate panel
+    if (genPanel && selected.name) {
+        const entry = navigableList.find(p =>
+            p.assetId ? p.assetId === selected.assetId : p.name === selected.name,
+        );
+        if (entry?.profile?.seed && entry.profile.controls) {
+            genPanel.setValues(entry.profile.seed, entry.profile.controls, undefined, entry.name);
+            genPanel.pushImageHistory();
+            // On re-entry (worker already ready), trigger render with loaded values.
+            // On first init, onReady() reads panel values and renders automatically.
+            if (wasInitialized && workerBridge?.ready) {
+                const seed = genPanel.readSeed();
+                const controls = genPanel.readControls();
+                const camera = genPanel.readCamera();
+                workerBridge.sendRenderImmediate(seed, controls, getLocale());
+                workerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
+            }
+        }
+    }
+
     modeTransitioning = true;
 
     // Phase 1: fade out gallery views

@@ -70,24 +70,179 @@ const SLIDER_GRADIENTS = {
  * @param {Function} opts.onControlChange   — (seed, controls, camera) => void
  * @param {Function} opts.onRender          — (seed, controls, camera, name) => void
  * @param {Function} [opts.onSave]          — (seed, controls, camera, name) => void
- * @param {HTMLElement} [opts.slugDisplay]  — element to show URL-safe slug
+ * @param {HTMLElement} [opts.nameTooltipEl] — element whose data-tooltip gets slug appended
  * @param {HTMLTextAreaElement} [opts.commentaryField] — commentary textarea
- * @param {HTMLElement} [opts.altTextField] — element to show auto-generated alt-text
+ * @param {HTMLElement} [opts.previewCanvas] — canvas element for alt-text tooltip overlay
  * @param {HTMLElement} [opts.nameCounter] — char counter for name
  * @param {HTMLElement} [opts.nameError] — validation error for name
  * @param {HTMLElement} [opts.commentaryCounter] — char counter for commentary
+ * @param {HTMLButtonElement} [opts.historyBackBtn] — previous randomized image
+ * @param {HTMLButtonElement} [opts.historyForwardBtn] — next randomized image
+ * @param {HTMLButtonElement} [opts.undoBtn] — undo parameter tweak
+ * @param {HTMLButtonElement} [opts.redoBtn] — redo parameter tweak
  */
 export function initGeneratePanel(opts) {
     const {
         slidersEl, tagArrEl, tagStrEl, tagDetEl,
         nameField, saveBtn, resetBtn, randomizeBtn, renderBtn,
-        onControlChange, onRender, onSave, slugDisplay, commentaryField,
-        altTextField, nameCounter, nameError, commentaryCounter,
+        onControlChange, onRender, onSave, nameTooltipEl, commentaryField,
+        previewCanvas, nameCounter, nameError, commentaryCounter,
+        historyBackBtn, historyForwardBtn, undoBtn, redoBtn,
     } = opts;
 
     const sliderInputs = {};
     const cameraInputs = {};
     let userEditedName = false;
+
+    // ── Two-tier history ──
+    // imageHistory: array of randomized image entries, each with its own undo stack
+    // Prev/next navigates between randomized images
+    // Undo/redo navigates within the current image's tweak history
+    const MAX_IMAGE_HISTORY = 50;
+    const MAX_UNDO = 50;
+    const imageHistory = []; // [{undoStack: [state, ...], undoIndex: number}]
+    let imageIndex = -1;
+    let navigating = false;
+    let undoPushTimer = null;
+
+    function captureState() {
+        return {
+            seed: readSeed(),
+            controls: readControls(),
+            camera: readCamera(),
+            name: nameField.value,
+            userEditedName,
+        };
+    }
+
+    /** Push a new randomized image entry to the top of image history. */
+    function pushImageHistory() {
+        // Save current undo state before leaving
+        if (imageIndex >= 0 && imageHistory[imageIndex]) {
+            flushUndoTimer();
+        }
+        const state = captureState();
+        const entry = { undoStack: [state], undoIndex: 0 };
+        // Always append to end (top), preserving all existing forward history
+        imageHistory.push(entry);
+        if (imageHistory.length > MAX_IMAGE_HISTORY) imageHistory.shift();
+        imageIndex = imageHistory.length - 1;
+        updateNavButtons();
+    }
+
+    /** Push an undo entry for the current image (debounced). */
+    function pushUndo(immediate) {
+        if (navigating) return;
+        if (undoPushTimer) { clearTimeout(undoPushTimer); undoPushTimer = null; }
+        const doPush = () => {
+            const entry = imageHistory[imageIndex];
+            if (!entry) return;
+            // Truncate redo forward when branching
+            if (entry.undoIndex < entry.undoStack.length - 1) {
+                entry.undoStack.length = entry.undoIndex + 1;
+            }
+            entry.undoStack.push(captureState());
+            if (entry.undoStack.length > MAX_UNDO) entry.undoStack.shift();
+            entry.undoIndex = entry.undoStack.length - 1;
+            updateNavButtons();
+        };
+        if (immediate) doPush();
+        else undoPushTimer = setTimeout(doPush, 500);
+    }
+
+    function flushUndoTimer() {
+        if (undoPushTimer) {
+            clearTimeout(undoPushTimer);
+            undoPushTimer = null;
+            // Force the push
+            const entry = imageHistory[imageIndex];
+            if (!entry) return;
+            if (entry.undoIndex < entry.undoStack.length - 1) {
+                entry.undoStack.length = entry.undoIndex + 1;
+            }
+            entry.undoStack.push(captureState());
+            if (entry.undoStack.length > MAX_UNDO) entry.undoStack.shift();
+            entry.undoIndex = entry.undoStack.length - 1;
+        }
+    }
+
+    /** Navigate between randomized images (prev/next). */
+    function navigateImage(dir) {
+        const newIdx = imageIndex + dir;
+        if (newIdx < 0 || newIdx >= imageHistory.length) return;
+        flushUndoTimer();
+        imageIndex = newIdx;
+        navigating = true;
+        const entry = imageHistory[imageIndex];
+        applyState(entry.undoStack[entry.undoIndex]);
+        navigating = false;
+        updateNavButtons();
+    }
+
+    /** Navigate undo/redo within current image entry. */
+    function navigateUndo(dir) {
+        const entry = imageHistory[imageIndex];
+        if (!entry) return;
+        const newIdx = entry.undoIndex + dir;
+        if (newIdx < 0 || newIdx >= entry.undoStack.length) return;
+        flushUndoTimer();
+        entry.undoIndex = newIdx;
+        navigating = true;
+        applyState(entry.undoStack[entry.undoIndex]);
+        navigating = false;
+        updateNavButtons();
+    }
+
+    function applyState(state) {
+        if (state.seed && Array.isArray(state.seed)) {
+            tagArrEl.value = String(state.seed[0]);
+            tagStrEl.value = String(state.seed[1]);
+            tagDetEl.value = String(state.seed[2]);
+        }
+        if (state.controls) {
+            for (const key of SLIDER_KEYS) {
+                if (state.controls[key] !== undefined && sliderInputs[key]) {
+                    sliderInputs[key].value = String(state.controls[key]);
+                    const valueEl = sliderInputs[key].closest('.gen-slider-row')?.querySelector('.gen-slider-value');
+                    if (valueEl) valueEl.value = parseFloat(String(state.controls[key])).toFixed(2);
+                }
+            }
+        }
+        if (state.camera) {
+            for (const cam of CAMERA_SLIDERS) {
+                if (state.camera[cam.key] !== undefined && cameraInputs[cam.key]) {
+                    cameraInputs[cam.key].value = String(state.camera[cam.key]);
+                    const valueEl = cameraInputs[cam.key].closest('.gen-slider-row')?.querySelector('.gen-slider-value');
+                    if (valueEl) valueEl.value = formatValue(parseFloat(String(state.camera[cam.key])), cam.format, cam.step);
+                }
+            }
+        }
+        if (state.name) {
+            nameField.value = state.name;
+            userEditedName = state.userEditedName;
+        } else {
+            userEditedName = false;
+            updateAutoName();
+        }
+        updateSlugDisplay();
+        updateAltText();
+        updateNameCounter();
+        updateCommentaryCounter();
+        if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
+    }
+
+    function updateNavButtons() {
+        if (historyBackBtn) historyBackBtn.disabled = imageIndex <= 0;
+        if (historyForwardBtn) historyForwardBtn.disabled = imageIndex >= imageHistory.length - 1;
+        const entry = imageHistory[imageIndex];
+        if (undoBtn) undoBtn.disabled = !entry || entry.undoIndex <= 0;
+        if (redoBtn) redoBtn.disabled = !entry || entry.undoIndex >= entry.undoStack.length - 1;
+    }
+
+    if (historyBackBtn) historyBackBtn.addEventListener('click', () => navigateImage(-1));
+    if (historyForwardBtn) historyForwardBtn.addEventListener('click', () => navigateImage(1));
+    if (undoBtn) undoBtn.addEventListener('click', () => navigateUndo(-1));
+    if (redoBtn) redoBtn.addEventListener('click', () => navigateUndo(1));
 
     // ── Build seed tag selects ──
 
@@ -285,15 +440,22 @@ export function initGeneratePanel(opts) {
     }
 
     function updateSlugDisplay() {
-        if (slugDisplay) slugDisplay.textContent = slugify(readName());
+        if (!nameTooltipEl) return;
+        const slug = slugify(readName());
+        const baseTooltip = nameTooltipEl.getAttribute('data-i18n-tooltip')
+            ? t(nameTooltipEl.getAttribute('data-i18n-tooltip'))
+            : 'A name for this arrangement of light and form.';
+        nameTooltipEl.setAttribute('data-tooltip', baseTooltip + '\nURL-safe identifier: ' + slug);
     }
 
     function updateAltText() {
-        if (!altTextField) return;
+        if (!previewCanvas) return;
         const controls = readControls();
         const nodeCount = Math.round(80 + (controls.density || 0.5) * 1400);
         const seed = readSeed();
-        altTextField.textContent = generateAltText(controls, nodeCount, readName(), locale, seed);
+        const altText = generateAltText(controls, nodeCount, readName(), locale, seed);
+        previewCanvas.setAttribute('data-tooltip', altText);
+        previewCanvas.setAttribute('data-tooltip-pos', 'overlay');
     }
 
     function updateNameCounter() {
@@ -327,6 +489,7 @@ export function initGeneratePanel(opts) {
         updateSlugDisplay();
         updateAltText();
         updateNameCounter();
+        pushUndo(false);
         if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
     }
 
@@ -367,7 +530,12 @@ export function initGeneratePanel(opts) {
 
         // Reset name to auto-generated
         userEditedName = false;
-        fireControlChange();
+        updateAutoName();
+        updateSlugDisplay();
+        updateAltText();
+        updateNameCounter();
+        pushImageHistory();
+        if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
     }
 
     randomizeBtn.addEventListener('click', randomize);
@@ -402,6 +570,7 @@ export function initGeneratePanel(opts) {
     updateAltText();
     updateNameCounter();
     updateCommentaryCounter();
+    pushImageHistory();
 
     // ── Public API ──
 
@@ -416,6 +585,7 @@ export function initGeneratePanel(opts) {
         readName,
         readCommentary,
         randomize,
+        pushImageHistory,
 
         /** Set all controls + seed + camera + name from external data. */
         setValues(seed, controls, camera, name) {

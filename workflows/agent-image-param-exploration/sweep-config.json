@@ -1,26 +1,56 @@
 {
-  "targetParam": "bloom",
+  "targetParam": "density",
   "values": [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
   "anchors": [
     {
-      "name": "violet-sanctum",
+      "name": "mid-lum-violet",
       "seed": [7, 6, 7],
-      "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.58, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 }
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.50, "fracture": 0.45, "coherence": 0.75, "hue": 0.744, "spectrum": 0.316, "chroma": 0.458, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 }
     },
     {
-      "name": "ice-crystal",
-      "seed": [1, 14, 1],
-      "controls": { "topology": "flow-field", "density": 0.05, "luminosity": 0.55, "fracture": 0.25, "coherence": 0.85, "hue": 0.55, "spectrum": 0.05, "chroma": 0.08, "scale": 0.35, "division": 0.50, "faceting": 0.85, "flow": 0.5, "bloom": 0.5 }
-    },
-    {
-      "name": "sapphire-lattice",
+      "name": "high-lum-sapphire",
       "seed": [1, 2, 3],
-      "controls": { "topology": "flow-field", "density": 0.03, "luminosity": 0.80, "fracture": 0.20, "coherence": 0.95, "hue": 0.556, "spectrum": 0.239, "chroma": 0.417, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 }
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.80, "fracture": 0.20, "coherence": 0.95, "hue": 0.556, "spectrum": 0.239, "chroma": 0.417, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.3 }
     },
     {
-      "name": "dark-ruby-divide",
+      "name": "low-lum-bloom-ruby",
       "seed": [9, 9, 14],
-      "controls": { "topology": "flow-field", "density": 0.15, "luminosity": 0.30, "fracture": 0.60, "coherence": 0.55, "hue": 0.986, "spectrum": 0.30, "chroma": 0.60, "scale": 0.5, "division": 0.85, "faceting": 0.6, "flow": 0.5, "bloom": 0.5 }
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.30, "fracture": 0.60, "coherence": 0.55, "hue": 0.986, "spectrum": 0.30, "chroma": 0.60, "scale": 0.5, "division": 0.85, "faceting": 0.6, "flow": 0.5, "bloom": 0.8 }
+    },
+    {
+      "name": "achromatic-mid",
+      "seed": [1, 14, 1],
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.50, "fracture": 0.25, "coherence": 0.85, "hue": 0.55, "spectrum": 0.05, "chroma": 0.0, "scale": 0.35, "division": 0.50, "faceting": 0.85, "flow": 0.5, "bloom": 0.5 }
+    },
+    {
+      "name": "warm-amber",
+      "seed": [5, 10, 15],
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.55, "fracture": 0.50, "coherence": 0.60, "hue": 0.10, "spectrum": 0.40, "chroma": 0.55, "scale": 0.5, "division": 0.4, "faceting": 0.4, "flow": 0.5, "bloom": 0.45 }
+    },
+    {
+      "name": "high-fracture-teal",
+      "seed": [3, 8, 5],
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.45, "fracture": 0.85, "coherence": 0.35, "hue": 0.48, "spectrum": 0.25, "chroma": 0.40, "scale": 0.6, "division": 0.3, "faceting": 0.7, "flow": 0.5, "bloom": 0.5 }
+    },
+    {
+      "name": "high-lum-high-chroma",
+      "seed": [4, 11, 2],
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.75, "fracture": 0.40, "coherence": 0.70, "hue": 0.30, "spectrum": 0.50, "chroma": 0.85, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 }
+    },
+    {
+      "name": "achromatic-high-lum",
+      "seed": [6, 3, 9],
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.80, "fracture": 0.35, "coherence": 0.80, "hue": 0.50, "spectrum": 0.0, "chroma": 0.0, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.4 }
+    },
+    {
+      "name": "high-lum-high-bloom",
+      "seed": [2, 7, 12],
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.75, "fracture": 0.45, "coherence": 0.65, "hue": 0.65, "spectrum": 0.30, "chroma": 0.35, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.80 }
+    },
+    {
+      "name": "low-chroma-wide-spectrum",
+      "seed": [8, 1, 6],
+      "controls": { "topology": "flow-field", "density": 0.5, "luminosity": 0.55, "fracture": 0.50, "coherence": 0.50, "hue": 0.40, "spectrum": 0.80, "chroma": 0.15, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.5, "bloom": 0.5 }
     }
   ]
 }

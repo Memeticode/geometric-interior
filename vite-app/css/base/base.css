@@ -14,6 +14,7 @@
     --accent-text: rgb(180, 130, 255);
     --danger: rgba(255, 90, 90, 0.25);
     --shadow: rgba(0, 0, 0, 0.55);
+    --title-overlay: rgba(0, 0, 0, 0.5);
     --modal-backdrop: rgba(0, 0, 0, 0.80);
     --modal-bg: #0f1219;
     --progress: rgba(180, 130, 255, 0.55);
@@ -39,6 +40,7 @@ html[data-theme="light"] {
     --accent-text: rgb(100, 30, 180);
     --danger: rgba(220, 50, 50, 0.25);
     --shadow: rgba(0, 0, 0, 0.15);
+    --title-overlay: rgba(255, 255, 255, 0.55);
     --modal-backdrop: rgba(0, 0, 0, 0.50);
     --modal-bg: #ffffff;
     --progress: rgba(120, 40, 200, 0.55);

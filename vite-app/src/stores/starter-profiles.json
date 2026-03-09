@@ -1,77 +1,205 @@
 {
-  "section-order": ["an-awakening-mind"],
+  "section-order": [
+    "an-awakening-mind"
+  ],
   "sections": {
     "an-awakening-mind": {
       "name": "An Awakening Mind",
       "portraits": {
         "meditation": {
           "name": "Meditation",
-          "commentary": "Contemplative stillness (sparse, achromatic, scattered starpoints)",
-          "seed": [1, 3, 2],
-          "controls": { "topology": "flow-field", "density": 0.03, "luminosity": 0.50, "bloom": 0.45, "fracture": 0.25, "coherence": 0.90, "hue": 0.60, "spectrum": 0.10, "chroma": 0.20, "scale": 0.40, "division": 0.5, "faceting": 0.35, "flow": 0.5 },
+          "commentary": "A few colorless forms suspended in gentle light, each one an island of intention",
+          "seed": [
+            1,
+            3,
+            2
+          ],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.03,
+            "luminosity": 0.5,
+            "bloom": 0.45,
+            "fracture": 0.25,
+            "coherence": 0.9,
+            "hue": 0.6,
+            "spectrum": 0.1,
+            "chroma": 0.2,
+            "scale": 0.4,
+            "division": 0.5,
+            "faceting": 0.35,
+            "flow": 0.5
+          },
           "generated": {
-            "title": "Cobalt Tempered Structure",
-            "alt-text": "Poised, folded, still.\nLuminous geometry fills the field with steady radiance, forms visible through spreading halos.\nA hushed cobalt tone pervades the composition, evoking aged surface more than emitted light.\nSparse fragments are carefully placed at readable scale, each form individually distinct.\nForms follow a coherent flowing pattern, creating visible directional structure.\nCompact geometry with mixed crystal character, smooth panels alongside angular faces, anchored by 122 luminous points."
+            "title": "Tempered Cobalt Lattice",
+            "alt-text": "122 luminous points anchor isolated broad achromatic geometric forms that follow a coherent flow against darkness, with gentle glow.\n\nExpanded Description: A gently lit field holds these geometric planes in readable suspension, light extending noticeably beyond every edge. Only a handful of translucent surfaces cluster tightly, each individually legible, surfaces mostly smooth with occasional angular interruptions. A legible organic current carries every element in the same purposeful direction. The forms carry no color — only gradations of luminous silver, pearl, and shadow. 122 luminous points scatter amongst the geometry like stars in a constellation, their halos softly visible. The structure recalls a mineral cathedral, ancient and still, its layers stacked with quiet architectural purpose. Each element an island of intention in a sea of void, the atmosphere suggests dusk — the last light held in geometric suspension."
           }
         },
         "shadow-lattice": {
           "name": "Shadow Lattice",
-          "commentary": "Wide web of silvery lines against darkness",
-          "seed": [5, 1, 0],
-          "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.10, "bloom": 0.15, "fracture": 0.20, "coherence": 0.90, "hue": 0.56, "spectrum": 0.05, "chroma": 0.12, "scale": 0.55, "division": 0.5, "faceting": 0.20, "flow": 1.0 },
+          "commentary": "Silver orbital traces in near-total darkness, a jewel-box geometry",
+          "seed": [
+            5,
+            1,
+            0
+          ],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.06,
+            "luminosity": 0.1,
+            "bloom": 0.15,
+            "fracture": 0.2,
+            "coherence": 0.9,
+            "hue": 0.56,
+            "spectrum": 0.05,
+            "chroma": 0.12,
+            "scale": 0.55,
+            "division": 0.5,
+            "faceting": 0.2,
+            "flow": 1
+          },
           "generated": {
-            "title": "Tempered Teal Lattice",
-            "alt-text": "Balanced, draped, frozen.\nPrecious concentrated light surfaces from near-blackness, each point a gem against the void.\nPure achromatic structure in silver and white, geometry without chromatic identity.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nOrbital bands wrap around the form, arcs of geometry spiraling with architectural discipline.\nCompact geometry with mixed crystal character, smooth panels alongside angular faces, anchored by 164 luminous points."
+            "title": "Spatial Cerulean Lattice",
+            "alt-text": "164 luminous points anchor sparse broad achromatic geometric forms that wrap in orbital bands against darkness, with concentrated light.\n\nExpanded Description: Against near-total darkness, the faintest geometric traces resolve at the threshold of visibility, light pooling closely around each surface with contained radiance. A few bold geometric planes hold together in close crystalline formation, surfaces mostly smooth with occasional angular interruptions. Orbital bands wrap around the form, arcs of geometry spiraling with architectural discipline. Pure achromatic structure in silver and white pervades the composition, geometry without chromatic identity. 164 concentrated points of light punctuate the composition like bright pins holding the structure in place. The image evokes a sanctuary built from pure geometry, a place of quiet intention, surfaces draped rather than constructed. Precious and contained, a jewel-box geometry visible only to those who look closely, the scene carries the silence of deep ice, geometry preserved in absolute zero."
           }
         },
         "dark-crystal": {
           "name": "Dark Crystal",
-          "commentary": "Vertical crystalline monolith from darkness (same params as Shadow Lattice, different seed)",
-          "seed": [9, 1, 0],
-          "controls": { "topology": "flow-field", "density": 0.06, "luminosity": 0.10, "bloom": 0.15, "fracture": 0.20, "coherence": 0.90, "hue": 0.56, "spectrum": 0.05, "chroma": 0.12, "scale": 0.55, "division": 0.5, "faceting": 0.20, "flow": 1.0 },
+          "commentary": "Shadow Lattice's twin — same parameters, different seed — resolved as a vertical monolith",
+          "seed": [
+            9,
+            1,
+            0
+          ],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.06,
+            "luminosity": 0.1,
+            "bloom": 0.15,
+            "fracture": 0.2,
+            "coherence": 0.9,
+            "hue": 0.56,
+            "spectrum": 0.05,
+            "chroma": 0.12,
+            "scale": 0.55,
+            "division": 0.5,
+            "faceting": 0.2,
+            "flow": 1
+          },
           "generated": {
-            "title": "Spatial Cerulean Lattice",
-            "alt-text": "Flowing, draped, frozen.\nPrecious concentrated light surfaces from near-blackness, each point a gem against the void.\nPure achromatic structure in silver and white, geometry without chromatic identity.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nOrbital bands wrap around the form, arcs of geometry spiraling with architectural discipline.\nCompact geometry with mixed crystal character, smooth panels alongside angular faces, anchored by 164 luminous points."
+            "title": "Subdued Aquamarine Manifold",
+            "alt-text": "164 luminous points anchor isolated soft-edged achromatic geometric planes that orbit in arcs against darkness, with precise light.\n\nExpanded Description: Against near-total darkness, the faintest geometric traces resolve at the threshold of visibility, light pooling closely around each surface with contained radiance. Only a handful of translucent surfaces cluster tightly, each individually legible, surfaces mostly smooth with occasional angular interruptions. Orbital bands wrap around the form, arcs of geometry spiraling with architectural discipline. Pure achromatic structure in silver and white pervades the composition, geometry without chromatic identity. 164 concentrated points of light punctuate the composition like bright pins holding the structure in place. The composition suggests water crystallized at the moment of movement, surfaces draped rather than constructed. Geometry so dark it must be found rather than seen, the scene carries the silence of deep ice, geometry preserved in absolute zero."
           }
         },
         "night-sapphire": {
           "name": "Night Sapphire",
-          "commentary": "Deep blue-purple gem in darkness",
-          "seed": [9, 5, 5],
-          "controls": { "topology": "flow-field", "density": 0.07, "luminosity": 0.10, "bloom": 0.75, "fracture": 0.45, "coherence": 0.80, "hue": 0.625, "spectrum": 0.22, "chroma": 0.70, "scale": 0.50, "division": 0.5, "faceting": 0.45, "flow": 0.30 },
+          "commentary": "Cobalt planes glowing from within their own darkness, the project's night-bloom signature",
+          "seed": [
+            9,
+            5,
+            5
+          ],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.07,
+            "luminosity": 0.1,
+            "bloom": 0.75,
+            "fracture": 0.45,
+            "coherence": 0.8,
+            "hue": 0.625,
+            "spectrum": 0.22,
+            "chroma": 0.7,
+            "scale": 0.5,
+            "division": 0.5,
+            "faceting": 0.45,
+            "flow": 0.3
+          },
           "generated": {
-            "title": "Dim Sapphire Manifold",
-            "alt-text": "Flowing, woven, dim.\nHalf-seen forms breathe through darkness, their light dissolving into atmospheric haze.\nRich cobalt dominates with vivid accents from adjacent hues adding chromatic depth.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nForms follow a coherent flowing pattern, creating visible directional structure.\nMixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 178 luminous points."
+            "title": "Dim Cobalt Manifold",
+            "alt-text": "178 luminous points anchor sparse mixed cobalt geometric planes that radiate from center against darkness, with spreading light.\n\nExpanded Description: Against near-total darkness, the faintest geometric traces resolve at the threshold of visibility, spreading aureoles of light merging between adjacent surfaces. A small number of geometric forms drift apart at readable distances, a blend of flowing curves and crystalline edges. Ordered elements emanate radially, a starburst of planes diverging from the center. Cobalt dominates completely — a concentrated, unwavering chromatic statement across every plane. 178 luminous orbs scatter through the structure, each casting visible light into the surrounding geometry. The structure recalls an ocean wave rendered in translucent geometry, perpetually about to break, geometry layered with the patience of sediment. Light arriving not from outside but from somewhere inside the geometry, the air itself seems to hold its breath, light arriving through distance and fog."
           }
         },
         "night-bloom": {
           "name": "Night Bloom",
-          "commentary": "Rose bloom in moonlit darkness",
-          "seed": [13, 5, 9],
-          "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.12, "bloom": 0.80, "fracture": 0.45, "coherence": 0.82, "hue": 0.94, "spectrum": 0.25, "chroma": 0.55, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.28 },
+          "commentary": "Ruby atmosphere in moonlit darkness, warmth arriving through geometric fog",
+          "seed": [
+            13,
+            5,
+            9
+          ],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.08,
+            "luminosity": 0.12,
+            "bloom": 0.8,
+            "fracture": 0.45,
+            "coherence": 0.82,
+            "hue": 0.94,
+            "spectrum": 0.25,
+            "chroma": 0.55,
+            "scale": 0.5,
+            "division": 0.5,
+            "faceting": 0.5,
+            "flow": 0.28
+          },
           "generated": {
-            "title": "Field Distilled Plane",
-            "alt-text": "Rushing, woven, warm.\nHalf-seen forms breathe through darkness, their light dissolving into atmospheric haze.\nRuby tones deepen and lighten across the geometry, shifting into neighboring hues.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nOrdered elements emanate radially, a starburst of crystal planes diverging from the center.\nMixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 192 luminous points."
+            "title": "Carmine Subdued Structure",
+            "alt-text": "192 luminous points anchor sparse translucent ruby geometric planes that radiate from center against darkness, in radiant haze.\n\nExpanded Description: Against near-total darkness, the faintest geometric traces resolve at the threshold of visibility, atmospheric radiance softening every geometric boundary. Sparse translucent planes are placed deliberately with moderate separation between them, a blend of flowing curves and crystalline edges. Precise radial symmetry governs the arrangement, every form aligned to the center. Quiet, desaturated ruby washes through every plane, suggesting patina rather than illumination. 192 points of white light diffuse broadly through the composition, each orb dissolving into atmospheric radiance. The image evokes a storm system rendered in geometric abstraction, its planes interlaced like warp and weft. Glowing from within its own darkness like a deep-sea creature, the scene glows with the warmth of something that has been held close, light as tenderness."
           }
         },
         "chartreuse-current": {
           "name": "Chartreuse Current",
-          "commentary": "Breakthrough vivid lime green (the one vivid, bright piece)",
-          "seed": [5, 5, 11],
-          "controls": { "topology": "flow-field", "density": 0.08, "luminosity": 0.50, "bloom": 0.35, "fracture": 0.50, "coherence": 0.82, "hue": 0.30, "spectrum": 0.24, "chroma": 0.78, "scale": 0.5, "division": 0.5, "faceting": 0.5, "flow": 0.0 },
+          "commentary": "The collection's one vivid piece — intense emerald so concentrated it becomes material",
+          "seed": [
+            5,
+            5,
+            11
+          ],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.08,
+            "luminosity": 0.5,
+            "bloom": 0.35,
+            "fracture": 0.5,
+            "coherence": 0.82,
+            "hue": 0.3,
+            "spectrum": 0.24,
+            "chroma": 0.78,
+            "scale": 0.5,
+            "division": 0.5,
+            "faceting": 0.5,
+            "flow": 0
+          },
           "generated": {
-            "title": "Layered Malachite Lattice",
-            "alt-text": "Balanced, woven, bright.\nLuminous geometry fills the field with steady radiance, forms visible through spreading halos.\nRich emerald dominates with vivid accents from adjacent hues adding chromatic depth.\nA measured arrangement of translucent planes fills the space, balancing density with legibility.\nOrdered elements emanate radially, a starburst of crystal planes diverging from the center.\nMixed surfaces with moderate fragmentation, some panels smooth, others faceted, anchored by 192 luminous points."
+            "title": "Curling Distilled Plane",
+            "alt-text": "192 luminous points anchor isolated mixed emerald geometric planes that radiate from center against darkness, with contained glow.\n\nExpanded Description: Moderate illumination fills the space, geometry neither hidden nor fully exposed, a subtle glow surrounding the most luminous surfaces. A small number of geometric forms drift apart at readable distances, surfaces mixing smooth panels and angular faces in equal measure. Precise radial symmetry governs the arrangement, every form aligned to the center. Intense emerald saturates every surface with bold singular chromatic identity. 192 points of light are scattered through the geometry, each surrounded by a small contained halo. The image evokes a sanctuary built from pure geometry, a place of quiet intention, its planes interlaced like warp and weft. A single hue raised to the intensity of conviction, the geometry carries its own daylight, bright without source, warm without heat."
           }
         },
         "tempest": {
           "name": "Tempest",
-          "commentary": "Turbulent teal storm (maximum kinetic energy)",
-          "seed": [0, 13, 8],
-          "controls": { "topology": "flow-field", "density": 0.25, "luminosity": 0.40, "bloom": 0.55, "fracture": 0.70, "coherence": 0.15, "hue": 0.56, "spectrum": 0.40, "chroma": 0.55, "scale": 0.70, "division": 0.5, "faceting": 0.55, "flow": 0.85 },
+          "commentary": "Maximum kinetic energy — cerulean fragments scattering past the point of order",
+          "seed": [
+            0,
+            13,
+            8
+          ],
+          "controls": {
+            "topology": "flow-field",
+            "density": 0.25,
+            "luminosity": 0.4,
+            "bloom": 0.55,
+            "fracture": 0.7,
+            "coherence": 0.15,
+            "hue": 0.56,
+            "spectrum": 0.4,
+            "chroma": 0.55,
+            "scale": 0.7,
+            "division": 0.5,
+            "faceting": 0.55,
+            "flow": 0.85
+          },
           "generated": {
-            "title": "Scattered Cerulean Lattice",
-            "alt-text": "Anchored, shattered, mild.\nLuminous geometry fills the field with steady radiance, forms visible through spreading halos.\nCerulean tones deepen and lighten across the geometry, shifting into neighboring hues.\nHundreds of fine particles swarm, individual elements dissolving into dense atmospheric haze.\nA turbulent storm of scattered geometry, orbital currents overwhelmed by disorder.\nShattered geometry disperses in every direction, smooth and angular fragments intermixed, anchored by 430 luminous points."
+            "title": "Particulate Field Geometry",
+            "alt-text": "430 luminous points anchor scattered translucent cerulean geometric fragments that tumble in disorder against darkness, with soft halos.\n\nExpanded Description: Subdued illumination reveals geometry in tonal whispers rather than declarations, light extending noticeably beyond every edge. Scattered geometric fragments spread across the field in widening dispersal, surfaces mixing smooth panels and angular faces in equal measure. A turbulent storm of geometry overwhelms any orbital structure with disorder. A restrained cerulean spectrum moves quietly through the geometry, colors felt rather than seen. 430 luminous points scatter amongst the geometry like stars in a constellation, their halos softly visible. The composition suggests a geode viewed from within, shattered into crystalline fragments that still hold formation. Order shattered past the point of recognition, the scene glows with the warmth of something that has been held close, light as tenderness."
           }
         }
       }

@@ -49,16 +49,60 @@ export function initResolutionSelector(dropdownEl) {
     });
 
     document.addEventListener('resolutionchange', (e) => {
-        const label = dropdownEl.querySelector('.custom-dropdown-label');
-        const menu = dropdownEl.querySelector('.custom-dropdown-menu');
-        if (menu) {
-            menu.querySelectorAll('.custom-dropdown-item').forEach(item => {
-                const isActive = item.dataset.value === e.detail.key;
-                item.classList.toggle('active', isActive);
-                item.setAttribute('aria-selected', String(isActive));
-                // Use the item's own text so it matches the dropdown's format
-                if (isActive && label) label.textContent = item.textContent;
-            });
-        }
+        syncDropdown(dropdownEl, e.detail.key);
     });
+}
+
+/* ── Generate-panel resolution (independent, defaults to SD) ── */
+
+const GEN_STORAGE_KEY = 'geo-gen-resolution';
+const GEN_DEFAULT_KEY = 'sd';
+
+export function getGenResolution() {
+    try {
+        const stored = localStorage.getItem(GEN_STORAGE_KEY);
+        if (stored) {
+            const p = PRESETS.find(p => p.key === stored);
+            if (p) return { key: p.key, w: p.w, h: p.h };
+        }
+    } catch {}
+    const def = PRESETS.find(p => p.key === GEN_DEFAULT_KEY);
+    return { key: def.key, w: def.w, h: def.h };
+}
+
+export function setGenResolution(key) {
+    const p = PRESETS.find(p => p.key === key);
+    if (!p) return;
+    try { localStorage.setItem(GEN_STORAGE_KEY, key); } catch {}
+    document.dispatchEvent(new CustomEvent('genresolutionchange', {
+        detail: { key: p.key, w: p.w, h: p.h },
+    }));
+}
+
+export function initGenResolutionSelector(dropdownEl) {
+    if (!dropdownEl) return;
+    const cur = getGenResolution();
+
+    initCustomDropdown(dropdownEl, {
+        initialValue: cur.key,
+        onSelect(value) { setGenResolution(value); },
+    });
+
+    document.addEventListener('genresolutionchange', (e) => {
+        syncDropdown(dropdownEl, e.detail.key);
+    });
+}
+
+/** Sync a dropdown's visual state to a resolution key. */
+function syncDropdown(dropdownEl, activeKey) {
+    const label = dropdownEl.querySelector('.custom-dropdown-label');
+    const menu = dropdownEl.querySelector('.custom-dropdown-menu');
+    if (menu) {
+        menu.querySelectorAll('.custom-dropdown-item').forEach(item => {
+            const isActive = item.dataset.value === activeKey;
+            item.classList.toggle('active', isActive);
+            item.setAttribute('aria-selected', String(isActive));
+            if (isActive && label) label.textContent = item.textContent;
+        });
+    }
 }

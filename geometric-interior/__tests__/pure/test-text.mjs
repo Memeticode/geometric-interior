@@ -28,6 +28,8 @@ const MID = {
 
 console.log('\n=== Text Tests ===\n');
 
+/* ── Title tests (unchanged) ── */
+
 test('generateTitle returns non-empty string', () => {
     const title = generateTitle(MID, mkRng());
     assert(typeof title === 'string' && title.length > 0, `empty title: "${title}"`);
@@ -55,23 +57,48 @@ test('generateTitle works for various hue values', () => {
     }
 });
 
+/* ── Alt-text format tests ── */
+
 test('generateAltText returns non-empty string', () => {
     const alt = generateAltText(MID, 150, 'Test Title');
     assert(typeof alt === 'string' && alt.length > 0, `empty alt text`);
 });
 
-test('generateAltText mentions node count', () => {
-    const alt = generateAltText(MID, 247, 'Test Title');
-    assert(alt.includes('247'), `alt text should mention node count 247: "${alt}"`);
+test('generateAltText has summary + expanded format', () => {
+    const alt = generateAltText(MID, 150, 'T');
+    assert(alt.includes('\n\nExpanded Description: '),
+        `missing format separator: "${alt.slice(0, 200)}..."`);
 });
 
-/* ── New alt-text quadrant tests ── */
+test('generateAltText summary is ≤140 chars', () => {
+    const alt = generateAltText(MID, 150, 'T');
+    const summary = alt.split('\n\n')[0];
+    assert(summary.length <= 140,
+        `summary too long (${summary.length} chars): "${summary}"`);
+});
+
+test('generateAltText total ≤2000 chars', () => {
+    // Test with extreme parameters that could produce long text
+    const extreme = { ...MID, density: 0.99, bloom: 0.99, chroma: 0.99, spectrum: 0.99 };
+    const alt = generateAltText(extreme, 999, 'T', 'en', [17, 17, 17]);
+    assert(alt.length <= 2000,
+        `total too long (${alt.length} chars)`);
+});
+
+test('generateAltText mentions node count', () => {
+    const alt = generateAltText(MID, 247, 'Test Title');
+    assert(alt.includes('247'), `alt text should mention node count 247`);
+});
+
+/* ── Determinism ── */
 
 test('generateAltText is deterministic', () => {
     const a1 = generateAltText(MID, 150, 'T');
     const a2 = generateAltText(MID, 150, 'T');
-    assert(a1 === a2, `non-deterministic: "${a1}" vs "${a2}"`);
+    assert(a1 === a2, `non-deterministic`);
 });
+
+/* ── Parameter sensitivity ── */
 
 test('generateAltText: luminosity extremes produce different text', () => {
     const dark = generateAltText({ ...MID, luminosity: 0.05 }, 150, 'T');
@@ -91,19 +118,13 @@ test('generateAltText: achromatic vs vivid chroma differ', () => {
     assert(gray !== vivid, 'chroma extremes should differ');
 });
 
-test('generateAltText: high spectrum mentions prismatic quality', () => {
-    const prism = generateAltText({ ...MID, spectrum: 0.90, chroma: 0.70 }, 150, 'T');
-    assert(prism.toLowerCase().includes('prismatic'),
-        `high spectrum should mention prismatic: "${prism}"`);
-});
-
 test('generateAltText: sparse vs dense population differ', () => {
     const sparse = generateAltText({ ...MID, density: 0.02 }, 30, 'T');
     const dense = generateAltText({ ...MID, density: 0.50 }, 500, 'T');
     assert(sparse !== dense, 'density extremes should differ');
 });
 
-test('generateAltText: high division mentions three/trifold', () => {
+test('generateAltText: high division mentions three', () => {
     const tri = generateAltText({ ...MID, division: 0.90 }, 150, 'T');
     assert(tri.toLowerCase().includes('three'),
         `high division should mention three: "${tri}"`);
@@ -121,24 +142,7 @@ test('generateAltText: smooth vs angular faceting differ', () => {
     assert(smooth !== angular, 'faceting extremes should differ');
 });
 
-test('generateAltText: Spanish locale returns non-empty', () => {
-    const alt = generateAltText(MID, 150, 'T', 'es');
-    assert(typeof alt === 'string' && alt.length > 0, 'empty Spanish alt');
-});
-
-test('generateAltText: Spanish differs from English', () => {
-    const en = generateAltText(MID, 150, 'T', 'en');
-    const es = generateAltText(MID, 150, 'T', 'es');
-    assert(en !== es, 'Spanish and English should differ');
-});
-
-test('generateAltText: exact node count appears', () => {
-    const alt = generateAltText(MID, 347, 'T');
-    assert(alt.includes('347'), `should contain 347: "${alt}"`);
-});
-
 test('generateAltText: every parameter affects output', () => {
-    // hue uses 0.15 vs 0.70 since 0.01 and 0.99 both map to the ruby hue band
     const extremes = {
         hue: [0.15, 0.70], spectrum: [0.01, 0.99], chroma: [0.01, 0.99],
         density: [0.01, 0.99], fracture: [0.01, 0.99], coherence: [0.01, 0.99],
@@ -152,41 +156,101 @@ test('generateAltText: every parameter affects output', () => {
     }
 });
 
-test('generateAltText: with seed produces 6 lines', () => {
-    const alt = generateAltText(MID, 150, 'T', 'en', [4, 12, 8]);
-    const lines = alt.split('\n');
-    assert(lines.length === 6, `expected 6 lines, got ${lines.length}`);
+/* ── Locale tests ── */
+
+test('generateAltText: Spanish locale returns non-empty', () => {
+    const alt = generateAltText(MID, 150, 'T', 'es');
+    assert(typeof alt === 'string' && alt.length > 0, 'empty Spanish alt');
 });
 
-test('generateAltText: seed phrase is first line', () => {
-    const alt = generateAltText(MID, 150, 'T', 'en', [4, 12, 8]);
-    const first = alt.split('\n')[0];
-    assert(first === 'Resting, splintered, mild.', `expected seed phrase as first line, got: "${first}"`);
+test('generateAltText: Spanish differs from English', () => {
+    const en = generateAltText(MID, 150, 'T', 'en');
+    const es = generateAltText(MID, 150, 'T', 'es');
+    assert(en !== es, 'Spanish and English should differ');
 });
 
-test('generateAltText: without seed produces 5 lines', () => {
+test('generateAltText: Spanish has correct format marker', () => {
+    const es = generateAltText(MID, 150, 'T', 'es');
+    assert(es.includes('Descripción Ampliada: '),
+        `Spanish should use "Descripción Ampliada: " marker`);
+});
+
+test('generateAltText: Spanish total ≤2000 chars', () => {
+    const extreme = { ...MID, density: 0.99, bloom: 0.99, chroma: 0.99, spectrum: 0.99 };
+    const alt = generateAltText(extreme, 999, 'T', 'es', [17, 17, 17]);
+    assert(alt.length <= 2000,
+        `Spanish total too long (${alt.length} chars)`);
+});
+
+/* ── Seed tests ── */
+
+test('generateAltText: with seed differs from without seed', () => {
+    const withSeed = generateAltText(MID, 150, 'T', 'en', [4, 12, 8]);
+    const noSeed = generateAltText(MID, 150, 'T', 'en');
+    assert(withSeed !== noSeed, 'seed should change output');
+});
+
+test('generateAltText: different seeds produce different text', () => {
+    const a = generateAltText(MID, 150, 'T', 'en', [0, 0, 0]);
+    const b = generateAltText(MID, 150, 'T', 'en', [17, 17, 17]);
+    assert(a !== b, 'different seeds should produce different text');
+});
+
+/* ── Quality tests ── */
+
+test('generateAltText: no template artifacts in output', () => {
+    const alt = generateAltText(MID, 150, 'T', 'en', [5, 5, 5]);
+    assert(!alt.includes('{N}'), `template artifact {N} found`);
+    assert(!alt.includes('{color}'), `template artifact {color} found`);
+    assert(!alt.includes('{Color}'), `template artifact {Color} found`);
+    assert(!alt.includes('{bloom_adj}'), `template artifact {bloom_adj} found`);
+});
+
+test('generateAltText: expanded section has multiple sentences', () => {
     const alt = generateAltText(MID, 150, 'T');
-    const lines = alt.split('\n');
-    assert(lines.length === 5, `expected 5 lines without seed, got ${lines.length}`);
+    const expanded = alt.split('Expanded Description: ')[1] || '';
+    const periods = (expanded.match(/\./g) || []).length;
+    assert(periods >= 3, `expected ≥3 sentences, got ${periods} periods in expanded`);
 });
 
-test('generateAltText: seed phrase respects locale', () => {
-    const alt = generateAltText(MID, 150, 'T', 'es', [4, 12, 8]);
-    const first = alt.split('\n')[0];
-    assert(first !== 'Resting, splintered, mild', `Spanish seed phrase should differ from English`);
-    assert(first.length > 0, `Spanish seed phrase should be non-empty`);
+test('generateAltText: node count appears as exact number', () => {
+    const alt = generateAltText(MID, 347, 'T');
+    assert(alt.includes('347'), `should contain exact count 347`);
 });
 
-test('generateAltText: Night Bloom config uses new opener', () => {
-    const nightBloom = {
-        topology: 'flow-field', density: 0.08, luminosity: 0.12, bloom: 0.80,
-        fracture: 0.45, coherence: 0.82, hue: 0.94, spectrum: 0.25,
-        chroma: 0.55, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.28,
-    };
-    const alt = generateAltText(nightBloom, 87, 'Night Bloom');
-    assert(!alt.includes('A dark field carries'), 'should not use old static opener');
-    assert(alt.length > 100, 'should be substantial description');
+/* ── Uniqueness tests ── */
+
+test('generateAltText: 200 random configs produce ≥195 unique texts', () => {
+    const rng = mulberry32(xmur3('uniqueness-test')());
+    const texts = new Set();
+    for (let i = 0; i < 200; i++) {
+        const controls = {
+            topology: 'flow-field',
+            hue: rng(), spectrum: rng(), chroma: rng(),
+            density: rng(), fracture: rng(), coherence: rng(),
+            luminosity: rng(), bloom: rng(), scale: rng(),
+            division: rng(), faceting: rng(), flow: rng(),
+        };
+        const seed = [Math.floor(rng() * 18), Math.floor(rng() * 18), Math.floor(rng() * 18)];
+        texts.add(generateAltText(controls, Math.floor(rng() * 500) + 50, 'T', 'en', seed));
+    }
+    assert(texts.size >= 195, `only ${texts.size}/200 unique (expected ≥195)`);
 });
+
+test('generateAltText: same params, different seeds → different text', () => {
+    const texts = new Set();
+    for (let a = 0; a < 18; a += 6) {
+        for (let s = 0; s < 18; s += 6) {
+            for (let d = 0; d < 18; d += 6) {
+                texts.add(generateAltText(MID, 150, 'T', 'en', [a, s, d]));
+            }
+        }
+    }
+    // 3×3×3 = 27 seed combos → should be mostly unique
+    assert(texts.size >= 20, `only ${texts.size}/27 unique across seed variations`);
+});
+
+/* ── Animation alt-text tests ── */
 
 test('generateAnimAltText returns non-empty string', () => {
     const landmarks = [

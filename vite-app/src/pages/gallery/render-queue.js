@@ -9,7 +9,7 @@ import { generateTitle } from '@geometric-interior/core/text-generation/title-te
 import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
 import { seedToString } from '@geometric-interior/core/text-generation/seed-tags.js';
 import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
-import { getResolution } from '../../stores/resolution.js';
+import { getGenResolution } from '../../stores/resolution.js';
 import { exportFromBuffer } from '../../export/animation.js';
 
 const FRAME_COUNT = 30;
@@ -76,7 +76,7 @@ export function createRenderQueue({ workerBridge, onUpdate, locale }) {
                 animation: next.animation,
             });
         } else {
-            const res = getResolution();
+            const res = getGenResolution();
             workerBridge.sendGenerate({
                 requestId: next.id,
                 seed: next.seed,

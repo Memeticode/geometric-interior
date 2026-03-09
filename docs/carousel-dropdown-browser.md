@@ -15,8 +15,7 @@ The component uses **light DOM child elements** (no Shadow DOM). Items are decla
 ```html
 <carousel-dropdown-browser
     controls-position="above"
-    carousel-title="below"
-    grid-title="below"
+    card-title="below"
     infinite
     bounce="0.35"
     expandable>
@@ -71,15 +70,15 @@ Cards also accept a `.data` property for attaching arbitrary data (returned in e
 
 | Attribute            | Type    | Default   | Description |
 |----------------------|---------|-----------|-------------|
-| `arc-angle`          | float   | `0.85`    | Arc radius of the carousel ellipse (0-1). Higher = wider spread. |
-| `smile-px`           | float   | `20`      | Vertical lift at card edges (px). Creates a subtle smile curve. |
+| `arc-z`              | int     | `24`      | Arc depth (0-50). Higher values push side cards further back in 3D space, creating a more pronounced arc. At 0, cards are flat. |
+| `arc-y`              | float   | `38`      | Vertical lift at card edges (px). Creates a subtle smile curve. |
 | `flip-duration`      | int     | `450`     | Duration (ms) of expand/collapse FLIP animations. |
 | `controls-position`  | string  | `"above"` | `"above"` or `"below"` — where nav arrows + toggle sit. |
 | `infinite`           | boolean | `true`    | Wrap around at carousel edges. |
 | `bounce`             | float   | `0.35`    | Overshoot in easing curve (0 = smooth, 1 = pronounced). |
 | `expandable`         | boolean | `true`    | Show/hide the grid expand toggle button. |
-| `carousel-title`     | string  | `"none"`  | Card title position in carousel mode (see Title System). |
-| `grid-title`         | string  | `"none"`  | Card title position in grid mode (see Title System). |
+| `card-title`         | string  | `"none"`  | Card title position in both carousel and grid modes (see Title System). |
+| `debug-show-controls`| boolean | `false`   | Show debug controls panel for tuning arc, title, and layout settings. |
 
 ---
 
@@ -120,24 +119,23 @@ Cards also accept a `.data` property for attaching arbitrary data (returned in e
 
 ## Title System
 
-Titles are independently configurable for carousel and grid via the `carousel-title` and `grid-title` attributes. The value format is `"vAlign"` or `"vAlign hAlign"`.
+Title position is set via the `card-title` attribute, which applies uniformly to both carousel and grid views. The value format is `"vAlign"` or `"vAlign hAlign"`. The card border wraps both the title and image.
 
 **Vertical positions** (`vAlign`):
 
-| Value    | Carousel behavior                      | Grid behavior                        |
-|----------|----------------------------------------|--------------------------------------|
-| `above`  | Sits above the image (outside bounds)  | Static element above the image       |
-| `top`    | Overlays top of image with gradient bg | Absolute overlay at image top        |
-| `center` | Overlays center with solid dark bg     | Absolute overlay at image center     |
-| `bottom` | Overlays bottom of image with gradient | Absolute overlay at image bottom     |
-| `below`  | Sits below the image (outside bounds)  | Static element below the image       |
-| `none`   | Hidden                                 | Hidden                               |
+| Value    | Behavior                                                        |
+|----------|-----------------------------------------------------------------|
+| `above`   | Static element above the image, inside the card border                        |
+| `top`     | Absolute overlay at the top of the image with themed semi-transparent bg      |
+| `center`  | Absolute overlay centered on the image with themed semi-transparent bg        |
+| `bottom`  | Absolute overlay at the bottom of the image with themed semi-transparent bg   |
+| `below`   | Static element below the image, inside the card border                        |
+| `tooltip` | Hidden until hover; shown via the global tooltip system                       |
+| `none`    | Hidden                                                                        |
 
-**Horizontal alignment** (`hAlign`): `left`, `center` (default), `right`.
+**Horizontal alignment** (`hAlign`): `left`, `center` (default), `right`. Alignment is ignored for `tooltip` and `none`.
 
-When titles are `above` or `below`, the carousel track height adjusts automatically to prevent clipping.
-
-Titles transition smoothly between positions (opacity + transform) when attributes change or when switching between carousel and grid.
+Overlay positions (`top`, `center`, `bottom`) use the `--title-overlay` CSS variable for their background, which adapts to light/dark theme. The `tooltip` position uses the global tooltip system (`data-tooltip` attribute on card elements). When titles are `above` or `below`, the carousel track height adjusts automatically to prevent clipping.
 
 ---
 
@@ -147,7 +145,7 @@ Cards wrapped in `<carousel-dropdown-browser-section>` elements are grouped:
 
 - **Carousel**: A scrolling section label strip appears above the track, showing the currently visible section. Labels scroll in sync with the carousel.
 - **Grid**: Full-width section headers are inserted between card groups.
-- **Transitions**: During expand/collapse, section labels morph between their carousel and grid positions using FLIP-animated phantom overlays. Headers without a carousel counterpart (e.g., off-screen sections) fade in/out gracefully.
+- **Transitions**: During collapse, section headers morph from grid positions to carousel label positions using absolutely-positioned phantom overlays. Phantoms match the source element's font size and letter spacing at the start, then animate to the target's styling. Sections without a carousel counterpart (e.g., off-screen sections) fade out with bounded drift (max 30px) rather than flying to distant targets.
 
 ---
 
@@ -160,7 +158,7 @@ Click and drag on the track to scroll through cards. The carousel uses momentum-
 Left/right arrows jump by the number of visible cards in that direction. Hold an arrow for auto-repeat (400ms initial delay, ~100ms repeat).
 
 ### Hover Effects
-Hovering a card lifts it in 3D space (`translateZ`, `scale`). Adjacent cards receive a gradient mask that fades their edges, keeping focus on the hovered card. The mask is scoped to the `<img>` element so titles remain visible.
+Hovering a card lifts it in 3D space (`translateZ`, `scale`). Adjacent cards receive a gradient mask that fades the entire card frame (image, title, and border) at their edges, keeping focus on the hovered card. Hover effects and masks are suppressed while cards are transitioning between positions (arrow navigation, momentum snap) and during drag.
 
 ### Infinite vs Clamped
 With `infinite`, the carousel loops seamlessly. Without it, arrows disable at the boundaries and drag stops at edges.
@@ -177,10 +175,11 @@ With `infinite`, the carousel loops seamlessly. Without it, arrows disable at th
 5. Carousel collapses (`max-height: 0`) and grid becomes interactive.
 
 ### Collapse (Grid to Carousel)
-1. Grid positions captured; carousel un-flattened at grid positions.
-2. Cards animate back to arc positions with stagger.
-3. Section headers morph back via phantom overlays.
-4. Grid hidden; carousel re-enabled.
+1. Grid card/header positions captured; grid content hidden (`opacity: 0` with `transition: none`).
+2. Carousel un-flattened; cards positioned at their grid positions as starting state.
+3. Phantom overlays created at grid header positions, animating to carousel label positions. Phantoms match the source element's font-size/letter-spacing and morph to the target's styling. Real section labels stay hidden during the animation.
+4. Cards animate from grid positions to arc positions via Web Animations API (staggered by distance from center). Off-screen cards animate to edge positions and fade out.
+5. After animation: dropdown collapsed, scroll compensated, controls/section-label-container FLIP'd for any layout shift. Phantoms removed and real section labels revealed only after FLIP transitions complete.
 
 Both directions use the FLIP technique (First-Last-Invert-Play) with phantom overlays for elements that exist in only one layout. Animations respect `flip-duration` and the `bounce` easing parameter.
 
@@ -213,6 +212,12 @@ Both directions use the FLIP technique (First-Last-Invert-Play) with phantom ove
 | `--cdb-easing`       | cubic-bezier (bounce-derived) | Main easing curve |
 | `--cdb-label-easing` | cubic-bezier (half bounce)    | Section label easing |
 
+### Theming
+
+| Property             | Dark default              | Light default               | Description |
+|----------------------|---------------------------|-----------------------------|-------------|
+| `--title-overlay`    | `rgba(0, 0, 0, 0.5)`     | `rgba(255, 255, 255, 0.55)` | Semi-transparent bg for overlay title positions (top/center/bottom) |
+
 ### Spacing
 
 | Property              | Default   | Description |
@@ -242,18 +247,22 @@ The carousel track `min-height` is derived from `--card-w` via `calc(var(--card-
 ```
 <carousel-dropdown-browser>
   .cdb-strip                          ← flex column (controls + carousel + dropdown)
-    .cdb-controls                     ← nav arrows + expand toggle
+    .cdb-controls                     ← nav arrows + expand toggle (position depends on controls-position)
       button.cdb-arrow.cdb-left       ← left nav
       button.cdb-arrow.cdb-right      ← right nav
+      button.cdb-sec-left             ← section nav left (optional)
+      button.cdb-sec-right            ← section nav right (optional)
       button.cdb-toggle               ← grid expand/collapse toggle
-    .cdb-section-label-container      ← scrolling section labels
     .cdb-container                    ← carousel viewport wrapper
+      .cdb-section-label-container    ← scrolling section labels (above track)
+        .cdb-section-label            ← per-section label (absolute, translateX positioned)
       .cdb-viewport                   ← overflow:hidden clip region
         .cdb-track                    ← absolute container for cards
           .cdb-card[data-flip-key]    ← carousel card (absolute, transformed)
-            .cdb-card-img             ← 3D perspective container (overflow:visible)
-              img                     ← thumbnail (border, mask, border-radius here)
-              .cdb-card-title         ← title overlay
+            .cdb-card-frame           ← bordered card container (3D transforms, flex column, mask target)
+              .cdb-card-title         ← title (flex-ordered above/below or absolute overlay)
+              .cdb-card-img           ← image container (aspect-ratio 14/9)
+                img                   ← thumbnail
     .cdb-dropdown                     ← grid container (hidden when collapsed)
       .cdb-grid                       ← CSS grid
         .cdb-grid-section-header      ← full-width section header

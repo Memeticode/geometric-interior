@@ -245,6 +245,33 @@
     background: #000;
 }
 .selected-video.hidden { display: none; }
+.alt-text-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: clamp(13.75rem, 50%, calc(100% - 16px));
+    max-height: calc(100% - 16px);
+    overflow-y: auto;
+    text-align: left;
+    background: var(--modal-bg);
+    color: var(--text);
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    padding: 0.5rem 0.625rem;
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    white-space: pre-line;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    box-shadow: 0 4px 16px var(--shadow);
+    z-index: 10;
+}
+.alt-text-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
 .selected-footer {
     width: 100%;
     padding: 0.25rem 0.75rem 0.5rem;
