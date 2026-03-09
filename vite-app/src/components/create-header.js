@@ -134,7 +134,7 @@ export function populateShareWrap(wrapEl, { btnClass = '', disabled = false } = 
     const cls = btnClass ? ` class="${btnClass}"` : '';
     const dis = disabled ? ' disabled' : '';
     wrapEl.innerHTML = `
-        <button id="shareBtn"${cls} data-tooltip="Share" data-i18n-tooltip="stage.share" data-tooltip-pos="left"${dis}>
+        <button id="shareBtn"${cls} data-tooltip="Open share" data-i18n-tooltip="stage.share" data-tooltip-pos="left"${dis}>
             ${SHARE_ICON}
         </button>
         <div id="sharePopover" class="share-popover hidden">

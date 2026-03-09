@@ -131,6 +131,7 @@ let dirty = false;
 let userEdited = false;
 let baselineSnapshot = null;
 let morphLocked = false;
+let shareActions = null;
 let lastNodeCount = 0;
 let initComplete = false;
 let foldTransitionState = 'idle';
@@ -205,8 +206,7 @@ function setMorphLocked(locked) {
     document.getElementById('historyForwardBtn').disabled = locked || historyIndex >= navHistory.length - 1;
     document.getElementById('configRandomizeBtn').disabled = locked;
     if (locked) {
-        el.sharePopover.classList.add('hidden');
-        el.shareBtn.setAttribute('data-tooltip', 'Share');
+        if (shareActions) shareActions.close();
         el.settingsPopover.classList.add('hidden');
     }
     const panelEl = document.querySelector('.panel');
@@ -684,7 +684,7 @@ document.addEventListener('resolutionchange', (e) => {
 
 /* ── Share / Export / Import ── */
 
-initShareActions({
+shareActions = initShareActions({
     el,
     getCurrentSeed: controls.getCurrentSeed,
     readControlsFromUI: controls.readControlsFromUI,

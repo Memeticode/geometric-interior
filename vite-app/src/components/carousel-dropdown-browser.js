@@ -179,7 +179,7 @@ function readCard(el) {
 // ── Main component ──
 
 class CarouselDropdownBrowser extends HTMLElement {
-    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'debug-show-controls'];
+    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'debug-show-controls', 'debug-transition-animation'];
 
     // ── Configuration ──
     #arcZ = 24;
@@ -191,6 +191,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     #bounce = 0.35;                // overshoot amount (0 = smooth, 1 = pronounced bounce)
     #expandable = true;            // whether the grid-expand toggle is available
     #debugShowControls = false;     // show debug controls panel
+    #debugTransitionAnimation = false; // log transition/FLIP debug info to console
     #animatingExpand = false;       // guard against overlapping expand/collapse
     #isFirstRender = true;          // fade-in on initial load
 
@@ -940,6 +941,15 @@ class CarouselDropdownBrowser extends HTMLElement {
                     const scrollParent = this.closest('.gallery-main') || this.parentElement;
                     const scrollBefore = scrollParent ? scrollParent.scrollTop : 0;
                     const rectBefore = this.getBoundingClientRect();
+                    const _dbg = this.#debugTransitionAnimation;
+                    let vpWidthBefore, trackHeightBefore;
+                    if (_dbg) {
+                        vpWidthBefore = this.#viewport.clientWidth;
+                        trackHeightBefore = this.#track.getBoundingClientRect().height;
+                        console.group('[CDB collapse] dropdown collapse phase');
+                        console.log('before: vpWidth=%d trackH=%.1f ctrlY=%.1f lblY=%.1f scrollTop=%d',
+                            vpWidthBefore, trackHeightBefore, ctrlBefore2.top, lblBefore2.top, scrollBefore);
+                    }
 
                     this.#dropdown.style.transition = '';
                     this.#dropdown.style.opacity = '';
@@ -949,10 +959,20 @@ class CarouselDropdownBrowser extends HTMLElement {
                     void this.#dropdown.offsetHeight;
                     this.#dropdown.classList.remove('cdb-measuring');
 
+                    let vpWidthAfterDropdown;
+                    if (_dbg) {
+                        vpWidthAfterDropdown = this.#viewport.clientWidth;
+                        const trackHeightAfterDropdown = this.#track.getBoundingClientRect().height;
+                        console.log('after dropdown collapse: vpWidth=%d (Δ%d) trackH=%.1f (Δ%.1f)',
+                            vpWidthAfterDropdown, vpWidthAfterDropdown - vpWidthBefore,
+                            trackHeightAfterDropdown, trackHeightAfterDropdown - trackHeightBefore);
+                    }
+
                     // Compensate for any residual layout shift from dropdown collapse
                     if (scrollParent) {
                         const rectAfter = this.getBoundingClientRect();
                         const layoutShift = rectBefore.top - rectAfter.top;
+                        if (_dbg) console.log('layout shift: %.1fpx, scroll compensate: %s', layoutShift, Math.abs(layoutShift) > 1);
                         if (Math.abs(layoutShift) > 1) {
                             scrollParent.scrollTop = scrollBefore - layoutShift;
                         }
@@ -961,6 +981,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                     // FLIP controls for dropdown collapse shift
                     const ctrlAfter2 = this.#controls.getBoundingClientRect();
                     const cdy2 = ctrlBefore2.top - ctrlAfter2.top;
+                    if (_dbg) console.log('controls FLIP: Δy=%.1f (animate: %s)', cdy2, Math.abs(cdy2) > 1);
                     if (Math.abs(cdy2) > 1) {
                         this.#controls.style.transition = 'none';
                         this.#controls.style.transform = `translateY(${cdy2}px)`;
@@ -972,6 +993,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                     // FLIP section label container for dropdown collapse shift
                     const lblAfter2 = this.#sectionLabelContainer.getBoundingClientRect();
                     const lblDy = lblBefore2.top - lblAfter2.top;
+                    if (_dbg) console.log('label FLIP: Δy=%.1f (animate: %s)', lblDy, Math.abs(lblDy) > 1);
                     if (Math.abs(lblDy) > 1) {
                         this.#sectionLabelContainer.style.transition = 'none';
                         this.#sectionLabelContainer.style.transform = `translateY(${lblDy}px)`;
@@ -991,21 +1013,66 @@ class CarouselDropdownBrowser extends HTMLElement {
                         sec.element.style.opacity = '0';
                     }
 
+                    if (_dbg) {
+                        console.log('applied pre-computed layout (frame vpWidth may differ from current)');
+                        console.groupEnd();
+                    }
+
                     // Clear FLIP styles, remove phantoms, reveal labels AFTER FLIP completes
                     setTimeout(() => {
+                        if (_dbg) {
+                            console.group('[CDB collapse] final recompute phase (+350ms)');
+                        }
+                        let trackHeightPreRecompute, ctrlBeforeRecompute, lblBeforeRecompute;
+                        if (_dbg) {
+                            trackHeightPreRecompute = this.#track.getBoundingClientRect().height;
+                        }
+
                         this.#controls.style.transition = '';
                         this.#controls.style.transform = '';
                         this.#sectionLabelContainer.style.transition = '';
                         this.#sectionLabelContainer.style.transform = '';
                         // Remove phantoms, then reveal real labels at final positions
                         for (const o of sectionPhantoms) o.remove();
+                        // Suppress transitions so recomputed layout applies instantly
+                        // (viewport width may have changed after dropdown collapse)
+                        for (const { element } of this.#cards) {
+                            element.style.transition = 'none';
+                        }
+                        this.#track.style.transition = 'none';
+
+                        if (_dbg) {
+                            ctrlBeforeRecompute = this.#controls.getBoundingClientRect();
+                            lblBeforeRecompute = this.#sectionLabelContainer.getBoundingClientRect();
+                        }
+
                         this.#positionCards();
-                        // Flush opacity change before restoring transitions so
-                        // the browser doesn't animate the opacity 0 → 1 switch.
-                        void this.#sectionLabelContainer.offsetHeight;
+                        // Remove cdb-transitioning immediately — no transitionend
+                        // will fire since transitions are suppressed.
+                        this.#isTransitioning = false;
+                        this.#track.classList.remove('cdb-transitioning');
+                        void this.#track.offsetHeight;
+
+                        if (_dbg) {
+                            const vpWidthFinal = this.#viewport.clientWidth;
+                            const trackHeightPostRecompute = this.#track.getBoundingClientRect().height;
+                            const ctrlAfterRecompute = this.#controls.getBoundingClientRect();
+                            const lblAfterRecompute = this.#sectionLabelContainer.getBoundingClientRect();
+                            console.log('vpWidth: %d (Δ%d from collapse)', vpWidthFinal, vpWidthFinal - vpWidthAfterDropdown);
+                            console.log('trackH: %.1f → %.1f (Δ%.1f)', trackHeightPreRecompute, trackHeightPostRecompute, trackHeightPostRecompute - trackHeightPreRecompute);
+                            console.log('controls: y %.1f → %.1f (Δ%.1f)', ctrlBeforeRecompute.top, ctrlAfterRecompute.top, ctrlAfterRecompute.top - ctrlBeforeRecompute.top);
+                            console.log('labels: y %.1f → %.1f (Δ%.1f)', lblBeforeRecompute.top, lblAfterRecompute.top, lblAfterRecompute.top - lblBeforeRecompute.top);
+                            console.groupEnd();
+                        }
+
+                        for (const { element } of this.#cards) {
+                            element.style.transition = '';
+                        }
+                        this.#track.style.transition = '';
                         for (const sec of this.#sectionLabels) {
                             sec.element.style.transition = '';
                         }
+                        console.groupEnd();
                     }, 350);
                     this.#toggle.disabled = false;
                     this.#toggle.setAttribute('data-tooltip', 'Expand');
@@ -1058,6 +1125,9 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (name === 'debug-show-controls') {
             this.#debugShowControls = val !== null && val !== 'false';
             if (this.#debugPanel) this.#debugPanel.style.display = this.#debugShowControls ? '' : 'none';
+        }
+        if (name === 'debug-transition-animation') {
+            this.#debugTransitionAnimation = val !== null && val !== 'false';
         }
     }
 

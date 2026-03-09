@@ -100,7 +100,7 @@ export function hideTooltip() {
 
 export function refreshTooltip(el) {
     if (tooltipSource === el && paramTooltip.classList.contains('visible')) {
-        paramTooltip.textContent = el.getAttribute('data-tooltip');
+        showTooltip(el);
     }
 }
 

@@ -1,6 +1,6 @@
 /**
- * Share actions — share URL builder, popover toggle, social share buttons,
- * and visual export (ZIP download).
+ * Share actions — editor-specific wiring on top of the shared share-popover,
+ * plus settings-popover toggle and JSON config export.
  */
 
 import { encodeStateToURL } from '../stores/url-state.js';
@@ -8,9 +8,10 @@ import { generateTitle } from '@geometric-interior/core/text-generation/title-te
 import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
 import { profileToConfig } from '@geometric-interior/core/config-schema.js';
 import { downloadBlob, toIsoLocalish, safeName } from '../export/export.js';
-import { hideTooltip, refreshTooltip } from '../components/tooltips.js';
+import { hideTooltip } from '../components/tooltips.js';
 import { toast } from '../components/toast.js';
 import { t } from '../i18n/locale.js';
+import { initSharePopover } from '../components/share-popover.js';
 
 /**
  * @param {object} opts
@@ -40,35 +41,25 @@ export function initShareActions({ el, getCurrentSeed, readControlsFromUI, readC
         return generateTitle(controls, titleRng);
     }
 
-    /* ── Toggle popovers ── */
+    /* ── Shared share-popover (toggle, dismiss, social buttons) ── */
 
-    el.shareBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        hideTooltip();
-        el.sharePopover.classList.toggle('hidden');
-        el.settingsPopover.classList.add('hidden');
-        const open = !el.sharePopover.classList.contains('hidden');
-        el.shareBtn.setAttribute('data-tooltip', open ? 'Close share' : 'Share');
-        refreshTooltip(el.shareBtn);
+    const share = initSharePopover({
+        shareBtn: el.shareBtn,
+        sharePopover: el.sharePopover,
+        getShareURL: buildShareURL,
+        getShareTitle: () => `${generateTitleForShare()} — Geometric Interior`,
     });
+
+    /* ── Settings popover ── */
 
     el.settingsBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         hideTooltip();
         el.settingsPopover.classList.toggle('hidden');
-        closeSharePopover();
+        share.close();
     });
 
-    function closeSharePopover() {
-        el.sharePopover.classList.add('hidden');
-        el.shareBtn.setAttribute('data-tooltip', 'Share');
-        refreshTooltip(el.shareBtn);
-    }
-
     document.addEventListener('click', (e) => {
-        if (!el.sharePopover.contains(e.target) && e.target !== el.shareBtn) {
-            closeSharePopover();
-        }
         if (!el.settingsPopover.contains(e.target) && e.target !== el.settingsBtn) {
             el.settingsPopover.classList.add('hidden');
         }
@@ -76,10 +67,6 @@ export function initShareActions({ el, getCurrentSeed, readControlsFromUI, readC
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            if (!el.sharePopover.classList.contains('hidden')) {
-                closeSharePopover();
-                el.shareBtn.focus();
-            }
             if (!el.settingsPopover.classList.contains('hidden')) {
                 el.settingsPopover.classList.add('hidden');
                 el.settingsBtn.focus();
@@ -110,76 +97,5 @@ export function initShareActions({ el, getCurrentSeed, readControlsFromUI, readC
         }
     });
 
-    /* ── Copy link ── */
-
-    document.getElementById('shareCopyLink').addEventListener('click', async () => {
-        const shareURL = buildShareURL();
-        try {
-            await navigator.clipboard.writeText(shareURL);
-            toast(t('toast.linkCopied'));
-        } catch {
-            const ta = document.createElement('textarea');
-            ta.value = shareURL;
-            ta.style.position = 'fixed';
-            ta.style.opacity = '0';
-            document.body.appendChild(ta);
-            ta.select();
-            document.execCommand('copy');
-            document.body.removeChild(ta);
-            toast(t('toast.linkCopiedShort'));
-        }
-        closeSharePopover();
-    });
-
-    /* ── Social share buttons ── */
-
-    function openShare(urlFn) {
-        const shareURL = buildShareURL();
-        urlFn(shareURL);
-        closeSharePopover();
-    }
-
-    document.getElementById('shareTwitter').addEventListener('click', () => {
-        openShare((url) => {
-            const title = generateTitleForShare();
-            const text = `${title} — Geometric Interior`;
-            window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`, '_blank', 'noopener,width=550,height=420');
-        });
-    });
-
-    document.getElementById('shareFacebook').addEventListener('click', () => {
-        openShare((url) => {
-            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'noopener,width=555,height=525');
-        });
-    });
-
-    document.getElementById('shareBluesky').addEventListener('click', () => {
-        openShare((url) => {
-            const title = generateTitleForShare();
-            const text = `${title} — Geometric Interior\n${url}`;
-            window.open(`https://bsky.app/intent/compose?text=${encodeURIComponent(text)}`, '_blank', 'noopener,width=600,height=500');
-        });
-    });
-
-    document.getElementById('shareReddit').addEventListener('click', () => {
-        openShare((url) => {
-            const title = generateTitleForShare();
-            window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(`${title} — Geometric Interior`)}`, '_blank', 'noopener,width=700,height=600');
-        });
-    });
-
-    document.getElementById('shareLinkedIn').addEventListener('click', () => {
-        openShare((url) => {
-            window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'noopener,width=600,height=550');
-        });
-    });
-
-    document.getElementById('shareEmail').addEventListener('click', () => {
-        openShare((url) => {
-            const title = generateTitleForShare();
-            const subject = `${title} — Geometric Interior`;
-            const body = `Check out this generative artwork:\n\n${url}`;
-            window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-        });
-    });
+    return { close: share.close };
 }

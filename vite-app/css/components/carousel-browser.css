@@ -29,7 +29,7 @@ carousel-dropdown-browser-section { display: none; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--cdb-controls-gap, 0.35rem);
+    gap: var(--cdb-controls-gap, 0.6rem);
     padding: 0;
     margin-top: 1rem;
 }
@@ -59,6 +59,10 @@ carousel-dropdown-browser-section { display: none; }
     align-items: center;
     justify-content: center;
     min-height: calc(var(--card-w) * 9 / 14 + 1.25rem + var(--arc-y-extra, 0px));
+    transition: opacity 0.4s ease;
+}
+/* Only animate track height during intentional carousel navigation */
+.cdb-track.cdb-transitioning {
     transition: min-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
                 opacity 0.4s ease;
 }

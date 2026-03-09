@@ -31,7 +31,8 @@ import { toast } from '../../components/toast.js';
 import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
 import { TRASH_SVG } from '../../components/icons.js';
-import { refreshTooltip, hideTooltip } from '../../components/tooltips.js';
+import { refreshTooltip } from '../../components/tooltips.js';
+import { initSharePopover } from '../../components/share-popover.js';
 import { initGalleryWorker } from './gallery-worker-bridge.js';
 import { createRenderQueue } from './render-queue.js';
 import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
@@ -1878,110 +1879,12 @@ Promise.allSettled([
 
 /* ── Share ── */
 
-const shareBtn = document.getElementById('shareBtn');
-const sharePopover = document.getElementById('sharePopover');
-
-function getShareURL() {
-    return window.location.origin + window.location.pathname;
-}
-
-function getShareTitle() {
-    const name = selectedName.textContent.trim();
-    return name ? `${name} — Geometric Interior` : 'Geometric Interior';
-}
-
-shareBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    hideTooltip();
-    sharePopover.classList.toggle('hidden');
-    const open = !sharePopover.classList.contains('hidden');
-    shareBtn.classList.toggle('share-open', open);
-    shareBtn.setAttribute('data-tooltip', open ? 'Close share' : 'Share');
-    refreshTooltip(shareBtn);
-});
-
-function closeSharePopover() {
-    sharePopover.classList.add('hidden');
-    shareBtn.classList.remove('share-open');
-    shareBtn.setAttribute('data-tooltip', 'Share');
-    refreshTooltip(shareBtn);
-}
-
-document.addEventListener('click', (e) => {
-    if (!sharePopover.contains(e.target) && e.target !== shareBtn) {
-        closeSharePopover();
-    }
-});
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !sharePopover.classList.contains('hidden')) {
-        closeSharePopover();
-        shareBtn.focus();
-    }
-});
-
-document.getElementById('shareCopyLink').addEventListener('click', async () => {
-    const url = getShareURL();
-    try {
-        await navigator.clipboard.writeText(url);
-        toast(t('toast.linkCopied') || 'Link copied');
-    } catch {
-        const ta = document.createElement('textarea');
-        ta.value = url;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        toast(t('toast.linkCopiedShort') || 'Copied');
-    }
-    closeSharePopover();
-});
-
-document.getElementById('shareTwitter').addEventListener('click', () => {
-    const url = getShareURL();
-    const title = getShareTitle();
-    window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank', 'noopener,width=550,height=420');
-    closeSharePopover();
-});
-
-document.getElementById('shareFacebook').addEventListener('click', () => {
-    const url = getShareURL();
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank', 'noopener,width=555,height=525');
-    closeSharePopover();
-});
-
-document.getElementById('shareBluesky').addEventListener('click', () => {
-    const url = getShareURL();
-    const title = getShareTitle();
-    window.open(`https://bsky.app/intent/compose?text=${encodeURIComponent(`${title}\n${url}`)}`, '_blank', 'noopener,width=600,height=500');
-    closeSharePopover();
-});
-
-document.getElementById('shareReddit').addEventListener('click', () => {
-    const url = getShareURL();
-    const title = getShareTitle();
-    window.open(`https://www.reddit.com/submit?url=${encodeURIComponent(url)}&title=${encodeURIComponent(title)}`, '_blank', 'noopener,width=700,height=600');
-    closeSharePopover();
-});
-
-document.getElementById('shareGoogle').addEventListener('click', () => {
-    const url = getShareURL();
-    window.open(`https://plus.google.com/share?url=${encodeURIComponent(url)}`, '_blank', 'noopener,width=600,height=500');
-    closeSharePopover();
-});
-
-document.getElementById('shareLinkedIn').addEventListener('click', () => {
-    const url = getShareURL();
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank', 'noopener,width=600,height=550');
-    closeSharePopover();
-});
-
-document.getElementById('shareEmail').addEventListener('click', () => {
-    const url = getShareURL();
-    const title = getShareTitle();
-    const body = `Check out this generative artwork:\n\n${url}`;
-    window.open(`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`);
-    closeSharePopover();
+initSharePopover({
+    shareBtn: document.getElementById('shareBtn'),
+    sharePopover: document.getElementById('sharePopover'),
+    getShareURL: () => window.location.origin + window.location.pathname,
+    getShareTitle: () => {
+        const name = selectedName.textContent.trim();
+        return name ? `${name} — Geometric Interior` : 'Geometric Interior';
+    },
 });
