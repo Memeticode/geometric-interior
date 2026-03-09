@@ -338,6 +338,8 @@
     .gallery-arrow { width: 24px; height: 24px; }
     .gallery-arrow svg { width: 14px; height: 14px; }
     .selected-header-nav { gap: 0.125rem; }
+    .selected-name { font-size: 0.65rem; }
+    .selected-seed { font-size: 0.5625rem; }
 }
 @media (min-width: 1440px) {
     .gallery-arrow { width: 32px; height: 32px; }

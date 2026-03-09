@@ -92,6 +92,41 @@ const PERSPECTIVE_D = 1200;      // matches CSS perspective(1200px)
 const DEG = Math.PI / 180;       // degrees-to-radians multiplier
 const HOVER_ZONE_DELAY = 900;    // ms delay before recomputing hover zones after layout
 
+// ── Card geometry ──
+const ARC_Z_MAX_RAD    = 1.2;    // max total arc angle in radians (at arc-z=50)
+const ARC_Z_RANGE      = 50;     // arc-z slider range
+const SPACING_FLAT     = 0.58;   // card-width fraction for flat spacing
+const SPACING_ARC_ADJ  = 0.08;   // spacing reduction at full arc
+const SCALE_MIN_ARC    = 0.70;   // minimum card scale in arc mode
+const SCALE_RATE_ARC   = 0.08;   // scale reduction per position in arc mode
+const SCALE_MIN_LINEAR = 0.88;   // minimum card scale in linear mode
+const SCALE_RATE_LINEAR = 0.04;  // scale reduction per position in linear mode
+const TZ_PER_POS       = 15;     // translateZ depth per card position (px)
+const RY_MAX_DEG       = 50;     // max rotateY cap in zone 1 (degrees)
+const EDGE_MARGIN      = 8;      // viewport edge margin (px)
+
+// ── Hover ──
+const HOVER_LIFT       = 4;      // px lift on hover
+const HOVER_TZ_BASE    = 15;     // base tz boost on hover
+const HOVER_TZ_EDGE    = 35;     // additional tz boost at edges
+const HOVER_SC_BASE    = 0.03;   // base scale boost on hover
+const HOVER_SC_EDGE    = 0.04;   // additional scale boost at edges
+const HOVER_RY_FACTOR  = 0.4;    // fraction of ry to flatten on hover
+
+// ── Zone boundaries ──
+const ZONE_CULL        = 2;      // cards beyond half+ZONE_CULL are hidden
+const ZONE2_FADE       = 0.5;    // cards beyond half+this get opacity 0
+const ZONE2_TZ_EXTRA   = 30;     // extra depth in zone 2
+
+// ── Drag / momentum ──
+const MOMENTUM_DECAY   = 0.92;   // velocity decay per reference frame
+const FRAME_REF_MS     = 16.67;  // reference frame duration (~60fps)
+const DRAG_INTENT_PX   = 5;      // min px to count as drag
+const FLING_VEL_MIN    = 0.15;   // min velocity for momentum fling
+
+// ── Animation ──
+const STAGGER_DELAY_MS = 50;     // ms between card animations
+
 /** Cubic-bezier evaluator for JS-driven scroll animations. */
 function cubicBezierEase(x1, y1, x2, y2) {
     const at = (t, a, b) => 3 * (1 - t) * (1 - t) * t * a + 3 * (1 - t) * t * t * b + t * t * t;
@@ -392,12 +427,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 const img = element.querySelector('.cdb-card-frame');
                 if (img) img.style.transition = 'none';
 
-                element.style.setProperty('--cx', edge.cx + 'px');
-                element.style.setProperty('--cy', edge.cy + 'px');
-                element.style.setProperty('--ry', edge.ry + 'deg');
-                element.style.setProperty('--tz', edge.tz + 'px');
-                element.style.setProperty('--sc', String(edge.sc));
-                element.style.setProperty('--card-opacity', '0');
+                this.#applyCardStyle(element, { ...edge, opacity: 0 });
                 element.style.zIndex = '0';
 
                 offScreenCards.push({ element, index, offset });
@@ -405,7 +435,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
 
         // ── Sort visible cards by distance from center for cascade stagger ──
-        const staggerDelay = 50; // ms per rank
+        const staggerDelay = STAGGER_DELAY_MS; // ms per rank
         const sorted = [...this.#cards]
             .map(c => ({ ...c, layout: this.#cardLayout.get(c.element) }))
             .filter(c => c.layout && c.layout.opacity > 0)
@@ -748,7 +778,7 @@ class CarouselDropdownBrowser extends HTMLElement {
 
                 // ── Animate cards to carousel positions via Web Animations API ──
                 const total = this.#items.length;
-                const staggerDelay = 50;
+                const staggerDelay = STAGGER_DELAY_MS;
                 const sorted = [...this.#cards]
                     .map(c => ({ ...c, layout: this.#cardLayout.get(c.element) }))
                     .filter(c => c.layout && c.layout.opacity > 0 && gridRects.has(c.element.dataset.flipKey))
@@ -1747,13 +1777,10 @@ class CarouselDropdownBrowser extends HTMLElement {
 
             // Set custom properties to target values immediately — CSS will use
             // these after the Web Animation is cancelled/finished in cleanup.
-            t.element.style.setProperty('--cx', t.toCx + 'px');
-            t.element.style.setProperty('--cy', t.toCy + 'px');
-            t.element.style.setProperty('--ry', t.toRy + 'deg');
-            t.element.style.setProperty('--rx', (t.toRx || 0) + 'deg');
-            t.element.style.setProperty('--tz', t.toTz + 'px');
-            t.element.style.setProperty('--sc', String(t.toSc));
-            t.element.style.setProperty('--card-opacity', String(t.toOpacity));
+            this.#applyCardStyle(t.element, {
+                cx: t.toCx, cy: t.toCy, ry: t.toRy, rx: t.toRx,
+                tz: t.toTz, sc: t.toSc, opacity: t.toOpacity,
+            });
         }
     }
 
@@ -1849,6 +1876,18 @@ class CarouselDropdownBrowser extends HTMLElement {
     // ── LAYOUT SYSTEM ──
     // ═══════════════════════════════════════════════════════
 
+    /** Apply card transform CSS custom properties in one call. */
+    #applyCardStyle(element, { cx, cy, ry, rx, tz, sc, opacity }) {
+        const s = element.style;
+        s.setProperty('--cx', cx + 'px');
+        s.setProperty('--cy', cy + 'px');
+        s.setProperty('--ry', ry + 'deg');
+        s.setProperty('--rx', (rx || 0) + 'deg');
+        s.setProperty('--tz', tz + 'px');
+        s.setProperty('--sc', String(sc));
+        s.setProperty('--card-opacity', String(opacity));
+    }
+
     /** Read --card-w from CSS once per layout pass. */
     #readCardW() {
         return parseInt(
@@ -1861,12 +1900,12 @@ class CarouselDropdownBrowser extends HTMLElement {
         const viewportW = this.#viewport ? this.#viewport.clientWidth : window.innerWidth;
 
         // 1. Arc angle and mode
-        const totalAngle = this.#arcZ * (1.2 / 50); // 0-50 → 0-1.2 rad
+        const totalAngle = this.#arcZ * (ARC_Z_MAX_RAD / ARC_Z_RANGE);
         const linearMode = totalAngle < 0.01;
 
         // 2. Adaptive spacing: flat cards need more room, arc cards compress
-        const arcFraction = Math.min(totalAngle / 1.2, 1);
-        const minSpacing = cardW * (0.58 - 0.08 * arcFraction); // 0.58 flat → 0.50 arc
+        const arcFraction = Math.min(totalAngle / ARC_Z_MAX_RAD, 1);
+        const minSpacing = cardW * (SPACING_FLAT - SPACING_ARC_ADJ * arcFraction);
 
         // 3. Visible count from available space
         const halfCount = Math.floor((viewportW - cardW) / (2 * minSpacing));
@@ -1875,13 +1914,12 @@ class CarouselDropdownBrowser extends HTMLElement {
 
         // 4. Estimate outermost card's projected half-width to prevent overflow
         const outerSc = linearMode
-            ? Math.max(0.88, 1 - half * 0.04)
-            : Math.max(0.70, 1 - half * 0.08);
-        const outerTz = linearMode ? 0 : -half * 15;
+            ? Math.max(SCALE_MIN_LINEAR, 1 - half * SCALE_RATE_LINEAR)
+            : Math.max(SCALE_MIN_ARC, 1 - half * SCALE_RATE_ARC);
+        const outerTz = linearMode ? 0 : -half * TZ_PER_POS;
         const outerRyRad = linearMode ? 0 : totalAngle;
         const outerHalfW = Math.abs(projOuterEdge(cardW, outerSc, outerTz, outerRyRad, PERSPECTIVE_D, 1));
-        const margin = 8;
-        const maxCx = viewportW / 2 - outerHalfW - margin;
+        const maxCx = viewportW / 2 - outerHalfW - EDGE_MARGIN;
 
         // 5. Spacing and arc geometry
         const spacing = half > 0 ? maxCx / half : minSpacing;
@@ -1932,7 +1970,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
 
         const abs = Math.abs(visualOffset);
-        if (abs > half + 2) return null;
+        if (abs > half + ZONE_CULL) return null;
 
         let cx, cy, ry, rx, tz, sc, opacity, zone;
 
@@ -1944,12 +1982,12 @@ class CarouselDropdownBrowser extends HTMLElement {
             } else {
                 const angle = visualOffset * dTheta;
                 cx = R * Math.sin(angle);
-                ry = Math.sign(visualOffset) * Math.min(Math.abs(angle) / DEG, 50);
+                ry = Math.sign(visualOffset) * Math.min(Math.abs(angle) / DEG, RY_MAX_DEG);
             }
-            tz = linearMode ? 0 : -abs * 15;
+            tz = linearMode ? 0 : -abs * TZ_PER_POS;
             sc = linearMode
-                ? Math.max(0.88, 1 - abs * 0.04)
-                : Math.max(0.70, 1 - abs * 0.08);
+                ? Math.max(SCALE_MIN_LINEAR, 1 - abs * SCALE_RATE_LINEAR)
+                : Math.max(SCALE_MIN_ARC, 1 - abs * SCALE_RATE_ARC);
             opacity = 1;
             const t = half > 0 ? abs / half : 0;
             cy = -this.#arcY * t * t;
@@ -1957,24 +1995,24 @@ class CarouselDropdownBrowser extends HTMLElement {
             cy += Math.min(this.#arcY, 0) / 2; // shift up only for frown curve (arcY < 0)
         } else {
             zone = 2;
-            const t = Math.min((abs - half) / 2, 1);
+            const t = Math.min((abs - half) / ZONE_CULL, 1);
             cx = linearMode
                 ? half * spacing * Math.sign(visualOffset)
                 : R * Math.sin(half * dTheta) * Math.sign(visualOffset);
-            ry = linearMode ? 0 : Math.sign(visualOffset) * (50 + t * 40);
-            tz = linearMode ? -t * 30 : -half * 15 - t * 30;
-            sc = (linearMode ? 0.88 : 0.70) * (1 - t);
-            opacity = abs > half + 0.5 ? 0 : 1;
+            ry = linearMode ? 0 : Math.sign(visualOffset) * (RY_MAX_DEG + t * 40);
+            tz = linearMode ? -t * ZONE2_TZ_EXTRA : -half * TZ_PER_POS - t * ZONE2_TZ_EXTRA;
+            sc = (linearMode ? SCALE_MIN_LINEAR : SCALE_MIN_ARC) * (1 - t);
+            opacity = abs > half + ZONE2_FADE ? 0 : 1;
             cy = -this.#arcY + Math.min(this.#arcY, 0) / 2;
             rx = this.#arcY !== 0 ? 0.5 * Math.atan2(this.#arcY, PERSPECTIVE_D) / DEG : 0;
         }
 
         // Hover parameters
         const hoverT = half > 0 ? Math.min(abs / half, 1) : 0;
-        const hoverLift = 4 * (1 - hoverT);
-        const hoverTzBoost = 15 + hoverT * 35;
-        const hoverScBoost = 0.03 + hoverT * 0.04;
-        const hoverRyOffset = ry * 0.4;
+        const hoverLift = HOVER_LIFT * (1 - hoverT);
+        const hoverTzBoost = HOVER_TZ_BASE + hoverT * HOVER_TZ_EDGE;
+        const hoverScBoost = HOVER_SC_BASE + hoverT * HOVER_SC_EDGE;
+        const hoverRyOffset = ry * HOVER_RY_FACTOR;
 
         const side = Math.sign(visualOffset);
         let hoverCxShift = 0;
@@ -2147,25 +2185,18 @@ class CarouselDropdownBrowser extends HTMLElement {
                     if (off < -total / 2) off += total;
                 }
                 const side = off >= 0 ? 1 : -1;
-                element.style.setProperty('--cx', (side * offScreenCx) + 'px');
-                element.style.setProperty('--ry', (side * 90) + 'deg');
-                element.style.setProperty('--tz', (-half * 20 - 30) + 'px');
-                element.style.setProperty('--sc', '0');
-                element.style.setProperty('--cy', (-this.#arcY + Math.min(this.#arcY, 0) / 2) + 'px');
-                element.style.setProperty('--rx', '0deg');
-                element.style.setProperty('--card-opacity', '0');
+                this.#applyCardStyle(element, {
+                    cx: side * offScreenCx,
+                    cy: -this.#arcY + Math.min(this.#arcY, 0) / 2,
+                    ry: side * 90, rx: 0,
+                    tz: -half * 20 - ZONE2_TZ_EXTRA, sc: 0, opacity: 0,
+                });
                 element.style.pointerEvents = 'none';
                 element.style.zIndex = '0';
                 continue;
             }
 
-            element.style.setProperty('--cx', layout.cx + 'px');
-            element.style.setProperty('--cy', layout.cy + 'px');
-            element.style.setProperty('--ry', layout.ry + 'deg');
-            element.style.setProperty('--rx', layout.rx + 'deg');
-            element.style.setProperty('--tz', layout.tz + 'px');
-            element.style.setProperty('--sc', String(layout.sc));
-            element.style.setProperty('--card-opacity', String(layout.opacity));
+            this.#applyCardStyle(element, layout);
             element.style.zIndex = String(layout.zIndex);
             element.style.pointerEvents = layout.zone === 1 ? '' : 'none';
 
@@ -2528,7 +2559,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 this.#positionCards_fractional(this.#dragFractionalCenter);
 
                 // Slower decay for more graceful momentum
-                vel *= Math.pow(0.92, dt / 16.67);
+                vel *= Math.pow(MOMENTUM_DECAY, dt / FRAME_REF_MS);
 
                 if (Math.abs(vel) < 0.05) {
                     this.#momentumRaf = null;
@@ -2567,12 +2598,12 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#isDragging = false;
 
             const totalDrag = Math.abs(e.clientX - this.#dragStartX);
-            if (totalDrag > 5) {
+            if (totalDrag > DRAG_INTENT_PX) {
                 this.#dragJustEnded = true;
                 requestAnimationFrame(() => { this.#dragJustEnded = false; });
             }
 
-            if (Math.abs(this.#dragVelocity) > 0.15) {
+            if (Math.abs(this.#dragVelocity) > FLING_VEL_MIN) {
                 startMomentum();
             } else {
                 snapToNearest();
