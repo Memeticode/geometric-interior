@@ -10,7 +10,7 @@
 }
 .gallery-page .gallery-main {
     flex: 1;
-    padding: 1rem;
+    padding: 0.75rem;
     overflow-y: auto;
     scrollbar-gutter: stable both-edges;
 }
@@ -160,6 +160,8 @@
     align-items: center;
     gap: 0.125rem;
     flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: center;
 }
 .selected-name {
     font-size: 0.875rem;
@@ -194,8 +196,8 @@
     border: 1px solid var(--border);
     color: var(--text-muted);
     border-radius: 50%;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;

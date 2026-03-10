@@ -64,36 +64,30 @@ const SLIDER_GRADIENTS = {
  * @param {HTMLSelectElement} opts.tagDetEl  — detail word select
  * @param {HTMLTextAreaElement} opts.nameField — name textarea
  * @param {HTMLButtonElement} opts.saveBtn
- * @param {HTMLButtonElement} opts.resetBtn
  * @param {HTMLButtonElement} opts.randomizeBtn
  * @param {HTMLButtonElement} opts.renderBtn
+ * @param {HTMLButtonElement} opts.undoBtn
+ * @param {HTMLButtonElement} opts.redoBtn
+ * @param {HTMLButtonElement} opts.fullscreenBtn
  * @param {Function} opts.onControlChange   — (seed, controls, camera) => void
  * @param {Function} opts.onRender          — (seed, controls, camera, name) => void
- * @param {Function} [opts.onSave]          — (seed, controls, camera, name) => void
+ * @param {Function} [opts.onSave]          — (name, seed, controls, camera, commentary) => Promise<{id, overwritten}>
+ * @param {Function} [opts.onFullscreen]    — () => void
  * @param {HTMLElement} [opts.nameTooltipEl] — element whose data-tooltip gets slug appended
  * @param {HTMLTextAreaElement} [opts.commentaryField] — commentary textarea
  * @param {HTMLElement} [opts.previewCanvas] — canvas element for alt-text tooltip overlay
  * @param {HTMLElement} [opts.nameCounter] — char counter for name
  * @param {HTMLElement} [opts.nameError] — validation error for name
  * @param {HTMLElement} [opts.commentaryCounter] — char counter for commentary
- * @param {HTMLButtonElement} [opts.historyBackBtn] — previous randomized image
- * @param {HTMLButtonElement} [opts.historyForwardBtn] — next randomized image
- * @param {HTMLButtonElement} [opts.undoBtn] — undo parameter tweak
- * @param {HTMLButtonElement} [opts.redoBtn] — redo parameter tweak
- * @param {HTMLButtonElement} [opts.duplicateBtn] — duplicate locked config for editing
- * @param {Function} [opts.onDuplicate] — () => void
- * @param {HTMLButtonElement} [opts.deleteBtn] — delete saved profile
- * @param {Function} [opts.onDelete] — (name: string) => void
  */
 export function initGeneratePanel(opts) {
     const {
         slidersEl, tagArrEl, tagStrEl, tagDetEl,
-        nameField, saveBtn, resetBtn, randomizeBtn, renderBtn,
-        onControlChange, onRender, onSave, nameTooltipEl, commentaryField,
+        nameField, saveBtn, randomizeBtn, renderBtn,
+        undoBtn, redoBtn, fullscreenBtn,
+        onControlChange, onRender, onSave, onFullscreen,
+        nameTooltipEl, commentaryField,
         previewCanvas, nameCounter, nameError, commentaryCounter,
-        historyBackBtn, historyForwardBtn, undoBtn, redoBtn,
-        duplicateBtn, onDuplicate,
-        deleteBtn, onDelete,
     } = opts;
 
     const sliderInputs = {};
@@ -101,17 +95,13 @@ export function initGeneratePanel(opts) {
     let userEditedName = false;
     let locked = false;       // true when viewing a saved (immutable) profile
     let savedName = null;     // name of the saved profile (null = unsaved draft)
-    let savedIsPortrait = false;
-    let savedAssetId = null;
+    let savedAssetId = null;  // asset ID if viewing a saved generated image
 
-    // ── Two-tier history ──
-    // imageHistory: array of randomized image entries, each with its own undo stack
-    // Prev/next navigates between randomized images
-    // Undo/redo navigates within the current image's tweak history
-    const MAX_IMAGE_HISTORY = 50;
-    const MAX_UNDO = 50;
-    const imageHistory = []; // [{undoStack: [state, ...], undoIndex: number}]
-    let imageIndex = -1;
+    // ── Unified undo/redo timeline ──
+    // Single flat stack: parameter tweaks, randomize, image loads all push entries.
+    const MAX_UNDO = 100;
+    const undoStack = []; // [{seed, controls, camera, name, userEditedName, commentary, savedAssetId?}]
+    let undoIndex = -1;
     let navigating = false;
     let undoPushTimer = null;
 
@@ -122,38 +112,23 @@ export function initGeneratePanel(opts) {
             camera: readCamera(),
             name: nameField.value,
             userEditedName,
+            commentary: commentaryField ? commentaryField.value : '',
+            savedAssetId: savedAssetId || null,
         };
     }
 
-    /** Push a new randomized image entry to the top of image history. */
-    function pushImageHistory() {
-        // Save current undo state before leaving
-        if (imageIndex >= 0 && imageHistory[imageIndex]) {
-            flushUndoTimer();
-        }
-        const state = captureState();
-        const entry = { undoStack: [state], undoIndex: 0 };
-        // Always append to end (top), preserving all existing forward history
-        imageHistory.push(entry);
-        if (imageHistory.length > MAX_IMAGE_HISTORY) imageHistory.shift();
-        imageIndex = imageHistory.length - 1;
-        updateNavButtons();
-    }
-
-    /** Push an undo entry for the current image (debounced). */
+    /** Push a new undo entry (debounced for parameter tweaks, immediate for major actions). */
     function pushUndo(immediate) {
         if (navigating) return;
         if (undoPushTimer) { clearTimeout(undoPushTimer); undoPushTimer = null; }
         const doPush = () => {
-            const entry = imageHistory[imageIndex];
-            if (!entry) return;
-            // Truncate redo forward when branching
-            if (entry.undoIndex < entry.undoStack.length - 1) {
-                entry.undoStack.length = entry.undoIndex + 1;
+            // Truncate any redo-forward entries when branching
+            if (undoIndex < undoStack.length - 1) {
+                undoStack.length = undoIndex + 1;
             }
-            entry.undoStack.push(captureState());
-            if (entry.undoStack.length > MAX_UNDO) entry.undoStack.shift();
-            entry.undoIndex = entry.undoStack.length - 1;
+            undoStack.push(captureState());
+            if (undoStack.length > MAX_UNDO) undoStack.shift();
+            undoIndex = undoStack.length - 1;
             updateNavButtons();
         };
         if (immediate) doPush();
@@ -164,41 +139,23 @@ export function initGeneratePanel(opts) {
         if (undoPushTimer) {
             clearTimeout(undoPushTimer);
             undoPushTimer = null;
-            // Force the push
-            const entry = imageHistory[imageIndex];
-            if (!entry) return;
-            if (entry.undoIndex < entry.undoStack.length - 1) {
-                entry.undoStack.length = entry.undoIndex + 1;
+            if (undoIndex < undoStack.length - 1) {
+                undoStack.length = undoIndex + 1;
             }
-            entry.undoStack.push(captureState());
-            if (entry.undoStack.length > MAX_UNDO) entry.undoStack.shift();
-            entry.undoIndex = entry.undoStack.length - 1;
+            undoStack.push(captureState());
+            if (undoStack.length > MAX_UNDO) undoStack.shift();
+            undoIndex = undoStack.length - 1;
         }
     }
 
-    /** Navigate between randomized images (prev/next). */
-    function navigateImage(dir) {
-        const newIdx = imageIndex + dir;
-        if (newIdx < 0 || newIdx >= imageHistory.length) return;
-        flushUndoTimer();
-        imageIndex = newIdx;
-        navigating = true;
-        const entry = imageHistory[imageIndex];
-        applyState(entry.undoStack[entry.undoIndex]);
-        navigating = false;
-        updateNavButtons();
-    }
-
-    /** Navigate undo/redo within current image entry. */
+    /** Navigate undo/redo. */
     function navigateUndo(dir) {
-        const entry = imageHistory[imageIndex];
-        if (!entry) return;
-        const newIdx = entry.undoIndex + dir;
-        if (newIdx < 0 || newIdx >= entry.undoStack.length) return;
+        const newIdx = undoIndex + dir;
+        if (newIdx < 0 || newIdx >= undoStack.length) return;
         flushUndoTimer();
-        entry.undoIndex = newIdx;
+        undoIndex = newIdx;
         navigating = true;
-        applyState(entry.undoStack[entry.undoIndex]);
+        applyState(undoStack[undoIndex]);
         navigating = false;
         updateNavButtons();
     }
@@ -234,6 +191,14 @@ export function initGeneratePanel(opts) {
             userEditedName = false;
             updateAutoName();
         }
+        if (commentaryField) {
+            commentaryField.value = state.commentary || '';
+        }
+        // Track saved state
+        savedAssetId = state.savedAssetId || null;
+        savedName = state.savedAssetId ? state.name : null;
+        locked = !!state.savedAssetId;
+        updateInputDisabledState();
         updateSlugDisplay();
         updateAltText();
         updateNameCounter();
@@ -242,49 +207,38 @@ export function initGeneratePanel(opts) {
     }
 
     function updateNavButtons() {
-        if (historyBackBtn) historyBackBtn.disabled = imageIndex <= 0;
-        if (historyForwardBtn) historyForwardBtn.disabled = imageIndex >= imageHistory.length - 1;
-        const entry = imageHistory[imageIndex];
-        if (undoBtn) undoBtn.disabled = locked || !entry || entry.undoIndex <= 0;
-        if (redoBtn) redoBtn.disabled = locked || !entry || entry.undoIndex >= entry.undoStack.length - 1;
+        if (undoBtn) undoBtn.disabled = undoIndex <= 0;
+        if (redoBtn) redoBtn.disabled = undoIndex >= undoStack.length - 1;
         updateActionButtons();
     }
 
-    /** Update Save/Render/Duplicate/Delete button states based on lock status. */
+    /** Update Save/Render button states. */
     function updateActionButtons() {
-        if (saveBtn) saveBtn.disabled = locked || !nameField.value.trim();
-        if (renderBtn) renderBtn.disabled = !locked;
-        if (resetBtn) resetBtn.disabled = locked;
-        if (duplicateBtn) {
-            duplicateBtn.classList.toggle('hidden', !locked);
-            duplicateBtn.disabled = !locked;
+        if (saveBtn) saveBtn.disabled = !nameField.value.trim();
+        if (renderBtn) renderBtn.disabled = !savedAssetId;
+    }
+
+    function updateInputDisabledState() {
+        const disabled = locked;
+        for (const key of SLIDER_KEYS) {
+            if (sliderInputs[key]) sliderInputs[key].range.disabled = disabled;
         }
-        if (deleteBtn) {
-            // Only show & enable for locked saved user profiles (not portraits/generated)
-            const canDelete = locked && savedName && !savedIsPortrait && !savedAssetId;
-            deleteBtn.classList.toggle('hidden', !canDelete);
-            deleteBtn.disabled = !canDelete;
+        for (const cam of CAMERA_SLIDERS) {
+            if (cameraInputs[cam.key]) cameraInputs[cam.key].range.disabled = disabled;
         }
+        tagArrEl.disabled = disabled;
+        tagStrEl.disabled = disabled;
+        tagDetEl.disabled = disabled;
+        nameField.disabled = disabled;
+        if (commentaryField) commentaryField.disabled = disabled;
     }
 
     /** Lock the panel (saved profile — immutable). */
     function setLocked(name, opts) {
         locked = true;
         savedName = name || null;
-        savedIsPortrait = opts?.isPortrait || false;
         savedAssetId = opts?.assetId || null;
-        // Disable all inputs
-        for (const key of SLIDER_KEYS) {
-            if (sliderInputs[key]) sliderInputs[key].range.disabled = true;
-        }
-        for (const cam of CAMERA_SLIDERS) {
-            if (cameraInputs[cam.key]) cameraInputs[cam.key].range.disabled = true;
-        }
-        tagArrEl.disabled = true;
-        tagStrEl.disabled = true;
-        tagDetEl.disabled = true;
-        nameField.disabled = true;
-        if (commentaryField) commentaryField.disabled = true;
+        updateInputDisabledState();
         updateActionButtons();
     }
 
@@ -292,24 +246,11 @@ export function initGeneratePanel(opts) {
     function setUnlocked() {
         locked = false;
         savedName = null;
-        savedIsPortrait = false;
         savedAssetId = null;
-        for (const key of SLIDER_KEYS) {
-            if (sliderInputs[key]) sliderInputs[key].range.disabled = false;
-        }
-        for (const cam of CAMERA_SLIDERS) {
-            if (cameraInputs[cam.key]) cameraInputs[cam.key].range.disabled = false;
-        }
-        tagArrEl.disabled = false;
-        tagStrEl.disabled = false;
-        tagDetEl.disabled = false;
-        nameField.disabled = false;
-        if (commentaryField) commentaryField.disabled = false;
+        updateInputDisabledState();
         updateActionButtons();
     }
 
-    if (historyBackBtn) historyBackBtn.addEventListener('click', () => navigateImage(-1));
-    if (historyForwardBtn) historyForwardBtn.addEventListener('click', () => navigateImage(1));
     if (undoBtn) undoBtn.addEventListener('click', () => navigateUndo(-1));
     if (redoBtn) redoBtn.addEventListener('click', () => navigateUndo(1));
 
@@ -355,11 +296,11 @@ export function initGeneratePanel(opts) {
 
         // Outer header (stable hover target)
         const header = document.createElement('div');
-        header.className = 'gen-section-header fold-up-container';
+        header.className = 'gen-section-header';
 
         // Inner fold-up area (rotates on hover)
         const foldArea = document.createElement('div');
-        foldArea.className = 'fold-up-area';
+        foldArea.className = 'gen-collapsible-toggle';
         foldArea.setAttribute('aria-expanded', 'true');
         foldArea.setAttribute('data-target', sectionId);
 
@@ -378,7 +319,7 @@ export function initGeneratePanel(opts) {
 
         // Collapsible rows container
         const rowsWrap = document.createElement('div');
-        rowsWrap.className = 'gen-section-rows fold-up-content';
+        rowsWrap.className = 'gen-section-rows gen-collapsible-content';
         rowsWrap.id = sectionId;
 
         for (const def of sliderDefs) {
@@ -610,7 +551,9 @@ export function initGeneratePanel(opts) {
         updateSlugDisplay();
         updateAltText();
         updateNameCounter();
-        pushImageHistory();
+        if (commentaryField) commentaryField.value = '';
+        updateCommentaryCounter();
+        pushUndo(true);
         if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
     }
 
@@ -627,43 +570,29 @@ export function initGeneratePanel(opts) {
     // ── Save ──
 
     if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
+        saveBtn.addEventListener('click', async () => {
             const name = readName();
-            if (onSave) onSave(readSeed(), readControls(), readCamera(), name, readCommentary());
-            setLocked(name);
+            const commentary = readCommentary();
+            if (onSave) {
+                const result = await onSave(name, readSeed(), readControls(), readCamera(), commentary);
+                if (result && result.id) {
+                    savedAssetId = result.id;
+                    savedName = name;
+                    // Mark current undo entry as saved
+                    if (undoStack[undoIndex]) {
+                        undoStack[undoIndex].savedAssetId = result.id;
+                    }
+                    setLocked(name, { assetId: result.id });
+                }
+            }
         });
     }
 
-    // ── Duplicate ──
+    // ── Fullscreen ──
 
-    if (duplicateBtn) {
-        duplicateBtn.addEventListener('click', () => {
-            setUnlocked();
-            // Clear name so user must pick a new one
-            nameField.value = '';
-            userEditedName = false;
-            updateAutoName();
-            updateSlugDisplay();
-            updateNameCounter();
-            pushImageHistory();
-            if (onDuplicate) onDuplicate();
-            if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
-        });
-    }
-
-    // ── Delete ──
-
-    if (deleteBtn) {
-        deleteBtn.addEventListener('click', () => {
-            if (onDelete && savedName) onDelete(savedName);
-        });
-    }
-
-    // ── Reset ──
-
-    if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
-            randomize();
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener('click', () => {
+            if (onFullscreen) onFullscreen();
         });
     }
 
@@ -674,7 +603,7 @@ export function initGeneratePanel(opts) {
     updateNameCounter();
     updateCommentaryCounter();
     updateActionButtons();
-    pushImageHistory();
+    pushUndo(true);
 
     // ── Public API ──
 
@@ -689,10 +618,15 @@ export function initGeneratePanel(opts) {
         readName,
         readCommentary,
         randomize,
-        pushImageHistory,
         setLocked,
         setUnlocked,
         get locked() { return locked; },
+        get dirty() {
+            // Dirty if current state differs from its saved baseline
+            const entry = undoStack[undoIndex];
+            return !entry || !entry.savedAssetId;
+        },
+        get currentAssetId() { return savedAssetId; },
 
         /** Set all controls + seed + camera + name + commentary from external data. */
         setValues(seed, controls, camera, name, commentary) {
@@ -733,6 +667,36 @@ export function initGeneratePanel(opts) {
             updateAltText();
             updateNameCounter();
             updateCommentaryCounter();
+        },
+
+        /**
+         * Load a saved asset into the editor.
+         * Pushes an undo entry marked as clean (savedAssetId set).
+         * @param {Object} asset — from IndexedDB
+         */
+        loadFromAsset(asset) {
+            if (locked) setUnlocked();
+            const meta = asset.meta || {};
+            this.setValues(
+                asset.seed || meta.seed,
+                meta.controls || asset.controls,
+                meta.camera,
+                asset.name || meta.title,
+                meta.commentary,
+            );
+            savedAssetId = asset.id;
+            savedName = asset.name;
+            setLocked(asset.name, { assetId: asset.id });
+            // Push undo entry marked as clean
+            flushUndoTimer();
+            if (undoIndex < undoStack.length - 1) {
+                undoStack.length = undoIndex + 1;
+            }
+            undoStack.push({ ...captureState(), savedAssetId: asset.id });
+            if (undoStack.length > MAX_UNDO) undoStack.shift();
+            undoIndex = undoStack.length - 1;
+            updateNavButtons();
+            if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
         },
 
         /** Enable or disable the render button. */

@@ -161,18 +161,32 @@
             <!-- Generate panel (hidden by default, shown when "Generate" mode active) -->
             <div class="generate-panel hidden" id="generatePanel">
                 <div class="gen-body">
-                    <div class="generate-config" id="generateConfig">
-                        <!-- Configure Image -->
-                        <div class="gen-heading fold-up-container">
-                            <div class="gen-heading-fold-up-area fold-up-area" data-target="genSliders" aria-expanded="true">
-                                <span class="gen-chevron">&#9662;</span>
-                                <span data-i18n="generate.configureImage">Configure Image</span>
-                            </div>
-                        </div>
-                        <div class="gen-sliders fold-up-content" id="genSliders"></div>
-                    </div>
                     <div class="gen-preview-col" id="genPreviewCol">
-                        <!-- Name + Seed + Nav controls above image -->
+                        <!-- Unified button bar (top, centered) -->
+                        <div class="gen-button-bar" id="genButtonBar">
+                            <button id="genSaveBtn" class="gen-action-btn" disabled data-tooltip="Save" data-i18n-tooltip="profile.save.tooltip" data-tooltip-pos="above">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" width="14" height="14"><path d="M2 2h9l3 3v9H2z"/><path d="M11 2v3h3"/><rect x="5" y="2" width="4" height="3" rx="0.5" stroke-width="0.75"/><rect x="4.5" y="9" width="7" height="5" rx="0.5" stroke-width="0.75"/></svg>
+                            </button>
+                            <button id="genRenderBtn" class="gen-action-btn" disabled data-tooltip="Render image at selected resolution" data-tooltip-pos="above">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" width="14" height="14"><path d="M5.5 3.5l3 4.5-3 4.5-3-4.5z"/><path d="M10.5 3.5l3 4.5-3 4.5-3-4.5z"/><path d="M14.5 3.5a7 7 0 1 1-5.5-2.5" stroke-linecap="round"/><path d="M11.5 1l-2 0 0.75 2" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                            <span class="gen-bar-sep">|</span>
+                            <button id="genUndoBtn" class="gen-action-btn" disabled aria-label="Undo" data-tooltip="Undo" data-tooltip-pos="above">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 7h7a4 4 0 0 1 0 8H8"/><path d="M6 4L3 7l3 3"/></svg>
+                            </button>
+                            <button id="genRedoBtn" class="gen-action-btn" disabled aria-label="Redo" data-tooltip="Redo" data-tooltip-pos="above">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M13 7H6a4 4 0 0 0 0 8h2"/><path d="M10 4l3 3-3 3"/></svg>
+                            </button>
+                            <span class="gen-bar-sep">|</span>
+                            <button id="genRandomizeBtn" class="gen-action-btn" data-tooltip="Randomize image" data-i18n-tooltip="stage.randomize" data-tooltip-pos="above">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" width="14" height="14"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/></svg>
+                            </button>
+                            <span class="gen-bar-sep">|</span>
+                            <button id="genFullscreenBtn" class="gen-action-btn" data-tooltip="Fullscreen" data-tooltip-pos="above" aria-label="Fullscreen">
+                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>
+                            </button>
+                        </div>
+                        <!-- Name + Seed -->
                         <div class="gen-identity">
                             <div class="gen-identity-text">
                                 <div class="gen-identity-name">
@@ -193,82 +207,18 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="gen-controls-stack">
-                                <!-- Gallery controls (arrows, slideshow, resolution, fullscreen) -->
-                                <div class="gallery-controls">
-                                    <button class="gallery-arrow" id="genHistoryBack" disabled aria-label="Previous image" data-tooltip="Previous image" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M10 3l-5 5 5 5"/></svg>
-                                    </button>
-                                    <button class="gallery-arrow" id="genHistoryForward" disabled aria-label="Next image" data-tooltip="Next image" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 3l5 5-5 5"/></svg>
-                                    </button>
-                                    <span class="header-nav-pipe">|</span>
-                                    <button class="gallery-arrow" id="genSlideshowBtn" disabled data-tooltip="Start slideshow" data-tooltip-pos="above" aria-label="Start slideshow">
-                                        <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M5 3l8 5-8 5z"/></svg>
-                                    </button>
-                                    <div class="custom-dropdown" id="genSlideshowDropdown">
-                                        <button class="custom-dropdown-trigger select-base" disabled aria-haspopup="listbox" aria-expanded="false" aria-label="Slideshow interval" data-tooltip="Slideshow interval" data-tooltip-pos="above">
-                                            <span class="custom-dropdown-label">2s</span>
-                                        </button>
-                                        <div class="custom-dropdown-menu dropdown-down hidden" role="listbox">
-                                            <button class="custom-dropdown-item" role="option" data-value="1" aria-selected="false">1s</button>
-                                            <button class="custom-dropdown-item active" role="option" data-value="2" aria-selected="true">2s</button>
-                                            <button class="custom-dropdown-item" role="option" data-value="3" aria-selected="false">3s</button>
-                                            <button class="custom-dropdown-item" role="option" data-value="5" aria-selected="false">5s</button>
-                                            <button class="custom-dropdown-item" role="option" data-value="10" aria-selected="false">10s</button>
-                                            <button class="custom-dropdown-item" role="option" data-value="30" aria-selected="false">30s</button>
-                                            <button class="custom-dropdown-item" role="option" data-value="60" aria-selected="false">1m</button>
-                                            <button class="custom-dropdown-item" role="option" data-value="120" aria-selected="false">2m</button>
-                                            <button class="custom-dropdown-item" role="option" data-value="300" aria-selected="false">5m</button>
-                                        </div>
-                                    </div>
-                                    <span class="header-nav-pipe">|</span>
-                                    <div class="custom-dropdown" id="genResolutionDropdown">
-                                        <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox" aria-expanded="false" aria-label="Resolution" data-tooltip="Preview resolution" data-tooltip-pos="above">
-                                            <span class="custom-dropdown-label">Pre</span>
-                                        </button>
-                                        <div class="custom-dropdown-menu dropdown-down hidden" role="listbox">
-                                            <button class="custom-dropdown-item active" role="option" data-value="pre" aria-selected="true">Pre</button>
-                                            <button class="custom-dropdown-item disabled" role="option" data-value="sd" aria-selected="false" aria-disabled="true">SD</button>
-                                            <button class="custom-dropdown-item disabled" role="option" data-value="hd" aria-selected="false" aria-disabled="true">HD</button>
-                                            <button class="custom-dropdown-item disabled" role="option" data-value="fhd" aria-selected="false" aria-disabled="true">FHD</button>
-                                            <button class="custom-dropdown-item disabled" role="option" data-value="qhd" aria-selected="false" aria-disabled="true">QHD</button>
-                                            <button class="custom-dropdown-item disabled" role="option" data-value="4k" aria-selected="false" aria-disabled="true">4K</button>
-                                        </div>
-                                    </div>
-                                    <span class="header-nav-pipe">|</span>
-                                    <button class="gallery-arrow" id="genFullscreenBtn" data-tooltip="Fullscreen" data-tooltip-pos="above" aria-label="Fullscreen">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>
-                                    </button>
-                                </div>
-                                <!-- Generation controls (visible in generate mode only) -->
-                                <div class="generation-controls" id="generationControls">
-                                    <button id="genSaveBtn" class="gen-action-btn" disabled data-tooltip="Save" data-i18n-tooltip="profile.save.tooltip" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" width="14" height="14"><path d="M2 2h9l3 3v9H2z"/><path d="M11 2v3h3"/><rect x="5" y="2" width="4" height="3" rx="0.5" stroke-width="0.75"/><rect x="4.5" y="9" width="7" height="5" rx="0.5" stroke-width="0.75"/></svg>
-                                    </button>
-                                    <button id="genDuplicateBtn" class="gen-action-btn" disabled data-tooltip="Save as copy" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><path d="M5.5 1l3 3-3 4.5-3-4.5z"/><path d="M10.5 5.5l3 3-3 4.5-3-4.5z"/></svg>
-                                    </button>
-                                    <button id="genDeleteBtn" class="gen-action-btn hidden" disabled data-tooltip="Delete profile" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="14" height="14"><path d="M3 4h10"/><path d="M6 4V3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1"/><path d="M4.5 4l.5 9a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1l.5-9"/><path d="M7 7v4"/><path d="M9 7v4"/></svg>
-                                    </button>
-                                    <button id="genRenderBtn" class="gen-action-btn" disabled data-tooltip="Render image at selected resolution" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" width="14" height="14"><path d="M5.5 3.5l3 4.5-3 4.5-3-4.5z"/><path d="M10.5 3.5l3 4.5-3 4.5-3-4.5z"/><path d="M14.5 3.5a7 7 0 1 1-5.5-2.5" stroke-linecap="round"/><path d="M11.5 1l-2 0 0.75 2" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                    </button>
-                                    <span class="header-nav-pipe">|</span>
-                                    <button id="genUndoBtn" class="gen-action-btn" disabled aria-label="Undo" data-tooltip="Undo" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M3 7h7a4 4 0 0 1 0 8H8"/><path d="M6 4L3 7l3 3"/></svg>
-                                    </button>
-                                    <button id="genRedoBtn" class="gen-action-btn" disabled aria-label="Redo" data-tooltip="Redo" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M13 7H6a4 4 0 0 0 0 8h2"/><path d="M10 4l3 3-3 3"/></svg>
-                                    </button>
-                                    <span class="header-nav-pipe">|</span>
-                                    <button id="genRandomizeBtn" class="gen-action-btn" data-tooltip="Randomize image" data-i18n-tooltip="stage.randomize" data-tooltip-pos="above">
-                                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round" width="14" height="14"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/></svg>
-                                    </button>
+                        </div>
+                        <!-- Image Configuration (collapsible sliders) -->
+                        <div class="generate-config" id="generateConfig">
+                            <div class="gen-heading">
+                                <div class="gen-heading-fold-up-area gen-collapsible-toggle" data-target="genSliders" aria-expanded="true">
+                                    <span class="gen-chevron">&#9662;</span>
+                                    <span data-i18n="generate.configureImage">Image Configuration</span>
                                 </div>
                             </div>
+                            <div class="gen-sliders gen-collapsible-content" id="genSliders"></div>
                         </div>
+                        <!-- Preview + Commentary -->
                         <div class="gen-preview-card">
                             <div class="gen-preview-wrap" id="genPreviewWrap">
                                 <canvas id="genPreviewCanvas"></canvas>
@@ -292,8 +242,11 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Saved images grid -->
+                        <div class="gen-saved-grid" id="genSavedGrid"></div>
+                        <!-- Render queue -->
+                        <div class="gen-queue" id="genQueue"></div>
                     </div>
-                    <div class="gen-queue" id="genQueue"></div>
                 </div>
             </div>
         </main>

@@ -18,11 +18,12 @@ import { createFooter } from '../../components/create-footer.js';
 import { initApp } from '../../components/app-init.js';
 import { initTheme } from '../../stores/theme.js';
 import { initLangSelector } from '../../i18n/lang-selector.js';
-import { initResolutionSelector, getResolution, getGenResolution, initGenResolutionSelector } from '../../stores/resolution.js';
+import { initResolutionSelector, getResolution, getGenResolution } from '../../stores/resolution.js';
 import { t, getLocale } from '../../i18n/locale.js';
 import { loadProfiles, loadPortraits, getPortraitNames, loadPortraitSections, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder, saveProfiles } from '../../stores/profiles.js';
 import { getAllThumbs, deleteThumb } from '../../stores/thumb-cache.js';
-import { getAllAssets, getAsset, deleteAsset, getAllAnimAssets, deleteAnimAsset } from '../../stores/asset-store.js';
+import { getAllAssets, getAsset, deleteAsset, putAsset, generateAssetId, getAllAnimAssets, deleteAnimAsset } from '../../stores/asset-store.js';
+import { syncGeneratedOrder, saveGeneratedOrder } from '../../stores/generated-order.js';
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
 import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
 import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
@@ -50,7 +51,7 @@ const { statement } = initApp({ page: 'gallery' });
 initTheme(footerRefs.themeSwitcher);
 initLangSelector(footerRefs.langDropdown);
 initResolutionSelector(document.getElementById('resolutionDropdown'));
-initGenResolutionSelector(document.getElementById('genResolutionDropdown'));
+// Gen resolution selector removed — now part of render flow
 initCustomDropdown(document.getElementById('slideshowDropdown'), {
     initialValue: '2',
     onSelect(value) {
@@ -63,18 +64,7 @@ initCustomDropdown(document.getElementById('slideshowDropdown'), {
         }
     },
 });
-initCustomDropdown(document.getElementById('genSlideshowDropdown'), {
-    initialValue: '2',
-    onSelect(value) {
-        // Sync gallery slideshow dropdown to same interval
-        syncGallerySlideshowInterval(value);
-        if (slideshowPlaying) {
-            restartRingAnimation();
-            if (slideshowTimer) { clearTimeout(slideshowTimer); slideshowTimer = null; }
-            scheduleNextSlide();
-        }
-    },
-});
+// Gen slideshow dropdown removed — slideshow only in gallery mode
 
 /* ── Site menu toggle ── */
 const siteMenuToggle = document.getElementById('siteMenuToggle');
@@ -213,8 +203,6 @@ const genNameField = document.getElementById('genNameField');
 const genSaveBtn = document.getElementById('genSaveBtn');
 const genRandomizeBtn = document.getElementById('genRandomizeBtn');
 const genRenderBtn = document.getElementById('genRenderBtn');
-const genDuplicateBtn = document.getElementById('genDuplicateBtn');
-const genDeleteBtn = document.getElementById('genDeleteBtn');
 const genNameLabel = document.getElementById('genNameLabel');
 const genCommentaryField = document.getElementById('genCommentaryField');
 const genNameCounter = document.getElementById('genNameCounter');
@@ -222,11 +210,10 @@ const genNameError = document.getElementById('genNameError');
 const genCommentaryCounter = document.getElementById('genCommentaryCounter');
 let genPreviewCanvas = document.getElementById('genPreviewCanvas');
 const genPreviewWrap = document.getElementById('genPreviewWrap');
-const genHistoryBack = document.getElementById('genHistoryBack');
-const genHistoryForward = document.getElementById('genHistoryForward');
 const genUndoBtn = document.getElementById('genUndoBtn');
 const genRedoBtn = document.getElementById('genRedoBtn');
 const genFullscreenBtn = document.getElementById('genFullscreenBtn');
+const genSavedGridEl = document.getElementById('genSavedGrid');
 const genLoadingOverlay = document.getElementById('genLoadingOverlay');
 const genErrorOverlay = document.getElementById('genErrorOverlay');
 const genRetryBtn = document.getElementById('genRetryBtn');
@@ -268,8 +255,7 @@ let carouselList = [];       // [{name, profile, isPortrait, assetId?}] — port
 /* ── Slideshow ── */
 const slideshowBtn = document.getElementById('slideshowBtn');
 const slideshowDropdown = document.getElementById('slideshowDropdown');
-const genSlideshowBtn = document.getElementById('genSlideshowBtn');
-const genSlideshowDropdown = document.getElementById('genSlideshowDropdown');
+// Gen slideshow refs removed — slideshow only in gallery mode
 let slideshowTimer = null;
 let slideshowPlaying = false;
 
@@ -324,29 +310,8 @@ function scheduleNextSlide() {
     }, ms);
 }
 
-/** Sync interval dropdown selection between gallery and gen slideshow */
-function syncGenSlideshowInterval(value) {
-    const menu = genSlideshowDropdown?.querySelector('.custom-dropdown-menu');
-    const label = genSlideshowDropdown?.querySelector('.custom-dropdown-label');
-    if (!menu) return;
-    menu.querySelectorAll('.custom-dropdown-item').forEach(item => {
-        const isActive = item.dataset.value === value;
-        item.classList.toggle('active', isActive);
-        item.setAttribute('aria-selected', String(isActive));
-        if (isActive && label) label.textContent = item.textContent;
-    });
-}
-function syncGallerySlideshowInterval(value) {
-    const menu = slideshowDropdown?.querySelector('.custom-dropdown-menu');
-    const label = slideshowDropdown?.querySelector('.custom-dropdown-label');
-    if (!menu) return;
-    menu.querySelectorAll('.custom-dropdown-item').forEach(item => {
-        const isActive = item.dataset.value === value;
-        item.classList.toggle('active', isActive);
-        item.setAttribute('aria-selected', String(isActive));
-        if (isActive && label) label.textContent = item.textContent;
-    });
-}
+/** Sync interval dropdown — gen slideshow removed, only gallery slideshow remains */
+function syncGenSlideshowInterval(/* value */) { /* no-op: gen slideshow removed */ }
 
 slideshowBtn.addEventListener('click', () => {
     if (slideshowPlaying) stopSlideshow();
@@ -613,6 +578,7 @@ function viewJob(job) {
         } else {
             generatedAssets = generatedAssets.filter(a => a.id !== job.asset.id);
             generatedAssets.unshift(job.asset);
+            refreshSavedGrid();
             refreshGallery();
             const profile = { seed: job.asset.meta.seed, controls: job.asset.meta.controls };
             selectProfile(job.asset.name, profile, false, job.asset.id);
@@ -1069,11 +1035,12 @@ function showImageGallery() {
         name, profile: portraits[name], isPortrait: true
     }));
 
-    // Append generated assets
-    for (const asset of generatedAssets) {
+    // Append generated assets (in user-defined order)
+    const orderedGen = syncGeneratedOrder(generatedAssets);
+    for (const asset of orderedGen) {
         carouselList.push({
             name: asset.name,
-            profile: { seed: asset.meta.seed, controls: asset.meta.controls, camera: asset.meta.camera },
+            profile: { seed: asset.meta?.seed, controls: asset.meta?.controls, camera: asset.meta?.camera },
             isPortrait: false,
             assetId: asset.id
         });
@@ -1411,15 +1378,11 @@ function retryGenerate() {
 
 /** Enable/disable all generate panel nav buttons. */
 function setGenNavEnabled(enabled) {
-    // Don't force-enable buttons that should be disabled by history state
     if (enabled && genPanel) {
-        // Let the panel's own button state logic handle disabled states
-        // Just remove our forced-disabled state
         [genFullscreenBtn].forEach(btn => { if (btn) btn.disabled = false; });
-        // For history/undo buttons, trigger panel's update
         return;
     }
-    [genHistoryBack, genHistoryForward, genUndoBtn, genRedoBtn, genFullscreenBtn].forEach(btn => {
+    [genUndoBtn, genRedoBtn, genFullscreenBtn].forEach(btn => {
         if (btn) btn.disabled = !enabled;
     });
 }
@@ -1516,6 +1479,289 @@ function closeGenFullscreen() {
     }, { once: true });
 }
 
+/* ── Save handler with conflict detection ── */
+
+async function handleSave(name, seed, controls, camera, commentary) {
+    // Check for name conflict in existing saved assets
+    const existingAsset = generatedAssets.find(a => a.name === name);
+
+    if (existingAsset) {
+        // Show conflict modal
+        const result = await showSaveConflictModal(name);
+        if (!result) return null; // cancelled
+        if (result.action === 'overwrite') {
+            // Overwrite existing asset
+            const asset = existingAsset;
+            asset.seed = seed;
+            asset.controls = controls;
+            asset.meta = { ...asset.meta, seed, controls, camera, commentary, title: name };
+            asset.name = name;
+            await putAsset(asset);
+            generatedAssets = await getAllAssets();
+            refreshSavedGrid();
+            refreshGallery();
+            toast(`Overwritten "${name}"`);
+            return { id: asset.id, overwritten: true };
+        } else {
+            // Save as new with different name
+            name = result.name;
+        }
+    }
+
+    // Save as new
+    const id = generateAssetId();
+    const asset = {
+        id,
+        name,
+        seed,
+        controls,
+        meta: { seed, controls, camera, commentary, title: name },
+        createdAt: Date.now(),
+    };
+    await putAsset(asset);
+    generatedAssets = await getAllAssets();
+    refreshSavedGrid();
+    refreshGallery();
+    toast(`Saved "${name}"`);
+    return { id, overwritten: false };
+}
+
+function showSaveConflictModal(existingName) {
+    return new Promise(resolve => {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'gen-save-modal-backdrop';
+
+        const modal = document.createElement('div');
+        modal.className = 'gen-save-modal';
+
+        const title = document.createElement('div');
+        title.className = 'gen-save-modal-title';
+        title.textContent = 'Name already exists';
+
+        const msg = document.createElement('div');
+        msg.className = 'gen-save-modal-msg';
+        msg.textContent = `An image named "${existingName}" already exists. Overwrite it, or enter a new name:`;
+
+        const input = document.createElement('input');
+        input.className = 'gen-save-modal-input';
+        input.type = 'text';
+        input.value = existingName;
+        input.maxLength = 40;
+
+        const btns = document.createElement('div');
+        btns.className = 'gen-save-modal-btns';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'gen-save-modal-btn';
+        cancelBtn.textContent = 'Cancel';
+
+        const overwriteBtn = document.createElement('button');
+        overwriteBtn.className = 'gen-save-modal-btn';
+        overwriteBtn.textContent = 'Overwrite';
+
+        const saveNewBtn = document.createElement('button');
+        saveNewBtn.className = 'gen-save-modal-btn primary';
+        saveNewBtn.textContent = 'Save as New';
+
+        function close(result) {
+            backdrop.remove();
+            resolve(result);
+        }
+
+        cancelBtn.addEventListener('click', () => close(null));
+        overwriteBtn.addEventListener('click', () => close({ action: 'overwrite' }));
+        saveNewBtn.addEventListener('click', () => {
+            const newName = input.value.trim();
+            if (!newName) return;
+            if (newName === existingName) {
+                // Same name — treat as overwrite
+                close({ action: 'overwrite' });
+                return;
+            }
+            // Check if new name also conflicts
+            if (generatedAssets.find(a => a.name === newName)) {
+                msg.textContent = `"${newName}" also exists. Enter a different name:`;
+                input.focus();
+                return;
+            }
+            close({ action: 'saveNew', name: newName });
+        });
+
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) close(null);
+        });
+
+        btns.append(cancelBtn, overwriteBtn, saveNewBtn);
+        modal.append(title, msg, input, btns);
+        backdrop.appendChild(modal);
+        document.body.appendChild(backdrop);
+        input.focus();
+        input.select();
+    });
+}
+
+/* ── Saved images grid ── */
+
+function refreshSavedGrid() {
+    if (!genSavedGridEl) return;
+    const ordered = syncGeneratedOrder(generatedAssets);
+    genSavedGridEl.innerHTML = '';
+
+    for (let i = 0; i < ordered.length; i++) {
+        const asset = ordered[i];
+        const card = document.createElement('div');
+        card.className = 'gen-saved-card';
+        card.draggable = true;
+        card.dataset.assetId = asset.id;
+        if (genPanel && genPanel.currentAssetId === asset.id) {
+            card.classList.add('gen-saved-active');
+        }
+
+        // Thumbnail
+        const thumb = document.createElement('img');
+        thumb.className = 'gen-saved-thumb';
+        thumb.src = asset.thumbDataUrl || '';
+        thumb.alt = asset.name || '';
+        thumb.loading = 'lazy';
+        card.appendChild(thumb);
+
+        // Info
+        const info = document.createElement('div');
+        info.className = 'gen-saved-info';
+        const nameEl = document.createElement('div');
+        nameEl.className = 'gen-saved-name';
+        nameEl.textContent = asset.name || '';
+        info.appendChild(nameEl);
+        if (asset.meta?.commentary) {
+            const comm = document.createElement('div');
+            comm.className = 'gen-saved-commentary';
+            comm.textContent = asset.meta.commentary;
+            info.appendChild(comm);
+        }
+        card.appendChild(info);
+
+        // Delete button (hover overlay)
+        const actions = document.createElement('div');
+        actions.className = 'gen-saved-actions';
+        const delBtn = document.createElement('button');
+        delBtn.className = 'gen-saved-action-btn gen-saved-delete';
+        delBtn.innerHTML = '&times;';
+        delBtn.title = 'Delete';
+        delBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const result = await showConfirm(
+                'Delete image?',
+                `Delete "${asset.name}"? This cannot be undone.`,
+                [
+                    { label: t('btn.cancel') },
+                    { label: t('btn.delete'), primary: true, value: 'delete' },
+                ],
+            );
+            if (result !== 'delete') return;
+            await deleteAsset(asset.id);
+            generatedAssets = generatedAssets.filter(a => a.id !== asset.id);
+            refreshSavedGrid();
+            refreshGallery();
+            toast(`Deleted "${asset.name}"`);
+        });
+        actions.appendChild(delBtn);
+        card.appendChild(actions);
+
+        // Up/down arrow buttons (hover overlay)
+        const orderBtns = document.createElement('div');
+        orderBtns.className = 'gen-saved-order-btns';
+        const upBtn = document.createElement('button');
+        upBtn.className = 'gen-saved-action-btn';
+        upBtn.innerHTML = '&#9650;';
+        upBtn.title = 'Move up';
+        upBtn.disabled = i === 0;
+        upBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            reorderSavedGrid(asset.id, -1);
+        });
+        const downBtn = document.createElement('button');
+        downBtn.className = 'gen-saved-action-btn';
+        downBtn.innerHTML = '&#9660;';
+        downBtn.title = 'Move down';
+        downBtn.disabled = i === ordered.length - 1;
+        downBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            reorderSavedGrid(asset.id, 1);
+        });
+        orderBtns.append(upBtn, downBtn);
+        card.appendChild(orderBtns);
+
+        // Click to load into editor
+        card.addEventListener('click', () => {
+            if (genPanel) {
+                genPanel.loadFromAsset(asset);
+                refreshSavedGrid(); // update active highlight
+                if (workerBridge && workerBridge.ready) {
+                    const seed = genPanel.readSeed();
+                    const controls = genPanel.readControls();
+                    const camera = genPanel.readCamera();
+                    workerBridge.sendRenderImmediate(seed, controls, getLocale());
+                    workerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
+                }
+            }
+        });
+
+        // Drag and drop
+        card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('text/plain', asset.id);
+            card.classList.add('dragging');
+        });
+        card.addEventListener('dragend', () => {
+            card.classList.remove('dragging');
+        });
+        card.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            card.classList.add('drag-over');
+        });
+        card.addEventListener('dragleave', () => {
+            card.classList.remove('drag-over');
+        });
+        card.addEventListener('drop', (e) => {
+            e.preventDefault();
+            card.classList.remove('drag-over');
+            const draggedId = e.dataTransfer.getData('text/plain');
+            if (draggedId && draggedId !== asset.id) {
+                reorderSavedGridDrop(draggedId, asset.id);
+            }
+        });
+
+        genSavedGridEl.appendChild(card);
+    }
+}
+
+function reorderSavedGrid(assetId, direction) {
+    const ordered = syncGeneratedOrder(generatedAssets);
+    const idx = ordered.findIndex(a => a.id === assetId);
+    if (idx < 0) return;
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= ordered.length) return;
+    // Swap
+    const ids = ordered.map(a => a.id);
+    [ids[idx], ids[newIdx]] = [ids[newIdx], ids[idx]];
+    saveGeneratedOrder(ids);
+    refreshSavedGrid();
+    refreshGallery();
+}
+
+function reorderSavedGridDrop(draggedId, targetId) {
+    const ordered = syncGeneratedOrder(generatedAssets);
+    const ids = ordered.map(a => a.id);
+    const fromIdx = ids.indexOf(draggedId);
+    const toIdx = ids.indexOf(targetId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    // Remove from old position and insert at new
+    ids.splice(fromIdx, 1);
+    ids.splice(toIdx, 0, draggedId);
+    saveGeneratedOrder(ids);
+    refreshSavedGrid();
+    refreshGallery();
+}
+
 function initGenerate() {
     if (generateInitialized) return;
     generateInitialized = true;
@@ -1582,21 +1828,17 @@ function initGenerate() {
         tagDetEl: genTagDetEl,
         nameField: genNameField,
         saveBtn: genSaveBtn,
-        resetBtn: null,
         randomizeBtn: genRandomizeBtn,
         renderBtn: genRenderBtn,
-        duplicateBtn: genDuplicateBtn,
-        deleteBtn: genDeleteBtn,
+        undoBtn: genUndoBtn,
+        redoBtn: genRedoBtn,
+        fullscreenBtn: genFullscreenBtn,
         nameTooltipEl: genNameLabel?.querySelector('.label-info'),
         commentaryField: genCommentaryField,
         previewCanvas: genPreviewCanvas,
         nameCounter: genNameCounter,
         nameError: genNameError,
         commentaryCounter: genCommentaryCounter,
-        historyBackBtn: genHistoryBack,
-        historyForwardBtn: genHistoryForward,
-        undoBtn: genUndoBtn,
-        redoBtn: genRedoBtn,
         onControlChange(seed, controls, camera) {
             if (workerBridge && workerBridge.ready) {
                 workerBridge.sendRender(seed, controls, getLocale());
@@ -1612,69 +1854,30 @@ function initGenerate() {
                 renderQueue.enqueue(seed, controls, name, commentary);
             }
         },
-        onSave(seed, controls, camera, name, commentary) {
-            const profiles = loadProfiles();
-            const entry = { seed, controls };
-            if (commentary) entry.commentary = commentary;
-            profiles[name] = entry;
-            saveProfiles(profiles);
-            // Refresh gallery to show the new profile
-            refreshGallery();
-            toast(`Saved "${name}"`);
+        async onSave(name, seed, controls, camera, commentary) {
+            return handleSave(name, seed, controls, camera, commentary);
         },
-        async onDelete(name) {
-            const result = await showConfirm(
-                t('confirm.deleteProfile'),
-                t('confirm.deleteConfirm', { name }),
-                [
-                    { label: t('btn.cancel') },
-                    { label: t('btn.delete'), primary: true, value: 'delete' },
-                ],
-            );
-            if (result !== 'delete') return;
-            const pd = loadProfiles()[name];
-            if (pd && pd.seed && pd.controls) {
-                const cacheKey = thumbCacheKey(pd.seed, pd.controls);
-                thumbCache.delete(cacheKey);
-                deleteThumb(cacheKey);
-            }
-            deleteProfile(name);
-            const order = loadProfileOrder();
-            if (order) saveProfileOrder(order.filter(n => n !== name));
-            refreshGallery();
-            genPanel.setUnlocked();
-            genPanel.randomize();
-            toast(`Deleted "${name}"`);
+        onFullscreen() {
+            if (genFullscreenOverlay) closeGenFullscreen();
+            else openGenFullscreen();
         },
     });
 
-    // Wire up fold-up collapsible toggles in the generate config
-    generatePanelEl.querySelectorAll('.fold-up-area[data-target]').forEach(toggle => {
+    // Wire up collapsible toggles in the generate config
+    generatePanelEl.querySelectorAll('.gen-collapsible-toggle[data-target]').forEach(toggle => {
         toggle.addEventListener('click', () => {
             const expanded = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!expanded));
             const target = document.getElementById(toggle.dataset.target);
             if (!target) return;
 
-            // Keep fold-up active during the collapse/expand animation
-            const container = toggle.closest('.fold-up-container');
-            if (container) container.classList.add('fold-active');
-
-            const removeFold = () => {
-                if (container) container.classList.remove('fold-active');
-                target.removeEventListener('transitionend', removeFold);
-            };
-            target.addEventListener('transitionend', removeFold);
-
             if (expanded) {
-                // Collapse: freeze current height, then animate to 0
                 target.style.maxHeight = target.scrollHeight + 'px';
                 requestAnimationFrame(() => {
                     target.classList.add('collapsed');
                     target.style.maxHeight = '0';
                 });
             } else {
-                // Expand: remove collapsed, animate to scrollHeight, then clear
                 target.classList.remove('collapsed');
                 target.style.maxHeight = target.scrollHeight + 'px';
                 const onEnd = () => {
@@ -1696,13 +1899,6 @@ function initGenerate() {
         workerBridge.resize(res.w, res.h);
     }
     document.addEventListener('genresolutionchange', resizeGenPreview);
-
-    if (genFullscreenBtn) {
-        genFullscreenBtn.addEventListener('click', () => {
-            if (genFullscreenOverlay) closeGenFullscreen();
-            else openGenFullscreen();
-        });
-    }
 
     workerBridge.onReady(() => {
         renderQueue = createRenderQueue({
@@ -1748,6 +1944,7 @@ function showGenerateMode() {
     if (modeTransitioning) return;
     const wasInitialized = generateInitialized;
     initGenerate();
+    refreshSavedGrid();
 
     // Load the selected profile's config into the generate panel
     if (genPanel && selected.name) {
@@ -1757,14 +1954,7 @@ function showGenerateMode() {
         if (entry?.profile?.seed && entry.profile.controls) {
             const displayName = entry.isPortrait ? entry.name + ' (User Version)' : entry.name;
             genPanel.setValues(entry.profile.seed, entry.profile.controls, entry.profile.camera, displayName, entry.profile.commentary);
-            genPanel.pushImageHistory();
-            // Lock panel for saved user profiles (not portraits, not generated assets)
-            const isSavedUserProfile = !entry.isPortrait && !entry.assetId;
-            if (isSavedUserProfile) {
-                genPanel.setLocked(entry.name, { isPortrait: false, assetId: null });
-            } else {
-                genPanel.setUnlocked();
-            }
+            genPanel.setUnlocked();
             // On re-entry (worker already ready), trigger render with loaded values.
             // On first init, onReady() reads panel values and renders automatically.
             if (wasInitialized && workerBridge?.ready) {

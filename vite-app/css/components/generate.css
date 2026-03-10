@@ -13,7 +13,7 @@
 .gen-body {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 /* ── Preview column (Name + Seed + canvas) ── */
@@ -28,7 +28,7 @@
     container-name: gen-preview;
 }
 
-/* ── Identity block (Name + Seed + Nav above image) ── */
+/* ── Identity block (Name + Seed above image) ── */
 
 .gen-identity {
     display: flex;
@@ -36,7 +36,7 @@
     align-items: stretch;
     gap: 0.5rem;
     width: 100%;
-    padding: 0.375rem 0.25rem 0.625rem;
+    padding: 0.25rem 0.25rem 0;
 }
 .gen-identity-text {
     min-width: 0;
@@ -50,18 +50,24 @@
     flex-direction: column;
     gap: 0.125rem;
 }
-.gen-controls-stack {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.25rem;
-    flex-shrink: 0;
-}
-.generation-controls {
+
+/* ── Unified button bar ── */
+
+.gen-button-bar {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.25rem;
-    flex-shrink: 0;
+    flex-wrap: wrap;
+    padding: 0.25rem 0.25rem;
+}
+.gen-bar-sep {
+    color: var(--text-muted);
+    opacity: 0.3;
+    font-size: 0.875rem;
+    line-height: 0;
+    cursor: default;
+    user-select: none;
 }
 .gen-action-btn {
     background: var(--surface);
@@ -176,7 +182,7 @@
     flex-direction: column;
     gap: 0.125rem;
     border-top: 1px solid var(--border);
-    padding: 0.25rem 0.75rem 0.5rem;
+    padding: 0.5rem 0.75rem 0.5rem;
 }
 .gen-commentary-field {
     font-size: 0.6875rem;
@@ -213,8 +219,6 @@
     max-width: 100%;
     display: flex;
     flex-direction: column;
-    perspective: 600px;
-    clip-path: inset(0 -9999px -9999px -9999px);
 }
 
 /* Override control-group margin when used in generate config */
@@ -228,10 +232,11 @@
     display: flex;
     align-items: center;
     gap: 0.375rem;
+    flex-wrap: wrap;
 }
 .seed-tag-select {
     flex: 0 1 auto;
-    min-width: 0;
+    min-width: 5rem;
     width: auto;
 }
 .seed-tag-sep {
@@ -240,111 +245,36 @@
     user-select: none;
 }
 
-/* ── Fold-up shared mechanics ── */
+/* ── Collapsible sections ── */
 
-.fold-up-container {
-    display: block;
-    perspective: 600px;
-    position: relative;
-    z-index: 2;
-    --fold-rotate: 20deg;
-    --fold-shadow-height: 30px;
-    --fold-shadow-spread-l: 15%;
-    --fold-shadow-spread-r: 85%;
-}
-.fold-up-area {
+.gen-collapsible-toggle {
     display: flex;
     align-items: center;
     gap: 0.25rem;
     cursor: pointer;
     width: 100%;
-    box-sizing: border-box;
-    position: relative;
-    z-index: 1;
-    background: var(--bg);
-    border-top: 1px solid transparent;
-    border-right: 2px solid transparent;
-    border-bottom: 2px solid transparent;
-    border-left: 2px solid transparent;
-    border-radius: 0 0 4px 4px;
-    transform-origin: top center;
+    background: none;
+    border: none;
     color: var(--text-muted);
-    transition: transform 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    transition: color 0.2s;
 }
-.fold-up-container:hover > .fold-up-area,
-.fold-up-container.fold-active > .fold-up-area {
+.gen-collapsible-toggle:hover {
     color: var(--text);
-    transform: perspective(600px) rotateX(var(--fold-rotate));
-    border-top-color: var(--border);
-    border-bottom-color: var(--border);
 }
-/* Tapered left/right borders: 1px at top, 2px at bottom */
-.fold-up-container:hover > .fold-up-area::before,
-.fold-up-container.fold-active > .fold-up-area::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-left: 2px solid var(--border);
-    border-right: 2px solid var(--border);
-    border-radius: 0 0 4px 4px;
-    clip-path: polygon(
-        1px 0,                  /* top-left: 1px inset */
-        calc(100% - 1px) 0,     /* top-right: 1px inset */
-        100% 100%,              /* bottom-right: full 2px */
-        0 100%                  /* bottom-left: full 2px */
-    );
-    pointer-events: none;
-}
-/* Shadow cast on the page below the folded-up area.
-   Simulates light blocked by the panel as it folds up from its top edge. */
-.fold-up-container::after {
-    content: '';                    /* pseudo-element for the shadow layer */
-    position: absolute;             /* positioned relative to container */
-    top: 0;                         /* starts at the fold/hinge line */
-    left: -25%;                     /* extra width so trapezoid edges can expand beyond the panel */
-    width: 150%;                    /* wider than panel to accommodate the spreading clip-path */
-    height: 100%;                   /* starts matching container height */
-    background: radial-gradient(    /* elliptical fade: darkest at center-top, fading outward */
-        ellipse 80% 100% at 50% 0%,
-        var(--shadow-color) 0%,
-        transparent 70%
-    );
-    clip-path: polygon(             /* starts as a rectangle matching panel width */
-        16.67% 0%, 83.33% 0%,      /* top-left, top-right = panel width */
-        83.33% 100%, 16.67% 100%   /* bottom-right, bottom-left = panel width (no spread yet) */
-    );
-    pointer-events: none;           /* clicks pass through to elements below */
-    z-index: 0;                     /* sits behind the fold-up area (z-index: 1) */
-    opacity: 0;                     /* hidden by default */
-    transition: opacity 0.3s ease, clip-path 0.3s ease-in, height 0.3s ease-in;
-}
-.fold-up-container:hover::after,
-.fold-up-container.fold-active::after {
-    opacity: 1;
-    height: calc(100% + var(--fold-shadow-height));
-    clip-path: polygon(
-        16.67% 0%, 83.33% 0%,
-        var(--fold-shadow-spread-r) 100%, var(--fold-shadow-spread-l) 100%
-    );
-}
-/* Collapsible content that slides under the fold-up */
-.fold-up-content {
-    overflow: visible;
-    position: relative;
-    z-index: 0;
-    transform: translateY(0);
-    transition: max-height 0.35s ease, opacity 0.25s ease, transform 0.35s ease;
-    opacity: 1;
-}
-.fold-up-content.collapsed {
-    max-height: 0 !important;
-    opacity: 0;
-    transform: translateY(-100%);
-    pointer-events: none;
+.gen-collapsible-toggle[aria-expanded="false"] .gen-chevron {
+    transform: rotate(-90deg);
 }
 
-.fold-up-area[aria-expanded="false"] .gen-chevron {
-    transform: rotate(-90deg);
+.gen-collapsible-content {
+    overflow: hidden;
+    max-height: 5000px;
+    transition: max-height 0.35s ease, opacity 0.25s ease;
+    opacity: 1;
+}
+.gen-collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
 }
 
 /* ── Headings (Parameters) ── */
@@ -355,7 +285,7 @@
     letter-spacing: 0.5px;
 }
 .gen-heading-fold-up-area {
-    padding: 0.5rem 0rem 0.375rem;
+    padding: 0.5rem 0rem 0;
     font-weight: 600;
 }
 .gen-heading + .gen-heading {
@@ -370,7 +300,6 @@
     margin-left: -0.5rem;
     margin-right: -0.5rem;
     padding: 0 0.5rem;
-    clip-path: inset(0 -9999px -9999px -9999px);
 }
 .gen-section + .gen-section {
     margin-top: 0;
@@ -386,7 +315,7 @@
     margin-right: -0.5rem;
     margin-bottom: 0;
 }
-.gen-section-header > .fold-up-area {
+.gen-section-header > .gen-collapsible-toggle {
     padding: 0.375rem 0.5rem 0.25rem;
 }
 .gen-section-label {
@@ -436,20 +365,21 @@ input.gen-slider-value {
     font-variant-numeric: tabular-nums;
     opacity: 0.75;
     background: transparent;
-    border: 1px solid transparent;
+    border: 1px solid var(--border);
     border-radius: 3px;
     color: inherit;
     font-family: inherit;
     text-align: center;
     width: 2.5rem;
     flex: 0 0 2.5rem;
-    padding: 0 0.125rem;
-    transition: border-color 0.2s;
+    padding: 0.125rem 0.125rem;
+    transition: border-color 0.2s, color 0.2s;
 }
 .gen-slider-value:hover {
-    border-color: var(--border);
+    color: var(--text);
 }
 .gen-slider-value:focus {
+    color: var(--text);
     border-color: var(--accent);
     outline: none;
     opacity: 1;
@@ -713,21 +643,187 @@ input.gen-slider-value {
     background: var(--accent-bg);
 }
 
-/* ── Responsive — viewport overrides in responsive.css ── */
+/* ── Saved images grid ── */
 
-@container gen-preview (max-width: 500px) {
-    .gen-identity {
-        flex-direction: column-reverse;
-        align-items: center;
-    }
-    .gen-identity-text {
-        text-align: center;
-        align-items: center;
-    }
-    .gen-controls-stack {
-        align-self: center;
-        align-items: center;
-    }
-    .gallery-controls { gap: 0.125rem; }
-    .generation-controls { gap: 0.125rem; }
+.gen-saved-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+    padding: 0.5rem 0.25rem;
+}
+.gen-saved-grid:empty {
+    display: none;
+}
+.gen-saved-card {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+.gen-saved-card:hover {
+    border-color: var(--border-strong);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.gen-saved-card.gen-saved-active {
+    border-color: var(--accent-text);
+}
+.gen-saved-thumb {
+    width: 100%;
+    aspect-ratio: 14 / 9;
+    object-fit: cover;
+    display: block;
+    background: #000;
+}
+.gen-saved-info {
+    padding: 0.25rem 0.375rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    min-height: 0;
+}
+.gen-saved-name {
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.gen-saved-commentary {
+    font-size: 0.5625rem;
+    color: var(--text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.gen-saved-actions {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    display: flex;
+    gap: 0.125rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.gen-saved-card:hover .gen-saved-actions {
+    opacity: 1;
+}
+.gen-saved-action-btn {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 0.625rem;
+    transition: background 0.2s, color 0.2s;
+}
+.gen-saved-action-btn:hover {
+    background: var(--surface-active);
+    color: var(--text);
+}
+.gen-saved-action-btn.gen-saved-delete:hover {
+    color: #ff6b6b;
+}
+.gen-saved-card.dragging {
+    opacity: 0.4;
+}
+.gen-saved-card.drag-over {
+    border-color: var(--accent-text);
+    box-shadow: 0 0 0 1px var(--accent-text);
+}
+.gen-saved-order-btns {
+    display: flex;
+    gap: 0.125rem;
+    position: absolute;
+    bottom: 0.25rem;
+    right: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.gen-saved-card:hover .gen-saved-order-btns {
+    opacity: 1;
+}
+
+/* ── Save conflict modal ── */
+
+.gen-save-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.gen-save-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    max-width: 20rem;
+    width: 90%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.gen-save-modal-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text);
+}
+.gen-save-modal-msg {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+}
+.gen-save-modal-input {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    width: 100%;
+    font-family: inherit;
+}
+.gen-save-modal-input:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+.gen-save-modal-btns {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+.gen-save-modal-btn {
+    font-size: 0.6875rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+.gen-save-modal-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text);
+}
+.gen-save-modal-btn.primary {
+    background: var(--accent-bg);
+    color: var(--accent-text);
+    border-color: var(--accent-text);
+}
+.gen-save-modal-btn.primary:hover {
+    opacity: 0.85;
 }

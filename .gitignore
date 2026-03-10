@@ -19,6 +19,8 @@ workflows/**/*.png
 scripts/**/*.png
 scripts/**.png
 
+screenshots/**/*.png
+output/screenshots/**/*.png
 sampler-captures/
-/notes.txt
+notes.txt
 workflows/image-param-space-exploration/output/chat-export-01.txt

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fold-Up Dropdown Animation</title>
+<style>
+/* ── Theme variables ── */
+:root {
+    --bg: #111114;
+    --bg-panel: #18181c;
+    --border: rgba(255,255,255,0.10);
+    --text: #e0e0e4;
+    --text-muted: rgba(255,255,255,0.45);
+    --shadow-color: rgba(0,0,0,0.55);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 2rem;
+    max-width: 360px;
+    margin: 0 auto;
+}
+h1 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+}
+
+/* ── Menu item rows ── */
+.menu-item {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.5rem;
+    color: var(--text-muted);
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* ── Fold-up shared mechanics ── */
+
+.fold-up-container {
+    display: block;
+    perspective: 600px;
+    position: relative;
+    z-index: 2;
+    --fold-rotate: 20deg;
+    --fold-shadow-height: 30px;
+    --fold-shadow-spread-l: 15%;
+    --fold-shadow-spread-r: 85%;
+}
+.fold-up-area {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+    background: var(--bg);
+    border-top: 1px solid transparent;
+    border-right: 2px solid transparent;
+    border-bottom: 2px solid transparent;
+    border-left: 2px solid transparent;
+    border-radius: 0 0 4px 4px;
+    transform-origin: top center;
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    font-weight: 600;
+    padding: 0.5rem 0.5rem 0.375rem;
+    transition: transform 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    user-select: none;
+}
+.fold-up-container:hover > .fold-up-area,
+.fold-up-container.fold-active > .fold-up-area {
+    color: var(--text);
+    transform: perspective(600px) rotateX(var(--fold-rotate));
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
+}
+
+/* Tapered left/right borders: 1px at top, 2px at bottom */
+.fold-up-container:hover > .fold-up-area::before,
+.fold-up-container.fold-active > .fold-up-area::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-left: 2px solid var(--border);
+    border-right: 2px solid var(--border);
+    border-radius: 0 0 4px 4px;
+    clip-path: polygon(
+        1px 0,
+        calc(100% - 1px) 0,
+        100% 100%,
+        0 100%
+    );
+    pointer-events: none;
+}
+
+/* Shadow cast on the page below the folded-up area */
+.fold-up-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -25%;
+    width: 150%;
+    height: 100%;
+    background: radial-gradient(
+        ellipse 80% 100% at 50% 0%,
+        var(--shadow-color) 0%,
+        transparent 70%
+    );
+    clip-path: polygon(
+        16.67% 0%, 83.33% 0%,
+        83.33% 100%, 16.67% 100%
+    );
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease, clip-path 0.3s ease-in, height 0.3s ease-in;
+}
+.fold-up-container:hover::after,
+.fold-up-container.fold-active::after {
+    opacity: 1;
+    height: calc(100% + var(--fold-shadow-height));
+    clip-path: polygon(
+        16.67% 0%, 83.33% 0%,
+        var(--fold-shadow-spread-r) 100%, var(--fold-shadow-spread-l) 100%
+    );
+}
+
+/* Collapsible content that slides under the fold-up */
+.fold-up-content {
+    overflow: visible;
+    position: relative;
+    z-index: 0;
+    transform: translateY(0);
+    transition: max-height 0.35s ease, opacity 0.25s ease, transform 0.35s ease;
+    opacity: 1;
+}
+.fold-up-content.collapsed {
+    max-height: 0 !important;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-100%);
+    pointer-events: none;
+}
+
+/* Chevron rotation */
+.chevron {
+    font-size: 0.8125rem;
+    transition: transform 0.25s ease;
+    flex-shrink: 0;
+}
+.fold-up-area[aria-expanded="false"] .chevron {
+    transform: rotate(-90deg);
+}
+
+/* Nesting: indent + clip overflow at top */
+.fold-up-section {
+    clip-path: inset(0 -9999px -9999px -9999px);
+}
+.fold-up-section .fold-up-section {
+    padding-left: 0.75rem;
+}
+.fold-up-section .fold-up-section .fold-up-section {
+    padding-left: 0.75rem;
+}
+
+/* ── Responsive: increase fold angle at wider viewports ── */
+@media (min-width: 768px) {
+    .fold-up-container {
+        --fold-rotate: 30deg;
+        --fold-shadow-spread-l: 12%;
+        --fold-shadow-spread-r: 88%;
+    }
+}
+@media (min-width: 1024px) {
+    .fold-up-container {
+        --fold-rotate: 40deg;
+        --fold-shadow-spread-l: 10%;
+        --fold-shadow-spread-r: 90%;
+    }
+}
+</style>
+</head>
+<body>
+
+<h1>Fold-Up Dropdown Animation</h1>
+
+<!-- Level 1: Settings -->
+<div class="fold-up-section">
+    <div class="fold-up-container">
+        <div class="fold-up-area" data-target="settings" aria-expanded="true">
+            <span class="chevron">&#9662;</span>
+            <span>Settings</span>
+        </div>
+    </div>
+    <div class="fold-up-content" id="settings">
+        <div class="menu-item">Theme: Dark</div>
+        <div class="menu-item">Language: English</div>
+
+        <!-- Level 2: Display Options -->
+        <div class="fold-up-section">
+            <div class="fold-up-container">
+                <div class="fold-up-area" data-target="display" aria-expanded="true">
+                    <span class="chevron">&#9662;</span>
+                    <span>Display Options</span>
+                </div>
+            </div>
+            <div class="fold-up-content" id="display">
+                <div class="menu-item">Resolution: Auto</div>
+                <div class="menu-item">Pixel Ratio: 2x</div>
+                <div class="menu-item">Anti-aliasing: On</div>
+
+                <!-- Level 3: Advanced -->
+                <div class="fold-up-section">
+                    <div class="fold-up-container">
+                        <div class="fold-up-area" data-target="advanced" aria-expanded="true">
+                            <span class="chevron">&#9662;</span>
+                            <span>Advanced</span>
+                        </div>
+                    </div>
+                    <div class="fold-up-content" id="advanced">
+                        <div class="menu-item">GPU Acceleration: Enabled</div>
+                        <div class="menu-item">Max Draw Calls: 1024</div>
+                        <div class="menu-item">Debug Overlay: Off</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="menu-item">Notifications: On</div>
+    </div>
+</div>
+
+<!-- Level 1: Rendering -->
+<div class="fold-up-section" style="margin-top: 0.5rem;">
+    <div class="fold-up-container">
+        <div class="fold-up-area" data-target="rendering" aria-expanded="true">
+            <span class="chevron">&#9662;</span>
+            <span>Rendering</span>
+        </div>
+    </div>
+    <div class="fold-up-content" id="rendering">
+        <div class="menu-item">Tone Mapping: Reinhard</div>
+        <div class="menu-item">Bloom: Enabled</div>
+        <div class="menu-item">Exposure: 1.1</div>
+
+        <!-- Level 2: Post-Processing -->
+        <div class="fold-up-section">
+            <div class="fold-up-container">
+                <div class="fold-up-area" data-target="postfx" aria-expanded="true">
+                    <span class="chevron">&#9662;</span>
+                    <span>Post-Processing</span>
+                </div>
+            </div>
+            <div class="fold-up-content" id="postfx">
+                <div class="menu-item">Chromatic Aberration: 0.3</div>
+                <div class="menu-item">Vignette: 0.5</div>
+                <div class="menu-item">Film Grain: Off</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.fold-up-area[data-target]').forEach(toggle => {
+    toggle.addEventListener('click', () => {
+        const expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', String(!expanded));
+        const target = document.getElementById(toggle.dataset.target);
+        if (!target) return;
+
+        const container = toggle.closest('.fold-up-container');
+        if (container) container.classList.add('fold-active');
+
+        const removeFold = () => {
+            if (container) container.classList.remove('fold-active');
+            target.removeEventListener('transitionend', removeFold);
+        };
+        target.addEventListener('transitionend', removeFold);
+
+        if (expanded) {
+            target.style.maxHeight = target.scrollHeight + 'px';
+            requestAnimationFrame(() => {
+                target.classList.add('collapsed');
+                target.style.maxHeight = '0';
+            });
+        } else {
+            target.classList.remove('collapsed');
+            target.style.maxHeight = target.scrollHeight + 'px';
+            const onEnd = () => {
+                target.style.maxHeight = '';
+                target.removeEventListener('transitionend', onEnd);
+            };
+            target.addEventListener('transitionend', onEnd);
+        }
+    });
+});
+</script>
+
+</body>
+</html>

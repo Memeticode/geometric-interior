@@ -155,7 +155,10 @@ Cards wrapped in `<carousel-dropdown-browser-section>` elements are grouped:
 Click and drag on the track to scroll through cards. The carousel uses momentum-based scrolling — release mid-drag and cards coast to a stop, snapping to the nearest item.
 
 ### Arrow Navigation
-Left/right arrows jump by the number of visible cards in that direction. Hold an arrow for auto-repeat (400ms initial delay, ~100ms repeat).
+Left/right arrows (single chevron SVG) jump by the number of visible cards in that direction. Hold an arrow for auto-repeat (400ms initial delay, ~100ms repeat).
+
+### Section Navigation
+When multiple sections exist, double-chevron arrows (`<<` / `>>`) appear flanking the single-chevron arrows. They jump to the first card of the previous/next section. With `infinite`, they wrap around at the boundaries.
 
 ### Hover Effects
 Hovering a card lifts it in 3D space (`translateZ`, `scale`). Adjacent cards receive a gradient mask that fades the entire card frame (image, title, and border) at their edges, keeping focus on the hovered card. Hover effects and masks are suppressed while cards are transitioning between positions (arrow navigation, momentum snap) and during drag.
@@ -179,7 +182,8 @@ With `infinite`, the carousel loops seamlessly. Without it, arrows disable at th
 2. Carousel un-flattened; cards positioned at their grid positions as starting state.
 3. Phantom overlays created at grid header positions, animating to carousel label positions. Phantoms match the source element's font-size/letter-spacing and morph to the target's styling. Real section labels stay hidden during the animation.
 4. Cards animate from grid positions to arc positions via Web Animations API (staggered by distance from center). Off-screen cards animate to edge positions and fade out.
-5. After animation: dropdown collapsed, scroll compensated, controls/section-label-container FLIP'd for any layout shift. Phantoms removed and real section labels revealed only after FLIP transitions complete.
+5. After animation: dropdown collapsed, scroll compensated, controls/section-label-container FLIP'd for any layout shift. All transitions on controls, labels, cards, and track are suppressed (`transition: none`) during the final recompute. Phantoms removed and real section labels revealed only after FLIP transitions complete.
+6. A `requestAnimationFrame` defers transition restoration until the browser has settled, preventing any residual layout shift from becoming animated. The `#animatingExpand` flag stays `true` through this entire sequence (including the deferred recompute) so the `ResizeObserver` guard blocks spurious `#positionCards()` calls.
 
 Both directions use the FLIP technique (First-Last-Invert-Play) with phantom overlays for elements that exist in only one layout. Animations respect `flip-duration` and the `bounce` easing parameter.
 
@@ -248,11 +252,11 @@ The carousel track `min-height` is derived from `--card-w` via `calc(var(--card-
 <carousel-dropdown-browser>
   .cdb-strip                          ← flex column (controls + carousel + dropdown)
     .cdb-controls                     ← nav arrows + expand toggle (position depends on controls-position)
-      button.cdb-arrow.cdb-left       ← left nav
-      button.cdb-arrow.cdb-right      ← right nav
-      button.cdb-sec-left             ← section nav left (optional)
-      button.cdb-sec-right            ← section nav right (optional)
+      button.cdb-arrow.cdb-sec-arrow  ← section nav left (double chevron SVG, hidden if ≤1 section)
+      button.cdb-arrow.cdb-arrow-left ← left nav (single chevron SVG)
       button.cdb-toggle               ← grid expand/collapse toggle
+      button.cdb-arrow.cdb-arrow-right← right nav (single chevron SVG)
+      button.cdb-arrow.cdb-sec-arrow  ← section nav right (double chevron SVG, hidden if ≤1 section)
     .cdb-container                    ← carousel viewport wrapper
       .cdb-section-label-container    ← scrolling section labels (above track)
         .cdb-section-label            ← per-section label (absolute, translateX positioned)
@@ -313,4 +317,21 @@ carousel.addEventListener('item-delete', e => {
 // Toggle grid view
 await carousel.expand();
 await carousel.collapse();
+```
+
+---
+
+## Host Page: Scrollbar Layout Shift
+
+When the carousel's grid dropdown expands/collapses, the scroll parent's content height can cross the scrollbar threshold, causing the browser scrollbar to appear or disappear. This changes the viewport width and shifts all centered content.
+
+**Fix**: The scroll parent (`.gallery-main` in the gallery page) uses `scrollbar-gutter: stable both-edges` to permanently reserve scrollbar space on both sides, keeping content centered regardless of scrollbar state. This is set in `vite-app/css/pages/gallery.css`.
+
+If embedding this component in a different scroll container, apply the same property to prevent layout shift during expand/collapse:
+
+```css
+.your-scroll-container {
+    overflow-y: auto;
+    scrollbar-gutter: stable both-edges;
+}
 ```
