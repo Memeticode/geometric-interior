@@ -98,9 +98,6 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
     opacity: 0.15;
     pointer-events: none;
 }
-.cdb-sec-arrow {
-}
-
 /* ── Debug controls ── */
 .cdb-debug-controls {
     display: flex;

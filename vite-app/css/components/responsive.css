@@ -168,6 +168,13 @@
         width: 140px;
         height: 90px;
     }
+
+    /* Fold-up — medium */
+    .fold-up-container {
+        --fold-rotate: 30deg;
+        --fold-shadow-spread-l: 12%;
+        --fold-shadow-spread-r: 88%;
+    }
 }
 
 /* ── lg (1024px+) — Desktop ── */
@@ -253,6 +260,13 @@
         flex-direction: row;
         align-items: flex-start;
         justify-content: space-between;
+    }
+
+    /* Fold-up — full */
+    .fold-up-container {
+        --fold-rotate: 40deg;
+        --fold-shadow-spread-l: 10%;
+        --fold-shadow-spread-r: 90%;
     }
 }
 

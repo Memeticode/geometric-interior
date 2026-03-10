@@ -1,3 +1,3 @@
-export const TRASH_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M8 1l4.5 4.5L8 14.5 3.5 5.5z"/><path d="M5 7l3-1 3 2" stroke-width="1" opacity="0.6"/></svg>';
+export const TRASH_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M8 1l4.5 4.5L8 14.5 3.5 5.5z"/><path d="M5 7l3-1 3 2" stroke-width="1"/></svg>';
 export const ARROW_UP_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l5-5 5 5"/></svg>';
 export const ARROW_DOWN_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l5 5 5-5"/></svg>';

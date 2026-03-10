@@ -214,6 +214,7 @@ const genSaveBtn = document.getElementById('genSaveBtn');
 const genRandomizeBtn = document.getElementById('genRandomizeBtn');
 const genRenderBtn = document.getElementById('genRenderBtn');
 const genDuplicateBtn = document.getElementById('genDuplicateBtn');
+const genDeleteBtn = document.getElementById('genDeleteBtn');
 const genNameLabel = document.getElementById('genNameLabel');
 const genCommentaryField = document.getElementById('genCommentaryField');
 const genNameCounter = document.getElementById('genNameCounter');
@@ -1585,6 +1586,7 @@ function initGenerate() {
         randomizeBtn: genRandomizeBtn,
         renderBtn: genRenderBtn,
         duplicateBtn: genDuplicateBtn,
+        deleteBtn: genDeleteBtn,
         nameTooltipEl: genNameLabel?.querySelector('.label-info'),
         commentaryField: genCommentaryField,
         previewCanvas: genPreviewCanvas,
@@ -1619,6 +1621,30 @@ function initGenerate() {
             // Refresh gallery to show the new profile
             refreshGallery();
             toast(`Saved "${name}"`);
+        },
+        async onDelete(name) {
+            const result = await showConfirm(
+                t('confirm.deleteProfile'),
+                t('confirm.deleteConfirm', { name }),
+                [
+                    { label: t('btn.cancel') },
+                    { label: t('btn.delete'), primary: true, value: 'delete' },
+                ],
+            );
+            if (result !== 'delete') return;
+            const pd = loadProfiles()[name];
+            if (pd && pd.seed && pd.controls) {
+                const cacheKey = thumbCacheKey(pd.seed, pd.controls);
+                thumbCache.delete(cacheKey);
+                deleteThumb(cacheKey);
+            }
+            deleteProfile(name);
+            const order = loadProfileOrder();
+            if (order) saveProfileOrder(order.filter(n => n !== name));
+            refreshGallery();
+            genPanel.setUnlocked();
+            genPanel.randomize();
+            toast(`Deleted "${name}"`);
         },
     });
 
@@ -1735,7 +1761,7 @@ function showGenerateMode() {
             // Lock panel for saved user profiles (not portraits, not generated assets)
             const isSavedUserProfile = !entry.isPortrait && !entry.assetId;
             if (isSavedUserProfile) {
-                genPanel.setLocked(entry.name);
+                genPanel.setLocked(entry.name, { isPortrait: false, assetId: null });
             } else {
                 genPanel.setUnlocked();
             }

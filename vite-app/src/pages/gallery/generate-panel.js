@@ -82,6 +82,8 @@ const SLIDER_GRADIENTS = {
  * @param {HTMLButtonElement} [opts.redoBtn] — redo parameter tweak
  * @param {HTMLButtonElement} [opts.duplicateBtn] — duplicate locked config for editing
  * @param {Function} [opts.onDuplicate] — () => void
+ * @param {HTMLButtonElement} [opts.deleteBtn] — delete saved profile
+ * @param {Function} [opts.onDelete] — (name: string) => void
  */
 export function initGeneratePanel(opts) {
     const {
@@ -91,6 +93,7 @@ export function initGeneratePanel(opts) {
         previewCanvas, nameCounter, nameError, commentaryCounter,
         historyBackBtn, historyForwardBtn, undoBtn, redoBtn,
         duplicateBtn, onDuplicate,
+        deleteBtn, onDelete,
     } = opts;
 
     const sliderInputs = {};
@@ -98,6 +101,8 @@ export function initGeneratePanel(opts) {
     let userEditedName = false;
     let locked = false;       // true when viewing a saved (immutable) profile
     let savedName = null;     // name of the saved profile (null = unsaved draft)
+    let savedIsPortrait = false;
+    let savedAssetId = null;
 
     // ── Two-tier history ──
     // imageHistory: array of randomized image entries, each with its own undo stack
@@ -245,7 +250,7 @@ export function initGeneratePanel(opts) {
         updateActionButtons();
     }
 
-    /** Update Save/Render/Duplicate button states based on lock status. */
+    /** Update Save/Render/Duplicate/Delete button states based on lock status. */
     function updateActionButtons() {
         if (saveBtn) saveBtn.disabled = locked || !nameField.value.trim();
         if (renderBtn) renderBtn.disabled = !locked;
@@ -254,12 +259,20 @@ export function initGeneratePanel(opts) {
             duplicateBtn.classList.toggle('hidden', !locked);
             duplicateBtn.disabled = !locked;
         }
+        if (deleteBtn) {
+            // Only show & enable for locked saved user profiles (not portraits/generated)
+            const canDelete = locked && savedName && !savedIsPortrait && !savedAssetId;
+            deleteBtn.classList.toggle('hidden', !canDelete);
+            deleteBtn.disabled = !canDelete;
+        }
     }
 
     /** Lock the panel (saved profile — immutable). */
-    function setLocked(name) {
+    function setLocked(name, opts) {
         locked = true;
         savedName = name || null;
+        savedIsPortrait = opts?.isPortrait || false;
+        savedAssetId = opts?.assetId || null;
         // Disable all inputs
         for (const key of SLIDER_KEYS) {
             if (sliderInputs[key]) sliderInputs[key].range.disabled = true;
@@ -279,6 +292,8 @@ export function initGeneratePanel(opts) {
     function setUnlocked() {
         locked = false;
         savedName = null;
+        savedIsPortrait = false;
+        savedAssetId = null;
         for (const key of SLIDER_KEYS) {
             if (sliderInputs[key]) sliderInputs[key].range.disabled = false;
         }
@@ -633,6 +648,14 @@ export function initGeneratePanel(opts) {
             pushImageHistory();
             if (onDuplicate) onDuplicate();
             if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
+        });
+    }
+
+    // ── Delete ──
+
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', () => {
+            if (onDelete && savedName) onDelete(savedName);
         });
     }
 

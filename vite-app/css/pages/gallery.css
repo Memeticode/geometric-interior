@@ -12,6 +12,7 @@
     flex: 1;
     padding: 1rem;
     overflow-y: auto;
+    scrollbar-gutter: stable both-edges;
 }
 .gallery-page .gallery-content {
     transition: opacity 0.25s ease, transform 0.25s ease;

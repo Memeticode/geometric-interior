@@ -938,9 +938,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                     void this.#sectionLabelContainer.offsetHeight;
 
                     // ── Collapse dropdown — compensate scroll for layout shift ──
+                    const scrollParent = this.closest('.gallery-main') || this.parentElement;
                     const ctrlBefore2 = this.#controls.getBoundingClientRect();
                     const lblBefore2 = this.#sectionLabelContainer.getBoundingClientRect();
-                    const scrollParent = this.closest('.gallery-main') || this.parentElement;
                     const scrollBefore = scrollParent ? scrollParent.scrollTop : 0;
                     const rectBefore = this.getBoundingClientRect();
                     const _dbg = this.#debugTransitionAnimation;
@@ -1030,9 +1030,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                             trackHeightPreRecompute = this.#track.getBoundingClientRect().height;
                         }
 
-                        this.#controls.style.transition = '';
+                        this.#controls.style.transition = 'none';
                         this.#controls.style.transform = '';
-                        this.#sectionLabelContainer.style.transition = '';
+                        this.#sectionLabelContainer.style.transition = 'none';
                         this.#sectionLabelContainer.style.transform = '';
                         // Remove phantoms, then reveal real labels at final positions
                         for (const o of sectionPhantoms) o.remove();
@@ -1067,25 +1067,38 @@ class CarouselDropdownBrowser extends HTMLElement {
                             console.groupEnd();
                         }
 
-                        for (const { element } of this.#cards) {
-                            element.style.transition = '';
-                        }
-                        this.#track.style.transition = '';
-                        for (const sec of this.#sectionLabels) {
-                            sec.element.style.transition = '';
-                        }
-                        console.groupEnd();
-                    }, 350);
-                    this.#toggle.disabled = false;
-                    this.#toggle.setAttribute('data-tooltip', 'Expand');
-                    if (this.#toggle.matches(':hover')) {
-                        const r = this.#toggle.getBoundingClientRect();
-                        this.#toggle.dispatchEvent(new MouseEvent('mouseover', {
-                            bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2,
-                        }));
-                    }
+                        // Let the browser settle scrollbar state before
+                        // restoring transitions so a late resize can't cause
+                        // an animated shift.
+                        requestAnimationFrame(() => {
+                            this.#positionCards();
+                            this.#isTransitioning = false;
+                            this.#track.classList.remove('cdb-transitioning');
+                            void this.#track.offsetHeight;
 
-                    resolve();
+                            this.#controls.style.transition = '';
+                            this.#sectionLabelContainer.style.transition = '';
+                            for (const { element } of this.#cards) {
+                                element.style.transition = '';
+                            }
+                            this.#track.style.transition = '';
+                            for (const sec of this.#sectionLabels) {
+                                sec.element.style.transition = '';
+                            }
+                            console.groupEnd();
+
+                            this.#toggle.disabled = false;
+                            this.#toggle.setAttribute('data-tooltip', 'Expand');
+                            if (this.#toggle.matches(':hover')) {
+                                const r = this.#toggle.getBoundingClientRect();
+                                this.#toggle.dispatchEvent(new MouseEvent('mouseover', {
+                                    bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2,
+                                }));
+                            }
+
+                            resolve();
+                        });
+                    }, 350);
                 }, totalDur + 50);
             }, cardDelay);
         });
@@ -1521,6 +1534,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     #attachResizeObserver() {
         if (this.#resizeObs) return;
         this.#resizeObs = new ResizeObserver(() => {
+            if (this.#animatingExpand) return;
             if (this.#cards.length) this.#positionCards();
             this.#updateToggleVisibility();
         });
