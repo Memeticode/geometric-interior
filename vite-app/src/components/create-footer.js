@@ -57,6 +57,7 @@ export function createFooter(footerEl, { page }) {
                         <span class="custom-dropdown-label">HD (1400&#215;900)</span>
                     </button>
                     <div class="custom-dropdown-menu hidden" role="listbox">
+                        <button class="custom-dropdown-item" role="option" data-value="pre" aria-selected="false">PRE (420&#215;270)</button>
                         <button class="custom-dropdown-item" role="option" data-value="sd" aria-selected="false">SD (840&#215;540)</button>
                         <button class="custom-dropdown-item active" role="option" data-value="hd" aria-selected="true">HD (1400&#215;900)</button>
                         <button class="custom-dropdown-item" role="option" data-value="fhd" aria-selected="false">FHD (1680&#215;1080)</button>

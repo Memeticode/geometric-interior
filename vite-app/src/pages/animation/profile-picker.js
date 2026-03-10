@@ -18,10 +18,10 @@ import { getPortraitNames } from '../../stores/profiles.js';
  * @param {string} [opts.locale] - current locale code
  * @returns {{ open(): Promise<profile|null>, close(): void }}
  */
-export function createProfilePicker({ portraits, getUserProfiles, getThumbUrl, locale = 'en' }) {
-    const modalEl = document.getElementById('profilePickerModal');
-    const bodyEl = document.getElementById('profilePickerBody');
-    const closeBtn = document.getElementById('profilePickerClose');
+export function createProfilePicker({ portraits, getUserProfiles, getThumbUrl, locale = 'en', modalId = 'profilePickerModal', bodyId = 'profilePickerBody', closeId = 'profilePickerClose' }) {
+    const modalEl = document.getElementById(modalId);
+    const bodyEl = document.getElementById(bodyId);
+    const closeBtn = document.getElementById(closeId);
 
     let resolvePromise = null;
 

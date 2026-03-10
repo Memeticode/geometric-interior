@@ -73,6 +73,8 @@ export default {
     'generate.parameters': 'Parameters',
     'generate.parameters.tooltip': 'Twelve continuous parameters, each a 0\u20131 scaling axis. Together they define a 12-dimensional creative space where every point produces a unique composition of luminous geometric forms.',
     'generate.configureImage': 'Configure Image',
+    'generate.imagePreview': 'Image Preview',
+    'generate.savedImages': 'Saved Images (Local)',
 
     /* ── Commentary, alt-text, slug ── */
     'control.commentary': 'Commentary',

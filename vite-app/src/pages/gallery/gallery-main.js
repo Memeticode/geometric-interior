@@ -5,11 +5,13 @@
  * "Generate" mode activates an in-gallery config panel with live preview + render queue.
  *
  * Routes (client-side, history.pushState):
- *   /gallery/images                          — image gallery (default)
- *   /gallery/images/portraits/{slug}         — portrait selected
- *   /gallery/images/local/{slug}             — user profile selected
- *   /gallery/images/generated/{id}           — generated profile selected
- *   /gallery/animations                      — animation gallery (placeholder)
+ *   /image                                   — image gallery (default)
+ *   /image/portraits/{slug}                  — portrait selected
+ *   /image/local/{slug}                      — user profile selected
+ *   /image/generated/{id}                    — generated profile selected
+ *   /image/create                            — image generator panel
+ *   /animation                               — animation gallery
+ *   /animation/create                        — animation editor
  */
 
 import '../../components/carousel-dropdown-browser.js';
@@ -39,6 +41,7 @@ import { createRenderQueue } from './render-queue.js';
 import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
 import { initRenderQueueMenu } from './render-queue-menu.js';
 import { initCustomDropdown } from '../../components/custom-dropdown.js';
+import { initAnimationEditor, destroyAnimationEditor } from '../animation/anim-main.js';
 
 /* ── Build header & footer DOM ── */
 createHeader(document.querySelector('.app-header'), { page: 'gallery' });
@@ -193,8 +196,9 @@ const carouselBrowser = document.getElementById('carouselBrowser');
 const galleryMainEl = document.querySelector('.gallery-main');
 
 
-/* ── Generate panel DOM refs ── */
+/* ── Generate / Animation editor DOM refs ── */
 const generatePanelEl = document.getElementById('generatePanel');
+const animationEditorEl = document.getElementById('animationEditor');
 const genSlidersEl = document.getElementById('genSliders');
 const genTagArrEl = document.getElementById('genTagArr');
 const genTagStrEl = document.getElementById('genTagStr');
@@ -245,7 +249,7 @@ window.addEventListener('resize', () => {
 /* ── State ── */
 let selected = { name: null, isPortrait: false };
 let activeType = 'image'; // 'image' | 'animation'
-let activeMode = 'gallery'; // 'gallery' | 'generate'
+let activeMode = 'gallery'; // 'gallery' | 'create'
 let navigableList = [];  // [{name, profile, isPortrait, assetId}] — all profiles in display order
 let currentIndex = -1;
 
@@ -601,35 +605,43 @@ const rqMenu = initRenderQueueMenu({
 
 function parseRoute() {
     const path = window.location.pathname;
-    if (path === '/gallery/animations/generate') return { type: 'animation', mode: 'generate', source: null, profileSlug: null };
-    if (path.startsWith('/gallery/animations')) return { type: 'animation', mode: 'gallery', source: null, profileSlug: null };
-    if (path === '/gallery/images/generate') return { type: 'image', mode: 'generate', source: null, profileSlug: null };
-    // /gallery/images/portraits/{slug} or /gallery/images/local/{slug} or /gallery/images/generated/{id}
-    const match = path.match(/^\/gallery\/images\/(portraits|local|generated)\/(.+)$/);
+
+    // Animation routes
+    if (path === '/animation/create') return { type: 'animation', mode: 'create', source: null, profileSlug: null };
+    if (path.startsWith('/animation')) {
+        const match = path.match(/^\/animation\/(portraits|local|generated)\/(.+)$/);
+        if (match) return { type: 'animation', mode: 'gallery', source: match[1], profileSlug: match[2] };
+        return { type: 'animation', mode: 'gallery', source: null, profileSlug: null };
+    }
+
+    // Image routes
+    if (path === '/image/create') return { type: 'image', mode: 'create', source: null, profileSlug: null };
+    const match = path.match(/^\/image\/(portraits|local|generated)\/(.+)$/);
     if (match) return { type: 'image', mode: 'gallery', source: match[1], profileSlug: match[2] };
     return { type: 'image', mode: 'gallery', source: null, profileSlug: null };
 }
 
 function pushRoute() {
-    const suffix = activeMode === 'generate' ? '/generate' : '';
-    const url = (activeType === 'animation' ? '/gallery/animations' : '/gallery/images') + suffix;
+    const base = activeType === 'animation' ? '/animation' : '/image';
+    const url = activeMode === 'create' ? `${base}/create` : base;
     if (window.location.pathname !== url) {
         history.pushState({ type: activeType, mode: activeMode, profile: null }, '', url);
     }
 }
 
 function pushProfileRoute(name, isPortrait, assetId) {
+    const base = activeType === 'animation' ? '/animation' : '/image';
     if (assetId) {
-        const url = `/gallery/images/generated/${assetId}`;
+        const url = `${base}/generated/${assetId}`;
         if (window.location.pathname !== url) {
-            history.pushState({ type: 'image', profile: name, isPortrait: false, assetId }, '', url);
+            history.pushState({ type: activeType, profile: name, isPortrait: false, assetId }, '', url);
         }
     } else {
         const slug = slugify(name);
         const prefix = isPortrait ? 'portraits' : 'local';
-        const url = `/gallery/images/${prefix}/${slug}`;
+        const url = `${base}/${prefix}/${slug}`;
         if (window.location.pathname !== url) {
-            history.pushState({ type: 'image', profile: name, isPortrait }, '', url);
+            history.pushState({ type: activeType, profile: name, isPortrait }, '', url);
         }
     }
 }
@@ -641,14 +653,14 @@ function applyRoute() {
     activeMode = route.mode;
     updateMenuNavLinks();
 
-    // Handle generate mode transitions
-    if (activeMode === 'generate' && prevMode !== 'generate') {
+    // Handle create mode transitions
+    if (activeMode === 'create' && prevMode !== 'create') {
         showGenerateMode();
-    } else if (activeMode !== 'generate' && prevMode === 'generate') {
+    } else if (activeMode !== 'create' && prevMode === 'create') {
         hideGenerateMode();
     }
 
-    if (activeMode === 'generate') return;
+    if (activeMode === 'create') return;
 
     if (activeType === 'image') {
         if (route.profileSlug) {
@@ -1002,13 +1014,8 @@ genPreviewCanvas.addEventListener('click', () => {
 });
 
 function navigateToEditor() {
-    const params = new URLSearchParams();
-    if (selected.name) {
-        params.set('profile', selected.name);
-        if (selected.isPortrait) params.set('source', 'portrait');
-    }
-    const page = activeType === 'animation' ? 'animation' : 'image';
-    window.location.href = `/${page}.html?${params}`;
+    // Navigate to create mode within the SPA
+    handleMenuNav(activeType, 'create');
 }
 
 
@@ -1066,11 +1073,11 @@ function showImageGallery() {
 
         // Use replaceState so auto-select doesn't pollute history
         if (first.assetId) {
-            history.replaceState({ type: 'image', profile: first.name }, '', `/gallery/images/generated/${first.assetId}`);
+            history.replaceState({ type: 'image', profile: first.name }, '', `/image/generated/${first.assetId}`);
         } else {
             const slug = slugify(first.name);
             const prefix = first.isPortrait ? 'portraits' : 'local';
-            history.replaceState({ type: 'image', profile: first.name }, '', `/gallery/images/${prefix}/${slug}`);
+            history.replaceState({ type: 'image', profile: first.name }, '', `/image/${prefix}/${slug}`);
         }
     }
 
@@ -1290,7 +1297,7 @@ function handleMenuNav(type, mode) {
     pushRoute();
 
     if (modeChanged) {
-        if (mode === 'generate') {
+        if (mode === 'create') {
             showGenerateMode();
         } else {
             hideGenerateMode();
@@ -1300,7 +1307,7 @@ function handleMenuNav(type, mode) {
     if (typeChanged) {
         selected = { name: null, isPortrait: false };
         refreshGallery();
-        if (activeMode === 'generate') {
+        if (activeMode === 'create') {
             selectedDisplay.style.display = 'none';
             galleryContentEl.style.display = 'none';
         }
@@ -1942,29 +1949,36 @@ let modeTransitioning = false;
 function showGenerateMode() {
     if (slideshowPlaying) stopSlideshow();
     if (modeTransitioning) return;
-    const wasInitialized = generateInitialized;
-    initGenerate();
-    refreshSavedGrid();
 
-    // Load the selected profile's config into the generate panel
-    if (genPanel && selected.name) {
-        const entry = navigableList.find(p =>
-            p.assetId ? p.assetId === selected.assetId : p.name === selected.name,
-        );
-        if (entry?.profile?.seed && entry.profile.controls) {
-            const displayName = entry.isPortrait ? entry.name + ' (User Version)' : entry.name;
-            genPanel.setValues(entry.profile.seed, entry.profile.controls, entry.profile.camera, displayName, entry.profile.commentary);
-            genPanel.setUnlocked();
-            // On re-entry (worker already ready), trigger render with loaded values.
-            // On first init, onReady() reads panel values and renders automatically.
-            if (wasInitialized && workerBridge?.ready) {
-                const seed = genPanel.readSeed();
-                const controls = genPanel.readControls();
-                const camera = genPanel.readCamera();
-                workerBridge.sendRenderImmediate(seed, controls, getLocale());
-                workerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
+    // Determine which create panel to show
+    const isAnimCreate = activeType === 'animation';
+    const targetEl = isAnimCreate ? animationEditorEl : generatePanelEl;
+
+    if (!isAnimCreate) {
+        const wasInitialized = generateInitialized;
+        initGenerate();
+        refreshSavedGrid();
+
+        // Load the selected profile's config into the generate panel
+        if (genPanel && selected.name) {
+            const entry = navigableList.find(p =>
+                p.assetId ? p.assetId === selected.assetId : p.name === selected.name,
+            );
+            if (entry?.profile?.seed && entry.profile.controls) {
+                const displayName = entry.isPortrait ? entry.name + ' (User Version)' : entry.name;
+                genPanel.setValues(entry.profile.seed, entry.profile.controls, entry.profile.camera, displayName, entry.profile.commentary);
+                genPanel.setUnlocked();
+                if (wasInitialized && workerBridge?.ready) {
+                    const seed = genPanel.readSeed();
+                    const controls = genPanel.readControls();
+                    const camera = genPanel.readCamera();
+                    workerBridge.sendRenderImmediate(seed, controls, getLocale());
+                    workerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
+                }
             }
         }
+    } else {
+        initAnimationEditor();
     }
 
     modeTransitioning = true;
@@ -1980,13 +1994,13 @@ function showGenerateMode() {
         selectedDisplay.classList.remove('view-fade-out');
         galleryContentEl.classList.remove('view-fade-out');
 
-        generatePanelEl.classList.remove('hidden');
-        generatePanelEl.classList.add('view-fade-in');
+        targetEl.classList.remove('hidden');
+        targetEl.classList.add('view-fade-in');
         // force reflow
-        generatePanelEl.offsetHeight;     // eslint-disable-line no-unused-expressions
+        targetEl.offsetHeight;     // eslint-disable-line no-unused-expressions
 
-        // Phase 3: fade in generate panel
-        generatePanelEl.classList.remove('view-fade-in');
+        // Phase 3: fade in create panel
+        targetEl.classList.remove('view-fade-in');
         modeTransitioning = false;
     }, 250);
 }
@@ -1995,13 +2009,27 @@ function hideGenerateMode() {
     if (modeTransitioning) return;
     modeTransitioning = true;
 
-    // Phase 1: fade out generate panel
-    generatePanelEl.classList.add('view-fade-out');
+    // Hide whichever create panel is visible
+    const visibleEl = !generatePanelEl.classList.contains('hidden') ? generatePanelEl
+        : !animationEditorEl.classList.contains('hidden') ? animationEditorEl
+        : null;
+
+    if (visibleEl === animationEditorEl) {
+        destroyAnimationEditor();
+    }
+
+    if (!visibleEl) {
+        modeTransitioning = false;
+        return;
+    }
+
+    // Phase 1: fade out create panel
+    visibleEl.classList.add('view-fade-out');
 
     setTimeout(() => {
         // Phase 2: swap visibility
-        generatePanelEl.classList.add('hidden');
-        generatePanelEl.classList.remove('view-fade-out');
+        visibleEl.classList.add('hidden');
+        visibleEl.classList.remove('view-fade-out');
 
         selectedDisplay.style.display = '';
         galleryContentEl.style.display = '';
@@ -2036,7 +2064,7 @@ document.addEventListener('keydown', (e) => {
             stopSlideshow();
             return;
         }
-        if (activeMode === 'generate') {
+        if (activeMode === 'create') {
             hideGenerateMode();
             activeMode = 'gallery';
             updateMenuNavLinks();
@@ -2068,10 +2096,10 @@ updateMenuNavLinks();
 requestAnimationFrame(() => positionMenuSlider(false));
 
 if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
-    history.replaceState({ type: 'image', profile: null }, '', '/gallery/images');
+    history.replaceState({ type: 'image', profile: null }, '', '/image');
 }
 
-if (activeMode === 'generate') {
+if (activeMode === 'create') {
     showGenerateMode();
 } else if (activeType === 'image' && route.profileSlug) {
     const entry = findProfileBySlug(route.profileSlug, route.source);

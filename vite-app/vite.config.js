@@ -13,8 +13,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, 'index.html'),
-        image: resolve(__dirname, 'image.html'),
-        animation: resolve(__dirname, 'animation.html'),
       },
       output: {
         manualChunks: {
@@ -39,8 +37,8 @@ export default defineConfig({
     name: 'gallery-routes',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        // Rewrite gallery sub-routes to index.html
-        if (req.url.startsWith('/gallery/') || req.url.startsWith('/generate/')) {
+        // Rewrite SPA sub-routes to index.html
+        if (req.url.startsWith('/image') || req.url.startsWith('/animation')) {
           req.url = '/index.html';
         }
         next();

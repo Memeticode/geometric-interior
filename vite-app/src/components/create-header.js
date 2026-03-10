@@ -31,13 +31,13 @@ export function createHeader(headerEl, { page }) {
     const navLinks = [];
     if (!isGallery) {
         const pages = [
-            { href: '/', key: 'nav.gallery', label: 'Gallery' },
-            { href: '/image.html', key: 'nav.imageEditor', label: 'Image Editor' },
-            { href: '/animation.html', key: 'nav.animationEditor', label: 'Animation Editor' },
+            { href: '/image', key: 'nav.gallery', label: 'Gallery' },
+            { href: '/image/create', key: 'nav.imageEditor', label: 'Image Editor' },
+            { href: '/animation/create', key: 'nav.animationEditor', label: 'Animation Editor' },
         ];
         for (const p of pages) {
-            const isActive = (page === 'image' && p.href === '/image.html')
-                          || (page === 'animation' && p.href === '/animation.html');
+            const isActive = (page === 'image' && p.href === '/image/create')
+                          || (page === 'animation' && p.href === '/animation/create');
             const cls = 'header-link' + (isActive ? ' header-link-active' : '');
             navLinks.push(`<a href="${p.href}" class="${cls}" data-i18n="${p.key}">${p.label}</a>`);
         }

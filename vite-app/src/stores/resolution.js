@@ -7,7 +7,7 @@ import { initCustomDropdown } from '../components/custom-dropdown.js';
 const STORAGE_KEY = 'geo-self-portrait-resolution';
 
 const PRESETS = [
-    { key: 'pre',   w: 420,  h: 270,  label: 'Pre'   },
+    { key: 'pre',   w: 420,  h: 270,  label: 'PRE'   },
     { key: 'sd',    w: 840,  h: 540,  label: 'SD'    },
     { key: 'hd',    w: 1400, h: 900,  label: 'HD'    },
     { key: 'fhd',   w: 1680, h: 1080, label: 'FHD'   },

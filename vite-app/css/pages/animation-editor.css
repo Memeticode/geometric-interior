@@ -1,5 +1,33 @@
 /* ── Animation Editor ── */
 
+/* ── Embedded editor layout (inside gallery SPA) ── */
+.animation-editor {
+    display: grid;
+    grid-template-columns: 16rem 1fr;
+    height: 100%;
+    min-height: 0;
+}
+
+.anim-editor-sidebar {
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border);
+    background: var(--bg-panel);
+    overflow: hidden;
+    min-height: 0;
+}
+
+@media (max-width: 767px) {
+    .animation-editor {
+        grid-template-columns: 1fr;
+    }
+    .anim-editor-sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        max-height: 14rem;
+    }
+}
+
 /* ── Event List ── */
 .event-list {
     display: flex;

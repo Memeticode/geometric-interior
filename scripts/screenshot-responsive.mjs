@@ -23,9 +23,10 @@ const VITE_ROOT = resolve(__dirname, '..', 'vite-app');
 
 /** Pages to screenshot. */
 const PAGES = [
-    { name: 'index',     path: '/' },
-    { name: 'image',     path: '/image.html' },
-    { name: 'animation', path: '/animation.html' },
+    { name: 'image-gallery',      path: '/image' },
+    { name: 'image-create',       path: '/image/create' },
+    { name: 'animation-gallery',  path: '/animation' },
+    { name: 'animation-create',   path: '/animation/create' },
 ];
 
 /** Breakpoint widths matching responsive.css + edge cases. */

@@ -73,6 +73,8 @@ export default {
     'generate.parameters': 'Par\u00e1metros',
     'generate.parameters.tooltip': 'Doce par\u00e1metros continuos, cada uno un eje de escala de 0 a 1. Juntos definen un espacio creativo de 12 dimensiones donde cada punto produce una composici\u00f3n \u00fanica de formas geom\u00e9tricas luminosas.',
     'generate.configureImage': 'Configurar Imagen',
+    'generate.imagePreview': 'Vista Previa',
+    'generate.savedImages': 'Im\u00e1genes Guardadas (Local)',
 
     /* ── Comentario, texto alternativo, slug ── */
     'control.commentary': 'Comentario',

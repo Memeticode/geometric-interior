@@ -9,4 +9,6 @@
 @import '../components/generate.css';
 @import '../components/modals.css';
 @import '../components/footer.css';
+@import './animation-editor.css';
+@import '../components/timeline.css';
 @import '../components/responsive.css';

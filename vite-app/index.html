@@ -35,8 +35,8 @@
                     <span class="settings-group-title" data-i18n="menu.generate">Generate</span>
                 </div>
                 <div class="settings-group-body">
-                    <button class="menu-nav-link" data-nav-type="image" data-nav-mode="generate" data-i18n="menu.generateImages">Images</button>
-                    <button class="menu-nav-link" data-nav-type="animation" data-nav-mode="generate" data-i18n="menu.generateAnimations">Animations</button>
+                    <button class="menu-nav-link" data-nav-type="image" data-nav-mode="create" data-i18n="menu.generateImages">Images</button>
+                    <button class="menu-nav-link" data-nav-type="animation" data-nav-mode="create" data-i18n="menu.generateAnimations">Animations</button>
                 </div>
             </div>
             <!-- Render queue (pinned to bottom of menu, expands upward) -->
@@ -114,7 +114,7 @@
                                 <span class="custom-dropdown-label">SD</span>
                             </button>
                             <div class="custom-dropdown-menu dropdown-down hidden" role="listbox">
-                                <button class="custom-dropdown-item" role="option" data-value="pre" aria-selected="false">Pre</button>
+                                <button class="custom-dropdown-item" role="option" data-value="pre" aria-selected="false">PRE</button>
                                 <button class="custom-dropdown-item active" role="option" data-value="sd" aria-selected="true">SD</button>
                                 <button class="custom-dropdown-item" role="option" data-value="hd" aria-selected="false">HD</button>
                                 <button class="custom-dropdown-item" role="option" data-value="fhd" aria-selected="false">FHD</button>
@@ -208,6 +208,36 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Preview + Commentary -->
+                        <div class="gen-preview-card">
+                            <div class="gen-preview-header gen-collapsible-toggle" data-target="genPreviewBody" aria-expanded="true">
+                                <span class="gen-chevron">&#9662;</span>
+                                <span data-i18n="generate.imagePreview">Image Preview</span>
+                            </div>
+                            <div class="gen-collapsible-content" id="genPreviewBody">
+                                <div class="gen-preview-wrap" id="genPreviewWrap">
+                                    <canvas id="genPreviewCanvas"></canvas>
+                                    <div class="alt-text-overlay" id="genAltTextOverlay"></div>
+                                    <div class="gen-progress-overlay hidden" id="genProgressOverlay">
+                                        <div class="gen-progress-bar"><div class="gen-progress-fill" id="genProgressFill"></div></div>
+                                        <div class="gen-progress-label" id="genProgressLabel"></div>
+                                    </div>
+                                    <div class="gen-loading-overlay hidden" id="genLoadingOverlay"><div class="gen-spinner"></div></div>
+                                    <div class="gen-error-overlay hidden" id="genErrorOverlay">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+                                        <span>WebGL unavailable — close other tabs or enable hardware acceleration</span>
+                                        <button class="gen-retry-btn" id="genRetryBtn">Retry</button>
+                                    </div>
+                                </div>
+                                <div class="gen-identity-commentary">
+                                    <label class="gen-identity-label"><span class="label-info" data-tooltip="User-provided commentary (optional)" data-i18n="control.commentary" data-i18n-tooltip="control.commentary.tooltip">Commentary<span class="info-icon">i</span></span><span id="genCommentaryCounter" class="gen-char-count">0/500</span></label>
+                                    <div class="gen-field-wrap">
+                                        <svg class="gen-field-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="12" height="12"><path d="M3 6l5-4 5 4-5 9z"/><path d="M5.5 10L8 15.5l2.5-5.5z" fill="currentColor" stroke="none"/></svg>
+                                        <textarea id="genCommentaryField" class="auto-grow gen-commentary-field" rows="2" maxlength="500"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <!-- Image Configuration (collapsible sliders) -->
                         <div class="generate-config" id="generateConfig">
                             <div class="gen-heading">
@@ -218,34 +248,83 @@
                             </div>
                             <div class="gen-sliders gen-collapsible-content" id="genSliders"></div>
                         </div>
-                        <!-- Preview + Commentary -->
-                        <div class="gen-preview-card">
-                            <div class="gen-preview-wrap" id="genPreviewWrap">
-                                <canvas id="genPreviewCanvas"></canvas>
-                                <div class="alt-text-overlay" id="genAltTextOverlay"></div>
-                                <div class="gen-progress-overlay hidden" id="genProgressOverlay">
-                                    <div class="gen-progress-bar"><div class="gen-progress-fill" id="genProgressFill"></div></div>
-                                    <div class="gen-progress-label" id="genProgressLabel"></div>
-                                </div>
-                                <div class="gen-loading-overlay hidden" id="genLoadingOverlay"><div class="gen-spinner"></div></div>
-                                <div class="gen-error-overlay hidden" id="genErrorOverlay">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="28" height="28"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-                                    <span>WebGL unavailable — close other tabs or enable hardware acceleration</span>
-                                    <button class="gen-retry-btn" id="genRetryBtn">Retry</button>
-                                </div>
-                            </div>
-                            <div class="gen-identity-commentary">
-                                <label class="gen-identity-label"><span class="label-info" data-tooltip="User-provided commentary (optional)" data-i18n="control.commentary" data-i18n-tooltip="control.commentary.tooltip">Commentary<span class="info-icon">i</span></span><span id="genCommentaryCounter" class="gen-char-count">0/500</span></label>
-                                <div class="gen-field-wrap">
-                                    <svg class="gen-field-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" width="12" height="12"><path d="M3 6l5-4 5 4-5 9z"/><path d="M5.5 10L8 15.5l2.5-5.5z" fill="currentColor" stroke="none"/></svg>
-                                    <textarea id="genCommentaryField" class="auto-grow gen-commentary-field" rows="2" maxlength="500"></textarea>
+                        <!-- Saved images grid -->
+                        <div class="gen-saved-section" id="genSavedSection">
+                            <div class="gen-saved-title" data-i18n="generate.savedImages">Saved Images (Local)</div>
+                            <div class="gen-saved-grid" id="genSavedGrid"></div>
+                        </div>
+                        <!-- Render queue -->
+                        <div class="gen-queue" id="genQueue"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Animation editor (hidden by default, shown at /animation/create) -->
+            <div class="animation-editor hidden" id="animationEditor">
+                <div class="anim-editor-sidebar">
+                    <div class="anim-panel-header">
+                        <span class="collapsible-label" data-i18n="anim.scenes">Scenes</span>
+                    </div>
+                    <div id="animEventList" class="event-list"></div>
+                    <button id="animAddEventBtn" class="add-event-btn" data-i18n="anim.addEvent">+ Add Event</button>
+                    <div class="anim-settings" id="animSettings">
+                        <div class="anim-setting-row">
+                            <span class="anim-setting-label" data-i18n="anim.fps">FPS</span>
+                            <select id="animFpsSelect" class="select-base anim-fps-select">
+                                <option value="12">12</option>
+                                <option value="24">24</option>
+                                <option value="30" selected>30</option>
+                                <option value="60">60</option>
+                            </select>
+                        </div>
+                        <div class="anim-setting-row">
+                            <span class="anim-setting-label" data-i18n="anim.resolution">Resolution</span>
+                            <select id="animResolutionSelect" class="select-base anim-fps-select">
+                                <option value="pre">PRE (420&#215;270)</option>
+                                <option value="sd">SD (840&#215;540)</option>
+                                <option value="hd" selected>HD (1400&#215;900)</option>
+                                <option value="fhd">FHD (1680&#215;1080)</option>
+                                <option value="qhd">QHD (2520&#215;1620)</option>
+                                <option value="4k">4K (3360&#215;2160)</option>
+                            </select>
+                        </div>
+                        <div class="anim-setting-row">
+                            <span class="anim-setting-label" data-i18n="anim.totalDuration">Duration</span>
+                            <span id="animDurationReadout" class="anim-setting-value">0.0s</span>
+                        </div>
+                        <div class="anim-setting-row">
+                            <span class="anim-setting-label" data-i18n="anim.totalFrames">Frames</span>
+                            <span id="animFrameReadout" class="anim-setting-value">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="anim-stage-content">
+                    <div class="preview-header" id="animPreviewHeader">
+                        <span class="preview-profile-name" id="animPreviewProfileName"></span>
+                        <span class="preview-sep">&mdash;</span>
+                        <span class="preview-seed-label" id="animPreviewSeedLabel"></span>
+                    </div>
+                    <div class="render-card" id="animRenderCard">
+                        <div class="canvas-wrapper">
+                            <canvas id="animCanvas" width="1400" height="900"></canvas>
+                            <div id="animCanvasOverlay" class="canvas-overlay">
+                                <div class="canvas-overlay-inner">
+                                    <div class="canvas-overlay-spinner"></div>
+                                    <span id="animCanvasOverlayText" class="canvas-overlay-text"></span>
                                 </div>
                             </div>
                         </div>
-                        <!-- Saved images grid -->
-                        <div class="gen-saved-grid" id="genSavedGrid"></div>
-                        <!-- Render queue -->
-                        <div class="gen-queue" id="genQueue"></div>
+                    </div>
+                    <div id="animTimelineArea" class="timeline-area"></div>
+                    <div class="anim-action-bar">
+                        <div class="anim-action-info">
+                            <span id="animTotalDurationLabel">0.0s</span>
+                            <span>&middot;</span>
+                            <span id="animTotalFrameLabel">0 frames</span>
+                        </div>
+                        <div class="anim-action-buttons">
+                            <button id="animPreviewPlayBtn" class="anim-preview-btn" disabled data-i18n="anim.preview">&#9654; Preview</button>
+                            <button id="animRenderBtn" class="anim-render-btn" disabled data-i18n="anim.renderAnimation">Render Animation</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -253,6 +332,23 @@
 
         <footer class="app-footer"></footer>
 
+    </div>
+
+    <!-- Animation profile picker modal -->
+    <div id="animProfilePickerModal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+        <div class="modal-box" style="max-width: 36rem;">
+            <div class="modal-header">
+                <span class="modal-title" data-i18n="anim.selectProfile">Select Profile</span>
+                <button id="animProfilePickerClose" class="modal-close" aria-label="Close" data-i18n-aria="aria.close">
+                    <div class="panel-toggle-icon">
+                        <span class="bar bar-top"></span>
+                        <span class="bar bar-mid"></span>
+                        <span class="bar bar-bot"></span>
+                    </div>
+                </button>
+            </div>
+            <div class="modal-body" id="animProfilePickerBody"></div>
+        </div>
     </div>
 
     <!-- Shared modals, toast, tooltip created by JS (src/components/create-shared-dom.js) -->
