@@ -53,9 +53,9 @@ export function createHeader(headerEl, { page }) {
     const allLinks = [...navLinks, ...statementBtns];
     const linksHTML = allLinks.join('<span class="header-sep">&middot;</span>');
 
-    // ── Header actions (gallery only: share button + popover) ──
-    const actionsHTML = isGallery
-        ? `<div class="header-actions"><div class="share-btn-wrap" id="shareWrap"></div></div>`
+    // ── Share button (gallery only) ──
+    const shareHTML = isGallery
+        ? `<div class="share-btn-wrap" id="shareWrap"></div>`
         : '';
 
     // ── Assemble ──
@@ -65,7 +65,7 @@ export function createHeader(headerEl, { page }) {
             <h1 data-i18n="header.title">Geometric Interior: Self-Portraits of a Predictive Model</h1>
             <div class="header-links">${linksHTML}</div>
         </div>
-        ${actionsHTML}`;
+        ${shareHTML}`;
 
     // Populate share button from shared source
     const shareWrap = headerEl.querySelector('#shareWrap');

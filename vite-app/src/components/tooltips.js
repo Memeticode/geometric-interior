@@ -113,8 +113,6 @@ export function initTooltips() {
     paramTooltip = document.getElementById('paramTooltip');
 
     let recentTouch = false;
-    let pressTimer = null;
-    let didLongPress = false;
     let pressTarget = null;
 
     function findTooltip(target) {
@@ -136,30 +134,35 @@ export function initTooltips() {
         hideTooltip();
     });
 
+    /* Touch tap-to-toggle: detect short taps on [data-tooltip] elements */
     document.addEventListener('touchstart', (e) => {
-        const el = findTooltip(e.target);
-        if (!el) return;
-        pressTarget = el;
-        didLongPress = false;
-        pressTimer = setTimeout(() => {
-            didLongPress = true;
-            showTooltip(el);
-        }, 400);
+        pressTarget = findTooltip(e.target);
     }, { passive: true });
 
-    document.addEventListener('touchend', (e) => {
-        clearTimeout(pressTimer);
+    document.addEventListener('touchend', () => {
         recentTouch = true;
         setTimeout(() => { recentTouch = false; }, 500);
-        if (didLongPress) {
-            e.preventDefault();
-            setTimeout(hideTooltip, 1500);
-        }
         pressTarget = null;
     });
 
+    /* On touch devices, click toggles the tooltip (recentTouch gates this) */
+    document.addEventListener('click', (e) => {
+        if (!recentTouch) return;
+        const el = findTooltip(e.target);
+        if (!el || el.hasAttribute('data-tooltip-click')) {
+            /* Tap outside tooltip element — dismiss */
+            if (paramTooltip.classList.contains('visible')) hideTooltip();
+            return;
+        }
+        if (tooltipSource === el && paramTooltip.classList.contains('visible')) {
+            hideTooltip();
+        } else {
+            const rect = el.getBoundingClientRect();
+            showTooltip(el, rect.left + rect.width / 2, rect.bottom);
+        }
+    });
+
     document.addEventListener('touchmove', () => {
-        clearTimeout(pressTimer);
         pressTarget = null;
     }, { passive: true });
 }

@@ -1554,6 +1554,10 @@ class CarouselDropdownBrowser extends HTMLElement {
             const idx = this.#items.findIndex(it => it.key === this.#selectedKey);
             if (idx >= 0) this.#centerIdx = idx;
         }
+        // Hide section labels during initial unfold via CSS class
+        if (this.#isFirstRender) {
+            this.#sectionLabelContainer.classList.add('cdb-labels-deferred');
+        }
         this.#positionCards();
         this.#updateToggleVisibility();
         this.#updateSectionNavVisibility();
@@ -1564,11 +1568,10 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Fade in on first render
         if (this.#isFirstRender && this.#cards.length > 0) {
             this.#isFirstRender = false;
+
+            // Cards start invisible, fade in via double-rAF
             for (const { element } of this.#cards) {
                 element.style.setProperty('--card-opacity', '0');
-            }
-            for (const sec of this.#sectionLabels) {
-                sec.element.style.opacity = '0';
             }
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
@@ -1576,9 +1579,16 @@ class CarouselDropdownBrowser extends HTMLElement {
                         const layout = this.#cardLayout.get(element);
                         element.style.setProperty('--card-opacity', layout ? String(layout.opacity) : '0');
                     }
-                    if (this.#lastFrame) this.#applySectionLabels(this.#lastFrame);
                 });
             });
+
+            // Reveal section labels only after cards settle into final positions
+            const onSettle = (e) => {
+                if (!e.target.classList?.contains('cdb-card') || e.propertyName !== 'transform') return;
+                this.#track.removeEventListener('transitionend', onSettle);
+                this.#sectionLabelContainer.classList.remove('cdb-labels-deferred');
+            };
+            this.#track.addEventListener('transitionend', onSettle);
         }
     }
 

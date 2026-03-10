@@ -79,6 +79,7 @@ const SLIDER_GRADIENTS = {
  * @param {HTMLElement} [opts.nameCounter] — char counter for name
  * @param {HTMLElement} [opts.nameError] — validation error for name
  * @param {HTMLElement} [opts.commentaryCounter] — char counter for commentary
+ * @param {HTMLElement} [opts.statusMessageEl] — status message element (saved/unsaved/unsaved edits)
  */
 export function initGeneratePanel(opts) {
     const {
@@ -88,6 +89,7 @@ export function initGeneratePanel(opts) {
         onControlChange, onRender, onSave, onFullscreen,
         nameTooltipEl, commentaryField,
         previewCanvas, nameCounter, nameError, commentaryCounter,
+        statusMessageEl,
     } = opts;
 
     const sliderInputs = {};
@@ -96,6 +98,7 @@ export function initGeneratePanel(opts) {
     let locked = false;       // true when viewing a saved (immutable) profile
     let savedName = null;     // name of the saved profile (null = unsaved draft)
     let savedAssetId = null;  // asset ID if viewing a saved generated image
+    let wasSaved = false;     // true if this session started from or was saved to a profile
 
     // ── Unified undo/redo timeline ──
     // Single flat stack: parameter tweaks, randomize, image loads all push entries.
@@ -216,6 +219,22 @@ export function initGeneratePanel(opts) {
     function updateActionButtons() {
         if (saveBtn) saveBtn.disabled = !nameField.value.trim();
         if (renderBtn) renderBtn.disabled = !savedAssetId;
+        updateStatusMessage();
+    }
+
+    /** Update the status message (Saved / Unsaved / Unsaved Edits). */
+    function updateStatusMessage() {
+        if (!statusMessageEl) return;
+        if (locked && savedAssetId) {
+            statusMessageEl.textContent = t('generate.statusSaved');
+            statusMessageEl.dataset.status = 'saved';
+        } else if (wasSaved) {
+            statusMessageEl.textContent = t('generate.statusUnsavedEdits');
+            statusMessageEl.dataset.status = 'unsaved';
+        } else {
+            statusMessageEl.textContent = t('generate.statusUnsaved');
+            statusMessageEl.dataset.status = 'unsaved';
+        }
     }
 
     function updateInputDisabledState() {
@@ -238,6 +257,7 @@ export function initGeneratePanel(opts) {
         locked = true;
         savedName = name || null;
         savedAssetId = opts?.assetId || null;
+        wasSaved = !!savedAssetId;
         updateInputDisabledState();
         updateActionButtons();
     }
@@ -527,6 +547,7 @@ export function initGeneratePanel(opts) {
 
     function randomize() {
         if (locked) setUnlocked();
+        wasSaved = false;
         tagArrEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));
         tagStrEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));
         tagDetEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));

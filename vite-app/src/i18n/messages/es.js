@@ -75,6 +75,9 @@ export default {
     'generate.configureImage': 'Configurar Imagen',
     'generate.imagePreview': 'Vista Previa',
     'generate.savedImages': 'Im\u00e1genes Guardadas (Local)',
+    'generate.statusSaved': 'Guardado',
+    'generate.statusUnsaved': 'Sin Guardar',
+    'generate.statusUnsavedEdits': 'Cambios Sin Guardar',
 
     /* ── Comentario, texto alternativo, slug ── */
     'control.commentary': 'Comentario',

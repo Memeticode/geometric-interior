@@ -94,6 +94,7 @@
 /* ── Share popover ── */
 .share-btn-wrap {
     position: relative;
+    align-self: center;
 }
 
 .share-popover {

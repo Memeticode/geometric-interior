@@ -75,6 +75,9 @@ export default {
     'generate.configureImage': 'Configure Image',
     'generate.imagePreview': 'Image Preview',
     'generate.savedImages': 'Saved Images (Local)',
+    'generate.statusSaved': 'Saved',
+    'generate.statusUnsaved': 'Unsaved',
+    'generate.statusUnsavedEdits': 'Unsaved Edits',
 
     /* ── Commentary, alt-text, slug ── */
     'control.commentary': 'Commentary',

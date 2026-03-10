@@ -485,6 +485,10 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     overflow: hidden;
     pointer-events: none;
 }
+.cdb-section-label-container.cdb-labels-deferred .cdb-section-label {
+    opacity: 0 !important;
+    transition: none !important;
+}
 .cdb-strip.cdb-flattened .cdb-section-label-container {
     opacity: 0;
     max-height: 0;
@@ -536,5 +540,59 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 }
 .cdb-grid-section-header:first-child {
     padding-top: 0;
+}
+
+/* ── Responsive overrides ── */
+
+/* ── xs (375px+) ── */
+@media (min-width: 375px) {
+    :root { --card-w: 90px; }
+    .cdb-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+}
+
+/* ── sm (480px+) ── */
+@media (min-width: 480px) {
+    :root { --card-w: 110px; }
+    .cdb-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* ── md (640px+) ── */
+@media (min-width: 640px) {
+    :root { --card-w: 130px; }
+    .cdb-grid {
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    }
+}
+
+/* ── lg (768px+) ── */
+@media (min-width: 768px) {
+    :root { --card-w: 160px; }
+    .cdb-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.75rem;
+    }
+}
+
+/* ── xl (1024px+) ── */
+@media (min-width: 1024px) {
+    :root { --card-w: 180px; }
+}
+
+/* ── 2xl (1440px+) ── */
+@media (min-width: 1440px) {
+    :root { --card-w: 210px; }
+}
+
+/* ── 3xl (1920px+) ── */
+@media (min-width: 1920px) {
+    :root { --card-w: 240px; }
+}
+
+/* ── 4k (2560px+) ── */
+@media (min-width: 2560px) {
+    :root { --card-w: 280px; }
 }
 

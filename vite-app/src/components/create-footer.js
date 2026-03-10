@@ -11,7 +11,6 @@
  */
 export function createFooter(footerEl, { page }) {
     const isGallery = page === 'gallery';
-    const hasResolution = page === 'image';
 
     const themeSwitcherHTML = `
         <div class="theme-switcher" id="themeSwitcher">
@@ -49,24 +48,6 @@ export function createFooter(footerEl, { page }) {
                 </div>
             </div>`;
     } else {
-        const resolutionHTML = hasResolution ? `
-            <div class="settings-section">
-                <span class="settings-section-label" data-i18n="footer.resolution">Resolution</span>
-                <div class="custom-dropdown" id="resolutionDropdown">
-                    <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox" aria-expanded="false" aria-label="Resolution" data-i18n-aria="footer.resolutionLabel">
-                        <span class="custom-dropdown-label">HD (1400&#215;900)</span>
-                    </button>
-                    <div class="custom-dropdown-menu hidden" role="listbox">
-                        <button class="custom-dropdown-item" role="option" data-value="pre" aria-selected="false">PRE (420&#215;270)</button>
-                        <button class="custom-dropdown-item" role="option" data-value="sd" aria-selected="false">SD (840&#215;540)</button>
-                        <button class="custom-dropdown-item active" role="option" data-value="hd" aria-selected="true">HD (1400&#215;900)</button>
-                        <button class="custom-dropdown-item" role="option" data-value="fhd" aria-selected="false">FHD (1680&#215;1080)</button>
-                        <button class="custom-dropdown-item" role="option" data-value="qhd" aria-selected="false">QHD (2520&#215;1620)</button>
-                        <button class="custom-dropdown-item" role="option" data-value="4k" aria-selected="false">4K (3360&#215;2160)</button>
-                    </div>
-                </div>
-            </div>` : '';
-
         footerEl.innerHTML = `
             <div class="footer-content">
                 <div class="settings-btn-wrap">
@@ -82,7 +63,6 @@ export function createFooter(footerEl, { page }) {
                             <span class="settings-section-label" data-i18n="footer.language">Language</span>
                             ${langDropdownHTML}
                         </div>
-                        ${resolutionHTML}
                     </div>
                 </div>
                 ${githubLinkHTML}
@@ -92,7 +72,6 @@ export function createFooter(footerEl, { page }) {
     return {
         themeSwitcher: footerEl.querySelector('#themeSwitcher'),
         langDropdown: footerEl.querySelector('#langDropdown'),
-        resolutionDropdown: footerEl.querySelector('#resolutionDropdown'),
         pageSettingsBtn: footerEl.querySelector('#pageSettingsBtn'),
         pageSettingsPopover: footerEl.querySelector('#pageSettingsPopover'),
     };

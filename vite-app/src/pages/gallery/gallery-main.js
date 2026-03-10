@@ -217,6 +217,7 @@ const genPreviewWrap = document.getElementById('genPreviewWrap');
 const genUndoBtn = document.getElementById('genUndoBtn');
 const genRedoBtn = document.getElementById('genRedoBtn');
 const genFullscreenBtn = document.getElementById('genFullscreenBtn');
+const genStatusMessage = document.getElementById('genStatusMessage');
 const genSavedGridEl = document.getElementById('genSavedGrid');
 const genLoadingOverlay = document.getElementById('genLoadingOverlay');
 const genErrorOverlay = document.getElementById('genErrorOverlay');
@@ -1846,6 +1847,7 @@ function initGenerate() {
         nameCounter: genNameCounter,
         nameError: genNameError,
         commentaryCounter: genCommentaryCounter,
+        statusMessageEl: genStatusMessage,
         onControlChange(seed, controls, camera) {
             if (workerBridge && workerBridge.ready) {
                 workerBridge.sendRender(seed, controls, getLocale());

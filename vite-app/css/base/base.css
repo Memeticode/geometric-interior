@@ -18,6 +18,8 @@
     --modal-backdrop: rgba(0, 0, 0, 0.80);
     --modal-bg: #0f1219;
     --progress: rgba(180, 130, 255, 0.55);
+    --status-saved: rgb(80, 200, 120);
+    --status-unsaved: rgb(240, 170, 60);
 }
 
 html[data-theme="dark"] {
@@ -44,6 +46,8 @@ html[data-theme="light"] {
     --modal-backdrop: rgba(0, 0, 0, 0.50);
     --modal-bg: #ffffff;
     --progress: rgba(120, 40, 200, 0.55);
+    --status-saved: rgb(40, 160, 80);
+    --status-unsaved: rgb(200, 140, 30);
 }
 
 /* ── Universal box-sizing ── */
