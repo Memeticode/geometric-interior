@@ -110,7 +110,7 @@ if (localStorage.getItem(MENU_STATE_KEY) === '1') {
     siteMenu.style.transition = 'none';
     siteMenuBackdrop.style.transition = 'none';
     appContainer.style.setProperty('--menu-restore', '1');
-    const main = document.querySelector('.gallery-main');
+    const main = document.querySelector('.main-content');
     const footer = document.querySelector('.app-footer');
     if (main) main.style.transition = 'none';
     if (footer) footer.style.transition = 'none';
@@ -176,24 +176,23 @@ function thumbCacheKey(seed, controls) {
 }
 
 /* ── DOM refs ── */
-const selectedImage = document.getElementById('selectedImage');
-const selectedImageWrap = document.getElementById('selectedImageWrap');
-const selectedName = document.getElementById('selectedName');
-const selectedSeed = document.getElementById('selectedSeed');
-const selectedDisplay = document.getElementById('selectedDisplay');
+const gallerySelectionVisual = document.getElementById('gallerySelectionVisual');
+const gallerySelectionCardVisualWrap = document.getElementById('gallerySelectionCardVisualWrap');
+const gallerySelectionHeaderTitle = document.getElementById('gallerySelectionHeaderTitle');
+const gallerySelectionHeaderSeed = document.getElementById('gallerySelectionHeaderSeed');
+const gallerySelectionContainer = document.getElementById('gallerySelectionContainer');
 const galleryContentEl = document.getElementById('galleryContent');
-const selectedGenToggle = document.getElementById('selectedGenToggle');
 const selectedGenTitle = document.getElementById('selectedGenTitle');
-const selectedGenAlt = document.getElementById('selectedGenAlt');
+const gallerySelectionCardCommentaryText = document.getElementById('gallerySelectionCardCommentaryText');
 const galleryArrowLeft = document.getElementById('galleryArrowLeft');
 const galleryArrowRight = document.getElementById('galleryArrowRight');
 const selectedVideo = document.getElementById('selectedVideo');
-const selectedHeaderText = document.querySelector('.selected-header-text');
-const selectedFooter = document.querySelector('.selected-footer');
+const gallerySelectionHeaderText = document.querySelector('.gallery-selection-header-text');
+const gallerySelectionCardFooter = document.querySelector('.gallery-selection-card-footer');
 
 /* ── Carousel component ── */
 const carouselBrowser = document.getElementById('carouselBrowser');
-const galleryMainEl = document.querySelector('.gallery-main');
+const galleryMainEl = document.querySelector('.main-content');
 
 
 /* ── Generate / Animation editor DOM refs ── */
@@ -230,13 +229,6 @@ const animSectionEl = document.getElementById('animSection');
 const animGalleryEl = document.getElementById('animGallery');
 
 if (genRetryBtn) genRetryBtn.addEventListener('click', retryGenerate);
-
-/* ── Generated text toggle ── */
-selectedGenToggle.addEventListener('click', () => {
-    const expanded = selectedGenToggle.getAttribute('aria-expanded') === 'true';
-    selectedGenToggle.setAttribute('aria-expanded', String(!expanded));
-    selectedGenAlt.classList.toggle('expanded', !expanded);
-});
 
 let resizeRaf;
 window.addEventListener('resize', () => {
@@ -343,7 +335,7 @@ function computeContainedRect(aspectRatio) {
 async function openFullscreen() {
     if (fullscreenOverlay) return;
 
-    const galleryRect = selectedImageWrap.getBoundingClientRect();
+    const galleryRect = gallerySelectionCardVisualWrap.getBoundingClientRect();
     const aspectRatio = galleryRect.width / galleryRect.height;
     const finalRect = computeContainedRect(aspectRatio);
 
@@ -362,8 +354,8 @@ async function openFullscreen() {
         media.playsInline = true;
     } else {
         media = document.createElement('img');
-        media.src = selectedImage.src;
-        media.alt = selectedImage.alt;
+        media.src = gallerySelectionVisual.src;
+        media.alt = gallerySelectionVisual.alt;
         // Decode image before animating to avoid blank/slow first frame
         try { await media.decode(); } catch { /* proceed anyway */ }
     }
@@ -400,7 +392,7 @@ async function openFullscreen() {
     fullscreenOverlay = overlay;
 
     // Hide the source image immediately
-    selectedImage.style.visibility = 'hidden';
+    gallerySelectionVisual.style.visibility = 'hidden';
     selectedVideo.style.visibility = 'hidden';
 
     // Force layout, then animate
@@ -418,7 +410,7 @@ function closeFullscreen() {
     const media = overlay.querySelector('#fullscreenMedia');
     if (!media) { overlay.remove(); return; }
 
-    const galleryRect = selectedImageWrap.getBoundingClientRect();
+    const galleryRect = gallerySelectionCardVisualWrap.getBoundingClientRect();
     const finalRect = {
         top: parseFloat(media.style.top),
         left: parseFloat(media.style.left),
@@ -438,7 +430,7 @@ function closeFullscreen() {
 
     media.addEventListener('transitionend', () => {
         overlay.remove();
-        selectedImage.style.visibility = '';
+        gallerySelectionVisual.style.visibility = '';
         selectedVideo.style.visibility = '';
     }, { once: true });
 }
@@ -454,8 +446,8 @@ function syncFullscreenMedia() {
     if (isVideo && media.tagName === 'VIDEO') {
         media.src = selectedVideo.src;
     } else if (!isVideo && media.tagName === 'IMG') {
-        media.src = selectedImage.src;
-        media.alt = selectedImage.alt;
+        media.src = gallerySelectionVisual.src;
+        media.alt = gallerySelectionVisual.alt;
     }
 }
 
@@ -726,7 +718,7 @@ document.addEventListener('resolutionchange', (e) => {
 
     // Portrait: swap to resolution-specific static image
     if (entry.isPortrait) {
-        selectedImage.src = getDisplaySrc(entry.name, profile, true);
+        gallerySelectionVisual.src = getDisplaySrc(entry.name, profile, true);
         syncFullscreenMedia();
         return;
     }
@@ -802,9 +794,9 @@ function applySelection(name, profile, isPortrait, assetId) {
     const fadeDuration = 250;
 
     // Fade out text + image + alt-text overlay together
-    selectedHeaderText.classList.add('fading');
-    selectedFooter.classList.add('fading');
-    selectedImage.style.opacity = '0';
+    gallerySelectionHeaderText.classList.add('fading');
+    gallerySelectionCardFooter.classList.add('fading');
+    gallerySelectionVisual.style.opacity = '0';
     fadeOutAltText();
 
     // Cancel any pending fade-in from a previous rapid selection
@@ -813,103 +805,91 @@ function applySelection(name, profile, isPortrait, assetId) {
     // After fade-out completes, swap content and fade back in
     selectionFadeTimer = setTimeout(() => {
         // Update text
-        selectedName.textContent = name;
-        selectedSeed.textContent = Array.isArray(profile.seed) ? seedTagToLabel(profile.seed) : (profile.seed || '');
+        gallerySelectionHeaderTitle.textContent = name;
+        gallerySelectionHeaderSeed.textContent = Array.isArray(profile.seed) ? seedTagToLabel(profile.seed) : (profile.seed || '');
 
         // Portrait commentary vs generated/custom text
         if (isPortrait && profile.generated) {
             selectedGenTitle.textContent = '';
-            selectedGenAlt.textContent = profile.commentary || '';
-            selectedGenAlt.classList.add('expanded');
-            selectedGenToggle.style.display = '';
-            selectedGenToggle.classList.add('portrait-static');
-            selectedImage.alt = `${name} \u2014 ${profile.generated.title}`;
-            selectedImage.setAttribute('data-tooltip', profile.generated['alt-text']);
-            selectedImage.setAttribute('data-tooltip-pos', 'overlay');
+            gallerySelectionCardCommentaryText.textContent = profile.commentary || '';
+            gallerySelectionCardCommentaryText.classList.add('expanded');
+            gallerySelectionVisual.alt = `${name} \u2014 ${profile.generated.title}`;
+            gallerySelectionVisual.setAttribute('data-tooltip', profile.generated['alt-text']);
+            gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
         } else if (assetId) {
             const asset = generatedAssets.find(a => a.id === assetId);
             if (asset && asset.meta && asset.meta.commentary) {
                 // Commentary exists — display like sampler portraits
                 selectedGenTitle.textContent = '';
-                selectedGenAlt.textContent = asset.meta.commentary;
-                selectedGenAlt.classList.add('expanded');
-                selectedGenToggle.style.display = '';
-                selectedGenToggle.classList.add('portrait-static');
-                selectedImage.alt = `${name} — ${asset.meta.title || ''}`;
-                selectedImage.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
-                selectedImage.setAttribute('data-tooltip-pos', 'overlay');
+                gallerySelectionCardCommentaryText.textContent = asset.meta.commentary;
+                gallerySelectionCardCommentaryText.classList.add('expanded');
+                gallerySelectionVisual.alt = `${name} — ${asset.meta.title || ''}`;
+                gallerySelectionVisual.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
+                gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
             } else if (asset && asset.meta) {
                 // No commentary — show title + collapsible alt-text
                 selectedGenTitle.textContent = asset.meta.title || '';
-                selectedGenAlt.textContent = asset.meta.altText || '';
-                selectedImage.alt = asset.meta.title || name;
-                selectedImage.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
-                selectedImage.setAttribute('data-tooltip-pos', 'overlay');
-                selectedGenToggle.style.display = '';
-                selectedGenToggle.classList.remove('portrait-static');
-                selectedGenAlt.classList.remove('expanded');
-                selectedGenToggle.setAttribute('aria-expanded', 'false');
+                gallerySelectionCardCommentaryText.textContent = asset.meta.altText || '';
+                gallerySelectionVisual.alt = asset.meta.title || name;
+                gallerySelectionVisual.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
+                gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
+                gallerySelectionCardCommentaryText.classList.remove('expanded');
             }
         } else if (profile.commentary) {
             // User-saved profile with commentary
             const { title, altText } = generateProfileText(profile);
             selectedGenTitle.textContent = '';
-            selectedGenAlt.textContent = profile.commentary;
-            selectedGenAlt.classList.add('expanded');
-            selectedGenToggle.style.display = '';
-            selectedGenToggle.classList.add('portrait-static');
-            selectedImage.alt = `${name} — ${title}`;
-            selectedImage.setAttribute('data-tooltip', altText || title);
-            selectedImage.setAttribute('data-tooltip-pos', 'overlay');
+            gallerySelectionCardCommentaryText.textContent = profile.commentary;
+            gallerySelectionCardCommentaryText.classList.add('expanded');
+            gallerySelectionVisual.alt = `${name} — ${title}`;
+            gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
+            gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
         } else {
             const { title, altText } = generateProfileText(profile);
             selectedGenTitle.textContent = title;
-            selectedGenAlt.textContent = altText;
-            selectedImage.alt = title;
-            selectedImage.setAttribute('data-tooltip', altText || title);
-            selectedImage.setAttribute('data-tooltip-pos', 'overlay');
-            selectedGenToggle.style.display = '';
-            selectedGenToggle.classList.remove('portrait-static');
-            selectedGenAlt.classList.remove('expanded');
-            selectedGenToggle.setAttribute('aria-expanded', 'false');
+            gallerySelectionCardCommentaryText.textContent = altText;
+            gallerySelectionVisual.alt = title;
+            gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
+            gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
+            gallerySelectionCardCommentaryText.classList.remove('expanded');
         }
 
         // Update alt-text overlay if visible
-        updateAltText(selectedImage.getAttribute('data-tooltip'));
+        updateAltText(gallerySelectionVisual.getAttribute('data-tooltip'));
 
         // Swap image src (old image is now fully hidden)
         if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
         if (snapshotUrl) { URL.revokeObjectURL(snapshotUrl); snapshotUrl = null; }
 
-        selectedImage.addEventListener('load', () => {
-            selectedImage.style.opacity = '1';
+        gallerySelectionVisual.addEventListener('load', () => {
+            gallerySelectionVisual.style.opacity = '1';
         }, { once: true });
 
         if (assetId) {
             const asset = generatedAssets.find(a => a.id === assetId);
-            if (asset && asset.thumbDataUrl) selectedImage.src = asset.thumbDataUrl;
+            if (asset && asset.thumbDataUrl) gallerySelectionVisual.src = asset.thumbDataUrl;
             getAsset(assetId).then(full => {
                 if (full && full.staticBlob && selected.assetId === assetId) {
                     currentStaticUrl = URL.createObjectURL(full.staticBlob);
-                    selectedImage.src = currentStaticUrl;
+                    gallerySelectionVisual.src = currentStaticUrl;
                 }
             });
         } else {
             const src = getDisplaySrc(name, profile, isPortrait);
-            if (src) selectedImage.src = src;
+            if (src) gallerySelectionVisual.src = src;
         }
 
         if (isPortrait) {
-            selectedImage.onerror = () => {
-                selectedImage.onerror = null;
+            gallerySelectionVisual.onerror = () => {
+                gallerySelectionVisual.onerror = null;
                 const pngSrc = `/static/images/portraits/${slugify(name)}-thumb.png`;
-                selectedImage.src = pngSrc;
+                gallerySelectionVisual.src = pngSrc;
             };
         }
 
         // Fade text back in
-        selectedHeaderText.classList.remove('fading');
-        selectedFooter.classList.remove('fading');
+        gallerySelectionHeaderText.classList.remove('fading');
+        gallerySelectionCardFooter.classList.remove('fading');
     }, fadeDuration);
 
     currentIndex = navigableList.findIndex(p =>
@@ -966,7 +946,7 @@ galleryArrowRight.addEventListener('click', () => { if (slideshowPlaying) stopSl
 
 /* ── Alt-text overlays (independent of tooltip system) ── */
 // Suppress hover tooltips on these elements (they use dedicated overlays instead)
-selectedImage.setAttribute('data-tooltip-click', '');
+gallerySelectionVisual.setAttribute('data-tooltip-click', '');
 genPreviewCanvas.setAttribute('data-tooltip-click', '');
 
 const altTextOverlay = document.getElementById('altTextOverlay');
@@ -990,8 +970,8 @@ function updateAltText(text) {
     altTextOverlay.classList.add('visible');
 }
 
-selectedImage.addEventListener('click', () => {
-    const text = selectedImage.getAttribute('data-tooltip');
+gallerySelectionVisual.addEventListener('click', () => {
+    const text = gallerySelectionVisual.getAttribute('data-tooltip');
     if (!text) return;
     if (altTextVisible) {
         hideAltText(altTextOverlay);
@@ -1083,7 +1063,7 @@ function showImageGallery() {
     }
 
     galleryContentEl.style.display = '';
-    selectedDisplay.style.display = '';
+    gallerySelectionContainer.style.display = '';
 }
 
 /**
@@ -1127,7 +1107,7 @@ function showAnimationGallery() {
     }
 
     galleryContentEl.style.display = '';
-    selectedDisplay.style.display = animAssets.length > 0 ? '' : 'none';
+    gallerySelectionContainer.style.display = animAssets.length > 0 ? '' : 'none';
 }
 
 /**
@@ -1209,12 +1189,12 @@ function applyAnimSelection(assetId) {
     if (!asset) return;
 
     selected = { name: asset.name, isPortrait: false, assetId, isAnimation: true };
-    selectedName.textContent = asset.name;
-    selectedSeed.textContent = '';
+    gallerySelectionHeaderTitle.textContent = asset.name;
+    gallerySelectionHeaderSeed.textContent = '';
 
     const meta = asset.meta || {};
     selectedGenTitle.textContent = meta.title || asset.name;
-    selectedGenAlt.textContent = meta.durationS
+    gallerySelectionCardCommentaryText.textContent = meta.durationS
         ? `${meta.durationS.toFixed(1)}s animation at ${meta.fps || 30}fps (${meta.width || '?'}×${meta.height || '?'})`
         : '';
 
@@ -1224,12 +1204,12 @@ function applyAnimSelection(assetId) {
         currentVideoUrl = URL.createObjectURL(asset.videoBlob);
         selectedVideo.src = currentVideoUrl;
         selectedVideo.classList.remove('hidden');
-        selectedImage.style.display = 'none';
+        gallerySelectionVisual.style.display = 'none';
     } else if (asset.thumbDataUrl) {
         // No video — show thumbnail
         selectedVideo.classList.add('hidden');
-        selectedImage.style.display = '';
-        selectedImage.src = asset.thumbDataUrl;
+        gallerySelectionVisual.style.display = '';
+        gallerySelectionVisual.src = asset.thumbDataUrl;
     }
 
     // Highlight card
@@ -1253,7 +1233,7 @@ function clearVideoPlayback() {
     }
     selectedVideo.src = '';
     selectedVideo.classList.add('hidden');
-    selectedImage.style.display = '';
+    gallerySelectionVisual.style.display = '';
 }
 
 /* ── Menu navigation links ── */
@@ -1309,7 +1289,7 @@ function handleMenuNav(type, mode) {
         selected = { name: null, isPortrait: false };
         refreshGallery();
         if (activeMode === 'create') {
-            selectedDisplay.style.display = 'none';
+            gallerySelectionContainer.style.display = 'none';
             galleryContentEl.style.display = 'none';
         }
     }
@@ -1780,7 +1760,7 @@ function initGenerate() {
         workerBridge.on('snapshot-complete', (msg) => {
             if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
             snapshotUrl = URL.createObjectURL(msg.blob);
-            selectedImage.src = snapshotUrl;
+            gallerySelectionVisual.src = snapshotUrl;
         });
         workerBridge.on('frame-captured', (msg) => {
             if (pendingFullscreenCaptureId && msg.requestId === pendingFullscreenCaptureId) {
@@ -1986,14 +1966,14 @@ function showGenerateMode() {
     modeTransitioning = true;
 
     // Phase 1: fade out gallery views
-    selectedDisplay.classList.add('view-fade-out');
+    gallerySelectionContainer.classList.add('view-fade-out');
     galleryContentEl.classList.add('view-fade-out');
 
     setTimeout(() => {
         // Phase 2: swap visibility
-        selectedDisplay.style.display = 'none';
+        gallerySelectionContainer.style.display = 'none';
         galleryContentEl.style.display = 'none';
-        selectedDisplay.classList.remove('view-fade-out');
+        gallerySelectionContainer.classList.remove('view-fade-out');
         galleryContentEl.classList.remove('view-fade-out');
 
         targetEl.classList.remove('hidden');
@@ -2033,15 +2013,15 @@ function hideGenerateMode() {
         visibleEl.classList.add('hidden');
         visibleEl.classList.remove('view-fade-out');
 
-        selectedDisplay.style.display = '';
+        gallerySelectionContainer.style.display = '';
         galleryContentEl.style.display = '';
-        selectedDisplay.classList.add('view-fade-in');
+        gallerySelectionContainer.classList.add('view-fade-in');
         galleryContentEl.classList.add('view-fade-in');
         // force reflow
-        selectedDisplay.offsetHeight;     // eslint-disable-line no-unused-expressions
+        gallerySelectionContainer.offsetHeight;     // eslint-disable-line no-unused-expressions
 
         // Phase 3: fade in gallery views
-        selectedDisplay.classList.remove('view-fade-in');
+        gallerySelectionContainer.classList.remove('view-fade-in');
         galleryContentEl.classList.remove('view-fade-in');
         modeTransitioning = false;
     }, 250);
@@ -2130,8 +2110,8 @@ document.addEventListener('localechange', () => {
         if (profile) {
             const { title, altText } = generateProfileText(profile);
             selectedGenTitle.textContent = title;
-            selectedGenAlt.textContent = altText;
-            selectedImage.alt = title;
+            gallerySelectionCardCommentaryText.textContent = altText;
+            gallerySelectionVisual.alt = title;
         }
     }
 });
@@ -2152,7 +2132,7 @@ initSharePopover({
     sharePopover: document.getElementById('sharePopover'),
     getShareURL: () => window.location.origin + window.location.pathname,
     getShareTitle: () => {
-        const name = selectedName.textContent.trim();
+        const name = gallerySelectionHeaderTitle.textContent.trim();
         return name ? `${name} — Geometric Interior` : 'Geometric Interior';
     },
 });

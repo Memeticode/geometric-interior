@@ -1,19 +1,21 @@
 /*
  * ── Responsive breakpoints (mobile-first) ──
  *
- * Base (2xs)   : 0–374px      — Mobile (default styles in component files)
- * xs           : 375–479px    — Carousel intermediate
- * sm           : 480–639px    — Large phone
- * md           : 640–767px    — Carousel intermediate
- * lg           : 768–1023px   — Tablet
- * xl           : 1024–1439px  — Desktop
- * 2xl          : 1440–1919px  — Large desktop
- * 3xl          : 1920–2559px  — 2K+
- * 4k           : 2560px+      — 4K+
- * hi-dpi       : 2x+          — Retina / high-DPI
+ * xs   : 0–479px     — Small phone (base styles in component files)
+ * sm   : 480–767px   — Large phone
+ * md   : 768–1023px  — Tablet
+ * lg   : 1024–1439px — Desktop
+ * xl   : 1440px+     — Large desktop
+ *
+ * Each tier has a hi-dpi (2x+) companion block for retina refinements.
  */
 
-/* ── xs (480px+) — Large phone ── */
+/* ── xs — hi-dpi ── */
+@media (max-width: 479px) and (min-resolution: 192dpi) {
+    /* Retina small-phone refinements */
+}
+
+/* ── sm (480px+) ── */
 @media (min-width: 480px) {
     .footer-link {
         font-size: 0.6875rem;
@@ -34,42 +36,41 @@
     }
 
     /* Gallery — restore padding */
-    .gallery-page .gallery-main {
+    .gallery-page .main-content {
         padding: 0 1rem;
     }
 
-}
-
-/* ── md (768px+) — Tablet ── */
-@media (min-width: 768px) {
     /* Header — restore single-row layout */
     .app-header {
         flex-wrap: nowrap;
         align-items: center;
         justify-content: center;
-        padding: 0.5rem;
+        padding: 0.5rem 1rem;
         gap: 0.5rem;
     }
     .header-brand {
         display: block;
         flex: 1;
+        min-width: 0;
         text-align: center;
+        padding-top: 0.5rem;
     }
     .header-brand h1 {
         flex: initial;
         order: initial;
-        font-size: 0.875rem;
+        font-size: 0.8125rem;
     }
     .header-links {
         flex: initial;
-        flex-wrap: nowrap;
+        flex-wrap: wrap;
         gap: 0.5rem;
     }
     .header-link {
-        flex: initial;
+        flex: none;
         min-width: auto;
         font-size: 0.8125rem;
         padding: 0.25rem 0.5rem;
+        word-spacing: normal;
         white-space: nowrap;
     }
     .header-sep {
@@ -80,6 +81,33 @@
     .lang-select {
         font-size: 0.6875rem;
         padding: 0.25rem 1.375rem 0.25rem 0.5rem;
+    }
+    .site-menu-toggle,
+    .sidebar-toggle-btn {
+        margin: 0.25rem;
+    }
+    .share-btn-wrap {
+        margin: 0.25rem;
+    }
+
+}
+
+/* ── sm — hi-dpi ── */
+@media (min-width: 480px) and (min-resolution: 192dpi) {
+    /* Retina large-phone refinements */
+}
+
+/* ── md (768px+) — Tablet ── */
+@media (min-width: 768px) {
+    /* Header — widen side padding + single row at tablet+ */
+    .app-header {
+        padding: 0.5rem 2rem;
+    }
+    .header-brand h1 {
+        font-size: 0.875rem;
+    }
+    .header-links {
+        flex-wrap: nowrap;
     }
 
     /* Sidebar — fixed overlay with border (tablet) */
@@ -93,16 +121,16 @@
     }
 
     /* Gallery */
-    .gallery-page .gallery-main {
-        padding: 0 2rem;
+    .gallery-page .main-content {
+        padding: 1rem 2rem 0;
     }
-    .selected-header {
+    .gallery-selection-header-container {
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
         gap: 0.5rem;
     }
-    .selected-header-text {
+    .gallery-selection-header-text {
         text-align: left;
     }
     .gallery-arrow {
@@ -115,12 +143,12 @@
     }
 
     /* Desktop content push (menu pushes content instead of overlaying) */
-    .gallery-main,
+    .main-content,
     .app-footer {
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         margin-left: 0;
     }
-    .menu-push .gallery-main,
+    .menu-push .main-content,
     .menu-push .app-footer {
         margin-left: min(16rem, 85vw);
     }
@@ -177,6 +205,11 @@
         height: 90px;
     }
 
+}
+
+/* ── md — hi-dpi ── */
+@media (min-width: 768px) and (min-resolution: 192dpi) {
+    /* Retina tablet refinements */
 }
 
 /* ── lg (1024px+) — Desktop ── */
@@ -253,12 +286,33 @@
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
 
+    /* Selected profile text — larger on desktop */
+    .gallery-selection-header-title {
+        font-size: 0.9rem;
+    }
+    .gallery-selection-header-seed {
+        font-size: 0.825rem;
+    }
+    .gallery-selection-card-commentary-text {
+        font-size: 0.825rem;
+    }
+
 }
 
-/* ── High-DPI screens ── */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+/* ── lg — hi-dpi ── */
+@media (min-width: 1024px) and (min-resolution: 192dpi) {
     .app-container {
         border-left-width: 0.5px;
         border-right-width: 0.5px;
     }
+}
+
+/* ── xl (1440px+) — Large desktop ── */
+@media (min-width: 1440px) {
+    /* Large desktop refinements */
+}
+
+/* ── xl — hi-dpi ── */
+@media (min-width: 1440px) and (min-resolution: 192dpi) {
+    /* Retina large-desktop refinements */
 }

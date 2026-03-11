@@ -225,7 +225,7 @@ Name + Seed Header (full-width)
 
 ### Components
 
-**Name + Seed Header**: Full-width bar above the 3-column body, mirroring the gallery browse mode's `selected-header` pattern. Name is an editable textarea that auto-populates via `generateTitle()` when seed/controls change. User edits override auto-generation. Seed is the standard 3-dropdown row.
+**Name + Seed Header**: Full-width bar above the 3-column body, mirroring the gallery browse mode's `gallery-selection-header-container` pattern. Name is an editable textarea that auto-populates via `generateTitle()` when seed/controls change. User edits override auto-generation. Seed is the standard 3-dropdown row.
 
 **Config Utility**: Reuses the `.control-group-utility` pattern from the image editor. Save persists as a user profile, Reset randomizes, Randomize randomizes seed + all sliders + resets camera to defaults.
 

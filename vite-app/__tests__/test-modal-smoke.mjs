@@ -19,7 +19,7 @@ errors.forEach(e => console.log(' ', e));
 // Check for duplicate IDs
 const dupeCheck = await page.evaluate(() => {
     const ids = ['artistStatement', 'developerStatement', 'governanceStatement',
-                 'statementModal', 'statementModalClose', 'selectedName', 'selectedCanvas'];
+                 'statementModal', 'statementModalClose', 'gallerySelectionHeaderTitle', 'selectedCanvas'];
     const result = {};
     for (const id of ids) {
         const els = document.querySelectorAll(`#${id}`);

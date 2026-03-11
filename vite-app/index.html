@@ -72,14 +72,14 @@
         </div>
         <div class="site-menu-backdrop hidden" id="siteMenuBackdrop"></div>
 
-        <main class="gallery-main">
-            <div class="gallery-column">
-            <div class="selected-display" id="selectedDisplay">
+        <main class="main-content">
+            <div class="gallery-container">
+            <div class="gallery-selection-container" id="gallerySelectionContainer">
                 <!-- Profile info above image with nav arrows right-aligned -->
-                <div class="selected-header">
-                    <div class="selected-header-text">
-                        <div class="selected-name" id="selectedName"></div>
-                        <div class="selected-seed" id="selectedSeed"></div>
+                <div class="gallery-selection-header-container">
+                    <div class="gallery-selection-header-text">
+                        <div class="gallery-selection-header-title" id="gallerySelectionHeaderTitle"></div>
+                        <div class="gallery-selection-header-seed" id="gallerySelectionHeaderSeed"></div>
                     </div>
                     <div class="gallery-controls">
                         <button class="gallery-arrow gallery-arrow-left" id="galleryArrowLeft" aria-label="Previous portrait" data-i18n-aria="gallery.prevPortrait" data-tooltip="" data-tooltip-pos="above">
@@ -129,20 +129,17 @@
                     </div>
                 </div>
                 <!-- Image + text card -->
-                <div class="selected-card">
-                    <div class="selected-image-area">
-                        <div class="selected-image-wrap" id="selectedImageWrap">
-                            <img class="selected-image" id="selectedImage" alt="" />
+                <div class="gallery-selection-card">
+                    <div class="gallery-selection-card-visual-area">
+                        <div class="gallery-selection-card-visual-wrap" id="gallerySelectionCardVisualWrap">
+                            <img class="gallery-selection-visual" id="gallerySelectionVisual" alt="" />
                             <video class="selected-video hidden" id="selectedVideo" controls loop playsinline></video>
                             <div class="alt-text-overlay" id="altTextOverlay"></div>
                         </div>
                     </div>
-                    <div class="selected-footer">
-                        <button class="selected-gen-toggle" id="selectedGenToggle" aria-expanded="false">
-                            <span class="selected-gen-title" id="selectedGenTitle"></span>
-                            <span class="selected-gen-chevron">&#9662;</span>
-                        </button>
-                        <div class="selected-gen-alt" id="selectedGenAlt"></div>
+                    <div class="gallery-selection-card-footer">
+                        <span class="selected-gen-title" id="selectedGenTitle"></span>
+                        <div class="gallery-selection-card-commentary-text" id="gallerySelectionCardCommentaryText"></div>
                     </div>
                 </div>
             </div>

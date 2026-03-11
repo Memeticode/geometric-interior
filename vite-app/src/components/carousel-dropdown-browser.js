@@ -375,7 +375,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
 
         // Store scroll parent for post-animation scroll
-        this.#scrollParent = this.closest('.gallery-main') || this.parentElement;
+        this.#scrollParent = this.closest('.main-content') || this.parentElement;
 
         const gridCards = this.#grid.querySelectorAll('.cdb-grid-card');
         const gridRects = new Map();
@@ -903,7 +903,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 const totalDur = Math.max(dur + maxVisibleDelay, dur + offScreenBaseDelay);
 
                 // ── Synchronized scroll: scroll to post-collapse position during animation ──
-                this.#scrollParent = this.closest('.gallery-main') || this.parentElement;
+                this.#scrollParent = this.closest('.main-content') || this.parentElement;
                 if (this.#scrollParent) {
                     const componentRect = this.getBoundingClientRect();
                     const parentRect = this.#scrollParent.getBoundingClientRect();
@@ -938,7 +938,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                     void this.#sectionLabelContainer.offsetHeight;
 
                     // ── Collapse dropdown — compensate scroll for layout shift ──
-                    const scrollParent = this.closest('.gallery-main') || this.parentElement;
+                    const scrollParent = this.closest('.main-content') || this.parentElement;
                     const ctrlBefore2 = this.#controls.getBoundingClientRect();
                     const lblBefore2 = this.#sectionLabelContainer.getBoundingClientRect();
                     const scrollBefore = scrollParent ? scrollParent.scrollTop : 0;
@@ -1727,7 +1727,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             card.addEventListener('click', () => {
                 this.#centerIdx = i;
                 // Check if grid overflows the scroll parent
-                this.#scrollParent = this.closest('.gallery-main') || this.parentElement;
+                this.#scrollParent = this.closest('.main-content') || this.parentElement;
                 const overflows = this.#scrollParent && this.#scrollParent.scrollHeight > this.#scrollParent.clientHeight;
                 if (overflows) {
                     this.collapse();

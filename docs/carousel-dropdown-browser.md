@@ -325,7 +325,7 @@ await carousel.collapse();
 
 When the carousel's grid dropdown expands/collapses, the scroll parent's content height can cross the scrollbar threshold, causing the browser scrollbar to appear or disappear. This changes the viewport width and shifts all centered content.
 
-**Fix**: The scroll parent (`.gallery-main` in the gallery page) uses `scrollbar-gutter: stable both-edges` to permanently reserve scrollbar space on both sides, keeping content centered regardless of scrollbar state. This is set in `vite-app/css/pages/gallery.css`.
+**Fix**: The scroll parent (`.main-content` in the gallery page) uses `scrollbar-gutter: stable both-edges` to permanently reserve scrollbar space on both sides, keeping content centered regardless of scrollbar state. This is set in `vite-app/css/pages/gallery.css`.
 
 If embedding this component in a different scroll container, apply the same property to prevent layout shift during expand/collapse:
 
