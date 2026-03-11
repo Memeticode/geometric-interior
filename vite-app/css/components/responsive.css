@@ -32,7 +32,7 @@
 
     /* Generate — restore gap */
     .gen-content {
-        gap: 0.875rem;
+        --gen-gap: 0.875rem;
     }
 
     /* Gallery — restore padding */
@@ -193,6 +193,7 @@
     /* Keep menu fully opaque on desktop — no fade, just slide + push */
     .site-menu {
         opacity: 1;
+        bottom: var(--footer-h, 0px);
         transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                     visibility 0.3s;
     }
@@ -236,37 +237,49 @@
         height: 90px;
     }
 
-    /* Generate — side-by-side identity + buttons at tablet+ */
+    /* Generate — side-by-side layout at tablet+ */
     .gen-content {
         display: grid;
-        grid-template-columns: minmax(0, 55%) auto;
+        grid-template-columns: 1fr auto;
         grid-template-areas:
             "identity  header"
-            "config    config"
-            "preview   preview"
+            "preview   config"
             "saved     saved"
             "queue     queue";
-        align-items: end;
+        align-items: start;
     }
-    .gen-identity     { grid-area: identity; align-self: center; }
+    .gen-identity     { grid-area: identity; }
     .gen-header       { grid-area: header; }
     .gen-preview-card { grid-area: preview; }
-    .gen-config       { grid-area: config; }
+    .gen-config       { grid-area: config; margin-top: calc(-1 * var(--gen-gap)); }
     .gen-saved        { grid-area: saved; }
     .gen-queue        { grid-area: queue; }
 
-    /* Header: stack status above buttons, both right-aligned */
+    /* Config — separate card beside identity+preview */
+    .gen-config {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+    }
+    .gen-preview-card {
+        border-radius: 12px;
+        margin-top: 0;
+    }
+
+    /* Stack identity labels above inputs */
+    .gen-identity-text {
+        grid-template-columns: 1fr;
+    }
+
+    /* Header: status above buttons, compact */
     .gen-header {
         display: flex;
         flex-direction: column;
-        align-items: flex-end;
-        gap: 0.125rem;
-        padding: 0.25rem 0;
+        align-items: center;
+        padding: 0;
     }
     .gen-header-status {
         order: -1;
         padding-right: 0;
-        padding-bottom: 0.5rem;
     }
 
 }
@@ -345,10 +358,7 @@
         font-size: 0.825rem;
     }
 
-    /* Generate — stack labels above inputs at desktop */
-    .gen-identity-text {
-        grid-template-columns: 1fr;
-    }
+    /* Generate — narrower grid at desktop */
     .gen-content {
         grid-template-columns: minmax(0, 40%) auto;
     }

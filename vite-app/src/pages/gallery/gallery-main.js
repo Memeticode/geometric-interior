@@ -82,6 +82,10 @@ function openSiteMenu() {
     if (header) {
         document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
     }
+    const footer = document.querySelector('.app-footer');
+    if (footer) {
+        document.documentElement.style.setProperty('--footer-h', footer.offsetHeight + 'px');
+    }
     siteMenu.classList.remove('site-menu-closed');
     siteMenu.setAttribute('aria-hidden', 'false');
     siteMenuBackdrop.classList.remove('hidden');
@@ -1493,7 +1497,35 @@ function closeGenFullscreen() {
 
 /* ── Save handler with conflict detection ── */
 
+/**
+ * Capture the current preview frame as a data URL for use as a thumbnail.
+ * Returns '' if the worker bridge is unavailable or capture fails.
+ */
+function capturePreviewThumb() {
+    return new Promise(resolve => {
+        if (!workerBridge || !workerBridge.ready) return resolve('');
+        let settled = false;
+        const reqId = 'save-thumb-' + Date.now();
+        const handler = (msg) => {
+            if (msg.requestId !== reqId || settled) return;
+            settled = true;
+            if (!msg.blob) return resolve('');
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => resolve('');
+            reader.readAsDataURL(msg.blob);
+        };
+        workerBridge.on('frame-captured', handler);
+        workerBridge.captureFrame(reqId);
+        // Timeout fallback
+        setTimeout(() => { if (!settled) { settled = true; resolve(''); } }, 3000);
+    });
+}
+
 async function handleSave(name, seed, controls, camera, commentary) {
+    // Capture preview thumbnail before saving
+    const thumbDataUrl = await capturePreviewThumb();
+
     // Check for name conflict in existing saved assets
     const existingAsset = generatedAssets.find(a => a.name === name);
 
@@ -1506,12 +1538,12 @@ async function handleSave(name, seed, controls, camera, commentary) {
             const asset = existingAsset;
             asset.seed = seed;
             asset.controls = controls;
+            asset.thumbDataUrl = thumbDataUrl || asset.thumbDataUrl;
             asset.meta = { ...asset.meta, seed, controls, camera, commentary, title: name };
             asset.name = name;
             await putAsset(asset);
             generatedAssets = await getAllAssets();
             refreshSavedGrid();
-            refreshGallery();
             toast(`Overwritten "${name}"`);
             return { id: asset.id, overwritten: true };
         } else {
@@ -1525,6 +1557,7 @@ async function handleSave(name, seed, controls, camera, commentary) {
     const asset = {
         id,
         name,
+        thumbDataUrl,
         seed,
         controls,
         meta: { seed, controls, camera, commentary, title: name },
@@ -1533,7 +1566,6 @@ async function handleSave(name, seed, controls, camera, commentary) {
     await putAsset(asset);
     generatedAssets = await getAllAssets();
     refreshSavedGrid();
-    refreshGallery();
     toast(`Saved "${name}"`);
     return { id, overwritten: false };
 }
@@ -1619,6 +1651,14 @@ function refreshSavedGrid() {
     const ordered = syncGeneratedOrder(generatedAssets);
     genSavedGridEl.innerHTML = '';
 
+    if (ordered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'gen-saved-empty';
+        empty.textContent = 'No user images saved';
+        genSavedGridEl.appendChild(empty);
+        return;
+    }
+
     for (let i = 0; i < ordered.length; i++) {
         const asset = ordered[i];
         const card = document.createElement('div');
@@ -1657,7 +1697,7 @@ function refreshSavedGrid() {
         actions.className = 'gen-saved-actions';
         const delBtn = document.createElement('button');
         delBtn.className = 'gen-saved-action-btn gen-saved-delete';
-        delBtn.innerHTML = '&times;';
+        delBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="2" x2="8" y2="8"/><line x1="8" y1="2" x2="2" y2="8"/></svg>';
         delBtn.title = 'Delete';
         delBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
@@ -1673,35 +1713,10 @@ function refreshSavedGrid() {
             await deleteAsset(asset.id);
             generatedAssets = generatedAssets.filter(a => a.id !== asset.id);
             refreshSavedGrid();
-            refreshGallery();
             toast(`Deleted "${asset.name}"`);
         });
         actions.appendChild(delBtn);
         card.appendChild(actions);
-
-        // Up/down arrow buttons (hover overlay)
-        const orderBtns = document.createElement('div');
-        orderBtns.className = 'gen-saved-order-btns';
-        const upBtn = document.createElement('button');
-        upBtn.className = 'gen-saved-action-btn';
-        upBtn.innerHTML = '&#9650;';
-        upBtn.title = 'Move up';
-        upBtn.disabled = i === 0;
-        upBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            reorderSavedGrid(asset.id, -1);
-        });
-        const downBtn = document.createElement('button');
-        downBtn.className = 'gen-saved-action-btn';
-        downBtn.innerHTML = '&#9660;';
-        downBtn.title = 'Move down';
-        downBtn.disabled = i === ordered.length - 1;
-        downBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            reorderSavedGrid(asset.id, 1);
-        });
-        orderBtns.append(upBtn, downBtn);
-        card.appendChild(orderBtns);
 
         // Click to load into editor
         card.addEventListener('click', () => {
@@ -1746,20 +1761,6 @@ function refreshSavedGrid() {
     }
 }
 
-function reorderSavedGrid(assetId, direction) {
-    const ordered = syncGeneratedOrder(generatedAssets);
-    const idx = ordered.findIndex(a => a.id === assetId);
-    if (idx < 0) return;
-    const newIdx = idx + direction;
-    if (newIdx < 0 || newIdx >= ordered.length) return;
-    // Swap
-    const ids = ordered.map(a => a.id);
-    [ids[idx], ids[newIdx]] = [ids[newIdx], ids[idx]];
-    saveGeneratedOrder(ids);
-    refreshSavedGrid();
-    refreshGallery();
-}
-
 function reorderSavedGridDrop(draggedId, targetId) {
     const ordered = syncGeneratedOrder(generatedAssets);
     const ids = ordered.map(a => a.id);
@@ -1771,7 +1772,6 @@ function reorderSavedGridDrop(draggedId, targetId) {
     ids.splice(toIdx, 0, draggedId);
     saveGeneratedOrder(ids);
     refreshSavedGrid();
-    refreshGallery();
 }
 
 function initGenerate() {
@@ -2167,6 +2167,7 @@ Promise.allSettled([
     getAllAnimAssets().then(assets => { animAssets = assets; }),
 ]).then(() => {
     refreshGallery();
+    if (activeMode === 'create') refreshSavedGrid();
 });
 
 /* ── Share ── */
