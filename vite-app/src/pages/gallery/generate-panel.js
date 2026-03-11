@@ -320,7 +320,7 @@ export function initGeneratePanel(opts) {
 
         // Inner fold-up area (rotates on hover)
         const foldArea = document.createElement('div');
-        foldArea.className = 'gen-collapsible-toggle';
+        foldArea.className = 'gen-collapse-toggle';
         foldArea.setAttribute('aria-expanded', 'true');
         foldArea.setAttribute('data-target', sectionId);
 
@@ -339,7 +339,7 @@ export function initGeneratePanel(opts) {
 
         // Collapsible rows container
         const rowsWrap = document.createElement('div');
-        rowsWrap.className = 'gen-section-rows gen-collapsible-content';
+        rowsWrap.className = 'gen-section-rows gen-collapse-body';
         rowsWrap.id = sectionId;
 
         for (const def of sliderDefs) {

@@ -1,4 +1,4 @@
-/* ── Icon button group (shared sizing for gallery-controls, gen-button-bar, etc.) ── */
+/* ── Icon button group (shared sizing for gallery-controls, gen-header-actions, etc.) ── */
 .icon-btn-group {
     --icon-btn-size: 22px;
     --icon-btn-icon: 12px;
@@ -37,13 +37,23 @@
 
 /* ── Share button open state (matches side-menu-toggle.menu-open) ── */
 #shareBtn {
+    background: none;
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 0.1875rem 0.3rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 0.25rem;
+    aspect-ratio: 1;
     display: flex;
     align-items: center;
+    align-self: center;
     justify-content: center;
+    flex-shrink: 0;
     transition: opacity 0.2s ease, background-color 0.2s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+#shareBtn:hover {
+    opacity: 1;
 }
 #shareBtn svg {
     width: 14px;
@@ -73,11 +83,6 @@
 }
 
 /* ── Share popover ── */
-.share-btn-wrap {
-    position: relative;
-    align-self: center;
-}
-
 .share-popover {
     position: fixed;
     right: 0;

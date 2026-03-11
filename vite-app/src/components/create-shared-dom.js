@@ -69,7 +69,7 @@ function createStatementModal() {
             el('span', { class: 'modal-tab-select-label', 'data-i18n': 'statement.artist', text: 'Artist Statement' }),
             el('span', { class: 'modal-tab-select-chevron', html: '&#9662;' }),
         ]),
-        el('div', { class: 'modal-tab-select-menu hidden' }, selectItems),
+        el('div', { class: 'modal-tab-select-menu' }, selectItems),
     ]);
 
     const closeBtn = el('button', { id: 'statementModalClose', class: 'modal-close', 'aria-label': 'Close', 'data-i18n-aria': 'aria.close' }, [

@@ -194,25 +194,21 @@ export function initStatementModal(dom) {
     if (tabSelectTrigger && tabSelectMenu) {
         tabSelectTrigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isOpen = !tabSelectMenu.classList.contains('hidden');
-            tabSelectMenu.classList.toggle('hidden', isOpen);
+            const isOpen = tabSelectMenu.classList.contains('open');
+            tabSelectMenu.classList.toggle('open', !isOpen);
             dom.statementTabSelect.classList.toggle('open', !isOpen);
         });
         tabSelectMenu.addEventListener('click', (e) => {
             const item = e.target.closest('.modal-tab-select-item');
             if (!item) return;
             switchStatementTab(item.dataset.tab);
+            tabSelectMenu.classList.remove('open');
             dom.statementTabSelect.classList.remove('open');
-            tabSelectMenu.classList.add('closing');
-            tabSelectMenu.addEventListener('transitionend', () => {
-                tabSelectMenu.classList.remove('closing');
-                tabSelectMenu.classList.add('hidden');
-            }, { once: true });
         });
         /* Close dropdown when clicking anywhere else in the modal */
         dom.statementModal.addEventListener('click', (e) => {
             if (!dom.statementTabSelect.contains(e.target)) {
-                tabSelectMenu.classList.add('hidden');
+                tabSelectMenu.classList.remove('open');
                 dom.statementTabSelect.classList.remove('open');
             }
         });

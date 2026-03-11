@@ -45,9 +45,9 @@ export function createHeader(headerEl, { page }) {
 
     // Statement buttons (all pages)
     const statementBtns = [
-        `<button id="artistStatement" class="header-link" data-i18n="header.artistStatement">Artist Statement</button>`,
-        `<button id="developerStatement" class="header-link" data-i18n="header.developerStatement">Developer Statement</button>`,
-        `<button id="governanceStatement" class="header-link" data-i18n="header.governanceFramework">Governance Framework</button>`,
+        `<button id="artistStatement" class="header-link header-statement" data-i18n="header.artistStatement">Artist Statement</button>`,
+        `<button id="developerStatement" class="header-link header-statement" data-i18n="header.developerStatement">Developer Statement</button>`,
+        `<button id="governanceStatement" class="header-link header-statement" data-i18n="header.governanceFramework">Governance Framework</button>`,
     ];
 
     const allLinks = [...navLinks, ...statementBtns];
@@ -55,7 +55,12 @@ export function createHeader(headerEl, { page }) {
 
     // ── Share button (gallery only) ──
     const shareHTML = isGallery
-        ? `<div class="share-btn-wrap" id="shareWrap"></div>`
+        ? `<button id="shareBtn" data-tooltip="Open share" data-i18n-tooltip="stage.share" data-tooltip-pos="left">
+               ${SHARE_ICON}
+           </button>
+           <div id="sharePopover" class="share-popover hidden">
+               ${sharePopoverContent()}
+           </div>`
         : '';
 
     // ── Assemble ──
@@ -66,10 +71,6 @@ export function createHeader(headerEl, { page }) {
             <div class="header-links">${linksHTML}</div>
         </div>
         ${shareHTML}`;
-
-    // Populate share button from shared source
-    const shareWrap = headerEl.querySelector('#shareWrap');
-    if (shareWrap) populateShareWrap(shareWrap, { btnClass: 'header-link' });
 
     return {
         sidebarToggle: headerEl.querySelector('#sidebarToggle'),
@@ -86,7 +87,7 @@ export function createHeader(headerEl, { page }) {
 // ── SVG icons ──
 
 const SHARE_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14">
-    <circle class="sd sd-r" cx="12" cy="3" r="2"/><circle class="sd sd-l" cx="4" cy="8" r="2"/><circle class="sd sd-r" cx="12" cy="13" r="2"/>
+    <circle class="sd sd-r" cx="12" cy="3" r="2" fill="currentColor"/><circle class="sd sd-l" cx="4" cy="8" r="2" fill="currentColor"/><circle class="sd sd-r" cx="12" cy="13" r="2" fill="currentColor"/>
     <path class="sd sd-line" d="M5.7 9.2l4.6 2.6M10.3 4.2L5.7 6.8"/>
 </svg>`;
 
@@ -123,21 +124,4 @@ function sharePopoverContent() {
         <button class="share-option" id="shareTwitter">${TWITTER_ICON}<span>X</span></button>
         <div class="share-sep"></div>
         <button class="share-option" id="shareEmail">${EMAIL_ICON}<span data-i18n="share.email">Email</span></button>`;
-}
-
-/**
- * Populate a share-btn-wrap container with the share button + popover.
- * @param {HTMLElement} wrapEl - An empty <div class="share-btn-wrap"> element
- * @param {{ btnClass?: string, disabled?: boolean }} [opts]
- */
-export function populateShareWrap(wrapEl, { btnClass = '', disabled = false } = {}) {
-    const cls = btnClass ? ` class="${btnClass}"` : '';
-    const dis = disabled ? ' disabled' : '';
-    wrapEl.innerHTML = `
-        <button id="shareBtn"${cls} data-tooltip="Open share" data-i18n-tooltip="stage.share" data-tooltip-pos="left"${dis}>
-            ${SHARE_ICON}
-        </button>
-        <div id="sharePopover" class="share-popover hidden">
-            ${sharePopoverContent()}
-        </div>`;
 }

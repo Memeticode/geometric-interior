@@ -20,7 +20,7 @@ import { createFooter } from '../../components/create-footer.js';
 import { initApp } from '../../components/app-init.js';
 import { initTheme } from '../../stores/theme.js';
 import { initLangSelector } from '../../i18n/lang-selector.js';
-import { initResolutionSelector, getResolution, getGenResolution } from '../../stores/resolution.js';
+import { initResolutionSelector, getResolution, getGenResolution, getLowerPreset, syncDropdown } from '../../stores/resolution.js';
 import { t, getLocale } from '../../i18n/locale.js';
 import { loadProfiles, loadPortraits, getPortraitNames, loadPortraitSections, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder, saveProfiles } from '../../stores/profiles.js';
 import { getAllThumbs, deleteThumb } from '../../stores/thumb-cache.js';
@@ -89,6 +89,7 @@ function openSiteMenu() {
     siteMenuToggle.setAttribute('data-tooltip', 'Close menu');
     siteMenuToggle.setAttribute('aria-label', 'Close menu');
     refreshTooltip(siteMenuToggle);
+    document.documentElement.style.setProperty('--menu-w', siteMenu.offsetWidth + 'px');
     appContainer.classList.add('menu-push');
     localStorage.setItem(MENU_STATE_KEY, '1');
 }
@@ -102,6 +103,7 @@ function closeSiteMenu() {
     siteMenuToggle.setAttribute('aria-label', 'Open menu');
     refreshTooltip(siteMenuToggle);
     appContainer.classList.remove('menu-push');
+    document.documentElement.style.removeProperty('--menu-w');
     localStorage.setItem(MENU_STATE_KEY, '0');
 }
 
@@ -192,9 +194,9 @@ const galleryMainEl = document.querySelector('.main-content');
 
 
 /* ── Generate / Animation editor DOM refs ── */
-const generatePanelEl = document.getElementById('generatePanel');
+const generatePanelEl = document.getElementById('genPanel');
 const animationEditorEl = document.getElementById('animationEditor');
-const genSlidersEl = document.getElementById('genSliders');
+const genSlidersEl = document.getElementById('genConfigSliders');
 const genTagArrEl = document.getElementById('genTagArr');
 const genTagStrEl = document.getElementById('genTagStr');
 const genTagDetEl = document.getElementById('genTagDet');
@@ -705,6 +707,29 @@ function findProfileBySlug(slug, source) {
 window.addEventListener('popstate', applyRoute);
 
 /* ── Resolution change ── */
+
+/**
+ * Install a chained onerror on a portrait image that tries progressively
+ * lower resolutions before falling back to the thumbnail.
+ * Updates the dropdown visually but does NOT change the stored preference.
+ */
+function installPortraitFallback(imgEl, slug, currentKey) {
+    imgEl.onerror = () => {
+        imgEl.onerror = null;
+        const lower = getLowerPreset(currentKey);
+        if (!lower) {
+            imgEl.src = `/static/images/portraits/${slug}-thumb.png`;
+            return;
+        }
+        installPortraitFallback(imgEl, slug, lower.key);
+        imgEl.src = `/static/images/portraits/${slug}-${lower.key}.png`;
+        syncDropdown(document.getElementById('resolutionDropdown'), lower.key);
+    };
+}
+
+/** Context for in-flight worker snapshot fallback. */
+let pendingSnapshotContext = null;
+
 document.addEventListener('resolutionchange', (e) => {
     if (currentIndex < 0 || currentIndex >= navigableList.length) return;
     if (activeMode !== 'gallery' || activeType !== 'image') return;
@@ -715,6 +740,7 @@ document.addEventListener('resolutionchange', (e) => {
     // Portrait: swap to resolution-specific static image
     if (entry.isPortrait) {
         gallerySelectionVisual.src = getDisplaySrc(entry.name, profile, true);
+        installPortraitFallback(gallerySelectionVisual, slugify(entry.name), e.detail.key);
         syncFullscreenMedia();
         return;
     }
@@ -724,6 +750,12 @@ document.addEventListener('resolutionchange', (e) => {
     if (!profile || !profile.seed || !profile.controls) return;
 
     const { w, h } = e.detail;
+    pendingSnapshotContext = {
+        resKey: e.detail.key,
+        seed: profile.seed,
+        controls: profile.controls,
+        locale: getLocale(),
+    };
     workerBridge.sendSnapshot({
         requestId: 'snap-' + Date.now(),
         seed: profile.seed,
@@ -876,11 +908,7 @@ function applySelection(name, profile, isPortrait, assetId) {
         }
 
         if (isPortrait) {
-            gallerySelectionVisual.onerror = () => {
-                gallerySelectionVisual.onerror = null;
-                const pngSrc = `/static/images/portraits/${slugify(name)}-thumb.png`;
-                gallerySelectionVisual.src = pngSrc;
-            };
+            installPortraitFallback(gallerySelectionVisual, slugify(name), getResolution().key);
         }
 
         // Fade text back in
@@ -1513,38 +1541,38 @@ async function handleSave(name, seed, controls, camera, commentary) {
 function showSaveConflictModal(existingName) {
     return new Promise(resolve => {
         const backdrop = document.createElement('div');
-        backdrop.className = 'gen-save-modal-backdrop';
+        backdrop.className = 'gen-modal-backdrop';
 
         const modal = document.createElement('div');
-        modal.className = 'gen-save-modal';
+        modal.className = 'gen-modal';
 
         const title = document.createElement('div');
-        title.className = 'gen-save-modal-title';
+        title.className = 'gen-modal-title';
         title.textContent = 'Name already exists';
 
         const msg = document.createElement('div');
-        msg.className = 'gen-save-modal-msg';
+        msg.className = 'gen-modal-msg';
         msg.textContent = `An image named "${existingName}" already exists. Overwrite it, or enter a new name:`;
 
         const input = document.createElement('input');
-        input.className = 'gen-save-modal-input';
+        input.className = 'gen-modal-input';
         input.type = 'text';
         input.value = existingName;
         input.maxLength = 40;
 
         const btns = document.createElement('div');
-        btns.className = 'gen-save-modal-btns';
+        btns.className = 'gen-modal-btns';
 
         const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'gen-save-modal-btn';
+        cancelBtn.className = 'gen-modal-btn';
         cancelBtn.textContent = 'Cancel';
 
         const overwriteBtn = document.createElement('button');
-        overwriteBtn.className = 'gen-save-modal-btn';
+        overwriteBtn.className = 'gen-modal-btn';
         overwriteBtn.textContent = 'Overwrite';
 
         const saveNewBtn = document.createElement('button');
-        saveNewBtn.className = 'gen-save-modal-btn primary';
+        saveNewBtn.className = 'gen-modal-btn primary';
         saveNewBtn.textContent = 'Save as New';
 
         function close(result) {
@@ -1754,9 +1782,29 @@ function initGenerate() {
     workerBridge = initGalleryWorker(genPreviewCanvas);
     if (workerBridge) {
         workerBridge.on('snapshot-complete', (msg) => {
+            pendingSnapshotContext = null;
             if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
             snapshotUrl = URL.createObjectURL(msg.blob);
             gallerySelectionVisual.src = snapshotUrl;
+        });
+        workerBridge.on('snapshot-failed', () => {
+            if (!pendingSnapshotContext) return;
+            const ctx = pendingSnapshotContext;
+            const lower = getLowerPreset(ctx.resKey);
+            if (!lower) {
+                pendingSnapshotContext = null;
+                return;
+            }
+            pendingSnapshotContext = { ...ctx, resKey: lower.key };
+            workerBridge.sendSnapshot({
+                requestId: 'snap-' + Date.now(),
+                seed: ctx.seed,
+                controls: ctx.controls,
+                locale: ctx.locale,
+                width: lower.w,
+                height: lower.h,
+            });
+            syncDropdown(document.getElementById('resolutionDropdown'), lower.key);
         });
         workerBridge.on('frame-captured', (msg) => {
             if (pendingFullscreenCaptureId && msg.requestId === pendingFullscreenCaptureId) {
@@ -1849,7 +1897,7 @@ function initGenerate() {
     });
 
     // Wire up collapsible toggles in the generate config
-    generatePanelEl.querySelectorAll('.gen-collapsible-toggle[data-target]').forEach(toggle => {
+    generatePanelEl.querySelectorAll('.gen-collapse-toggle[data-target]').forEach(toggle => {
         toggle.addEventListener('click', () => {
             const expanded = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!expanded));

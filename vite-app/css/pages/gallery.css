@@ -634,11 +634,13 @@
     border-radius: 6px;
     color: var(--text-muted);
     cursor: pointer;
-    padding: 0.1875rem 0.3rem;
+    padding: 0.25rem;
     display: flex;
     align-items: center;
+    justify-content: center;
     align-self: center;
     flex-shrink: 0;
+    aspect-ratio: 1;
     transition: color 0.3s ease, border-color 0.3s ease;
 }
 .site-menu-toggle:hover {
@@ -692,10 +694,11 @@
     top: var(--header-h, 0px);
     left: max(0px, calc((100vw - 100rem) / 2));
     bottom: 0;
-    width: min(16rem, 85vw);
+    width: fit-content;
+    max-width: 85vw;
     background: var(--bg);
     border-right: 1px solid var(--border);
-    padding: 0.75rem 0.5rem;
+    padding: 0.75rem 2rem 0.75rem 0.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
@@ -741,6 +744,10 @@
 
 .settings-group + .settings-group {
     border-top: 1px solid var(--border);
+    margin-left: -0.5rem;
+    margin-right: -2rem;
+    padding-left: 0.5rem;
+    padding-right: 2rem;
 }
 .settings-group-title {
     font-size: 0.75rem;

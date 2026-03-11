@@ -4,6 +4,7 @@
     --bg-panel: rgba(255, 255, 255, 0.02);
     --text: #e9eefc;
     --text-muted: rgba(233, 238, 252, 0.75);
+    --text-dim: rgba(233, 238, 252, 0.55);
     --border: rgba(255, 255, 255, 0.08);
     --border-strong: rgba(255, 255, 255, 0.14);
     --surface: rgba(255, 255, 255, 0.03);
@@ -32,6 +33,7 @@ html[data-theme="light"] {
     --bg-panel: rgba(0, 0, 0, 0.02);
     --text: #1a1e2e;
     --text-muted: rgba(26, 30, 46, 0.65);
+    --text-dim: rgba(26, 30, 46, 0.50);
     --border: rgba(0, 0, 0, 0.10);
     --border-strong: rgba(0, 0, 0, 0.18);
     --surface: rgba(0, 0, 0, 0.03);

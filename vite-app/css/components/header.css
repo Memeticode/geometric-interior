@@ -40,13 +40,12 @@
 .header-link {
     background: none;
     border: none;
-    color: var(--text-muted);
+    color: var(--text-dim);
     font-size: 0.65rem;
     cursor: pointer;
     padding: 0.25rem 0.25rem 0.125rem;
     border-radius: 6px;
-    opacity: 0.6;
-    transition: opacity 0.2s ease, background-color 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease;
     text-align: center;
     flex: 1;
     min-width: 0;
@@ -54,18 +53,15 @@
 }
 
 .header-link:hover {
-    opacity: 1;
+    color: var(--text-muted);
     background: var(--surface-hover);
 }
 
-#artistStatement:hover,
-#developerStatement:hover,
-#governanceStatement:hover {
+.header-statement:hover {
     background: none;
 }
 
 .header-link-active {
-    opacity: 1;
     color: var(--accent-text);
     position: relative;
 }

@@ -110,8 +110,20 @@ export function setEnabledResolutions(dropdownEl, enabledKeys) {
     });
 }
 
+/**
+ * Return the next lower resolution preset, or null if already at minimum.
+ * @param {string} key — current preset key
+ * @returns {{ key: string, w: number, h: number } | null}
+ */
+export function getLowerPreset(key) {
+    const idx = PRESETS.findIndex(p => p.key === key);
+    if (idx <= 0) return null;
+    const p = PRESETS[idx - 1];
+    return { key: p.key, w: p.w, h: p.h };
+}
+
 /** Sync a dropdown's visual state to a resolution key. */
-function syncDropdown(dropdownEl, activeKey) {
+export function syncDropdown(dropdownEl, activeKey) {
     const label = dropdownEl.querySelector('.custom-dropdown-label');
     const menu = dropdownEl.querySelector('.custom-dropdown-menu');
     if (menu) {

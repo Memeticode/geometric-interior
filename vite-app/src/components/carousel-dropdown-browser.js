@@ -94,12 +94,13 @@ const PERSPECTIVE_D = 1200;      // matches CSS perspective(1200px)
 const DEG = Math.PI / 180;       // degrees-to-radians multiplier
 const HOVER_ZONE_DELAY = 900;    // ms delay before recomputing hover zones after layout
 
-// ── Responsive arc-y ──
-const ARC_Y_BREAKPOINTS = [
-    { query: '(max-width: 374px)', arcY: 15 },
-    { query: '(max-width: 767px)', arcY: 25 },
+// ── Responsive arc-y (keyed to container width) ──
+const ARC_Y_CONTAINER_BREAKPOINTS = [
+    { minW:  700, arcY: 43 },
+    { minW:  480, arcY: 30 },
+    { minW:  320, arcY: 20 },
 ];
-const ARC_Y_DEFAULT = 43;
+const ARC_Y_TINY = 12;
 
 // ── Card geometry ──
 const ARC_Z_MAX_RAD    = 1.2;    // max total arc angle in radians (at arc-z=50)
@@ -185,8 +186,7 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     // ── Configuration ──
     #arcZ = 24;
-    #arcY = ARC_Y_DEFAULT;
-    #arcYMediaListeners = [];
+    #arcY = ARC_Y_CONTAINER_BREAKPOINTS[0].arcY;
     #flipDuration = 1500;
     #controlsPosition = 'above'; // 'above' | 'below'
     #infinite = true;              // wrap around or clamp at edges
@@ -1116,7 +1116,7 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     attributeChangedCallback(name, _old, val) {
         if (name === 'arc-z') { this.#arcZ = Math.round(parseFloat(val)) || 24; if (this.#domBuilt) this.#positionCards(); }
-        if (name === 'arc-y') { this.#arcY = parseFloat(val) ?? ARC_Y_DEFAULT; this.#syncArcYExtra(); if (this.#domBuilt) this.#positionCards(); }
+        if (name === 'arc-y') { this.#arcY = parseFloat(val) ?? ARC_Y_CONTAINER_BREAKPOINTS[0].arcY; this.#syncArcYExtra(); if (this.#domBuilt) this.#positionCards(); }
         if (name === 'flip-duration') this.#flipDuration = parseInt(val, 10) || 450;
         if (name === 'controls-position') {
             this.#controlsPosition = val === 'below' ? 'below' : 'above';
@@ -1205,24 +1205,20 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     #initResponsiveArcY() {
         if (this.hasAttribute('arc-y')) return;
-        for (const bp of ARC_Y_BREAKPOINTS) {
-            const mql = window.matchMedia(bp.query);
-            const handler = () => this.#applyResponsiveArcY();
-            mql.addEventListener('change', handler);
-            this.#arcYMediaListeners.push({ mql, handler });
-        }
         this.#applyResponsiveArcY();
     }
 
+    /** Derive arc-y from container width (called from ResizeObserver too). */
     #applyResponsiveArcY() {
         if (this.hasAttribute('arc-y')) return;
-        let arcY = ARC_Y_DEFAULT;
-        for (const bp of ARC_Y_BREAKPOINTS) {
-            if (window.matchMedia(bp.query).matches) { arcY = bp.arcY; break; }
+        const w = (this.#viewport || this).clientWidth || window.innerWidth;
+        let arcY = ARC_Y_TINY;
+        for (const bp of ARC_Y_CONTAINER_BREAKPOINTS) {
+            if (w >= bp.minW) { arcY = bp.arcY; break; }
         }
+        if (arcY === this.#arcY) return; // no change — skip layout
         this.#arcY = arcY;
         this.#syncArcYExtra();
-        if (this.#domBuilt) this.#positionCards();
     }
 
     #updateEasing() {
@@ -1258,10 +1254,6 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     disconnectedCallback() {
-        for (const { mql, handler } of this.#arcYMediaListeners) {
-            mql.removeEventListener('change', handler);
-        }
-        this.#arcYMediaListeners = [];
         this.#cancelFlipAnimations();
         if (this.#scrollRaf) { cancelAnimationFrame(this.#scrollRaf); this.#scrollRaf = null; }
         if (this.#resizeObs) {
@@ -1535,6 +1527,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (this.#resizeObs) return;
         this.#resizeObs = new ResizeObserver(() => {
             if (this.#animatingExpand) return;
+            this.#applyResponsiveArcY();
             if (this.#cards.length) this.#positionCards();
             this.#updateToggleVisibility();
         });
@@ -2079,11 +2072,30 @@ class CarouselDropdownBrowser extends HTMLElement {
         s.setProperty('--card-opacity', String(opacity));
     }
 
-    /** Read --card-w from CSS once per layout pass. */
+    /** Derive card width from available container space (not viewport). */
     #readCardW() {
-        return parseInt(
-            getComputedStyle(document.documentElement).getPropertyValue('--card-w')
-        ) || 180;
+        const el = this.#viewport || this;
+        const w = el.clientWidth || window.innerWidth;
+        const h = window.innerHeight;
+
+        // Vertical constraint: card height is w * 9/14; cap so center card
+        // (with arc displacement) doesn't exceed ~40% of viewport height.
+        const maxFromHeight = Math.round(h * 0.4 * 14 / 9);
+
+        // Width-based sizing keyed to container width, not viewport
+        const fromWidth =
+            w >= 2560 ? 280 :
+            w >= 1920 ? 240 :
+            w >= 1200 ? 210 :
+            w >= 900  ? 180 :
+            w >= 700  ? 160 :
+            w >= 540  ? 130 :
+            w >= 400  ? 110 :
+            w >= 320  ? 90  : 75;
+
+        const cardW = Math.min(fromWidth, maxFromHeight);
+        this.style.setProperty('--card-w', cardW + 'px');
+        return cardW;
     }
 
     /** Compute arc parameters fitted to available viewport width. */
