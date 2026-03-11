@@ -118,11 +118,13 @@
     flex-wrap: wrap;
     flex: 1;
 }
+.gen-button-bar {
+    --icon-btn-size: 24px;
+    --icon-btn-icon: 14px;
+}
 .gen-bar-sep {
-    color: var(--text-muted);
+    background: var(--text-muted);
     opacity: 0.3;
-    font-size: 0.875rem;
-    line-height: 0;
     cursor: default;
     user-select: none;
 }
@@ -131,8 +133,6 @@
     border: 1px solid var(--border);
     color: var(--text-muted);
     border-radius: 50%;
-    width: 24px;
-    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -141,8 +141,6 @@
     transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
 }
 .gen-action-btn svg {
-    width: 14px;
-    height: 14px;
     flex-shrink: 0;
 }
 .gen-action-btn:hover:not(:disabled) {

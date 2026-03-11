@@ -56,15 +56,15 @@
     border-radius: 10px;
     border: 1px solid var(--border-strong);
     background: var(--surface);
-    padding: 3px;
+    padding: 0;
     transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .theme-slider {
     position: absolute;
-    top: 3px;
-    left: 3px;
-    height: calc(100% - 6px);
+    top: 0;
+    left: 0;
+    height: 100%;
     border-radius: 7px;
     background: var(--accent-bg);
     border: 1px solid var(--accent);

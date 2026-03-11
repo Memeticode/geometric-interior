@@ -109,18 +109,14 @@ function closeSiteMenu() {
 if (localStorage.getItem(MENU_STATE_KEY) === '1') {
     siteMenu.style.transition = 'none';
     siteMenuBackdrop.style.transition = 'none';
-    appContainer.style.setProperty('--menu-restore', '1');
     const main = document.querySelector('.main-content');
-    const footer = document.querySelector('.app-footer');
     if (main) main.style.transition = 'none';
-    if (footer) footer.style.transition = 'none';
     openSiteMenu();
     // Force layout then re-enable transitions
     siteMenu.offsetHeight; // eslint-disable-line no-unused-expressions
     siteMenu.style.transition = '';
     siteMenuBackdrop.style.transition = '';
     if (main) main.style.transition = '';
-    if (footer) footer.style.transition = '';
 }
 
 function isSiteMenuOpen() {

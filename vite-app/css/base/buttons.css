@@ -1,47 +1,28 @@
-/* ── Stage header buttons ── */
-.stage-header-btns {
-    display: flex;
-    gap: 0.5rem;
-    flex-shrink: 0;
+/* ── Icon button group (shared sizing for gallery-controls, gen-button-bar, etc.) ── */
+.icon-btn-group {
+    --icon-btn-size: 22px;
+    --icon-btn-icon: 12px;
 }
-
-.stage-header-btns .header-sep {
+.icon-btn-group .icon-btn {
+    width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
+}
+.icon-btn-group .icon-btn svg {
+    width: var(--icon-btn-icon);
+    height: var(--icon-btn-icon);
+}
+.icon-btn-group .icon-btn-sep {
+    width: 1px;
+    height: var(--icon-btn-size);
+    font-size: 0;
+    flex-shrink: 0;
     align-self: center;
 }
-
-/* ── Icon buttons (arrows, randomize, save, etc.) ── */
-.stage-header-btns button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    transition: background-color 0.2s, border-color 0.2s, color 0.2s, opacity 0.2s, box-shadow 0.2s;
-}
-
-.stage-header-btns button:hover:not([disabled]) {
-    background: var(--surface-active);
-    color: var(--text);
-    border-color: rgba(255, 255, 255, 0.22);
-}
-
-.stage-header-btns button:active:not([disabled]) {
-    background: rgba(255, 255, 255, 0.13);
-    transform: scale(0.94);
-}
-
-.stage-header-btns button[disabled] {
-    opacity: 0.28;
-    cursor: not-allowed;
-    border-color: transparent;
-    background: transparent;
-}
-
-[data-theme="light"] .stage-header-btns button:hover:not([disabled]) {
-    border-color: rgba(0, 0, 0, 0.25);
-}
-
-[data-theme="light"] .stage-header-btns button:active:not([disabled]) {
-    background: rgba(0, 0, 0, 0.14);
+.icon-btn-group .select-base {
+    height: var(--icon-btn-size);
+    box-sizing: border-box;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 /* ── Share button separator ── */

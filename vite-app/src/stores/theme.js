@@ -22,7 +22,7 @@ function applyTheme(pref) {
 function positionSlider(switcher, slider, activeBtn) {
     if (!activeBtn) return;
     slider.style.width = activeBtn.offsetWidth + 'px';
-    slider.style.transform = `translateX(${activeBtn.offsetLeft - 3}px)`;
+    slider.style.transform = `translateX(${activeBtn.offsetLeft}px)`;
 }
 
 export function initTheme(switcherEl) {
