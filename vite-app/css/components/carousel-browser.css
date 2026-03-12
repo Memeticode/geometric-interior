@@ -596,3 +596,62 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     :root { --card-w: 280px; }
 }
 
+/* ── Programmatic control ── */
+
+/* Locked: suppress carousel interaction */
+.cdb-strip.cdb-locked .cdb-track {
+    pointer-events: none;
+}
+.cdb-strip.cdb-locked .cdb-arrow,
+.cdb-strip.cdb-locked .cdb-toggle {
+    opacity: 0.15;
+    pointer-events: none;
+}
+
+/* Controls hidden: remove from layout */
+.cdb-strip.cdb-controls-hidden > .cdb-controls {
+    display: none;
+}
+
+/* ── Placeholder card ── */
+
+.cdb-card.cdb-placeholder .cdb-card-frame {
+    border: 2px dashed var(--border);
+}
+.cdb-card.cdb-placeholder .cdb-card-img {
+    background: transparent;
+    position: relative;
+}
+.cdb-card.cdb-placeholder .cdb-card-img img {
+    display: none;
+}
+.cdb-card.cdb-placeholder .cdb-card-img::after {
+    content: '+';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.cdb-grid-card.cdb-placeholder {
+    border-style: dashed;
+    position: relative;
+}
+.cdb-grid-card.cdb-placeholder img {
+    display: none;
+}
+.cdb-grid-card.cdb-placeholder::after {
+    content: '+';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 14 / 9;
+    font-size: 1.75rem;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+

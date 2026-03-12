@@ -46,7 +46,7 @@ import './flip-layout.js';
 // ── Child element: <carousel-dropdown-browser-card> ──
 
 class CarouselDropdownBrowserCard extends HTMLElement {
-    static observedAttributes = ['key', 'label', 'thumb-src', 'fallback-src', 'deletable'];
+    static observedAttributes = ['key', 'label', 'thumb-src', 'fallback-src', 'deletable', 'placeholder'];
     #data = null;
 
     get key() { return this.getAttribute('key'); }
@@ -59,6 +59,8 @@ class CarouselDropdownBrowserCard extends HTMLElement {
     set fallbackSrc(v) { v ? this.setAttribute('fallback-src', v) : this.removeAttribute('fallback-src'); }
     get deletable() { return this.hasAttribute('deletable'); }
     set deletable(v) { v ? this.setAttribute('deletable', '') : this.removeAttribute('deletable'); }
+    get placeholder() { return this.hasAttribute('placeholder'); }
+    set placeholder(v) { v ? this.setAttribute('placeholder', '') : this.removeAttribute('placeholder'); }
     get data() { return this.#data; }
     set data(v) { this.#data = v; }
 
@@ -175,6 +177,7 @@ function readCard(el) {
         thumbSrc: el.thumbSrc,
         fallbackSrc: el.fallbackSrc,
         deletable: el.deletable,
+        placeholder: el.placeholder,
         data: el.data,
     };
 }
@@ -197,6 +200,11 @@ class CarouselDropdownBrowser extends HTMLElement {
     #animatingExpand = false;       // guard against overlapping expand/collapse
     #isFirstRender = true;          // fade-in on initial load
 
+    // ── Programmatic control ──
+    #locked = false;                // suppress user interaction (drag, arrows, toggle)
+    #controlsHidden = false;        // hide controls row entirely
+    #modeState = null;              // saved state for enterMode/exitMode
+
     // ── Title configuration ──
     // Format: "v-align" or "v-align h-align"
     //   v-align: above | top | center | bottom | below | none (default: none = hidden)
@@ -205,6 +213,8 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     // ── Data ──
     #items = [];           // [{ key, label, thumbSrc, fallbackSrc, deletable, data, section, sectionIndex }]
+    #allItems = [];        // unfiltered items from #collectItems()
+    #filterPredicate = null; // (item) => boolean, or null for no filter
     #selectedKey = null;
 
     // ── Carousel state ──
@@ -277,6 +287,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             card.thumbSrc = item.thumbSrc || '';
             if (item.fallbackSrc) card.fallbackSrc = item.fallbackSrc;
             if (item.deletable) card.deletable = true;
+            if (item.placeholder) card.placeholder = true;
             card.data = item.data;
             this.appendChild(card);
         }
@@ -291,6 +302,18 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     get centerIndex() { return this.#centerIdx; }
     get expanded() { return this.#dropdown?.classList.contains('expanded') ?? false; }
+
+    get locked() { return this.#locked; }
+    set locked(v) {
+        this.#locked = !!v;
+        this.#applyLockedState();
+    }
+
+    get controlsHidden() { return this.#controlsHidden; }
+    set controlsHidden(v) {
+        this.#controlsHidden = !!v;
+        this.#applyControlsHidden();
+    }
 
     // ── Public methods ──
 
@@ -317,8 +340,123 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
     }
 
+    /** Filter visible items without DOM teardown. Pass null to clear filter. */
+    filter(predicate) {
+        this.#filterPredicate = typeof predicate === 'function' ? predicate : null;
+        this.#applyFilter();
+        this.#rebuildFiltered();
+    }
+
+    /**
+     * Enter a programmatic mode: saves state, applies filter/expand/lock/hideControls.
+     * @param {Object} options
+     * @param {Function|null} [options.filter] - Filter predicate for items
+     * @param {boolean} [options.expand] - Expand to grid view
+     * @param {boolean} [options.locked] - Lock user interaction
+     * @param {boolean} [options.hideControls] - Hide the controls row
+     * @returns {Promise<void>}
+     */
+    async enterMode({ expand: doExpand, hideControls, locked, filter } = {}) {
+        // If already in a mode, exit immediately (no animation)
+        if (this.#modeState) this.#exitModeImmediate();
+
+        // Save current state
+        this.#modeState = {
+            wasExpanded: this.expanded,
+            selectedKey: this.#selectedKey,
+            centerIdx: this.#centerIdx,
+            controlsHidden: this.#controlsHidden,
+            locked: this.#locked,
+            filterPredicate: this.#filterPredicate,
+        };
+
+        // 1. Filter first (may trigger rebuild)
+        if (filter !== undefined) this.filter(filter);
+
+        // 2. Wait for any in-progress animation
+        if (this.#animatingExpand) {
+            await new Promise(r => {
+                const h = () => { this.removeEventListener('expand-change', h); r(); };
+                this.addEventListener('expand-change', h);
+            });
+        }
+
+        // 3. Expand (controls must be visible for FLIP measurement)
+        if (doExpand && !this.expanded && this.#items.length > 0) {
+            await new Promise(r => {
+                const h = () => { this.removeEventListener('expand-change', h); r(); };
+                this.addEventListener('expand-change', h);
+                this.expand();
+            });
+        }
+
+        // 4. Lock AFTER expand (so expand() isn't blocked by locked guard)
+        if (locked !== undefined) this.locked = locked;
+
+        // 5. Hide controls LAST (after FLIP completes)
+        if (hideControls !== undefined) this.controlsHidden = hideControls;
+    }
+
+    /**
+     * Exit programmatic mode: restores saved state with animations.
+     * @returns {Promise<void>}
+     */
+    async exitMode() {
+        if (!this.#modeState) return;
+        const saved = this.#modeState;
+        this.#modeState = null;
+
+        // 1. Show controls FIRST (needed for FLIP measurement)
+        this.controlsHidden = saved.controlsHidden;
+
+        // 2. Unlock BEFORE collapse (so collapse() isn't blocked)
+        this.locked = saved.locked;
+
+        // 3. Restore filter (triggers rebuildFiltered — grid updates in-place if expanded)
+        this.filter(saved.filterPredicate);
+
+        // 4. Wait for any in-progress animation
+        if (this.#animatingExpand) {
+            await new Promise(r => {
+                const h = () => { this.removeEventListener('expand-change', h); r(); };
+                this.addEventListener('expand-change', h);
+            });
+        }
+
+        // 5. Restore expand/collapse state
+        if (!saved.wasExpanded && this.expanded) {
+            await new Promise(r => {
+                const h = () => { this.removeEventListener('expand-change', h); r(); };
+                this.addEventListener('expand-change', h);
+                this.collapse();
+            });
+        } else if (saved.wasExpanded && !this.expanded) {
+            await new Promise(r => {
+                const h = () => { this.removeEventListener('expand-change', h); r(); };
+                this.addEventListener('expand-change', h);
+                this.expand();
+            });
+        }
+
+        // 6. Restore selection
+        if (saved.selectedKey) {
+            this.selectedKey = saved.selectedKey;
+            this.syncToKey(saved.selectedKey);
+        }
+    }
+
+    /** Exit mode immediately without animations (used when re-entering). */
+    #exitModeImmediate() {
+        if (!this.#modeState) return;
+        const saved = this.#modeState;
+        this.#modeState = null;
+        this.controlsHidden = saved.controlsHidden;
+        this.locked = saved.locked;
+        this.filter(saved.filterPredicate);
+    }
+
     expand() {
-        if (this.expanded || this.#animatingExpand) return;
+        if (this.expanded || this.#animatingExpand || this.#locked || this.#controlsHidden) return;
         this.#animatingExpand = true;
 
         // Disable controls during animation
@@ -697,7 +835,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     async collapse() {
-        if (!this.expanded || this.#animatingExpand) return;
+        if (!this.expanded || this.#animatingExpand || this.#locked || this.#controlsHidden) return;
         this.#animatingExpand = true;
 
         // Disable controls during animation
@@ -1108,6 +1246,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     toggle() {
+        if (this.#locked || this.#controlsHidden) return;
         if (this.expanded) this.collapse();
         else this.expand();
     }
@@ -1286,7 +1425,53 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     #collectAndRebuild() {
-        this.#items = this.#collectItems();
+        this.#allItems = this.#collectItems();
+        this.#applyFilter();
+        this.#rebuild();
+    }
+
+    #applyFilter() {
+        if (this.#filterPredicate) {
+            this.#items = this.#allItems.filter(this.#filterPredicate);
+        } else {
+            this.#items = this.#allItems;
+        }
+        // Clamp centerIdx to valid range
+        if (this.#items.length > 0) {
+            if (this.#selectedKey) {
+                const idx = this.#items.findIndex(it => it.key === this.#selectedKey);
+                if (idx >= 0) this.#centerIdx = idx;
+                else this.#centerIdx = Math.min(this.#centerIdx, this.#items.length - 1);
+            } else {
+                this.#centerIdx = Math.min(this.#centerIdx, this.#items.length - 1);
+            }
+        } else {
+            this.#centerIdx = 0;
+        }
+    }
+
+    /** Rebuild after filter change: re-render grid in-place if expanded, otherwise full rebuild. */
+    #rebuildFiltered() {
+        if (this.expanded && !this.#animatingExpand) {
+            // Re-render in-place without collapse/expand animation
+            this.#renderCarouselCards();
+            this.#buildSectionLabels();
+            this.#positionCards();
+            this.#renderGridCards();
+            // Show grid cards immediately (skip entry animation)
+            for (const card of this.#grid.querySelectorAll('.cdb-grid-card')) {
+                card.style.opacity = '';
+            }
+            for (const name of this.#grid.querySelectorAll('.cdb-grid-card-name')) {
+                name.style.opacity = '';
+            }
+            for (const header of this.#grid.querySelectorAll('.cdb-grid-section-header')) {
+                header.style.opacity = '';
+            }
+            this.#updateToggleVisibility();
+            this.#updateActiveHighlight();
+            return;
+        }
         this.#rebuild();
     }
 
@@ -1590,6 +1775,29 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#toggle.style.display = this.#expandable && this.#items.length > 0 ? '' : 'none';
     }
 
+    #applyLockedState() {
+        if (!this.#strip) return;
+        const btns = [this.#navLeft, this.#navRight, this.#secNavLeft, this.#secNavRight, this.#toggle];
+        if (this.#locked) {
+            this.#strip.classList.add('cdb-locked');
+            for (const b of btns) if (b) b.disabled = true;
+        } else {
+            this.#strip.classList.remove('cdb-locked');
+            for (const b of btns) if (b) b.disabled = false;
+            this.#updateToggleVisibility();
+        }
+    }
+
+    #applyControlsHidden() {
+        if (!this.#strip) return;
+        if (this.#controlsHidden) {
+            this.#strip.classList.add('cdb-controls-hidden');
+        } else {
+            this.#strip.classList.remove('cdb-controls-hidden');
+            this.#updateToggleVisibility();
+        }
+    }
+
     // ── Carousel card rendering ──
 
     #renderCarouselCards() {
@@ -1606,17 +1814,23 @@ class CarouselDropdownBrowser extends HTMLElement {
             frame.className = 'cdb-card-frame';
             frame.dataset.flipKey = item.key;
 
+            if (item.placeholder) card.classList.add('cdb-placeholder');
+
             const imgWrap = document.createElement('div');
             imgWrap.className = 'cdb-card-img';
 
             const img = document.createElement('img');
             img.alt = item.label;
-            if (item.thumbSrc) img.src = item.thumbSrc;
-            const markError = () => { img.onerror = null; img.removeAttribute('src'); imgWrap.classList.add('cdb-img-error'); };
-            if (item.fallbackSrc) {
-                img.onerror = () => { img.onerror = markError; img.src = item.fallbackSrc; };
+            if (item.placeholder) {
+                // Placeholder cards: no image, CSS handles visual
             } else if (item.thumbSrc) {
-                img.onerror = markError;
+                img.src = item.thumbSrc;
+                const markError = () => { img.onerror = null; img.removeAttribute('src'); imgWrap.classList.add('cdb-img-error'); };
+                if (item.fallbackSrc) {
+                    img.onerror = () => { img.onerror = markError; img.src = item.fallbackSrc; };
+                } else {
+                    img.onerror = markError;
+                }
             } else {
                 imgWrap.classList.add('cdb-img-error');
             }
@@ -1681,15 +1895,20 @@ class CarouselDropdownBrowser extends HTMLElement {
             card.className = 'cdb-grid-card';
             card.dataset.flipKey = item.key;
             if (item.key === this.#selectedKey) card.classList.add('selected');
+            if (item.placeholder) card.classList.add('cdb-placeholder');
 
             const img = document.createElement('img');
             img.alt = item.label;
-            if (item.thumbSrc) img.src = item.thumbSrc;
-            const markGridError = () => { img.onerror = null; img.removeAttribute('src'); card.classList.add('cdb-img-error'); };
-            if (item.fallbackSrc) {
-                img.onerror = () => { img.onerror = markGridError; img.src = item.fallbackSrc; };
+            if (item.placeholder) {
+                // Placeholder cards: no image, CSS handles visual
             } else if (item.thumbSrc) {
-                img.onerror = markGridError;
+                img.src = item.thumbSrc;
+                const markGridError = () => { img.onerror = null; img.removeAttribute('src'); card.classList.add('cdb-img-error'); };
+                if (item.fallbackSrc) {
+                    img.onerror = () => { img.onerror = markGridError; img.src = item.fallbackSrc; };
+                } else {
+                    img.onerror = markGridError;
+                }
             } else {
                 card.classList.add('cdb-img-error');
             }
@@ -2710,7 +2929,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     }
 
     #onTrackClick(e) {
-        if (this.#dragJustEnded) return;
+        if (this.#dragJustEnded || this.#locked) return;
         const found = this.#findCardAtX(e.clientX);
         if (!found) return;
         const entry = this.#cards.find(c => c.element === found);
@@ -2814,7 +3033,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         };
 
         track.addEventListener('pointerdown', (e) => {
-            if (e.button !== 0) return;
+            if (e.button !== 0 || this.#locked) return;
             cancelMomentum();
             this.#resetHoverState();
 

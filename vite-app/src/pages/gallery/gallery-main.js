@@ -2300,7 +2300,7 @@ function initEditMode() {
     });
 }
 
-function enterEditMode(mode, entry, fromPopstate) {
+async function enterEditMode(mode, entry, fromPopstate) {
     if (editMode) return; // already in edit mode
     if (slideshowPlaying) stopSlideshow();
 
@@ -2351,11 +2351,16 @@ function enterEditMode(mode, entry, fromPopstate) {
         editWorkerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
     }
 
-    // Filter carousel to user images only
-    filterCarouselForEditMode(true);
+    // Enter carousel edit mode: filter to user images, expand to grid, lock interaction
+    await carouselBrowser.enterMode({
+        filter: item => !item.data?.isPortrait,
+        expand: true,
+        hideControls: true,
+        locked: true,
+    });
 }
 
-function exitEditMode(saved, fromPopstate) {
+async function exitEditMode(saved, fromPopstate) {
     if (!editMode) return;
 
     if (saved) {
@@ -2387,37 +2392,8 @@ function exitEditMode(saved, fromPopstate) {
     editMode = null;
     editSourceEntry = null;
 
-    // Restore carousel
-    filterCarouselForEditMode(false);
-}
-
-function filterCarouselForEditMode(editActive) {
-    if (editActive) {
-        // Rebuild carousel showing only user images (generated + custom, no portraits)
-        carouselBrowser.clearItems();
-        const generated = carouselList.filter(e => e.assetId && !e.isPortrait);
-        const custom = carouselList.filter(e => !e.isPortrait && !e.assetId);
-        const addSection = (label, entries) => {
-            if (!entries.length) return;
-            const section = document.createElement('carousel-dropdown-browser-section');
-            section.label = label;
-            for (const entry of entries) {
-                const card = document.createElement('carousel-dropdown-browser-card');
-                card.key = entry.assetId || entry.name;
-                card.label = entry.name;
-                card.thumbSrc = resolveThumbSrc(entry);
-                card.deletable = true;
-                card.data = entry;
-                section.appendChild(card);
-            }
-            carouselBrowser.appendChild(section);
-        };
-        addSection('Generated', generated);
-        addSection('Custom', custom);
-    } else {
-        // Restore full carousel
-        updateBrowserItems();
-    }
+    // Restore carousel to full state
+    await carouselBrowser.exitMode();
 }
 
 // ── Edit/Add/Save/Render button handlers ──
@@ -2432,6 +2408,73 @@ galleryBtnEdit.addEventListener('click', () => {
         if (entry) enterEditMode('edit', entry);
     }
 });
+
+// ── Right-click / long-press "Edit image" context menu on main visual ──
+{
+    const ctxMenu = document.createElement('div');
+    ctxMenu.className = 'gallery-ctx-menu';
+    ctxMenu.setAttribute('role', 'menu');
+    ctxMenu.innerHTML = '<button class="gallery-ctx-item" role="menuitem">Edit image</button>';
+    document.body.appendChild(ctxMenu);
+
+    const ctxItem = ctxMenu.querySelector('.gallery-ctx-item');
+
+    function showCtxMenu(x, y) {
+        ctxMenu.style.left = Math.min(x, window.innerWidth - 160) + 'px';
+        ctxMenu.style.top = Math.min(y, window.innerHeight - 40) + 'px';
+        ctxMenu.classList.add('visible');
+        ctxItem.focus();
+    }
+
+    function hideCtxMenu() {
+        ctxMenu.classList.remove('visible');
+    }
+
+    function triggerEdit() {
+        hideCtxMenu();
+        const entry = navigableList[currentIndex];
+        if (entry) enterEditMode('edit', entry);
+    }
+
+    // Desktop: right-click
+    gallerySelectionCardVisualWrap.addEventListener('contextmenu', (e) => {
+        if (editMode) return; // already editing, allow native menu
+        e.preventDefault();
+        showCtxMenu(e.clientX, e.clientY);
+    });
+
+    // Mobile/tablet: long-press (500ms)
+    let lpTimer = 0;
+    let lpFired = false;
+    gallerySelectionCardVisualWrap.addEventListener('touchstart', (e) => {
+        if (editMode) return;
+        if (e.touches.length !== 1) return;
+        lpFired = false;
+        const touch = e.touches[0];
+        lpTimer = setTimeout(() => {
+            lpFired = true;
+            showCtxMenu(touch.clientX, touch.clientY);
+        }, 500);
+    }, { passive: true });
+    gallerySelectionCardVisualWrap.addEventListener('touchmove', () => { clearTimeout(lpTimer); }, { passive: true });
+    gallerySelectionCardVisualWrap.addEventListener('touchend', (e) => {
+        clearTimeout(lpTimer);
+        if (lpFired) e.preventDefault();
+    });
+    gallerySelectionCardVisualWrap.addEventListener('touchcancel', () => { clearTimeout(lpTimer); });
+
+    ctxItem.addEventListener('click', triggerEdit);
+    ctxItem.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triggerEdit(); }
+        if (e.key === 'Escape') hideCtxMenu();
+    });
+
+    document.addEventListener('mousedown', (e) => {
+        if (!ctxMenu.contains(e.target)) hideCtxMenu();
+    });
+    document.addEventListener('scroll', hideCtxMenu, true);
+    window.addEventListener('resize', hideCtxMenu);
+}
 
 galleryBtnAdd.addEventListener('click', () => {
     if (editMode) {

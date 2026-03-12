@@ -453,7 +453,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--morph-move) ease var(--morph-d2);
     cursor: pointer;
 }
 .selected-video {
@@ -1561,31 +1561,37 @@
 .gallery-morph-btn {
     position: relative;
 }
-.gallery-morph-btn .icon-browse,
-.gallery-morph-btn .icon-edit {
-    transition: opacity 0.25s ease, transform 0.25s ease;
+/* Base (exit): browse icons appear (d3), edit icons disappear (d1) */
+.gallery-morph-btn .icon-browse {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+    transition: opacity var(--morph-appear) ease var(--morph-d3),
+                transform var(--morph-appear) ease var(--morph-d3);
 }
 .gallery-morph-btn .icon-edit {
     position: absolute;
     opacity: 0;
     transform: rotate(-90deg) scale(0.6);
+    transition: opacity var(--morph-disappear) ease var(--morph-d1),
+                transform var(--morph-disappear) ease var(--morph-d1);
 }
-.gallery-morph-btn .icon-browse {
-    opacity: 1;
-    transform: rotate(0deg) scale(1);
-}
+/* Enter: browse icons disappear (d1), edit icons appear (d3) */
 .editing .gallery-morph-btn .icon-browse {
     opacity: 0;
     transform: rotate(90deg) scale(0.6);
+    transition: opacity var(--morph-disappear) ease var(--morph-d1),
+                transform var(--morph-disappear) ease var(--morph-d1);
 }
 .editing .gallery-morph-btn .icon-edit {
     opacity: 1;
     transform: rotate(0deg) scale(1);
+    transition: opacity var(--morph-appear) ease var(--morph-d3),
+                transform var(--morph-appear) ease var(--morph-d3);
 }
 
 /* ── Browse ↔ Edit cross-fade ── */
 
-/* Visual: cross-fade image ↔ canvas */
+/* Visual: cross-fade image ↔ canvas — move phase (d2) */
 .gallery-edit-canvas {
     position: absolute;
     inset: 0;
@@ -1593,7 +1599,7 @@
     height: 100%;
     border-radius: 4px;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity var(--morph-move) ease var(--morph-d2);
 }
 .editing .gallery-selection-visual {
     opacity: 0;
@@ -1607,8 +1613,13 @@
 .gallery-footer-edit {
     grid-row: 1;
     grid-column: 1;
-    transition: opacity 0.3s ease, transform 0.3s ease;
 }
+/* Footer browse — base (exit): appears at d3 */
+.gallery-footer-browse {
+    transition: opacity var(--morph-appear) ease var(--morph-d3),
+                transform var(--morph-appear) ease var(--morph-d3);
+}
+/* Footer edit — base (exit): disappears at d1 */
 .gallery-footer-edit {
     display: flex;
     flex-direction: column;
@@ -1616,16 +1627,23 @@
     opacity: 0;
     transform: translateY(4px);
     pointer-events: none;
+    transition: opacity var(--morph-disappear) ease var(--morph-d1),
+                transform var(--morph-disappear) ease var(--morph-d1);
 }
+/* Enter: browse disappears (d1), edit appears (d3) */
 .editing .gallery-footer-browse {
     opacity: 0;
     transform: translateY(-4px);
     pointer-events: none;
+    transition: opacity var(--morph-disappear) ease var(--morph-d1),
+                transform var(--morph-disappear) ease var(--morph-d1);
 }
 .editing .gallery-footer-edit {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
+    transition: opacity var(--morph-appear) ease var(--morph-d3),
+                transform var(--morph-appear) ease var(--morph-d3);
 }
 
 /* Config panel — slides up from behind the image card */
@@ -1676,29 +1694,37 @@
     align-items: center;
     gap: 0.125rem;
     overflow: hidden;
-    transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.25s ease;
 }
 
-/* Browse group — visible by default, collapses in edit mode */
+/* Browse group — base (exit): appears at d3 */
 .toolbar-browse-group {
     max-width: 8rem;
     opacity: 1;
+    transition: max-width var(--morph-appear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d3),
+                opacity var(--morph-appear) ease var(--morph-d3);
 }
+/* Browse group — enter: disappears at d1 */
 .editing .toolbar-browse-group {
     max-width: 0;
     opacity: 0;
     pointer-events: none;
+    transition: max-width var(--morph-disappear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d1),
+                opacity var(--morph-disappear) ease var(--morph-d1);
 }
 
-/* Edit group — collapsed by default, expands in edit mode */
+/* Edit group — base (exit): disappears at d1 */
 .toolbar-edit-group {
     max-width: 0;
     opacity: 0;
+    transition: max-width var(--morph-disappear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d1),
+                opacity var(--morph-disappear) ease var(--morph-d1);
 }
+/* Edit group — enter: appears at d3 */
 .editing .toolbar-edit-group {
     max-width: 8rem;
     opacity: 1;
+    transition: max-width var(--morph-appear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d3),
+                opacity var(--morph-appear) ease var(--morph-d3);
 }
 
 /* Status indicator for edit mode */
@@ -1710,4 +1736,43 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
+}
+
+/* ── Right-click / long-press context menu ── */
+.gallery-ctx-menu {
+    position: fixed;
+    z-index: 9999;
+    min-width: 140px;
+    padding: 4px 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.96);
+    transition: opacity 120ms ease, transform 120ms ease;
+}
+.gallery-ctx-menu.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+}
+.gallery-ctx-item {
+    display: block;
+    width: 100%;
+    padding: 6px 14px;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 0.8125rem;
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.gallery-ctx-item:hover,
+.gallery-ctx-item:focus-visible {
+    background: var(--surface-hover);
+    outline: none;
 }
