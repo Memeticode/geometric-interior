@@ -233,14 +233,17 @@ export function removeImageFromAnimProfiles(imageName) {
  * ---------------------------
  */
 
-/** Flatten all sections into { "Display Name": { seed, controls, commentary, generated } } */
+/** Flatten all sections into { "Display Name": { seed, controls, commentary, displayName, generated } } */
 export function loadPortraits() {
     const result = {};
     for (const sectionKey of starterProfiles['section-order']) {
         const section = starterProfiles.sections[sectionKey];
         if (!section) continue;
-        for (const portrait of Object.values(section.portraits)) {
-            result[portrait.name] = structuredClone(portrait);
+        for (const [slug, portrait] of Object.entries(section.portraits)) {
+            const p = structuredClone(portrait);
+            p.displayName = t(`portrait.name.${slug}`);
+            p.commentary = t(`portrait.commentary.${slug}`);
+            result[portrait.name] = p;
         }
     }
     return result;
@@ -265,7 +268,7 @@ export function loadPortraitSections() {
         const section = starterProfiles.sections[key];
         if (!section) return null;
         const portraitNames = Object.values(section.portraits).map(p => p.name);
-        return { key, name: section.name, portraitNames };
+        return { key, name: t(`portrait.section.${key}`), portraitNames };
     }).filter(Boolean);
 }
 

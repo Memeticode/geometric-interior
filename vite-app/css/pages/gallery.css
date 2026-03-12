@@ -10,7 +10,7 @@
 }
 .gallery-page .main-content {
     flex: 1;
-    padding: 0 0.75rem;
+    padding: 0 0.75rem 0.25rem;
     overflow-y: auto;
     scrollbar-gutter: stable both-edges;
 }
@@ -175,35 +175,48 @@
     --morph-d3:        3.5s;   /* phase 3 start     (prod: 0.35s)*/
 }
 
+/* Suppress all morph transitions on initial page load */
+.gallery-container.no-transition,
+.gallery-container.no-transition *,
+.gallery-container.no-transition *::before,
+.gallery-container.no-transition *::after {
+    transition: none !important;
+}
+
 .gallery-selection-header-container {
     width: 100%;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: auto 1fr;
     gap: 0;
-    padding: 0.25rem 0 0.25rem;
+    padding: 0 0 0.25rem;
     transition: gap var(--morph-move) ease var(--morph-d2),
                 padding var(--morph-move) ease var(--morph-d2);
 }
 .editing .gallery-selection-header-container {
     gap: 0.375rem;
-    padding: 0.25rem 0 0.5rem;
+    padding: 0 0 0.5rem;
     transition: gap var(--morph-move) ease var(--morph-d2),
                 padding var(--morph-move) ease var(--morph-d2);
 }
 
-/* Each row: label + field side by side */
+/* Each row: label + field share parent columns via subgrid */
 .morph-row {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
     align-items: center;
 }
 .morph-row .gen-field-error {
     grid-column: 1 / -1;
 }
+.morph-row .gen-field-error.hidden {
+    position: absolute;
+}
 
 /* Labels: hidden in browse, slide in from left for edit */
 .morph-label {
     max-width: 0;
+    max-height: 0;
     opacity: 0;
     overflow: hidden;
     white-space: nowrap;
@@ -214,15 +227,18 @@
     display: flex;
     align-items: center;
     gap: 0.3125rem;
-    /* Exit: opacity disappears (d1), max-width moves (d2) */
+    /* Exit: opacity disappears (d1), max-width/height move (d2) */
     transition: max-width var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
+                max-height var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
                 opacity var(--morph-disappear) ease var(--morph-d1);
 }
 .editing .morph-label {
     max-width: 5rem;
+    max-height: 2rem;
     opacity: 1;
-    /* Enter: max-width moves (d2), opacity appears (d3) */
+    /* Enter: max-width/height move (d2), opacity appears (d3) */
     transition: max-width var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
+                max-height var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
                 opacity var(--morph-appear) ease var(--morph-d3);
 }
 
@@ -308,7 +324,7 @@
 .morph-seed-field {
     display: flex;
     align-items: baseline;
-    gap: 0;
+    gap: 0.1em;
     min-width: 0;
     transition: gap var(--morph-move) ease var(--morph-d2);
 }
@@ -317,12 +333,32 @@
     transition: gap var(--morph-move) ease var(--morph-d2);
 }
 
+/* Wrapper: holds select + comma (via ::after), manages width transition */
+.morph-select-wrap {
+    display: inline-flex;
+    align-items: baseline;
+    min-width: 0;
+    width: var(--morph-select-w);
+    /* Exit: width moves (d2) */
+    transition: width var(--morph-move) ease var(--morph-d2);
+}
+.editing .morph-select-wrap {
+    width: calc((100% - 0.75rem) / 3);
+    /* Enter: width moves (d2) */
+    transition: width var(--morph-move) ease var(--morph-d2);
+}
+
+
 .morph-select {
     appearance: none;
     -webkit-appearance: none;
     border: 1px solid transparent;
-    background: transparent;
-    background-image: none;
+    background-color: transparent;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.375rem center;
+    background-size: 0;
+    width: 100%;
     padding: 0;
     font-family: inherit;
     font-size: 0.6875rem;
@@ -333,66 +369,46 @@
     pointer-events: none;
     outline: none;
     border-radius: 0;
+    /* Exit transitions: most props move (d2), chevron disappears (d1) */
     transition: border-color var(--morph-move) ease var(--morph-d2),
                 background-color var(--morph-move) ease var(--morph-d2),
                 padding var(--morph-move) ease var(--morph-d2),
                 color var(--morph-move) ease var(--morph-d2),
-                border-radius var(--morph-move) ease var(--morph-d2);
+                border-radius var(--morph-move) ease var(--morph-d2),
+                background-size var(--morph-disappear) ease var(--morph-d1);
 }
 /* Sentence case: capitalize first select in browse mode */
-.morph-select:first-child {
+.morph-select-wrap:first-child .morph-select {
     text-transform: capitalize;
 }
-.editing .morph-select:first-child {
+.editing .morph-select-wrap:first-child .morph-select {
     text-transform: none;
 }
 
 .editing .morph-select {
-    font-style: normal;
     color: var(--text);
     border-color: var(--border);
-    background: var(--surface);
+    background-color: transparent;
+    background-size: 10px;
     padding: 0.25rem 1.375rem 0.25rem 0.5rem;
     border-radius: 8px;
     cursor: pointer;
     pointer-events: auto;
-    flex: 1 1 0;
     min-width: 0;
-    width: 0;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 0.375rem center;
+    /* Enter transitions: most props move (d2), chevron appears (d3) */
+    transition: border-color var(--morph-move) ease var(--morph-d2),
+                background-color var(--morph-move) ease var(--morph-d2),
+                padding var(--morph-move) ease var(--morph-d2),
+                color var(--morph-move) ease var(--morph-d2),
+                border-radius var(--morph-move) ease var(--morph-d2),
+                background-size var(--morph-appear) ease var(--morph-d3);
 }
 .editing .morph-select:hover {
     border-color: var(--border-strong);
-    background-color: var(--surface-active);
 }
 .editing .morph-select:focus-visible {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-bg);
-}
-
-/* Commas: visible in browse, fade out + collapse in edit */
-.morph-comma {
-    font-size: 0.6875rem;
-    font-style: italic;
-    color: var(--text-muted);
-    line-height: 1.4;
-    opacity: 0.7;
-    max-width: 1.5rem;
-    overflow: hidden;
-    white-space: pre;
-    display: inline-block;
-    /* Exit: appear (d3) */
-    transition: opacity var(--morph-appear) ease var(--morph-d3),
-                max-width var(--morph-appear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d3);
-}
-.editing .morph-comma {
-    opacity: 0;
-    max-width: 0;
-    /* Enter: disappear (d1) */
-    transition: opacity var(--morph-disappear) ease var(--morph-d1),
-                max-width var(--morph-disappear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d1);
 }
 
 /* Fading for profile switching (reuse existing pattern) */
@@ -422,6 +438,8 @@
     border: 1px solid var(--border);
     color: var(--text-muted);
     border-radius: 50%;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -453,7 +471,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: opacity var(--morph-move) ease var(--morph-d2);
+    transition: opacity 0.25s ease;
     cursor: pointer;
 }
 .selected-video {
@@ -469,7 +487,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    max-width: clamp(13.75rem, 50%, calc(100% - 16px));
+    width: min(50rem, 75vw);
     max-height: calc(100% - 16px);
     overflow-y: auto;
     text-align: left;
@@ -493,35 +511,81 @@
 }
 .gallery-selection-card-footer {
     width: 100%;
-    padding: 0.25rem 0.75rem 0.5rem;
+    padding: 0 0.75rem;
     text-align: center;
     border-top: 1px solid var(--border);
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: opacity 0.25s ease, height 0.3s ease;
+    overflow: hidden;
 }
+.gallery-selection-card-footer.fading {
+    opacity: 0;
+}
+
+/* Gen title — fades independently */
 .selected-gen-title {
     font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.3px;
     color: var(--text);
+    transition: opacity var(--morph-appear) ease var(--morph-d3);
 }
-.gallery-selection-card-commentary-text {
-    font-size: 0.6875rem;
-    line-height: 1.5;
-    color: var(--text-muted);
-    margin-top: 0.375rem;
-    white-space: pre-wrap;
-    display: none;
-}
-.gallery-selection-card-commentary-text.expanded {
-    display: block;
+.editing .selected-gen-title {
+    opacity: 0;
+    transition: opacity var(--morph-disappear) ease var(--morph-d1);
 }
 
-/* Cross-fade transition for selection change */
-.gallery-selection-card-footer {
-    transition: opacity 0.25s ease;
+/* Commentary morph wrapper */
+.morph-commentary {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 0.25rem;
 }
-.gallery-selection-card-footer.fading {
-    opacity: 0;
+.morph-commentary-field {
+    width: min(50rem, 75vw);
+    max-width: 100%;
+    font-size: 0.6875rem;
+    font-weight: normal;
+    line-height: 1.5;
+    color: var(--text-muted);
+    resize: none;
+    field-sizing: content;
+    white-space: pre-wrap;
+    text-align: center;
+    /* Exit transitions (d2) */
+    transition: border-color var(--morph-move) ease var(--morph-d2),
+                background-color var(--morph-move) ease var(--morph-d2),
+                padding var(--morph-move) ease var(--morph-d2),
+                color var(--morph-move) ease var(--morph-d2);
+}
+.morph-commentary-field::placeholder {
+    font-style: italic;
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+.editing .morph-commentary-field {
+    text-align: center;
+    color: var(--text);
+    background-color: var(--bg);
+    padding: 0.25rem 0.5rem 0.75rem;
+    /* Enter transitions (d2) */
+    transition: border-color var(--morph-move) ease var(--morph-d2),
+                background-color var(--morph-move) ease var(--morph-d2),
+                padding var(--morph-move) ease var(--morph-d2),
+                color var(--morph-move) ease var(--morph-d2);
+}
+.editing .morph-commentary-field::placeholder {
+    font-style: normal;
+    opacity: 0.4;
+}
+.morph-commentary-counter {
+    top: auto;
+    bottom: 0.5rem;
+    transform: none;
 }
 /* ── Label info wrapper + tooltip ── */
 .label-info {
@@ -1599,52 +1663,19 @@
     height: 100%;
     border-radius: 4px;
     opacity: 0;
+    pointer-events: none;
     transition: opacity var(--morph-move) ease var(--morph-d2);
 }
 .editing .gallery-selection-visual {
     opacity: 0;
+    transition: opacity var(--morph-move) ease var(--morph-d2);
 }
 .editing .gallery-edit-canvas {
+    pointer-events: auto;
     opacity: 1;
 }
 
-/* Footer: stack browse + edit in same grid cell */
-.gallery-footer-browse,
-.gallery-footer-edit {
-    grid-row: 1;
-    grid-column: 1;
-}
-/* Footer browse — base (exit): appears at d3 */
-.gallery-footer-browse {
-    transition: opacity var(--morph-appear) ease var(--morph-d3),
-                transform var(--morph-appear) ease var(--morph-d3);
-}
-/* Footer edit — base (exit): disappears at d1 */
-.gallery-footer-edit {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    opacity: 0;
-    transform: translateY(4px);
-    pointer-events: none;
-    transition: opacity var(--morph-disappear) ease var(--morph-d1),
-                transform var(--morph-disappear) ease var(--morph-d1);
-}
-/* Enter: browse disappears (d1), edit appears (d3) */
-.editing .gallery-footer-browse {
-    opacity: 0;
-    transform: translateY(-4px);
-    pointer-events: none;
-    transition: opacity var(--morph-disappear) ease var(--morph-d1),
-                transform var(--morph-disappear) ease var(--morph-d1);
-}
-.editing .gallery-footer-edit {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-    transition: opacity var(--morph-appear) ease var(--morph-d3),
-                transform var(--morph-appear) ease var(--morph-d3);
-}
+/* Footer commentary — morph handled by .morph-textarea / .morph-label rules above */
 
 /* Config panel — slides up from behind the image card */
 .gallery-edit-config {
@@ -1744,10 +1775,12 @@
     z-index: 9999;
     min-width: 140px;
     padding: 4px 0;
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: rgba(28, 28, 32, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
     opacity: 0;
     pointer-events: none;
     transform: scale(0.96);
@@ -1775,4 +1808,9 @@
 .gallery-ctx-item:focus-visible {
     background: var(--surface-hover);
     outline: none;
+}
+.gallery-ctx-browser {
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+    white-space: normal;
 }

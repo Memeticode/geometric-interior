@@ -184,7 +184,6 @@ const gallerySelectionCardVisualWrap = document.getElementById('gallerySelection
 const gallerySelectionContainer = document.getElementById('gallerySelectionContainer');
 const galleryContentEl = document.getElementById('galleryContent');
 const selectedGenTitle = document.getElementById('selectedGenTitle');
-const gallerySelectionCardCommentaryText = document.getElementById('gallerySelectionCardCommentaryText');
 const selectedVideo = document.getElementById('selectedVideo');
 const gallerySelectionCardFooter = document.querySelector('.gallery-selection-card-footer');
 const morphNameRow = document.querySelector('.morph-name');
@@ -192,6 +191,9 @@ const morphSeedRow = document.querySelector('.morph-seed');
 
 /* ── Carousel component ── */
 const carouselBrowser = document.getElementById('carouselBrowser');
+carouselBrowser.arrowNavStep = 1;
+carouselBrowser.arrowAutoSelect = true;
+carouselBrowser.sectionNavStep = 'page';
 const galleryMainEl = document.querySelector('.main-content');
 
 
@@ -268,6 +270,7 @@ const editNameField = document.getElementById('editNameField');
 const editNameCounter = document.getElementById('editNameCounter');
 const editNameError = document.getElementById('editNameError');
 const editCommentaryField = document.getElementById('editCommentaryField');
+const editCommentaryCounter = document.getElementById('editCommentaryCounter');
 const editTagArr = document.getElementById('editTagArr');
 const editTagStr = document.getElementById('editTagStr');
 const editTagDet = document.getElementById('editTagDet');
@@ -286,8 +289,8 @@ const editTagDet = document.getElementById('editTagDet');
         }
     };
     fill(editTagArr, words.arrangement);
-    fill(editTagStr, words.structure);
-    fill(editTagDet, words.detail);
+    fill(editTagStr, words.structure.map(w => w.toLowerCase()));
+    fill(editTagDet, words.detail.map(w => w.toLowerCase()));
 }
 
 /* Auto-size seed selects to selected option text (browse mode looks like plain text) */
@@ -296,27 +299,45 @@ _fitMeasure.style.cssText = 'position:absolute;visibility:hidden;white-space:pre
 document.body.appendChild(_fitMeasure);
 
 function fitSelect(sel) {
+    const wrap = sel.closest('.morph-select-wrap');
     const style = getComputedStyle(sel);
     _fitMeasure.style.font = style.font;
     _fitMeasure.style.fontSize = style.fontSize;
     _fitMeasure.style.fontFamily = style.fontFamily;
-    _fitMeasure.style.fontStyle = style.fontStyle;
+    _fitMeasure.style.fontStyle = 'italic'; // always measure browse-mode metrics
     _fitMeasure.style.letterSpacing = style.letterSpacing;
-    _fitMeasure.textContent = sel.options[sel.selectedIndex]?.text || '';
-    sel.style.width = (_fitMeasure.offsetWidth + 2) + 'px';
+    const text = sel.options[sel.selectedIndex]?.text || '';
+    _fitMeasure.textContent = text;
+    wrap.style.setProperty('--morph-select-w', (_fitMeasure.offsetWidth + 4) + 'px');
 }
 function fitAllSelects() {
     fitSelect(editTagArr);
     fitSelect(editTagStr);
     fitSelect(editTagDet);
 }
+
+/** Append comma to displayed option text of first two seed selects (browse mode) */
+function addSelectCommas() {
+    for (const sel of [editTagArr, editTagStr]) {
+        const opt = sel.options[sel.selectedIndex];
+        if (opt && !opt.text.endsWith(',')) opt.text += ',';
+    }
+}
+/** Strip trailing comma from first two seed selects (edit mode) */
+function removeSelectCommas() {
+    for (const sel of [editTagArr, editTagStr]) {
+        const opt = sel.options[sel.selectedIndex];
+        if (opt && opt.text.endsWith(',')) opt.text = opt.text.slice(0, -1);
+    }
+}
+
 // Re-fit when user changes selection in edit mode
 editTagArr.addEventListener('change', () => fitSelect(editTagArr));
 editTagStr.addEventListener('change', () => fitSelect(editTagStr));
 editTagDet.addEventListener('change', () => fitSelect(editTagDet));
 
-/* Initial fit after populate — deferred so styles are computed */
-requestAnimationFrame(() => fitAllSelects());
+/* Initial fit after populate — deferred so styles are computed. */
+requestAnimationFrame(() => { addSelectCommas(); fitAllSelects(); });
 
 /* ── Carousel state ── */
 let carouselList = [];       // [{name, profile, isPortrait, assetId?}] — portraits first, then local
@@ -545,7 +566,7 @@ function updateBrowserItems() {
         for (const entry of entries) {
             const card = document.createElement('carousel-dropdown-browser-card');
             card.key = entry.assetId || entry.name;
-            card.label = entry.name;
+            card.label = entry.profile?.displayName || entry.name;
             card.thumbSrc = resolveThumbSrc(entry);
             if (entry.isPortrait) card.fallbackSrc = resolveFallbackSrc(entry) || '';
             if (!entry.isPortrait) card.deletable = true;
@@ -560,8 +581,19 @@ function updateBrowserItems() {
         const sectionPortraits = portraits.filter(e => sec.portraitNames.includes(e.name));
         addSection(sec.name, sectionPortraits);
     }
-    addSection('Generated', generated);
-    addSection('Custom', custom);
+    addSection(t('gallery.generated'), generated);
+    addSection(t('gallery.custom'), custom);
+
+    // Editor section — permanent placeholder at the end
+    const editorSection = document.createElement('carousel-dropdown-browser-section');
+    editorSection.label = t('gallery.editor');
+    const editorCard = document.createElement('carousel-dropdown-browser-card');
+    editorCard.key = '__add_image__';
+    editorCard.label = t('gallery.addImage');
+    editorCard.placeholder = true;
+    editorCard.data = { isAddCard: true };
+    editorSection.appendChild(editorCard);
+    carouselBrowser.appendChild(editorSection);
 }
 
 function resolveThumbSrc(entry) {
@@ -580,6 +612,13 @@ function resolveFallbackSrc(entry) {
 
 carouselBrowser.addEventListener('item-select', (e) => {
     const entry = e.detail.item.data;
+    if (entry?.isAddCard) {
+        if (!editMode) enterEditMode('add', null);
+        return;
+    }
+    if (editMode) {
+        exitEditMode(false);
+    }
     if (slideshowPlaying) stopSlideshow();
     selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
 });
@@ -926,12 +965,14 @@ function applySelection(name, profile, isPortrait, assetId) {
     selected = { name, isPortrait, assetId };
     const fadeDuration = 250;
 
+    // Lock footer height before fade so resize can animate
+    gallerySelectionCardFooter.style.height = gallerySelectionCardFooter.offsetHeight + 'px';
+
     // Fade out text + image + alt-text overlay together
     morphNameRow.classList.add('fading');
     morphSeedRow.classList.add('fading');
     gallerySelectionCardFooter.classList.add('fading');
     gallerySelectionVisual.style.opacity = '0';
-    fadeOutAltText();
 
     // Cancel any pending fade-in from a previous rapid selection
     clearTimeout(selectionFadeTimer);
@@ -939,7 +980,8 @@ function applySelection(name, profile, isPortrait, assetId) {
     // After fade-out completes, swap content and fade back in
     selectionFadeTimer = setTimeout(() => {
         // Update unified morph elements
-        editNameField.value = name;
+        const displayName = profile.displayName || name;
+        editNameField.value = displayName;
         if (Array.isArray(profile.seed)) {
             editTagArr.value = String(profile.seed[0]);
             editTagStr.value = String(profile.seed[1]);
@@ -950,51 +992,39 @@ function applySelection(name, profile, isPortrait, assetId) {
             editTagDet.value = '0';
         }
         fitAllSelects();
+        addSelectCommas();
 
         // Portrait commentary vs generated/custom text
-        if (isPortrait && profile.generated) {
+        if (isPortrait) {
+            const { title, altText } = generateProfileText(profile);
             selectedGenTitle.textContent = '';
-            gallerySelectionCardCommentaryText.textContent = profile.commentary || '';
-            gallerySelectionCardCommentaryText.classList.add('expanded');
-            gallerySelectionVisual.alt = `${name} \u2014 ${profile.generated.title}`;
-            gallerySelectionVisual.setAttribute('data-tooltip', profile.generated['alt-text']);
+            editCommentaryField.value = profile.commentary || '';
+            gallerySelectionVisual.alt = `${displayName} \u2014 ${title}`;
+            gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
             gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
         } else if (assetId) {
             const asset = generatedAssets.find(a => a.id === assetId);
-            if (asset && asset.meta && asset.meta.commentary) {
-                // Commentary exists — display like sampler portraits
+            if (asset && asset.meta) {
                 selectedGenTitle.textContent = '';
-                gallerySelectionCardCommentaryText.textContent = asset.meta.commentary;
-                gallerySelectionCardCommentaryText.classList.add('expanded');
+                editCommentaryField.value = asset.meta.commentary || '';
                 gallerySelectionVisual.alt = `${name} — ${asset.meta.title || ''}`;
                 gallerySelectionVisual.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
                 gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
-            } else if (asset && asset.meta) {
-                // No commentary — show title + collapsible alt-text
-                selectedGenTitle.textContent = asset.meta.title || '';
-                gallerySelectionCardCommentaryText.textContent = asset.meta.altText || '';
-                gallerySelectionVisual.alt = asset.meta.title || name;
-                gallerySelectionVisual.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
-                gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
-                gallerySelectionCardCommentaryText.classList.remove('expanded');
             }
         } else if (profile.commentary) {
-            // User-saved profile with commentary
             const { title, altText } = generateProfileText(profile);
             selectedGenTitle.textContent = '';
-            gallerySelectionCardCommentaryText.textContent = profile.commentary;
-            gallerySelectionCardCommentaryText.classList.add('expanded');
+            editCommentaryField.value = profile.commentary;
             gallerySelectionVisual.alt = `${name} — ${title}`;
             gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
             gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
         } else {
             const { title, altText } = generateProfileText(profile);
             selectedGenTitle.textContent = title;
-            gallerySelectionCardCommentaryText.textContent = altText;
+            editCommentaryField.value = '';
             gallerySelectionVisual.alt = title;
             gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
             gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
-            gallerySelectionCardCommentaryText.classList.remove('expanded');
         }
 
         // Update alt-text overlay if visible
@@ -1026,10 +1056,32 @@ function applySelection(name, profile, isPortrait, assetId) {
             installPortraitFallback(gallerySelectionVisual, slugify(name), getResolution().key);
         }
 
+        // Animate footer height to fit new content
+        const oldHeight = gallerySelectionCardFooter.offsetHeight;
+        gallerySelectionCardFooter.style.height = 'auto';
+        const newHeight = gallerySelectionCardFooter.offsetHeight;
+        if (oldHeight !== newHeight) {
+            gallerySelectionCardFooter.style.height = oldHeight + 'px';
+            void gallerySelectionCardFooter.offsetHeight; // force layout
+            gallerySelectionCardFooter.style.height = newHeight + 'px';
+            const onEnd = (e) => {
+                if (e.propertyName === 'height') {
+                    gallerySelectionCardFooter.style.height = '';
+                    gallerySelectionCardFooter.removeEventListener('transitionend', onEnd);
+                }
+            };
+            gallerySelectionCardFooter.addEventListener('transitionend', onEnd);
+        } else {
+            gallerySelectionCardFooter.style.height = '';
+        }
+
         // Fade text back in
         morphNameRow.classList.remove('fading');
         morphSeedRow.classList.remove('fading');
         gallerySelectionCardFooter.classList.remove('fading');
+
+        // Re-enable morph transitions after first paint with final values
+        requestAnimationFrame(() => galleryContainerEl.classList.remove('no-transition'));
     }, fadeDuration);
 
     currentIndex = navigableList.findIndex(p =>
@@ -1114,19 +1166,29 @@ function fadeOutAltText() {
 function updateAltText(text) {
     if (!altTextVisible) return;
     altTextOverlay.textContent = text;
+    altTextOverlay.scrollTop = 0;
     altTextOverlay.classList.add('visible');
+}
+
+function dismissAltText(resetScroll) {
+    hideAltText(altTextOverlay);
+    if (resetScroll) altTextOverlay.scrollTop = 0;
+    altTextVisible = false;
 }
 
 gallerySelectionVisual.addEventListener('click', () => {
     const text = gallerySelectionVisual.getAttribute('data-tooltip');
     if (!text) return;
     if (altTextVisible) {
-        hideAltText(altTextOverlay);
-        altTextVisible = false;
+        dismissAltText();
     } else {
         showAltText(altTextOverlay, text);
         altTextVisible = true;
     }
+});
+
+altTextOverlay.addEventListener('click', () => {
+    if (altTextVisible) dismissAltText();
 });
 
 genPreviewCanvas.addEventListener('click', () => {
@@ -1341,10 +1403,11 @@ function applyAnimSelection(assetId) {
     editTagStr.value = '0';
     editTagDet.value = '0';
     fitAllSelects();
+    addSelectCommas();
 
     const meta = asset.meta || {};
-    selectedGenTitle.textContent = meta.title || asset.name;
-    gallerySelectionCardCommentaryText.textContent = meta.durationS
+    selectedGenTitle.textContent = '';
+    editCommentaryField.value = meta.durationS
         ? `${meta.durationS.toFixed(1)}s animation at ${meta.fps || 30}fps (${meta.width || '?'}×${meta.height || '?'})`
         : '';
 
@@ -2227,7 +2290,7 @@ function initEditMode() {
         nameError: editNameError,
         commentaryField: editCommentaryField,
         previewCanvas: galleryEditCanvas,
-        commentaryCounter: null,
+        commentaryCounter: editCommentaryCounter,
         statusMessageEl: null,
         onControlChange(seed, controls, camera) {
             if (editWorkerBridge && editWorkerBridge.ready) {
@@ -2329,12 +2392,15 @@ async function enterEditMode(mode, entry, fromPopstate) {
         editPanel.randomize();
     }
 
+    // Strip commas from seed text before entering edit mode
+    removeSelectCommas();
+    editCommentaryField.placeholder = 'Add commentary (optional)';
+
     // Toggle editing class (triggers all CSS cross-fade transitions)
     galleryContainerEl.classList.add('editing');
-    // Clear inline widths so flex sizing takes over in edit mode
-    editTagArr.style.width = '';
-    editTagStr.style.width = '';
-    editTagDet.style.width = '';
+
+    // Hide alt text overlay when entering edit mode
+    dismissAltText(true);
 
     // Update button tooltips for edit mode
     galleryBtnLeft.setAttribute('data-tooltip', 'Undo');
@@ -2351,13 +2417,22 @@ async function enterEditMode(mode, entry, fromPopstate) {
         editWorkerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
     }
 
-    // Enter carousel edit mode: filter to user images, expand to grid, lock interaction
-    await carouselBrowser.enterMode({
-        filter: item => !item.data?.isPortrait,
-        expand: true,
-        hideControls: true,
-        locked: true,
-    });
+    // Transform the "Add Image" card into an "Editing" indicator and select it
+    const addCardEl = carouselBrowser.querySelector(
+        'carousel-dropdown-browser-card[key="__add_image__"]'
+    );
+    if (addCardEl) {
+        addCardEl.label = t('gallery.editing');
+        addCardEl.placeholder = true;
+        addCardEl.thumbSrc = '';
+    }
+    carouselBrowser.selectedKey = '__add_image__';
+    carouselBrowser.syncToKey('__add_image__');
+
+    // Collapse carousel grid if it was expanded
+    if (carouselBrowser.expanded) {
+        await carouselBrowser.collapse({ noScroll: true });
+    }
 }
 
 async function exitEditMode(saved, fromPopstate) {
@@ -2368,10 +2443,12 @@ async function exitEditMode(saved, fromPopstate) {
         refreshGallery();
     }
 
+    // Restore commas + update browse-mode widths before removing class
+    addSelectCommas();
+    fitAllSelects();
+    editCommentaryField.placeholder = 'No commentary';
     // Remove editing class (triggers all CSS cross-fade transitions)
     galleryContainerEl.classList.remove('editing');
-    // Restore inline widths for browse-mode text sizing
-    requestAnimationFrame(() => fitAllSelects());
 
     // Navigate back to gallery URL (skip if triggered by popstate)
     if (!fromPopstate) {
@@ -2389,11 +2466,27 @@ async function exitEditMode(saved, fromPopstate) {
     galleryBtnEdit.setAttribute('data-tooltip', 'Edit');
     galleryBtnAdd.setAttribute('data-tooltip', 'Add new');
 
+    // Capture thumbnail before clearing editMode (so capturePreviewThumb uses editWorkerBridge)
+    const addCardEl = carouselBrowser.querySelector(
+        'carousel-dropdown-browser-card[key="__add_image__"]'
+    );
+    const thumb = addCardEl ? await capturePreviewThumb() : '';
+
     editMode = null;
     editSourceEntry = null;
 
-    // Restore carousel to full state
-    await carouselBrowser.exitMode();
+    // Revert the "Editing" card — show thumbnail if available, else placeholder
+    if (addCardEl) {
+        addCardEl.label = t('gallery.addImage');
+        if (thumb) {
+            addCardEl.placeholder = false;
+            addCardEl.thumbSrc = thumb;
+        } else {
+            addCardEl.placeholder = true;
+            addCardEl.thumbSrc = '';
+        }
+    }
+
 }
 
 // ── Edit/Add/Save/Render button handlers ──
@@ -2414,20 +2507,28 @@ galleryBtnEdit.addEventListener('click', () => {
     const ctxMenu = document.createElement('div');
     ctxMenu.className = 'gallery-ctx-menu';
     ctxMenu.setAttribute('role', 'menu');
-    ctxMenu.innerHTML = '<button class="gallery-ctx-item" role="menuitem">Edit image</button>';
+    const isTouch = matchMedia('(pointer: coarse)').matches;
+    const ctxBrowserKey = isTouch ? 'gallery.ctxBrowserTouch' : 'gallery.ctxBrowserDesktop';
+    ctxMenu.innerHTML =
+        `<button class="gallery-ctx-item" role="menuitem">${t('gallery.ctxEdit')}</button>` +
+        `<button class="gallery-ctx-item gallery-ctx-browser" role="menuitem">${t(ctxBrowserKey)}</button>`;
     document.body.appendChild(ctxMenu);
 
     const ctxItem = ctxMenu.querySelector('.gallery-ctx-item');
+    const ctxBrowserItem = ctxMenu.querySelector('.gallery-ctx-browser');
+    let ctxVisible = false;
 
     function showCtxMenu(x, y) {
         ctxMenu.style.left = Math.min(x, window.innerWidth - 160) + 'px';
         ctxMenu.style.top = Math.min(y, window.innerHeight - 40) + 'px';
         ctxMenu.classList.add('visible');
+        ctxVisible = true;
         ctxItem.focus();
     }
 
     function hideCtxMenu() {
         ctxMenu.classList.remove('visible');
+        ctxVisible = false;
     }
 
     function triggerEdit() {
@@ -2436,10 +2537,26 @@ galleryBtnEdit.addEventListener('click', () => {
         if (entry) enterEditMode('edit', entry);
     }
 
+    let allowNativeCtx = false;
+
+    // Right-click directly on "Browser menu" button → let native menu through
+    ctxBrowserItem.addEventListener('contextmenu', () => {
+        hideCtxMenu();
+        // Don't preventDefault — native context menu opens at this location
+    });
+
+    // Left-click "Browser menu" → hide our menu, next right-click passes through
+    ctxBrowserItem.addEventListener('click', () => {
+        hideCtxMenu();
+        allowNativeCtx = true;
+    });
+
     // Desktop: right-click
     gallerySelectionCardVisualWrap.addEventListener('contextmenu', (e) => {
         if (editMode) return; // already editing, allow native menu
+        if (allowNativeCtx) { allowNativeCtx = false; return; } // pass through for browser menu
         e.preventDefault();
+        if (ctxVisible) { hideCtxMenu(); return; }
         showCtxMenu(e.clientX, e.clientY);
     });
 
@@ -2464,9 +2581,15 @@ galleryBtnEdit.addEventListener('click', () => {
     gallerySelectionCardVisualWrap.addEventListener('touchcancel', () => { clearTimeout(lpTimer); });
 
     ctxItem.addEventListener('click', triggerEdit);
-    ctxItem.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); triggerEdit(); }
+    ctxMenu.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            if (e.target === ctxItem) triggerEdit();
+            else if (e.target === ctxBrowserItem) { hideCtxMenu(); allowNativeCtx = true; }
+        }
         if (e.key === 'Escape') hideCtxMenu();
+        if (e.key === 'ArrowDown' && e.target === ctxItem) ctxBrowserItem.focus();
+        if (e.key === 'ArrowUp' && e.target === ctxBrowserItem) ctxItem.focus();
     });
 
     document.addEventListener('mousedown', (e) => {
@@ -2594,10 +2717,18 @@ document.addEventListener('localechange', () => {
         const profiles = { ...loadPortraits(), ...loadProfiles() };
         const profile = profiles[selected.name];
         if (profile) {
+            const displayName = profile.displayName || selected.name;
+            editNameField.value = displayName;
+            editCommentaryField.value = profile.commentary || '';
             const { title, altText } = generateProfileText(profile);
-            selectedGenTitle.textContent = title;
-            gallerySelectionCardCommentaryText.textContent = altText;
-            gallerySelectionVisual.alt = title;
+            if (selected.isPortrait) {
+                selectedGenTitle.textContent = '';
+                gallerySelectionVisual.alt = `${displayName} \u2014 ${title}`;
+                gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
+            } else {
+                selectedGenTitle.textContent = title;
+                gallerySelectionVisual.alt = title;
+            }
         }
     }
 });

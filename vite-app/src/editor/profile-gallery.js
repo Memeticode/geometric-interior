@@ -78,7 +78,7 @@ export function createProfileGallery({ el, thumbRenderer, getCurrentSeed, readCo
 
         const nm = document.createElement('div');
         nm.className = 'profile-card-name';
-        nm.textContent = name;
+        nm.textContent = p.displayName || name;
         body.appendChild(nm);
 
         if (p.seed) {

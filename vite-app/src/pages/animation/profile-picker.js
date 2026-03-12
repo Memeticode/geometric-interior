@@ -86,7 +86,7 @@ export function createProfilePicker({ portraits, getUserProfiles, getThumbUrl, l
 
         const thumb = document.createElement('img');
         thumb.className = 'profile-picker-thumb';
-        thumb.alt = name;
+        thumb.alt = profile?.displayName || name;
 
         // Determine thumbnail URL
         if (isPortrait) {
@@ -107,7 +107,7 @@ export function createProfilePicker({ portraits, getUserProfiles, getThumbUrl, l
 
         const nameEl = document.createElement('span');
         nameEl.className = 'profile-picker-name';
-        nameEl.textContent = name;
+        nameEl.textContent = profile?.displayName || name;
         cell.appendChild(nameEl);
 
         cell.addEventListener('click', () => {
@@ -117,7 +117,7 @@ export function createProfilePicker({ portraits, getUserProfiles, getThumbUrl, l
 
             if (resolvePromise) {
                 resolvePromise({
-                    name,
+                    name: profile?.displayName || name,
                     seed: profile.seed,
                     controls: profile.controls,
                     camera: profile.camera || { zoom: 1.0, rotation: 0 },

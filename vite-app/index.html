@@ -79,7 +79,7 @@
         <div class="site-menu-backdrop hidden" id="siteMenuBackdrop"></div>
 
         <main class="main-content">
-            <div class="gallery-container" id="galleryContainer">
+            <div class="gallery-container no-transition" id="galleryContainer">
                 <!-- Centered toolbar — always at top -->
                 <div class="gallery-toolbar" id="galleryToolbar">
                     <div class="gallery-controls icon-btn-group" id="galleryControls">
@@ -272,11 +272,9 @@
                                     data-i18n-tooltip="control.seed.tooltip">Seed<span
                                         class="info-icon">i</span></span></label>
                             <div class="morph-field morph-seed-field">
-                                <select id="editTagArr" class="morph-select"></select>
-                                <span class="morph-comma">,&nbsp;</span>
-                                <select id="editTagStr" class="morph-select"></select>
-                                <span class="morph-comma">,&nbsp;</span>
-                                <select id="editTagDet" class="morph-select"></select>
+                                <span class="morph-select-wrap"><select id="editTagArr" class="morph-select"></select></span>
+                                <span class="morph-select-wrap"><select id="editTagStr" class="morph-select"></select></span>
+                                <span class="morph-select-wrap morph-select-last"><select id="editTagDet" class="morph-select"></select></span>
                             </div>
                         </div>
                     </div>
@@ -284,11 +282,11 @@
                     <div class="gallery-edit-config" id="galleryEditConfig">
                         <div class="gen-config" id="editGenConfig">
                             <div class="gen-config-header gen-collapse-toggle" data-target="editGenConfigSliders"
-                                aria-expanded="true">
+                                aria-expanded="false">
                                 <span class="gen-chevron">&#9662;</span>
                                 <span>Configure Image</span>
                             </div>
-                            <div class="gen-config-sliders gen-collapse-body" id="editGenConfigSliders">
+                            <div class="gen-config-sliders gen-collapse-body collapsed" id="editGenConfigSliders">
                                 <!-- Sliders built dynamically by JS -->
                             </div>
                         </div>
@@ -305,17 +303,13 @@
                             </div>
                         </div>
                         <div class="gallery-selection-card-footer">
-                            <div class="gallery-footer-browse" id="galleryFooterBrowse">
-                                <span class="selected-gen-title" id="selectedGenTitle"></span>
-                                <div class="gallery-selection-card-commentary-text"
-                                    id="gallerySelectionCardCommentaryText"></div>
-                            </div>
-                            <div class="gallery-footer-edit" id="galleryFooterEdit">
-                                <label class="gen-identity-label"><span class="label-info"
-                                        data-tooltip="Optional notes about this image."
-                                        >Commentary<span class="info-icon">i</span></span></label>
-                                <textarea id="editCommentaryField" class="auto-grow gen-commentary-field"
-                                    rows="2" maxlength="500" placeholder="Add commentary..."></textarea>
+                            <span class="selected-gen-title" id="selectedGenTitle"></span>
+                            <div class="morph-commentary">
+                                <div class="morph-field">
+                                    <textarea id="editCommentaryField" class="morph-textarea morph-commentary-field"
+                                        rows="1" maxlength="500" placeholder="No commentary"></textarea>
+                                    <span id="editCommentaryCounter" class="morph-counter morph-commentary-counter">0/500</span>
+                                </div>
                             </div>
                         </div>
                     </div>

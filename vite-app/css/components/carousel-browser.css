@@ -168,7 +168,6 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
                 box-shadow 0.2s ease;
     transform-style: preserve-3d;
 }
-
 .cdb-card.active .cdb-card-frame {
     border-top-color: rgba(180, 130, 255, 0.6);
     border-bottom-color: rgba(180, 130, 255, 0.6);
@@ -395,6 +394,11 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-dropdown.cdb-measuring {
     transition: none !important;
 }
+/* Instant repositioning — suppress transitions during resize/layout shifts */
+.cdb-track.cdb-instant,
+.cdb-track.cdb-instant * {
+    transition: none !important;
+}
 
 .cdb-grid {
     padding: 0.5rem 0.75rem;
@@ -414,7 +418,6 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     background: var(--bg);
     transition: transform 0.15s ease;
 }
-
 .cdb-grid-card:hover {
     transform: scale(1.05);
     z-index: 2;
@@ -621,6 +624,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-card.cdb-placeholder .cdb-card-img {
     background: transparent;
     position: relative;
+    transition: background 0.4s ease;
 }
 .cdb-card.cdb-placeholder .cdb-card-img img {
     display: none;
@@ -640,6 +644,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-grid-card.cdb-placeholder {
     border-style: dashed;
     position: relative;
+    transition: background 0.4s ease;
 }
 .cdb-grid-card.cdb-placeholder img {
     display: none;
@@ -654,4 +659,26 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     color: var(--text-muted);
     opacity: 0.5;
 }
+
+/* Editing state: placeholder card with accent background */
+.editing .cdb-card.cdb-placeholder .cdb-card-img {
+    background: var(--accent-bg);
+}
+.editing .cdb-card.cdb-placeholder .cdb-card-img::after {
+    content: none;
+}
+.editing .cdb-card.cdb-placeholder .cdb-card-frame {
+    border-style: solid;
+    border-color: var(--accent-text);
+}
+.editing .cdb-grid-card.cdb-placeholder {
+    background: var(--accent-bg);
+    border-style: solid;
+    border-color: var(--accent-text);
+    transition: background 0.4s ease;
+}
+.editing .cdb-grid-card.cdb-placeholder::after {
+    content: none;
+}
+
 

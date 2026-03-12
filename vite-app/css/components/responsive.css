@@ -165,10 +165,13 @@
         padding: 1rem 2rem 0;
     }
     .gallery-selection-header-container {
-        flex-direction: row;
+        grid-template-columns: 1fr 1fr;
         align-items: center;
-        justify-content: space-between;
         gap: 0.5rem;
+    }
+    .gallery-selection-header-container > .morph-row {
+        grid-column: span 1;
+        grid-template-columns: auto 1fr;
     }
     .gallery-controls {
         --icon-btn-size: 24px;
@@ -356,11 +359,10 @@
     .morph-textarea {
         font-size: 0.9rem;
     }
-    .morph-select,
-    .morph-comma {
+    .morph-select {
         font-size: 0.825rem;
     }
-    .gallery-selection-card-commentary-text {
+    .morph-commentary-field {
         font-size: 0.825rem;
     }
 

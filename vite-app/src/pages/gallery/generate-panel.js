@@ -289,8 +289,8 @@ export function initGeneratePanel(opts) {
     const locale = getLocale();
     const localizedWords = getLocalizedWords(locale);
     populateTagSelect(tagArrEl, localizedWords.arrangement);
-    populateTagSelect(tagStrEl, localizedWords.structure);
-    populateTagSelect(tagDetEl, localizedWords.detail);
+    populateTagSelect(tagStrEl, localizedWords.structure.map(w => w.toLowerCase()));
+    populateTagSelect(tagDetEl, localizedWords.detail.map(w => w.toLowerCase()));
 
     // Start with random seed tags
     tagArrEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));

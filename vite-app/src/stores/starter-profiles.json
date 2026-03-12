@@ -424,7 +424,7 @@
         },
         "chlorophyll": {
           "name": "Chlorophyll",
-          "commentary": "Vivid emerald radiating from within — light converted to substance, color carrying the weight of something alive",
+          "commentary": "Light held in green — as if the geometry itself were photosynthesizing, quietly converting structure into warmth",
           "seed": [5, 5, 11],
           "controls": {
             "density": 0.08, "luminosity": 0.52, "bloom": 0.32,

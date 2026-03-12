@@ -204,6 +204,9 @@ class CarouselDropdownBrowser extends HTMLElement {
     #locked = false;                // suppress user interaction (drag, arrows, toggle)
     #controlsHidden = false;        // hide controls row entirely
     #modeState = null;              // saved state for enterMode/exitMode
+    #arrowNavStep = null;           // null = jump by visible card count (default), number = fixed card step
+    #sectionNavStep = null;         // null = jump to section boundary (default), number = fixed card step, 'page' = jump by visible card count
+    #arrowAutoSelect = false;       // when true, arrow navigation also fires item-select
 
     // ── Title configuration ──
     // Format: "v-align" or "v-align h-align"
@@ -259,6 +262,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     #resizeObs = null;
     #scrollParent = null;
     #scrollRaf = null;
+    #scrollCancelled = false;  // true when user scrolls during animation or noScroll active
+    #scrollListener = null;    // bound scroll listener for user-scroll detection
     #flipAnimations = [];  // Web Animations created by #animateCardsWA
     #sectionLabelContainer = null;
     #sectionLabels = [];
@@ -315,6 +320,24 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#applyControlsHidden();
     }
 
+    /** Override arrow (< >) behavior: null = jump by visible card count (default), number = fixed card step. */
+    get arrowNavStep() { return this.#arrowNavStep; }
+    set arrowNavStep(v) {
+        this.#arrowNavStep = (typeof v === 'number' && v >= 1) ? Math.round(v) : null;
+    }
+
+    /** Override section arrow (<< >>) behavior: null = jump to section boundary (default), number = fixed card step, 'page' = jump by visible card count. */
+    get sectionNavStep() { return this.#sectionNavStep; }
+    set sectionNavStep(v) {
+        if (v === 'page') this.#sectionNavStep = 'page';
+        else this.#sectionNavStep = (typeof v === 'number' && v >= 1) ? Math.round(v) : null;
+        this.#updateSectionNavVisibility();
+    }
+
+    /** When true, arrow (< >) navigation also fires item-select for the navigated-to card. */
+    get arrowAutoSelect() { return this.#arrowAutoSelect; }
+    set arrowAutoSelect(v) { this.#arrowAutoSelect = !!v; }
+
     // ── Public methods ──
 
     /** Notify parent that child element data changed. Debounced via microtask. */
@@ -356,7 +379,7 @@ class CarouselDropdownBrowser extends HTMLElement {
      * @param {boolean} [options.hideControls] - Hide the controls row
      * @returns {Promise<void>}
      */
-    async enterMode({ expand: doExpand, hideControls, locked, filter } = {}) {
+    async enterMode({ expand: doExpand, hideControls, locked, filter, noScroll } = {}) {
         // If already in a mode, exit immediately (no animation)
         if (this.#modeState) this.#exitModeImmediate();
 
@@ -386,7 +409,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             await new Promise(r => {
                 const h = () => { this.removeEventListener('expand-change', h); r(); };
                 this.addEventListener('expand-change', h);
-                this.expand();
+                this.expand({ noScroll: !!noScroll });
             });
         }
 
@@ -401,7 +424,7 @@ class CarouselDropdownBrowser extends HTMLElement {
      * Exit programmatic mode: restores saved state with animations.
      * @returns {Promise<void>}
      */
-    async exitMode() {
+    async exitMode({ noScroll = false } = {}) {
         if (!this.#modeState) return;
         const saved = this.#modeState;
         this.#modeState = null;
@@ -428,13 +451,13 @@ class CarouselDropdownBrowser extends HTMLElement {
             await new Promise(r => {
                 const h = () => { this.removeEventListener('expand-change', h); r(); };
                 this.addEventListener('expand-change', h);
-                this.collapse();
+                this.collapse({ noScroll });
             });
         } else if (saved.wasExpanded && !this.expanded) {
             await new Promise(r => {
                 const h = () => { this.removeEventListener('expand-change', h); r(); };
                 this.addEventListener('expand-change', h);
-                this.expand();
+                this.expand({ noScroll });
             });
         }
 
@@ -455,9 +478,10 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.filter(saved.filterPredicate);
     }
 
-    expand() {
+    expand({ noScroll = false } = {}) {
         if (this.expanded || this.#animatingExpand || this.#locked || this.#controlsHidden) return;
         this.#animatingExpand = true;
+        this.#scrollCancelled = noScroll;
 
         // Disable controls during animation
         this.#navLeft.disabled = true;
@@ -499,6 +523,39 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#dropdown.classList.add('expanded', 'cdb-measuring');
         this.#toggle.classList.add('active');
         void this.#grid.offsetHeight;
+
+        // ── Pre-scroll dropdown so selected card is centered when grid appears ──
+        // Done while cdb-measuring is still active (transition: none) so scrollTop sticks
+        // immediately. Must happen BEFORE capturing grid rects so FLIP targets match.
+        // Reset scrollTop first — it may persist from a previous expansion.
+        this.#dropdown.scrollTop = 0;
+        if (this.#selectedKey && this.#dropdown.scrollHeight > this.#dropdown.clientHeight) {
+            const sel = this.#grid.querySelector(
+                `.cdb-grid-card[data-flip-key="${CSS.escape(this.#selectedKey)}"]`
+            );
+            if (sel) {
+                const dropRect = this.#dropdown.getBoundingClientRect();
+                const cardRect = sel.getBoundingClientRect();
+                const cardTopInDrop = cardRect.top - dropRect.top;
+                this.#dropdown.scrollTop = Math.max(0, Math.min(
+                    cardTopInDrop - (dropRect.height - cardRect.height) / 2,
+                    this.#dropdown.scrollHeight - this.#dropdown.clientHeight
+                ));
+            }
+        }
+
+        const gridCards = this.#grid.querySelectorAll('.cdb-grid-card');
+        const gridRects = new Map();
+        for (const card of gridCards) {
+            gridRects.set(card.dataset.flipKey, card.getBoundingClientRect());
+            card.style.opacity = '0';
+        }
+
+        // Hide grid headers (will animate in via FLIP)
+        const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
+        for (const h of headers) h.style.opacity = '0';
+
+        // Now release cdb-measuring so dropdown transitions can proceed
         this.#dropdown.classList.remove('cdb-measuring');
 
         // ── FLIP controls to smooth position change ──
@@ -514,17 +571,6 @@ class CarouselDropdownBrowser extends HTMLElement {
 
         // Store scroll parent for post-animation scroll
         this.#scrollParent = this.closest('.main-content') || this.parentElement;
-
-        const gridCards = this.#grid.querySelectorAll('.cdb-grid-card');
-        const gridRects = new Map();
-        for (const card of gridCards) {
-            gridRects.set(card.dataset.flipKey, card.getBoundingClientRect());
-            card.style.opacity = '0';
-        }
-
-        // Hide grid headers (will animate in via FLIP)
-        const headers = this.#grid.querySelectorAll('.cdb-grid-section-header');
-        for (const h of headers) h.style.opacity = '0';
 
         // ── Prevent viewport clipping during animation ──
         this.#viewport.style.overflow = 'visible';
@@ -829,14 +875,17 @@ class CarouselDropdownBrowser extends HTMLElement {
                 }));
             }
 
+            this.#teardownScrollListener();
+            this.#scrollCancelled = false;
             this.#animatingExpand = false;
             this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: true } }));
         }, totalDur + 50);
     }
 
-    async collapse() {
+    async collapse({ noScroll = false } = {}) {
         if (!this.expanded || this.#animatingExpand || this.#locked || this.#controlsHidden) return;
         this.#animatingExpand = true;
+        this.#scrollCancelled = noScroll;
 
         // Disable controls during animation
         this.#navLeft.disabled = true;
@@ -1241,6 +1290,8 @@ class CarouselDropdownBrowser extends HTMLElement {
             }, cardDelay);
         });
 
+        this.#teardownScrollListener();
+        this.#scrollCancelled = false;
         this.#animatingExpand = false;
         this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: false } }));
     }
@@ -1394,6 +1445,7 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     disconnectedCallback() {
         this.#cancelFlipAnimations();
+        this.#teardownScrollListener();
         if (this.#scrollRaf) { cancelAnimationFrame(this.#scrollRaf); this.#scrollRaf = null; }
         if (this.#resizeObs) {
             this.#resizeObs.disconnect();
@@ -1713,7 +1765,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#resizeObs = new ResizeObserver(() => {
             if (this.#animatingExpand) return;
             this.#applyResponsiveArcY();
-            if (this.#cards.length) this.#positionCards();
+            if (this.#cards.length) this.#positionCardsInstant();
             this.#updateToggleVisibility();
         });
         if (this.#viewport) this.#resizeObs.observe(this.#viewport);
@@ -1723,6 +1775,18 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     #rebuild() {
         if (!this.#track) return; // not yet connected
+
+        // If item structure is unchanged (same count + keys), patch in-place
+        // instead of tearing down and rebuilding all card DOM.
+        if (this.#cards.length > 0 &&
+            this.#cards.length === this.#items.length &&
+            this.#cards.every(({ element }, i) =>
+                element.dataset.flipKey === this.#items[i].key
+            )) {
+            this.#patchCards();
+            return;
+        }
+
         this.#renderCarouselCards();
         this.#buildSectionLabels();
         const t = this.#parseTitlePos(this.#cardTitle);
@@ -1747,7 +1811,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (this.#isFirstRender && this.#cards.length > 0) {
             this.#isFirstRender = false;
 
-            // Cards start invisible, fade in via double-rAF
+            // Cards + section labels start invisible, fade in via double-rAF
             for (const { element } of this.#cards) {
                 element.style.setProperty('--card-opacity', '0');
             }
@@ -1757,16 +1821,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                         const layout = this.#cardLayout.get(element);
                         element.style.setProperty('--card-opacity', layout ? String(layout.opacity) : '0');
                     }
+                    this.#sectionLabelContainer.classList.remove('cdb-labels-deferred');
                 });
             });
-
-            // Reveal section labels only after cards settle into final positions
-            const onSettle = (e) => {
-                if (!e.target.classList?.contains('cdb-card') || e.propertyName !== 'transform') return;
-                this.#track.removeEventListener('transitionend', onSettle);
-                this.#sectionLabelContainer.classList.remove('cdb-labels-deferred');
-            };
-            this.#track.addEventListener('transitionend', onSettle);
         }
     }
 
@@ -1795,6 +1852,69 @@ class CarouselDropdownBrowser extends HTMLElement {
         } else {
             this.#strip.classList.remove('cdb-controls-hidden');
             this.#updateToggleVisibility();
+        }
+    }
+
+    // ── In-place card patching (no DOM teardown, no reposition) ──
+
+    /** Patch existing card DOM to reflect changed item data (label, placeholder, thumbSrc). */
+    #patchCards() {
+        for (let i = 0; i < this.#cards.length; i++) {
+            const card = this.#cards[i].element;
+            const item = this.#items[i];
+
+            const titleEl = card.querySelector('.cdb-card-title');
+            if (titleEl) titleEl.textContent = item.label;
+
+            card.classList.toggle('cdb-placeholder', !!item.placeholder);
+
+            const imgWrap = card.querySelector('.cdb-card-img');
+            const img = imgWrap?.querySelector('img');
+            if (img && imgWrap) {
+                imgWrap.classList.remove('cdb-img-error');
+                if (item.placeholder) {
+                    img.removeAttribute('src');
+                } else if (item.thumbSrc) {
+                    img.src = item.thumbSrc;
+                    const markError = () => { img.onerror = null; img.removeAttribute('src'); imgWrap.classList.add('cdb-img-error'); };
+                    if (item.fallbackSrc) {
+                        img.onerror = () => { img.onerror = markError; img.src = item.fallbackSrc; };
+                    } else {
+                        img.onerror = markError;
+                    }
+                } else {
+                    img.removeAttribute('src');
+                    imgWrap.classList.add('cdb-img-error');
+                }
+            }
+        }
+
+        if (this.expanded) this.#patchGridCards();
+        this.#updateActiveHighlight();
+    }
+
+    /** Patch grid card DOM in-place when the dropdown is expanded. */
+    #patchGridCards() {
+        for (const gridCard of this.#grid.querySelectorAll('.cdb-grid-card')) {
+            const key = gridCard.dataset.flipKey;
+            const item = this.#items.find(it => it.key === key);
+            if (!item) continue;
+
+            const nameEl = gridCard.querySelector('.cdb-grid-card-name');
+            if (nameEl) nameEl.textContent = item.label;
+
+            gridCard.classList.toggle('cdb-placeholder', !!item.placeholder);
+
+            const img = gridCard.querySelector('img');
+            if (img) {
+                if (item.placeholder) {
+                    img.removeAttribute('src');
+                } else if (item.thumbSrc) {
+                    img.src = item.thumbSrc;
+                } else {
+                    img.removeAttribute('src');
+                }
+            }
         }
     }
 
@@ -2208,19 +2328,48 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     /** Animate scrollTop of #scrollParent in sync with card animations. */
     #animateScroll(targetTop, duration) {
-        if (!this.#scrollParent) return;
+        if (!this.#scrollParent || this.#scrollCancelled) return;
         if (this.#scrollRaf) cancelAnimationFrame(this.#scrollRaf);
-        const from = this.#scrollParent.scrollTop;
+        this.#teardownScrollListener();
+
+        const sp = this.#scrollParent;
+        const from = sp.scrollTop;
         const delta = targetTop - from;
         if (Math.abs(delta) < 1) return;
+
+        // Detect user scroll: any scroll event not caused by our animation cancels auto-scroll
+        let lastSetTop = from;
+        this.#scrollListener = () => {
+            // If scrollTop differs from what we just set, user scrolled
+            if (Math.abs(sp.scrollTop - lastSetTop) > 1) {
+                this.#scrollCancelled = true;
+                if (this.#scrollRaf) { cancelAnimationFrame(this.#scrollRaf); this.#scrollRaf = null; }
+                this.#teardownScrollListener();
+            }
+        };
+        sp.addEventListener('scroll', this.#scrollListener, { passive: true });
+
         const start = performance.now();
         const tick = (now) => {
+            if (this.#scrollCancelled) {
+                this.#scrollRaf = null;
+                this.#teardownScrollListener();
+                return;
+            }
             const t = Math.min(1, (now - start) / duration);
-            this.#scrollParent.scrollTop = from + delta * FLIP_EASE(t);
+            lastSetTop = from + delta * FLIP_EASE(t);
+            sp.scrollTop = lastSetTop;
             if (t < 1) this.#scrollRaf = requestAnimationFrame(tick);
-            else this.#scrollRaf = null;
+            else { this.#scrollRaf = null; this.#teardownScrollListener(); }
         };
         this.#scrollRaf = requestAnimationFrame(tick);
+    }
+
+    #teardownScrollListener() {
+        if (this.#scrollListener && this.#scrollParent) {
+            this.#scrollParent.removeEventListener('scroll', this.#scrollListener);
+        }
+        this.#scrollListener = null;
     }
 
     #animateGridNamesIn(dur) {
@@ -2572,15 +2721,23 @@ class CarouselDropdownBrowser extends HTMLElement {
         };
 
         // Section nav disabled state
-        const curSecIdx = this.#items[centerIdx]?.sectionIndex ?? -1;
-        if (!this.#infinite && curSecIdx >= 0) {
-            const hasPrev = this.#items.some(it => it.sectionIndex >= 0 && it.sectionIndex < curSecIdx);
-            const hasNext = this.#items.some(it => it.sectionIndex >= 0 && it.sectionIndex > curSecIdx);
-            frame.secNavLeftDisabled = !hasPrev;
-            frame.secNavRightDisabled = !hasNext;
-        } else if (!this.#infinite) {
-            frame.secNavLeftDisabled = true;
-            frame.secNavRightDisabled = true;
+        if (this.#sectionNavStep != null) {
+            // Fixed step mode: disable at edges (same logic as regular arrows)
+            if (!this.#infinite) {
+                frame.secNavLeftDisabled = centerIdx <= 0;
+                frame.secNavRightDisabled = centerIdx >= this.#items.length - 1;
+            }
+        } else {
+            const curSecIdx = this.#items[centerIdx]?.sectionIndex ?? -1;
+            if (!this.#infinite && curSecIdx >= 0) {
+                const hasPrev = this.#items.some(it => it.sectionIndex >= 0 && it.sectionIndex < curSecIdx);
+                const hasNext = this.#items.some(it => it.sectionIndex >= 0 && it.sectionIndex > curSecIdx);
+                frame.secNavLeftDisabled = !hasPrev;
+                frame.secNavRightDisabled = !hasNext;
+            } else if (!this.#infinite) {
+                frame.secNavLeftDisabled = true;
+                frame.secNavRightDisabled = true;
+            }
         }
         this.#lastFrame = frame;
         return frame;
@@ -2596,7 +2753,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         for (const { element, index } of this.#cards) {
             const layout = this.#cardLayout.get(element);
 
-            element.classList.remove('active');
+            element.classList.remove('active', 'cdb-centered');
 
             if (!layout) {
                 // Push off-screen in the correct direction so CSS transition scrolls them out
@@ -2628,6 +2785,9 @@ class CarouselDropdownBrowser extends HTMLElement {
             element.style.setProperty('--hover-sc', String(layout.hoverScBoost));
             element.style.setProperty('--hover-cx', layout.hoverCxShift + 'px');
 
+            if (index === this.#centerIdx) {
+                element.classList.add('cdb-centered');
+            }
             if (item_key_matches(element.dataset.flipKey, this.#selectedKey)) {
                 element.classList.add('active');
             }
@@ -2729,6 +2889,16 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#track.classList.add('cdb-transitioning');
         this.#resetHoverState();
         this.#applyLayout(frame);
+    }
+
+    /** Reposition cards without CSS transition (for resize / layout shifts). */
+    #positionCardsInstant() {
+        const frame = this.#computeLayout();
+        this.#resetHoverState();
+        this.#track.classList.add('cdb-instant');
+        this.#applyLayout(frame);
+        void this.#track.offsetHeight;
+        this.#track.classList.remove('cdb-instant');
     }
 
     #updateActiveHighlight() {
@@ -3092,6 +3262,14 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#container.style.setProperty('--carousel-speed', '0.85s');
             this.#positionCards();
             this.#emitCenterChange();
+            if (this.#arrowAutoSelect) {
+                const item = this.#items[this.#centerIdx];
+                if (item) {
+                    this.dispatchEvent(new CustomEvent('item-select', {
+                        detail: { key: item.key, index: this.#centerIdx, item }
+                    }));
+                }
+            }
             setTimeout(() => this.#track.classList.remove('cdb-dragging'), 900);
         };
 
@@ -3133,18 +3311,22 @@ class CarouselDropdownBrowser extends HTMLElement {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (holdJustEnded) return;
-            // Right arrow (direction=-1): rightmost visible → center
-            // Left arrow (direction=1): leftmost visible → center
-            const jump = direction < 0
-                ? this.#numCardsVisibleRight
-                : this.#numCardsVisibleLeft;
-            navBy(-direction * Math.max(1, jump));
+            if (this.#arrowNavStep != null) {
+                navBy(-direction * this.#arrowNavStep);
+            } else {
+                // Default: jump by visible card count on that side
+                const jump = direction < 0
+                    ? this.#numCardsVisibleRight
+                    : this.#numCardsVisibleLeft;
+                navBy(-direction * Math.max(1, jump));
+            }
         });
     }
 
     #updateSectionNavVisibility() {
+        // Show section arrows when there are multiple sections, or when fixed step mode is active
         const sectionCount = new Set(this.#items.filter(it => it.sectionIndex >= 0).map(it => it.sectionIndex)).size;
-        const show = sectionCount > 1;
+        const show = this.#sectionNavStep != null || sectionCount > 1;
         if (this.#secNavLeft) this.#secNavLeft.style.display = show ? '' : 'none';
         if (this.#secNavRight) this.#secNavRight.style.display = show ? '' : 'none';
     }
@@ -3159,38 +3341,61 @@ class CarouselDropdownBrowser extends HTMLElement {
             const total = items.length;
             if (total <= 1) return;
 
-            const curSecIdx = items[this.#centerIdx]?.sectionIndex ?? -1;
             let targetIdx = -1;
 
-            if (direction > 0) {
-                // Next section: find first item with sectionIndex > current
-                for (let i = 0; i < total; i++) {
-                    if (items[i].sectionIndex > curSecIdx && items[i].sectionIndex >= 0) {
-                        targetIdx = i;
-                        break;
-                    }
+            if (this.#sectionNavStep === 'page') {
+                // Page mode: jump by visible card count (same as default arrow behavior)
+                const jump = direction > 0
+                    ? this.#numCardsVisibleRight
+                    : this.#numCardsVisibleLeft;
+                const step = Math.max(1, jump) * direction;
+                if (this.#infinite) {
+                    targetIdx = ((this.#centerIdx + step) % total + total) % total;
+                } else {
+                    targetIdx = Math.max(0, Math.min(total - 1, this.#centerIdx + step));
                 }
-                // Infinite wrap: go to first section
-                if (targetIdx < 0 && this.#infinite) {
-                    targetIdx = items.findIndex(it => it.sectionIndex >= 0);
+            } else if (this.#sectionNavStep != null) {
+                // Fixed step mode: move by N cards instead of jumping to section boundary
+                const step = this.#sectionNavStep * direction;
+                if (this.#infinite) {
+                    targetIdx = ((this.#centerIdx + step) % total + total) % total;
+                } else {
+                    targetIdx = Math.max(0, Math.min(total - 1, this.#centerIdx + step));
                 }
             } else {
-                // Previous section: find first item of the section before current
-                let prevSecIdx = -1;
-                for (let i = 0; i < total; i++) {
-                    const si = items[i].sectionIndex;
-                    if (si >= 0 && si < curSecIdx) prevSecIdx = si;
-                }
-                if (prevSecIdx >= 0) {
-                    targetIdx = items.findIndex(it => it.sectionIndex === prevSecIdx);
-                } else if (this.#infinite) {
-                    // Wrap to last section
-                    let maxSec = -1;
-                    for (const it of items) {
-                        if (it.sectionIndex > maxSec) maxSec = it.sectionIndex;
+                // Default: jump to section boundary
+                const curSecIdx = items[this.#centerIdx]?.sectionIndex ?? -1;
+
+                if (direction > 0) {
+                    // Next section: find first item with sectionIndex > current
+                    for (let i = 0; i < total; i++) {
+                        if (items[i].sectionIndex > curSecIdx && items[i].sectionIndex >= 0) {
+                            targetIdx = i;
+                            break;
+                        }
                     }
-                    if (maxSec >= 0) {
-                        targetIdx = items.findIndex(it => it.sectionIndex === maxSec);
+                    // Infinite wrap: go to first section
+                    if (targetIdx < 0 && this.#infinite) {
+                        targetIdx = items.findIndex(it => it.sectionIndex >= 0);
+                    }
+                } else {
+                    // Previous section: find first item of the section before current
+                    let prevSecIdx = -1;
+                    for (let i = 0; i < total; i++) {
+                        const si = items[i].sectionIndex;
+                        if (si >= 0 && si < curSecIdx) prevSecIdx = si;
+                    }
+                    if (prevSecIdx >= 0) {
+                        targetIdx = items.findIndex(it => it.sectionIndex === prevSecIdx);
+                    } else if (this.#infinite) {
+                        // Wrap to last section
+                        let maxSec = -1;
+                        for (const it of items) {
+                            if (it.sectionIndex > maxSec) maxSec = it.sectionIndex;
+                        }
+                        if (maxSec >= 0) {
+                            targetIdx = items.findIndex(it => it.sectionIndex === maxSec);
+                        }
                     }
                 }
             }

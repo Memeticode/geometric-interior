@@ -35,8 +35,8 @@ export function createConfigControls(el) {
         const locale = getLocale();
         const words = getLocalizedWords(locale);
         populateTagSelect(el.seedTagArr, words.arrangement);
-        populateTagSelect(el.seedTagStr, words.structure);
-        populateTagSelect(el.seedTagDet, words.detail);
+        populateTagSelect(el.seedTagStr, words.structure.map(w => w.toLowerCase()));
+        populateTagSelect(el.seedTagDet, words.detail.map(w => w.toLowerCase()));
     }
 
     function populateTagSelect(selectEl, words) {
