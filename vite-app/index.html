@@ -83,163 +83,90 @@
                 <!-- Centered toolbar — always at top -->
                 <div class="gallery-toolbar" id="galleryToolbar">
                     <div class="gallery-controls icon-btn-group" id="galleryControls">
-                            <!-- Prev/Undo morph pair -->
-                            <button class="icon-btn gallery-morph-btn" id="galleryBtnLeft"
-                                aria-label="Previous portrait" data-tooltip="Previous" data-tooltip-pos="above">
-                                <svg class="icon-browse" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16"
-                                    height="16">
-                                    <path d="M10 3l-5 5 5 5" />
-                                </svg>
-                                <svg class="icon-edit" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14"
-                                    height="14">
-                                    <path d="M3 7h7a4 4 0 0 1 0 8H8" />
-                                    <path d="M6 4L3 7l3 3" />
-                                </svg>
-                            </button>
-                            <!-- Next/Redo morph pair -->
-                            <button class="icon-btn gallery-morph-btn" id="galleryBtnRight"
-                                aria-label="Next portrait" data-tooltip="Next" data-tooltip-pos="above">
-                                <svg class="icon-browse" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16"
-                                    height="16">
-                                    <path d="M6 3l5 5-5 5" />
-                                </svg>
-                                <svg class="icon-edit" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14"
-                                    height="14">
-                                    <path d="M13 7H6a4 4 0 0 0 0 8h2" />
-                                    <path d="M10 4l3 3-3 3" />
-                                </svg>
-                            </button>
-                            <button class="icon-btn" id="fullscreenBtn" data-tooltip="Fullscreen"
-                                data-tooltip-pos="above" aria-label="Fullscreen">
-                                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
-                                    stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-                                    <path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" />
-                                </svg>
-                            </button>
-                            <span class="icon-btn-sep">|</span>
-                            <!-- Browse-only group (slides out in edit mode) -->
-                            <span class="toolbar-browse-group">
-                                <button class="icon-btn" id="slideshowBtn" data-tooltip="Start slideshow"
-                                    data-tooltip-pos="above" aria-label="Start slideshow">
-                                    <svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16">
-                                        <path d="M5 3l8 5-8 5z" />
-                                    </svg>
-                                </button>
-                                <div class="custom-dropdown" id="slideshowDropdown">
-                                    <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox"
-                                        aria-expanded="false" aria-label="Slideshow interval"
-                                        data-tooltip="Slideshow interval" data-tooltip-pos="above">
-                                        <span class="custom-dropdown-label">2s</span>
-                                    </button>
-                                    <div class="custom-dropdown-menu dropdown-down hidden" role="listbox">
-                                        <button class="custom-dropdown-item" role="option" data-value="1"
-                                            aria-selected="false">1s</button>
-                                        <button class="custom-dropdown-item active" role="option" data-value="2"
-                                            aria-selected="true">2s</button>
-                                        <button class="custom-dropdown-item" role="option" data-value="3"
-                                            aria-selected="false">3s</button>
-                                        <button class="custom-dropdown-item" role="option" data-value="5"
-                                            aria-selected="false">5s</button>
-                                        <button class="custom-dropdown-item" role="option" data-value="10"
-                                            aria-selected="false">10s</button>
-                                        <button class="custom-dropdown-item" role="option" data-value="30"
-                                            aria-selected="false">30s</button>
-                                        <button class="custom-dropdown-item" role="option" data-value="60"
-                                            aria-selected="false">1m</button>
-                                        <button class="custom-dropdown-item" role="option" data-value="120"
-                                            aria-selected="false">2m</button>
-                                        <button class="custom-dropdown-item" role="option" data-value="300"
-                                            aria-selected="false">5m</button>
-                                    </div>
-                                </div>
-                            </span>
-                            <!-- Resolution (always visible) -->
-                            <div class="custom-dropdown" id="resolutionDropdown">
-                                <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox"
-                                    aria-expanded="false" aria-label="Resolution"
-                                    data-i18n-aria="footer.resolutionLabel" data-tooltip="Display resolution"
-                                    data-tooltip-pos="above">
-                                    <span class="custom-dropdown-label">SD</span>
-                                </button>
-                                <div class="custom-dropdown-menu dropdown-down hidden" role="listbox">
-                                    <button class="custom-dropdown-item" role="option" data-value="pre"
-                                        aria-selected="false">PRE</button>
-                                    <button class="custom-dropdown-item active" role="option" data-value="sd"
-                                        aria-selected="true">SD</button>
-                                    <button class="custom-dropdown-item" role="option" data-value="hd"
-                                        aria-selected="false">HD</button>
-                                    <button class="custom-dropdown-item" role="option" data-value="fhd"
-                                        aria-selected="false">FHD</button>
-                                    <button class="custom-dropdown-item" role="option" data-value="qhd"
-                                        aria-selected="false">QHD</button>
-                                    <button class="custom-dropdown-item" role="option" data-value="4k"
-                                        aria-selected="false">4K</button>
-                                </div>
-                            </div>
-                            <span class="icon-btn-sep">|</span>
                             <!-- Edit-only group (slides in during edit mode) -->
                             <span class="toolbar-edit-group">
+                                <!-- Undo -->
+                                <button class="icon-btn" id="galleryBtnLeft"
+                                    aria-label="Undo" data-tooltip="Undo" data-tooltip-pos="above">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 7h7a4 4 0 0 1 0 8H8" />
+                                        <path d="M6 4L3 7l3 3" />
+                                    </svg>
+                                </button>
+                                <!-- Redo -->
+                                <button class="icon-btn" id="galleryBtnRight"
+                                    aria-label="Redo" data-tooltip="Redo" data-tooltip-pos="above">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                        stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M13 7H6a4 4 0 0 0 0 8h2" />
+                                        <path d="M10 4l3 3-3 3" />
+                                    </svg>
+                                </button>
+                                <span class="icon-btn-sep">|</span>
+                                <!-- Save -->
                                 <button class="icon-btn" id="gallerySaveBtn"
                                     data-tooltip="Save" data-tooltip-pos="above" aria-label="Save">
                                     <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25"
-                                        stroke-linejoin="round" width="14" height="14">
+                                        stroke-linejoin="round">
                                         <path d="M2 2h9l3 3v9H2z" />
                                         <path d="M11 2v3h3" />
                                         <rect x="5" y="2" width="4" height="3" rx="0.5" stroke-width="0.75" />
                                         <rect x="4.5" y="9" width="7" height="5" rx="0.5" stroke-width="0.75" />
                                     </svg>
                                 </button>
-                                <button class="icon-btn" id="galleryRenderBtn"
-                                    data-tooltip="Render image" data-tooltip-pos="above" aria-label="Render image">
-                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25"
-                                        stroke-linejoin="round" width="14" height="14">
-                                        <path d="M5.5 3.5l3 4.5-3 4.5-3-4.5z" />
-                                        <path d="M10.5 3.5l3 4.5-3 4.5-3-4.5z" />
-                                        <path d="M14.5 3.5a7 7 0 1 1-5.5-2.5" stroke-linecap="round" />
-                                        <path d="M11.5 1l-2 0 0.75 2" stroke-width="1.25" stroke-linecap="round"
-                                            stroke-linejoin="round" />
+                                <span class="icon-btn-sep">|</span>
+                            </span>
+                            <!-- Always-visible group (transforms to image upper-right in browse) -->
+                            <span class="toolbar-browse-group" id="toolbarBrowseGroup">
+                                <!-- Fullscreen -->
+                                <button class="icon-btn" id="fullscreenBtn" data-tooltip="Fullscreen"
+                                    data-tooltip-pos="above" aria-label="Fullscreen">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+                                        stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" />
+                                    </svg>
+                                </button>
+                                <!-- Resolution -->
+                                <div class="custom-dropdown" id="resolutionDropdown">
+                                    <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox"
+                                        aria-expanded="false" aria-label="Resolution"
+                                        data-i18n-aria="footer.resolutionLabel">
+                                        <span class="custom-dropdown-label">SD</span>
+                                    </button>
+                                    <div class="custom-dropdown-menu dropdown-down hidden" role="listbox">
+                                        <button class="custom-dropdown-item" role="option" data-value="pre"
+                                            aria-selected="false">PRE</button>
+                                        <button class="custom-dropdown-item active" role="option" data-value="sd"
+                                            aria-selected="true">SD</button>
+                                        <button class="custom-dropdown-item" role="option" data-value="hd"
+                                            aria-selected="false">HD</button>
+                                        <button class="custom-dropdown-item" role="option" data-value="fhd"
+                                            aria-selected="false">FHD</button>
+                                        <button class="custom-dropdown-item" role="option" data-value="qhd"
+                                            aria-selected="false">QHD</button>
+                                        <button class="custom-dropdown-item" role="option" data-value="4k"
+                                            aria-selected="false">4K</button>
+                                    </div>
+                                </div>
+                            </span>
+                            <!-- Edit-only: Randomize -->
+                            <span class="toolbar-edit-group">
+                                <!-- Randomize -->
+                                <button class="icon-btn" id="galleryBtnAdd"
+                                    data-tooltip="Randomize" data-tooltip-pos="above" aria-label="Randomize">
+                                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                        stroke-width="1.25" stroke-linejoin="round">
+                                        <rect x="2" y="2" width="12" height="12" rx="1.5" />
+                                        <circle cx="5.5" cy="4.5" r="0.9" fill="currentColor" stroke="none" />
+                                        <circle cx="5.5" cy="8" r="0.9" fill="currentColor" stroke="none" />
+                                        <circle cx="5.5" cy="11.5" r="0.9" fill="currentColor" stroke="none" />
+                                        <circle cx="10.5" cy="4.5" r="0.9" fill="currentColor" stroke="none" />
+                                        <circle cx="10.5" cy="8" r="0.9" fill="currentColor" stroke="none" />
+                                        <circle cx="10.5" cy="11.5" r="0.9" fill="currentColor" stroke="none" />
                                     </svg>
                                 </button>
                             </span>
-                            <span class="icon-btn-sep">|</span>
-                            <!-- Edit/Cancel morph pair -->
-                            <button class="icon-btn gallery-morph-btn" id="galleryBtnEdit"
-                                data-tooltip="Edit" data-tooltip-pos="above" aria-label="Edit">
-                                <svg class="icon-browse" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14"
-                                    height="14">
-                                    <path d="M11.5 1.5l3 3L5 14H2v-3z" />
-                                    <path d="M9.5 3.5l3 3" />
-                                </svg>
-                                <svg class="icon-edit" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14"
-                                    height="14">
-                                    <path d="M3 3l10 10M13 3L3 13" />
-                                </svg>
-                            </button>
-                            <!-- Add/Randomize morph pair -->
-                            <button class="icon-btn gallery-morph-btn" id="galleryBtnAdd"
-                                data-tooltip="Add new" data-tooltip-pos="above" aria-label="Add new">
-                                <svg class="icon-browse" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                                    stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14"
-                                    height="14">
-                                    <path d="M8 2v12M2 8h12" />
-                                </svg>
-                                <svg class="icon-edit" viewBox="0 0 16 16" fill="none" stroke="currentColor"
-                                    stroke-width="1.25" stroke-linejoin="round" width="14" height="14">
-                                    <rect x="2" y="2" width="12" height="12" rx="1.5" />
-                                    <circle cx="5.5" cy="4.5" r="0.9" fill="currentColor" stroke="none" />
-                                    <circle cx="5.5" cy="8" r="0.9" fill="currentColor" stroke="none" />
-                                    <circle cx="5.5" cy="11.5" r="0.9" fill="currentColor" stroke="none" />
-                                    <circle cx="10.5" cy="4.5" r="0.9" fill="currentColor" stroke="none" />
-                                    <circle cx="10.5" cy="8" r="0.9" fill="currentColor" stroke="none" />
-                                    <circle cx="10.5" cy="11.5" r="0.9" fill="currentColor" stroke="none" />
-                                </svg>
-                            </button>
                     </div>
                 </div>
                 <div class="gallery-selection-container" id="gallerySelectionContainer">

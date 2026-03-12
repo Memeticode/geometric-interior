@@ -595,7 +595,7 @@ export function initGeneratePanel(opts) {
             const name = readName();
             const commentary = readCommentary();
             if (onSave) {
-                const result = await onSave(name, readSeed(), readControls(), readCamera(), commentary);
+                const result = await onSave(name, readSeed(), readControls(), readCamera(), commentary, savedAssetId);
                 if (result && result.id) {
                     savedAssetId = result.id;
                     savedName = name;

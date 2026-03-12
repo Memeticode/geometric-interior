@@ -165,7 +165,8 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
                translateZ(var(--tz, 0px))
                scale(var(--sc, 1));
     transition: transform 0.15s ease,
-                box-shadow 0.2s ease;
+                box-shadow 0.2s ease,
+                border-color 0.4s ease;
     transform-style: preserve-3d;
 }
 .cdb-card.active .cdb-card-frame {

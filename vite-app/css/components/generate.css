@@ -848,8 +848,8 @@ input.gen-slider-value {
     justify-content: center;
 }
 .gen-modal {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: var(--modal-bg);
+    border: 1px solid var(--border-strong);
     border-radius: 10px;
     padding: 1rem;
     max-width: 20rem;

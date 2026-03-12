@@ -41,7 +41,7 @@ import { initGalleryWorker } from './gallery-worker-bridge.js';
 import { createRenderQueue } from './render-queue.js';
 import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
 import { initRenderQueueMenu } from './render-queue-menu.js';
-import { initCustomDropdown } from '../../components/custom-dropdown.js';
+// import { initCustomDropdown } from '../../components/custom-dropdown.js'; // slideshow removed
 import { initAnimationEditor, destroyAnimationEditor } from '../animation/anim-main.js';
 
 /* ── Build header & footer DOM ── */
@@ -56,19 +56,8 @@ initTheme(footerRefs.themeSwitcher);
 initLangSelector(footerRefs.langDropdown);
 initResolutionSelector(document.getElementById('resolutionDropdown'));
 // Gen resolution selector removed — now part of render flow
-initCustomDropdown(document.getElementById('slideshowDropdown'), {
-    initialValue: '2',
-    onSelect(value) {
-        // Sync gen slideshow dropdown to same interval
-        syncGenSlideshowInterval(value);
-        if (slideshowPlaying) {
-            restartRingAnimation();
-            if (slideshowTimer) { clearTimeout(slideshowTimer); slideshowTimer = null; }
-            scheduleNextSlide();
-        }
-    },
-});
-// Gen slideshow dropdown removed — slideshow only in gallery mode
+// Slideshow removed — navigation via carousel
+// initCustomDropdown(document.getElementById('slideshowDropdown'), { ... });
 
 /* ── Site menu toggle ── */
 const siteMenuToggle = document.getElementById('siteMenuToggle');
@@ -238,8 +227,30 @@ window.addEventListener('resize', () => {
     resizeRaf = requestAnimationFrame(() => {
         resizeRaf = null;
         positionMenuSlider(false);
+        updateBrowseGroupOffset();
     });
 });
+
+/** Measure toolbar-browse-group offset so it visually sits at image upper-right in browse mode. */
+function updateBrowseGroupOffset() {
+    if (galleryContainerEl.classList.contains('editing')) return;
+    if (!toolbarBrowseGroup || !gallerySelectionCardVisualWrap || !morphSeedRow) return;
+
+    const groupRect = toolbarBrowseGroup.getBoundingClientRect();
+    const imageRect = gallerySelectionCardVisualWrap.getBoundingClientRect();
+    const seedRect = morphSeedRow.getBoundingClientRect();
+
+    // Vertical: same distance above image as seed row sits above it
+    const seedToImage = imageRect.top - seedRect.bottom;
+    const targetTop = imageRect.top - seedToImage - groupRect.height;
+    const offsetY = targetTop - groupRect.top;
+
+    // Horizontal: right-align with image
+    const offsetX = imageRect.right - groupRect.right;
+
+    toolbarBrowseGroup.style.setProperty('--browse-offset-x', offsetX + 'px');
+    toolbarBrowseGroup.style.setProperty('--browse-offset-y', offsetY + 'px');
+}
 
 /* ── State ── */
 let selected = { name: null, isPortrait: false };
@@ -259,10 +270,11 @@ let editInitialized = false;
 const galleryContainerEl = document.getElementById('galleryContainer');
 const galleryBtnLeft = document.getElementById('galleryBtnLeft');
 const galleryBtnRight = document.getElementById('galleryBtnRight');
-const galleryBtnEdit = document.getElementById('galleryBtnEdit');
+// const galleryBtnEdit = document.getElementById('galleryBtnEdit'); // cancel button removed
 const galleryBtnAdd = document.getElementById('galleryBtnAdd');
 const gallerySaveBtn = document.getElementById('gallerySaveBtn');
-const galleryRenderBtn = document.getElementById('galleryRenderBtn');
+const toolbarBrowseGroup = document.getElementById('toolbarBrowseGroup');
+// const galleryRenderBtn = document.getElementById('galleryRenderBtn'); // render button removed
 const galleryEditCanvas = document.getElementById('galleryEditCanvas');
 const galleryEditConfigEl = document.getElementById('galleryEditConfig');
 const editGenConfigSliders = document.getElementById('editGenConfigSliders');
@@ -342,71 +354,12 @@ requestAnimationFrame(() => { addSelectCommas(); fitAllSelects(); });
 /* ── Carousel state ── */
 let carouselList = [];       // [{name, profile, isPortrait, assetId?}] — portraits first, then local
 
-/* ── Slideshow ── */
-const slideshowBtn = document.getElementById('slideshowBtn');
-const slideshowDropdown = document.getElementById('slideshowDropdown');
-// Gen slideshow refs removed — slideshow only in gallery mode
-let slideshowTimer = null;
-let slideshowPlaying = false;
-
-const PLAY_SVG = '<svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><path d="M5 3l8 5-8 5z"/></svg>';
-const PAUSE_SVG = '<svg viewBox="0 0 16 16" fill="currentColor" width="16" height="16"><rect x="3" y="3" width="4" height="10" rx="1"/><rect x="9" y="3" width="4" height="10" rx="1"/></svg>';
-
-function getSlideDuration() {
-    const activeItem = slideshowDropdown.querySelector('.custom-dropdown-item.active');
-    return parseInt(activeItem ? activeItem.dataset.value : '2', 10);
-}
-
-function startSlideshow() {
-    if (navigableList.length <= 1) return;
-    slideshowPlaying = true;
-    slideshowBtn.classList.add('slideshow-active');
-    slideshowBtn.style.setProperty('--slide-duration', getSlideDuration() + 's');
-    slideshowBtn.innerHTML = PAUSE_SVG;
-    slideshowBtn.setAttribute('data-tooltip', 'Pause slideshow');
-    slideshowBtn.setAttribute('aria-label', 'Pause slideshow');
-    refreshTooltip(slideshowBtn);
-    scheduleNextSlide();
-}
-
-function stopSlideshow() {
-    slideshowPlaying = false;
-    slideshowBtn.classList.remove('slideshow-active');
-    slideshowBtn.style.removeProperty('--slide-duration');
-    slideshowBtn.innerHTML = PLAY_SVG;
-    slideshowBtn.setAttribute('data-tooltip', 'Start slideshow');
-    slideshowBtn.setAttribute('aria-label', 'Start slideshow');
-    refreshTooltip(slideshowBtn);
-    if (slideshowTimer) { clearTimeout(slideshowTimer); slideshowTimer = null; }
-}
-
-function restartRingAnimation() {
-    slideshowBtn.style.setProperty('--slide-duration', getSlideDuration() + 's');
-    slideshowBtn.classList.remove('slideshow-active');
-    slideshowBtn.offsetHeight; // force reflow
-    slideshowBtn.classList.add('slideshow-active');
-}
-
-function scheduleNextSlide() {
-    if (!slideshowPlaying) return;
-    if (slideshowTimer) clearTimeout(slideshowTimer);
-    const ms = getSlideDuration() * 1000;
-    slideshowTimer = setTimeout(() => {
-        slideshowTimer = null;
-        if (!slideshowPlaying) return;
-        navigateArrow(1);
-        restartRingAnimation();
-        scheduleNextSlide();
-    }, ms);
-}
-
-/** Sync interval dropdown — gen slideshow removed, only gallery slideshow remains */
-function syncGenSlideshowInterval(/* value */) { /* no-op: gen slideshow removed */ }
-
-slideshowBtn.addEventListener('click', () => {
-    if (slideshowPlaying) stopSlideshow();
-    else startSlideshow();
-});
+/* ── Slideshow (commented out) ── */
+// const slideshowBtn = document.getElementById('slideshowBtn');
+// const slideshowDropdown = document.getElementById('slideshowDropdown');
+// let slideshowTimer = null;
+// let slideshowPlaying = false;
+// ... slideshow functions removed — navigation via carousel
 
 /* ── Fullscreen ── */
 
@@ -619,12 +572,11 @@ carouselBrowser.addEventListener('item-select', (e) => {
     if (editMode) {
         exitEditMode(false);
     }
-    if (slideshowPlaying) stopSlideshow();
     selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
 });
 
 carouselBrowser.addEventListener('center-change', () => {
-    if (slideshowPlaying) stopSlideshow();
+    // slideshow stop removed — carousel is primary navigation
 });
 
 carouselBrowser.addEventListener('item-delete', (e) => {
@@ -993,6 +945,7 @@ function applySelection(name, profile, isPortrait, assetId) {
         }
         fitAllSelects();
         addSelectCommas();
+        updateBrowseGroupOffset();
 
         // Portrait commentary vs generated/custom text
         if (isPortrait) {
@@ -1081,7 +1034,10 @@ function applySelection(name, profile, isPortrait, assetId) {
         gallerySelectionCardFooter.classList.remove('fading');
 
         // Re-enable morph transitions after first paint with final values
-        requestAnimationFrame(() => galleryContainerEl.classList.remove('no-transition'));
+        requestAnimationFrame(() => {
+            galleryContainerEl.classList.remove('no-transition');
+            updateBrowseGroupOffset();
+        });
     }, fadeDuration);
 
     currentIndex = navigableList.findIndex(p =>
@@ -1133,14 +1089,12 @@ function navigateArrow(direction) {
     selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
 }
 
-// Morph buttons: left = prev/undo, right = next/redo
+// Edit-only buttons: undo/redo
 galleryBtnLeft.addEventListener('click', () => {
-    if (editMode) { if (editPanel) editPanel.undo(); }
-    else { if (slideshowPlaying) stopSlideshow(); navigateArrow(-1); }
+    if (editMode && editPanel) editPanel.undo();
 });
 galleryBtnRight.addEventListener('click', () => {
-    if (editMode) { if (editPanel) editPanel.redo(); }
-    else { if (slideshowPlaying) stopSlideshow(); navigateArrow(1); }
+    if (editMode && editPanel) editPanel.redo();
 });
 
 /* ── Alt-text overlays (independent of tooltip system) ── */
@@ -1382,7 +1336,6 @@ function buildAnimCard(asset) {
 
     header.addEventListener('click', (e) => {
         if (e.target.closest('.profile-card-actions')) return;
-        if (slideshowPlaying) stopSlideshow();
         applyAnimSelection(asset.id);
         pushProfileRoute(asset.name, false, asset.id);
     });
@@ -1708,33 +1661,29 @@ function capturePreviewThumb() {
     });
 }
 
-async function handleSave(name, seed, controls, camera, commentary) {
+async function handleSave(name, seed, controls, camera, commentary, currentAssetId) {
     // Capture preview thumbnail before saving
     const thumbDataUrl = await capturePreviewThumb();
 
-    // Check for name conflict in existing saved assets
-    const existingAsset = generatedAssets.find(a => a.name === name);
-
-    if (existingAsset) {
-        // Show conflict modal
-        const result = await showSaveConflictModal(name);
-        if (!result) return null; // cancelled
-        if (result.action === 'overwrite') {
-            // Overwrite existing asset
-            const asset = existingAsset;
-            asset.seed = seed;
-            asset.controls = controls;
-            asset.thumbDataUrl = thumbDataUrl || asset.thumbDataUrl;
-            asset.meta = { ...asset.meta, seed, controls, camera, commentary, title: name };
-            asset.name = name;
-            await putAsset(asset);
-            generatedAssets = await getAllAssets();
-            refreshSavedGrid();
-            toast(`Overwritten "${name}"`);
-            return { id: asset.id, overwritten: true };
-        } else {
-            // Save as new with different name
-            name = result.name;
+    // If editing an existing saved image, ask overwrite or save-as-new
+    if (currentAssetId) {
+        const existingAsset = generatedAssets.find(a => a.id === currentAssetId);
+        if (existingAsset) {
+            const result = await showSaveConflictModal(name);
+            if (!result) return null; // cancelled
+            if (result.action === 'overwrite') {
+                existingAsset.seed = seed;
+                existingAsset.controls = controls;
+                existingAsset.thumbDataUrl = thumbDataUrl || existingAsset.thumbDataUrl;
+                existingAsset.meta = { ...existingAsset.meta, seed, controls, camera, commentary, title: name };
+                existingAsset.name = name;
+                await putAsset(existingAsset);
+                generatedAssets = await getAllAssets();
+                refreshSavedGrid();
+                toast(`Overwritten "${name}"`);
+                return { id: existingAsset.id, overwritten: true };
+            }
+            // fall through to save-as-new
         }
     }
 
@@ -1756,7 +1705,7 @@ async function handleSave(name, seed, controls, camera, commentary) {
     return { id, overwritten: false };
 }
 
-function showSaveConflictModal(existingName) {
+function showSaveConflictModal(name) {
     return new Promise(resolve => {
         const backdrop = document.createElement('div');
         backdrop.className = 'gen-modal-backdrop';
@@ -1766,17 +1715,11 @@ function showSaveConflictModal(existingName) {
 
         const title = document.createElement('div');
         title.className = 'gen-modal-title';
-        title.textContent = 'Name already exists';
+        title.textContent = 'Update existing image?';
 
         const msg = document.createElement('div');
         msg.className = 'gen-modal-msg';
-        msg.textContent = `An image named "${existingName}" already exists. Overwrite it, or enter a new name:`;
-
-        const input = document.createElement('input');
-        input.className = 'gen-modal-input';
-        input.type = 'text';
-        input.value = existingName;
-        input.maxLength = 40;
+        msg.textContent = `You're editing "${name}". Save changes to this image, or save as a new image?`;
 
         const btns = document.createElement('div');
         btns.className = 'gen-modal-btns';
@@ -1800,33 +1743,16 @@ function showSaveConflictModal(existingName) {
 
         cancelBtn.addEventListener('click', () => close(null));
         overwriteBtn.addEventListener('click', () => close({ action: 'overwrite' }));
-        saveNewBtn.addEventListener('click', () => {
-            const newName = input.value.trim();
-            if (!newName) return;
-            if (newName === existingName) {
-                // Same name — treat as overwrite
-                close({ action: 'overwrite' });
-                return;
-            }
-            // Check if new name also conflicts
-            if (generatedAssets.find(a => a.name === newName)) {
-                msg.textContent = `"${newName}" also exists. Enter a different name:`;
-                input.focus();
-                return;
-            }
-            close({ action: 'saveNew', name: newName });
-        });
+        saveNewBtn.addEventListener('click', () => close({ action: 'saveNew' }));
 
         backdrop.addEventListener('click', (e) => {
             if (e.target === backdrop) close(null);
         });
 
         btns.append(cancelBtn, overwriteBtn, saveNewBtn);
-        modal.append(title, msg, input, btns);
+        modal.append(title, msg, btns);
         backdrop.appendChild(modal);
         document.body.appendChild(backdrop);
-        input.focus();
-        input.select();
     });
 }
 
@@ -2073,8 +1999,8 @@ function initGenerate() {
                 renderQueue.enqueue(seed, controls, name, commentary);
             }
         },
-        async onSave(name, seed, controls, camera, commentary) {
-            return handleSave(name, seed, controls, camera, commentary);
+        async onSave(name, seed, controls, camera, commentary, assetId) {
+            return handleSave(name, seed, controls, camera, commentary, assetId);
         },
         onFullscreen() {
             if (genFullscreenOverlay) closeGenFullscreen();
@@ -2159,7 +2085,6 @@ function initGenerate() {
 let modeTransitioning = false;
 
 function showGenerateMode() {
-    if (slideshowPlaying) stopSlideshow();
     if (modeTransitioning) return;
 
     // Determine which create panel to show
@@ -2282,7 +2207,7 @@ function initEditMode() {
         nameField: editNameField,
         saveBtn: gallerySaveBtn,
         randomizeBtn: null,   // randomize handled by galleryBtnAdd morph
-        renderBtn: galleryRenderBtn,
+        renderBtn: null, // render button removed from toolbar
         undoBtn: null,        // undo handled by galleryBtnLeft morph
         redoBtn: null,        // redo handled by galleryBtnRight morph
         fullscreenBtn: null,
@@ -2302,8 +2227,8 @@ function initEditMode() {
             if (!renderQueue) return;
             renderQueue.enqueue(seed, controls, name, commentary);
         },
-        async onSave(name, seed, controls, camera, commentary) {
-            const result = await handleSave(name, seed, controls, camera, commentary);
+        async onSave(name, seed, controls, camera, commentary, assetId) {
+            const result = await handleSave(name, seed, controls, camera, commentary, assetId);
             if (result) {
                 exitEditMode(true);
             }
@@ -2365,7 +2290,6 @@ function initEditMode() {
 
 async function enterEditMode(mode, entry, fromPopstate) {
     if (editMode) return; // already in edit mode
-    if (slideshowPlaying) stopSlideshow();
 
     editMode = mode;
     editSourceEntry = entry || null;
@@ -2396,6 +2320,10 @@ async function enterEditMode(mode, entry, fromPopstate) {
     removeSelectCommas();
     editCommentaryField.placeholder = 'Add commentary (optional)';
 
+    // Clear browse offset so buttons animate from current position to toolbar
+    toolbarBrowseGroup.style.setProperty('--browse-offset-x', '0px');
+    toolbarBrowseGroup.style.setProperty('--browse-offset-y', '0px');
+
     // Toggle editing class (triggers all CSS cross-fade transitions)
     galleryContainerEl.classList.add('editing');
 
@@ -2405,7 +2333,6 @@ async function enterEditMode(mode, entry, fromPopstate) {
     // Update button tooltips for edit mode
     galleryBtnLeft.setAttribute('data-tooltip', 'Undo');
     galleryBtnRight.setAttribute('data-tooltip', 'Redo');
-    galleryBtnEdit.setAttribute('data-tooltip', 'Cancel');
     galleryBtnAdd.setAttribute('data-tooltip', 'Randomize');
 
     // Send render if worker is ready
@@ -2447,8 +2374,6 @@ async function exitEditMode(saved, fromPopstate) {
     addSelectCommas();
     fitAllSelects();
     editCommentaryField.placeholder = 'No commentary';
-    // Remove editing class (triggers all CSS cross-fade transitions)
-    galleryContainerEl.classList.remove('editing');
 
     // Navigate back to gallery URL (skip if triggered by popstate)
     if (!fromPopstate) {
@@ -2463,7 +2388,6 @@ async function exitEditMode(saved, fromPopstate) {
     // Restore button tooltips for browse mode
     galleryBtnLeft.setAttribute('data-tooltip', 'Previous');
     galleryBtnRight.setAttribute('data-tooltip', 'Next');
-    galleryBtnEdit.setAttribute('data-tooltip', 'Edit');
     galleryBtnAdd.setAttribute('data-tooltip', 'Add new');
 
     // Capture thumbnail before clearing editMode (so capturePreviewThumb uses editWorkerBridge)
@@ -2487,20 +2411,16 @@ async function exitEditMode(saved, fromPopstate) {
         }
     }
 
+    // Remove editing class after card attributes are updated so CSS transitions animate smoothly
+    galleryContainerEl.classList.remove('editing');
+
+    // Recalculate browse-group offset after layout settles
+    requestAnimationFrame(() => updateBrowseGroupOffset());
 }
 
 // ── Edit/Add/Save/Render button handlers ──
 
-galleryBtnEdit.addEventListener('click', () => {
-    if (editMode) {
-        // Cancel — exit without saving
-        exitEditMode(false);
-    } else {
-        // Enter edit mode with selected profile
-        const entry = navigableList[currentIndex];
-        if (entry) enterEditMode('edit', entry);
-    }
-});
+// galleryBtnEdit removed — cancel via Escape key or navigating away
 
 // ── Right-click / long-press "Edit image" context menu on main visual ──
 {
@@ -2616,21 +2536,13 @@ gallerySaveBtn.addEventListener('click', () => {
         const controls = editPanel.readControls();
         const camera = editPanel.readCamera();
         const commentary = editPanel.readCommentary();
-        handleSave(name, seed, controls, camera, commentary).then(result => {
+        handleSave(name, seed, controls, camera, commentary, editPanel.currentAssetId).then(result => {
             if (result) exitEditMode(true);
         });
     }
 });
 
-galleryRenderBtn.addEventListener('click', () => {
-    if (editMode && editPanel && renderQueue) {
-        const seed = editPanel.readSeed();
-        const controls = editPanel.readControls();
-        const name = editPanel.readName();
-        const commentary = editPanel.readCommentary();
-        renderQueue.enqueue(seed, controls, name, commentary);
-    }
-});
+// galleryRenderBtn removed from toolbar
 
 /* ── Keyboard navigation ── */
 document.addEventListener('keydown', (e) => {
@@ -2651,10 +2563,6 @@ document.addEventListener('keydown', (e) => {
             closeSiteMenu();
             return;
         }
-        if (slideshowPlaying) {
-            stopSlideshow();
-            return;
-        }
         if (activeMode === 'create') {
             hideGenerateMode();
             activeMode = 'gallery';
@@ -2667,11 +2575,9 @@ document.addEventListener('keydown', (e) => {
     if (activeType === 'image' && navigableList.length > 1) {
         if (e.key === 'ArrowLeft') {
             e.preventDefault();
-            if (slideshowPlaying) stopSlideshow();
             navigateArrow(-1);
         } else if (e.key === 'ArrowRight') {
             e.preventDefault();
-            if (slideshowPlaying) stopSlideshow();
             navigateArrow(1);
         }
     }
