@@ -243,47 +243,40 @@
                     </div>
                 </div>
                 <div class="gallery-selection-container" id="gallerySelectionContainer">
-                    <!-- Profile info above image -->
+                    <!-- Profile info — unified morph elements (plain text in browse, form inputs in edit) -->
                     <div class="gallery-selection-header-container">
-                        <div class="gallery-selection-header-text" id="galleryHeaderBrowse">
-                            <div class="gallery-selection-header-title" id="gallerySelectionHeaderTitle"></div>
-                            <div class="gallery-selection-header-seed" id="gallerySelectionHeaderSeed"></div>
+                        <div class="morph-row morph-name">
+                            <label class="morph-label"><span class="label-info"
+                                    data-tooltip="A name for this arrangement of light and form."
+                                    data-i18n="control.name"
+                                    data-i18n-tooltip="control.name.tooltip">Name<span
+                                        class="info-icon">i</span></span></label>
+                            <div class="morph-field morph-name-field">
+                                <svg class="morph-field-icon" viewBox="0 0 16 16" fill="none"
+                                    stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"
+                                    width="12" height="12">
+                                    <path d="M3 6l5-4 5 4-5 9z" />
+                                    <path d="M5.5 10L8 15.5l2.5-5.5z" fill="currentColor" stroke="none" />
+                                </svg>
+                                <textarea id="editNameField" class="morph-textarea" rows="1"
+                                    maxlength="40" placeholder="Auto-generated title"
+                                    data-i18n-placeholder="control.name.placeholder"></textarea>
+                                <span id="editNameCounter" class="morph-counter">0/40</span>
+                            </div>
+                            <div id="editNameError" class="gen-field-error hidden"></div>
                         </div>
-                        <!-- Edit-mode identity inputs (hidden until edit mode) -->
-                        <div class="gallery-edit-identity" id="galleryEditIdentity">
-                            <div class="gen-identity-text">
-                                <div class="gen-identity-name">
-                                    <label class="gen-identity-label"><span class="label-info"
-                                            data-tooltip="A name for this arrangement of light and form."
-                                            data-i18n="control.name"
-                                            data-i18n-tooltip="control.name.tooltip">Name<span
-                                                class="info-icon">i</span></span></label>
-                                    <div class="gen-field-wrap">
-                                        <svg class="gen-field-icon" viewBox="0 0 16 16" fill="none"
-                                            stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"
-                                            width="12" height="12">
-                                            <path d="M3 6l5-4 5 4-5 9z" />
-                                            <path d="M5.5 10L8 15.5l2.5-5.5z" fill="currentColor" stroke="none" />
-                                        </svg>
-                                        <textarea id="editNameField" class="auto-grow gen-name-field" rows="1"
-                                            maxlength="40" placeholder="Auto-generated title"
-                                            data-i18n-placeholder="control.name.placeholder"></textarea>
-                                        <span id="editNameCounter" class="gen-char-count">0/40</span>
-                                    </div>
-                                    <div id="editNameError" class="gen-field-error hidden"></div>
-                                </div>
-                                <div class="gen-identity-seed">
-                                    <label class="gen-identity-label"><span class="label-info"
-                                            data-tooltip="A three-word compositional seed."
-                                            data-i18n="control.seed"
-                                            data-i18n-tooltip="control.seed.tooltip">Seed<span
-                                                class="info-icon">i</span></span></label>
-                                    <div class="gen-seed-row" id="editSeedRow">
-                                        <select id="editTagArr" class="select-base seed-tag-select"></select>
-                                        <select id="editTagStr" class="select-base seed-tag-select"></select>
-                                        <select id="editTagDet" class="select-base seed-tag-select"></select>
-                                    </div>
-                                </div>
+                        <div class="morph-row morph-seed">
+                            <label class="morph-label"><span class="label-info"
+                                    data-tooltip="A three-word compositional seed."
+                                    data-i18n="control.seed"
+                                    data-i18n-tooltip="control.seed.tooltip">Seed<span
+                                        class="info-icon">i</span></span></label>
+                            <div class="morph-field morph-seed-field">
+                                <select id="editTagArr" class="morph-select"></select>
+                                <span class="morph-comma">,&nbsp;</span>
+                                <select id="editTagStr" class="morph-select"></select>
+                                <span class="morph-comma">,&nbsp;</span>
+                                <select id="editTagDet" class="morph-select"></select>
                             </div>
                         </div>
                     </div>

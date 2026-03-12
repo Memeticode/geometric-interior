@@ -30,7 +30,7 @@ import { syncGeneratedOrder, saveGeneratedOrder } from '../../stores/generated-o
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
 import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
 import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
-import { seedTagToLabel } from '@geometric-interior/core/text-generation/seed-tags.js';
+import { getLocalizedWords } from '@geometric-interior/core/text-generation/seed-tags.js';
 import { toast } from '../../components/toast.js';
 import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
@@ -181,15 +181,14 @@ function thumbCacheKey(seed, controls) {
 /* ── DOM refs ── */
 const gallerySelectionVisual = document.getElementById('gallerySelectionVisual');
 const gallerySelectionCardVisualWrap = document.getElementById('gallerySelectionCardVisualWrap');
-const gallerySelectionHeaderTitle = document.getElementById('gallerySelectionHeaderTitle');
-const gallerySelectionHeaderSeed = document.getElementById('gallerySelectionHeaderSeed');
 const gallerySelectionContainer = document.getElementById('gallerySelectionContainer');
 const galleryContentEl = document.getElementById('galleryContent');
 const selectedGenTitle = document.getElementById('selectedGenTitle');
 const gallerySelectionCardCommentaryText = document.getElementById('gallerySelectionCardCommentaryText');
 const selectedVideo = document.getElementById('selectedVideo');
-const gallerySelectionHeaderText = document.querySelector('.gallery-selection-header-text');
 const gallerySelectionCardFooter = document.querySelector('.gallery-selection-card-footer');
+const morphNameRow = document.querySelector('.morph-name');
+const morphSeedRow = document.querySelector('.morph-seed');
 
 /* ── Carousel component ── */
 const carouselBrowser = document.getElementById('carouselBrowser');
@@ -272,6 +271,52 @@ const editCommentaryField = document.getElementById('editCommentaryField');
 const editTagArr = document.getElementById('editTagArr');
 const editTagStr = document.getElementById('editTagStr');
 const editTagDet = document.getElementById('editTagDet');
+
+/* Populate seed tag selects immediately (needed for browse-mode morph display) */
+{
+    const locale = getLocale();
+    const words = getLocalizedWords(locale);
+    const fill = (sel, list) => {
+        sel.innerHTML = '';
+        for (let i = 0; i < list.length; i++) {
+            const opt = document.createElement('option');
+            opt.value = String(i);
+            opt.textContent = list[i];
+            sel.appendChild(opt);
+        }
+    };
+    fill(editTagArr, words.arrangement);
+    fill(editTagStr, words.structure);
+    fill(editTagDet, words.detail);
+}
+
+/* Auto-size seed selects to selected option text (browse mode looks like plain text) */
+const _fitMeasure = document.createElement('span');
+_fitMeasure.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;pointer-events:none;font:inherit';
+document.body.appendChild(_fitMeasure);
+
+function fitSelect(sel) {
+    const style = getComputedStyle(sel);
+    _fitMeasure.style.font = style.font;
+    _fitMeasure.style.fontSize = style.fontSize;
+    _fitMeasure.style.fontFamily = style.fontFamily;
+    _fitMeasure.style.fontStyle = style.fontStyle;
+    _fitMeasure.style.letterSpacing = style.letterSpacing;
+    _fitMeasure.textContent = sel.options[sel.selectedIndex]?.text || '';
+    sel.style.width = (_fitMeasure.offsetWidth + 2) + 'px';
+}
+function fitAllSelects() {
+    fitSelect(editTagArr);
+    fitSelect(editTagStr);
+    fitSelect(editTagDet);
+}
+// Re-fit when user changes selection in edit mode
+editTagArr.addEventListener('change', () => fitSelect(editTagArr));
+editTagStr.addEventListener('change', () => fitSelect(editTagStr));
+editTagDet.addEventListener('change', () => fitSelect(editTagDet));
+
+/* Initial fit after populate — deferred so styles are computed */
+requestAnimationFrame(() => fitAllSelects());
 
 /* ── Carousel state ── */
 let carouselList = [];       // [{name, profile, isPortrait, assetId?}] — portraits first, then local
@@ -882,7 +927,8 @@ function applySelection(name, profile, isPortrait, assetId) {
     const fadeDuration = 250;
 
     // Fade out text + image + alt-text overlay together
-    gallerySelectionHeaderText.classList.add('fading');
+    morphNameRow.classList.add('fading');
+    morphSeedRow.classList.add('fading');
     gallerySelectionCardFooter.classList.add('fading');
     gallerySelectionVisual.style.opacity = '0';
     fadeOutAltText();
@@ -892,9 +938,18 @@ function applySelection(name, profile, isPortrait, assetId) {
 
     // After fade-out completes, swap content and fade back in
     selectionFadeTimer = setTimeout(() => {
-        // Update text
-        gallerySelectionHeaderTitle.textContent = name;
-        gallerySelectionHeaderSeed.textContent = Array.isArray(profile.seed) ? seedTagToLabel(profile.seed) : (profile.seed || '');
+        // Update unified morph elements
+        editNameField.value = name;
+        if (Array.isArray(profile.seed)) {
+            editTagArr.value = String(profile.seed[0]);
+            editTagStr.value = String(profile.seed[1]);
+            editTagDet.value = String(profile.seed[2]);
+        } else {
+            editTagArr.value = '0';
+            editTagStr.value = '0';
+            editTagDet.value = '0';
+        }
+        fitAllSelects();
 
         // Portrait commentary vs generated/custom text
         if (isPortrait && profile.generated) {
@@ -972,7 +1027,8 @@ function applySelection(name, profile, isPortrait, assetId) {
         }
 
         // Fade text back in
-        gallerySelectionHeaderText.classList.remove('fading');
+        morphNameRow.classList.remove('fading');
+        morphSeedRow.classList.remove('fading');
         gallerySelectionCardFooter.classList.remove('fading');
     }, fadeDuration);
 
@@ -1280,8 +1336,11 @@ function applyAnimSelection(assetId) {
     if (!asset) return;
 
     selected = { name: asset.name, isPortrait: false, assetId, isAnimation: true };
-    gallerySelectionHeaderTitle.textContent = asset.name;
-    gallerySelectionHeaderSeed.textContent = '';
+    editNameField.value = asset.name;
+    editTagArr.value = '0';
+    editTagStr.value = '0';
+    editTagDet.value = '0';
+    fitAllSelects();
 
     const meta = asset.meta || {};
     selectedGenTitle.textContent = meta.title || asset.name;
@@ -2272,6 +2331,10 @@ function enterEditMode(mode, entry, fromPopstate) {
 
     // Toggle editing class (triggers all CSS cross-fade transitions)
     galleryContainerEl.classList.add('editing');
+    // Clear inline widths so flex sizing takes over in edit mode
+    editTagArr.style.width = '';
+    editTagStr.style.width = '';
+    editTagDet.style.width = '';
 
     // Update button tooltips for edit mode
     galleryBtnLeft.setAttribute('data-tooltip', 'Undo');
@@ -2302,6 +2365,8 @@ function exitEditMode(saved, fromPopstate) {
 
     // Remove editing class (triggers all CSS cross-fade transitions)
     galleryContainerEl.classList.remove('editing');
+    // Restore inline widths for browse-mode text sizing
+    requestAnimationFrame(() => fitAllSelects());
 
     // Navigate back to gallery URL (skip if triggered by popstate)
     if (!fromPopstate) {
@@ -2511,7 +2576,7 @@ initSharePopover({
     sharePopover: document.getElementById('sharePopover'),
     getShareURL: () => window.location.origin + window.location.pathname,
     getShareTitle: () => {
-        const name = gallerySelectionHeaderTitle.textContent.trim();
+        const name = editNameField.value.trim();
         return name ? `${name} — Geometric Interior` : 'Geometric Interior';
     },
 });

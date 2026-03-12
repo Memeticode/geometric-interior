@@ -160,29 +160,247 @@
     margin-bottom: 0;
     transition: opacity 0.25s ease;
 }
+/* ── Morph header system (unified browse/edit elements) ── */
+
+/* Morph timing — three sequential phases: disappear → move/morph → appear.
+   Enter edit: commas disappear → borders/gaps morph → labels/icons appear.
+   Exit edit:  labels/icons disappear → borders/gaps morph → commas appear.
+   Currently 10× for debugging. Divide all values by 10 for production. */
+:root {
+    --morph-disappear: 2s;     /* phase 1 duration  (prod: 0.2s) */
+    --morph-move:      3s;     /* phase 2 duration  (prod: 0.3s) */
+    --morph-appear:    2s;     /* phase 3 duration  (prod: 0.2s) */
+    --morph-d1:        0s;     /* phase 1 start     (prod: 0s)   */
+    --morph-d2:        1.5s;   /* phase 2 start     (prod: 0.15s)*/
+    --morph-d3:        3.5s;   /* phase 3 start     (prod: 0.35s)*/
+}
+
 .gallery-selection-header-container {
     width: 100%;
-    padding: 0;
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.25rem 0 0.25rem;
+    transition: gap var(--morph-move) ease var(--morph-d2),
+                padding var(--morph-move) ease var(--morph-d2);
 }
-.gallery-selection-header-text {
-    min-width: 0;
-    text-align: left;
-    overflow: hidden;
+.editing .gallery-selection-header-container {
+    gap: 0.375rem;
     padding: 0.25rem 0 0.5rem;
+    transition: gap var(--morph-move) ease var(--morph-d2),
+                padding var(--morph-move) ease var(--morph-d2);
 }
-.gallery-selection-header-title {
+
+/* Each row: label + field side by side */
+.morph-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+}
+.morph-row .gen-field-error {
+    grid-column: 1 / -1;
+}
+
+/* Labels: hidden in browse, slide in from left for edit */
+.morph-label {
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.3125rem;
+    /* Exit: opacity disappears (d1), max-width moves (d2) */
+    transition: max-width var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
+                opacity var(--morph-disappear) ease var(--morph-d1);
+}
+.editing .morph-label {
+    max-width: 5rem;
+    opacity: 1;
+    /* Enter: max-width moves (d2), opacity appears (d3) */
+    transition: max-width var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
+                opacity var(--morph-appear) ease var(--morph-d3);
+}
+
+/* Morph field wrapper */
+.morph-field {
+    position: relative;
+    min-width: 0;
+}
+
+/* ── Name: textarea styled as plain text in browse ── */
+.morph-textarea {
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--text);
+    font-family: inherit;
     word-break: break-word;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 0;
+    resize: none;
+    overflow: hidden;
+    width: 100%;
+    field-sizing: content;
+    min-height: 1.5em;
+    cursor: default;
+    pointer-events: none;
+    transition: border-color var(--morph-move) ease var(--morph-d2),
+                background-color var(--morph-move) ease var(--morph-d2),
+                padding var(--morph-move) ease var(--morph-d2);
 }
-.gallery-selection-header-seed {
-    font-size: 0.6875rem;
+.editing .morph-textarea {
+    border-color: var(--border);
+    padding: 0.25rem 2.5rem 0.25rem 1.375rem;
+    cursor: text;
+    pointer-events: auto;
+}
+.editing .morph-textarea:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+/* Name field icon (fades in for edit) */
+.morph-field-icon {
+    position: absolute;
+    left: 0.375rem;
+    top: 0.4rem;
+    width: 12px;
+    height: 12px;
     color: var(--text-muted);
-    margin-top: 0.125rem;
+    opacity: 0;
+    pointer-events: none;
+    /* Exit: disappear (d1) */
+    transition: opacity var(--morph-disappear) ease var(--morph-d1);
+}
+.editing .morph-field-icon {
+    opacity: 0.4;
+    /* Enter: appear (d3) */
+    transition: opacity var(--morph-appear) ease var(--morph-d3);
+}
+
+/* Name char counter (fades in for edit) */
+.morph-counter {
+    position: absolute;
+    right: 0.375rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.5625rem;
+    color: var(--text-muted);
+    opacity: 0;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+    line-height: 1;
+    /* Exit: disappear (d1) */
+    transition: opacity var(--morph-disappear) ease var(--morph-d1);
+}
+.editing .morph-counter {
+    opacity: 0.5;
+    /* Enter: appear (d3) */
+    transition: opacity var(--morph-appear) ease var(--morph-d3);
+}
+
+/* ── Seed: selects styled as plain italic text in browse ── */
+.morph-seed-field {
+    display: flex;
+    align-items: baseline;
+    gap: 0;
+    min-width: 0;
+    transition: gap var(--morph-move) ease var(--morph-d2);
+}
+.editing .morph-seed-field {
+    gap: 0.375rem;
+    transition: gap var(--morph-move) ease var(--morph-d2);
+}
+
+.morph-select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    background-image: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: 0.6875rem;
     font-style: italic;
+    color: var(--text-muted);
     line-height: 1.4;
+    cursor: default;
+    pointer-events: none;
+    outline: none;
+    border-radius: 0;
+    transition: border-color var(--morph-move) ease var(--morph-d2),
+                background-color var(--morph-move) ease var(--morph-d2),
+                padding var(--morph-move) ease var(--morph-d2),
+                color var(--morph-move) ease var(--morph-d2),
+                border-radius var(--morph-move) ease var(--morph-d2);
+}
+/* Sentence case: capitalize first select in browse mode */
+.morph-select:first-child {
+    text-transform: capitalize;
+}
+.editing .morph-select:first-child {
+    text-transform: none;
+}
+
+.editing .morph-select {
+    font-style: normal;
+    color: var(--text);
+    border-color: var(--border);
+    background: var(--surface);
+    padding: 0.25rem 1.375rem 0.25rem 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    pointer-events: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    width: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.375rem center;
+}
+.editing .morph-select:hover {
+    border-color: var(--border-strong);
+    background-color: var(--surface-active);
+}
+.editing .morph-select:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+}
+
+/* Commas: visible in browse, fade out + collapse in edit */
+.morph-comma {
+    font-size: 0.6875rem;
+    font-style: italic;
+    color: var(--text-muted);
+    line-height: 1.4;
+    opacity: 0.7;
+    max-width: 1.5rem;
+    overflow: hidden;
+    white-space: pre;
+    display: inline-block;
+    /* Exit: appear (d3) */
+    transition: opacity var(--morph-appear) ease var(--morph-d3),
+                max-width var(--morph-appear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d3);
+}
+.editing .morph-comma {
+    opacity: 0;
+    max-width: 0;
+    /* Enter: disappear (d1) */
+    transition: opacity var(--morph-disappear) ease var(--morph-d1),
+                max-width var(--morph-disappear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d1);
+}
+
+/* Fading for profile switching (reuse existing pattern) */
+.morph-row {
+    transition: opacity 0.25s ease;
+}
+.morph-row.fading {
+    opacity: 0;
 }
 .gallery-selection-card {
     position: relative;
@@ -299,11 +517,9 @@
 }
 
 /* Cross-fade transition for selection change */
-.gallery-selection-header-text,
 .gallery-selection-card-footer {
     transition: opacity 0.25s ease;
 }
-.gallery-selection-header-text.fading,
 .gallery-selection-card-footer.fading {
     opacity: 0;
 }
@@ -1369,29 +1585,6 @@
 
 /* ── Browse ↔ Edit cross-fade ── */
 
-/* Header: stack browse text + edit identity in same grid cell */
-.gallery-selection-header-text,
-.gallery-edit-identity {
-    grid-row: 1;
-    grid-column: 1;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.gallery-edit-identity {
-    opacity: 0;
-    transform: translateY(4px);
-    pointer-events: none;
-}
-.editing .gallery-selection-header-text {
-    opacity: 0;
-    transform: translateY(-4px);
-    pointer-events: none;
-}
-.editing .gallery-edit-identity {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-
 /* Visual: cross-fade image ↔ canvas */
 .gallery-edit-canvas {
     position: absolute;
@@ -1445,14 +1638,19 @@
     max-height: 0;
     opacity: 0;
     transform: translateY(2rem);
-    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.35s ease 0.05s,
-                transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Exit: disappear (d1) */
+    transition: max-height var(--morph-disappear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d1),
+                opacity var(--morph-disappear) ease var(--morph-d1),
+                transform var(--morph-disappear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d1);
 }
 .editing .gallery-edit-config {
     max-height: 80vh;
     opacity: 1;
     transform: translateY(0);
+    /* Enter: move (d2) */
+    transition: max-height var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
+                opacity var(--morph-move) ease var(--morph-d2),
+                transform var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2);
 }
 
 

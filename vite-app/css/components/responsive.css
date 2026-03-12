@@ -170,9 +170,6 @@
         justify-content: space-between;
         gap: 0.5rem;
     }
-    .gallery-selection-header-text {
-        text-align: left;
-    }
     .gallery-controls {
         --icon-btn-size: 24px;
         --icon-btn-icon: 14px;
@@ -356,10 +353,11 @@
     }
 
     /* Selected profile text — larger on desktop */
-    .gallery-selection-header-title {
+    .morph-textarea {
         font-size: 0.9rem;
     }
-    .gallery-selection-header-seed {
+    .morph-select,
+    .morph-comma {
         font-size: 0.825rem;
     }
     .gallery-selection-card-commentary-text {
