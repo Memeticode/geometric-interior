@@ -5,11 +5,12 @@
  * "Generate" mode activates an in-gallery config panel with live preview + render queue.
  *
  * Routes (client-side, history.pushState):
- *   /image                                   — image gallery (default)
- *   /image/portraits/{slug}                  — portrait selected
- *   /image/local/{slug}                      — user profile selected
- *   /image/generated/{id}                    — generated profile selected
- *   /image/create                            — image generator panel
+ *   /images                                  — image gallery (default)
+ *   /images/portraits/{slug}                 — portrait selected
+ *   /images/local/{slug}                     — user profile selected
+ *   /images/generated/{id}                   — generated profile selected
+ *   /images/editor                           — editing / adding an image
+ *   /images/create                           — image generator panel (legacy)
  *   /animation                               — animation gallery
  *   /animation/create                        — animation editor
  */
@@ -186,8 +187,6 @@ const gallerySelectionContainer = document.getElementById('gallerySelectionConta
 const galleryContentEl = document.getElementById('galleryContent');
 const selectedGenTitle = document.getElementById('selectedGenTitle');
 const gallerySelectionCardCommentaryText = document.getElementById('gallerySelectionCardCommentaryText');
-const galleryArrowLeft = document.getElementById('galleryArrowLeft');
-const galleryArrowRight = document.getElementById('galleryArrowRight');
 const selectedVideo = document.getElementById('selectedVideo');
 const gallerySelectionHeaderText = document.querySelector('.gallery-selection-header-text');
 const gallerySelectionCardFooter = document.querySelector('.gallery-selection-card-footer');
@@ -247,6 +246,32 @@ let activeType = 'image'; // 'image' | 'animation'
 let activeMode = 'gallery'; // 'gallery' | 'create'
 let navigableList = [];  // [{name, profile, isPortrait, assetId}] — all profiles in display order
 let currentIndex = -1;
+
+/* ── Inline edit mode ── */
+let editMode = null;           // null | 'edit' | 'add'
+let editSourceEntry = null;    // profile entry being edited (null for 'add')
+let editPanel = null;          // initGeneratePanel instance for inline edit
+let editWorkerBridge = null;   // worker bridge for edit preview canvas
+let editInitialized = false;
+
+/* ── Edit-mode DOM refs ── */
+const galleryContainerEl = document.getElementById('galleryContainer');
+const galleryBtnLeft = document.getElementById('galleryBtnLeft');
+const galleryBtnRight = document.getElementById('galleryBtnRight');
+const galleryBtnEdit = document.getElementById('galleryBtnEdit');
+const galleryBtnAdd = document.getElementById('galleryBtnAdd');
+const gallerySaveBtn = document.getElementById('gallerySaveBtn');
+const galleryRenderBtn = document.getElementById('galleryRenderBtn');
+const galleryEditCanvas = document.getElementById('galleryEditCanvas');
+const galleryEditConfigEl = document.getElementById('galleryEditConfig');
+const editGenConfigSliders = document.getElementById('editGenConfigSliders');
+const editNameField = document.getElementById('editNameField');
+const editNameCounter = document.getElementById('editNameCounter');
+const editNameError = document.getElementById('editNameError');
+const editCommentaryField = document.getElementById('editCommentaryField');
+const editTagArr = document.getElementById('editTagArr');
+const editTagStr = document.getElementById('editTagStr');
+const editTagDet = document.getElementById('editTagDet');
 
 /* ── Carousel state ── */
 let carouselList = [];       // [{name, profile, isPortrait, assetId?}] — portraits first, then local
@@ -609,15 +634,18 @@ function parseRoute() {
         return { type: 'animation', mode: 'gallery', source: null, profileSlug: null };
     }
 
+    // Image editor route
+    if (path === '/images/editor') return { type: 'image', mode: 'edit', editMode: null, source: null, profileSlug: null };
+
     // Image routes
-    if (path === '/image/create') return { type: 'image', mode: 'create', source: null, profileSlug: null };
-    const match = path.match(/^\/image\/(portraits|local|generated)\/(.+)$/);
+    if (path === '/images/create') return { type: 'image', mode: 'create', source: null, profileSlug: null };
+    const match = path.match(/^\/images\/(portraits|local|generated)\/(.+)$/);
     if (match) return { type: 'image', mode: 'gallery', source: match[1], profileSlug: match[2] };
     return { type: 'image', mode: 'gallery', source: null, profileSlug: null };
 }
 
 function pushRoute() {
-    const base = activeType === 'animation' ? '/animation' : '/image';
+    const base = activeType === 'animation' ? '/animation' : '/images';
     const url = activeMode === 'create' ? `${base}/create` : base;
     if (window.location.pathname !== url) {
         history.pushState({ type: activeType, mode: activeMode, profile: null }, '', url);
@@ -625,7 +653,7 @@ function pushRoute() {
 }
 
 function pushProfileRoute(name, isPortrait, assetId) {
-    const base = activeType === 'animation' ? '/animation' : '/image';
+    const base = activeType === 'animation' ? '/animation' : '/images';
     if (assetId) {
         const url = `${base}/generated/${assetId}`;
         if (window.location.pathname !== url) {
@@ -641,12 +669,40 @@ function pushProfileRoute(name, isPortrait, assetId) {
     }
 }
 
+function pushEditRoute() {
+    const url = '/images/editor';
+    if (window.location.pathname !== url) {
+        history.pushState({ type: 'image', mode: 'edit' }, '', url);
+    }
+}
+
 function applyRoute() {
     const route = parseRoute();
     const prevMode = activeMode;
     activeType = route.type;
     activeMode = route.mode;
     updateMenuNavLinks();
+
+    // Handle edit mode transitions (popstate: back/forward into or out of edit)
+    if (activeMode === 'edit') {
+        if (prevMode === 'create') hideGenerateMode();
+        if (!editMode) {
+            showImageGallery();
+            // Re-enter edit mode for the currently selected profile (or add mode)
+            if (selected.name) {
+                const entry = findProfileBySlug(slugify(selected.name), selected.isPortrait ? 'portraits' : 'local');
+                enterEditMode(entry ? 'edit' : 'add', entry, true);
+            } else {
+                enterEditMode('add', null, true);
+            }
+        }
+        return;
+    }
+
+    // Exiting edit mode via popstate (back button)
+    if (editMode && activeMode !== 'edit') {
+        exitEditMode(false, true);
+    }
 
     // Handle create mode transitions
     if (activeMode === 'create' && prevMode !== 'create') {
@@ -953,11 +1009,11 @@ function instantSelect(name, profile, isPortrait, assetId) {
 function updateArrowStates() {
     const len = navigableList.length;
     const disabled = len <= 1;
-    galleryArrowLeft.disabled = disabled;
-    galleryArrowRight.disabled = disabled;
+    galleryBtnLeft.disabled = disabled;
+    galleryBtnRight.disabled = disabled;
 
-    galleryArrowLeft.setAttribute('data-tooltip', disabled ? '' : 'Previous');
-    galleryArrowRight.setAttribute('data-tooltip', disabled ? '' : 'Next');
+    galleryBtnLeft.setAttribute('data-tooltip', disabled ? '' : 'Previous');
+    galleryBtnRight.setAttribute('data-tooltip', disabled ? '' : 'Next');
 }
 
 function navigateArrow(direction) {
@@ -969,8 +1025,15 @@ function navigateArrow(direction) {
     selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
 }
 
-galleryArrowLeft.addEventListener('click', () => { if (slideshowPlaying) stopSlideshow(); navigateArrow(-1); });
-galleryArrowRight.addEventListener('click', () => { if (slideshowPlaying) stopSlideshow(); navigateArrow(1); });
+// Morph buttons: left = prev/undo, right = next/redo
+galleryBtnLeft.addEventListener('click', () => {
+    if (editMode) { if (editPanel) editPanel.undo(); }
+    else { if (slideshowPlaying) stopSlideshow(); navigateArrow(-1); }
+});
+galleryBtnRight.addEventListener('click', () => {
+    if (editMode) { if (editPanel) editPanel.redo(); }
+    else { if (slideshowPlaying) stopSlideshow(); navigateArrow(1); }
+});
 
 /* ── Alt-text overlays (independent of tooltip system) ── */
 // Suppress hover tooltips on these elements (they use dedicated overlays instead)
@@ -1082,11 +1145,11 @@ function showImageGallery() {
 
         // Use replaceState so auto-select doesn't pollute history
         if (first.assetId) {
-            history.replaceState({ type: 'image', profile: first.name }, '', `/image/generated/${first.assetId}`);
+            history.replaceState({ type: 'image', profile: first.name }, '', `/images/generated/${first.assetId}`);
         } else {
             const slug = slugify(first.name);
             const prefix = first.isPortrait ? 'portraits' : 'local';
-            history.replaceState({ type: 'image', profile: first.name }, '', `/image/${prefix}/${slug}`);
+            history.replaceState({ type: 'image', profile: first.name }, '', `/images/${prefix}/${slug}`);
         }
     }
 
@@ -1502,8 +1565,9 @@ function closeGenFullscreen() {
  * Returns '' if the worker bridge is unavailable or capture fails.
  */
 function capturePreviewThumb() {
+    const wb = editMode ? editWorkerBridge : workerBridge;
     return new Promise(resolve => {
-        if (!workerBridge || !workerBridge.ready) return resolve('');
+        if (!wb || !wb.ready) return resolve('');
         let settled = false;
         const reqId = 'save-thumb-' + Date.now();
         const handler = (msg) => {
@@ -1515,8 +1579,8 @@ function capturePreviewThumb() {
             reader.onerror = () => resolve('');
             reader.readAsDataURL(msg.blob);
         };
-        workerBridge.on('frame-captured', handler);
-        workerBridge.captureFrame(reqId);
+        wb.on('frame-captured', handler);
+        wb.captureFrame(reqId);
         // Timeout fallback
         setTimeout(() => { if (!settled) { settled = true; resolve(''); } }, 3000);
     });
@@ -2071,9 +2135,279 @@ function hideGenerateMode() {
     }, 250);
 }
 
+/* ── Inline edit mode ── */
+
+function initEditMode() {
+    if (editInitialized) return;
+    editInitialized = true;
+
+    // Create worker bridge for the edit preview canvas
+    editWorkerBridge = initGalleryWorker(galleryEditCanvas);
+    if (!editWorkerBridge) return;
+
+    editWorkerBridge.on('rendered', () => {
+        // preview updated
+    });
+    editWorkerBridge.on('error', () => {
+        // Could show error overlay
+    });
+
+    editPanel = initGeneratePanel({
+        slidersEl: editGenConfigSliders,
+        tagArrEl: editTagArr,
+        tagStrEl: editTagStr,
+        tagDetEl: editTagDet,
+        nameField: editNameField,
+        saveBtn: gallerySaveBtn,
+        randomizeBtn: null,   // randomize handled by galleryBtnAdd morph
+        renderBtn: galleryRenderBtn,
+        undoBtn: null,        // undo handled by galleryBtnLeft morph
+        redoBtn: null,        // redo handled by galleryBtnRight morph
+        fullscreenBtn: null,
+        nameCounter: editNameCounter,
+        nameError: editNameError,
+        commentaryField: editCommentaryField,
+        previewCanvas: galleryEditCanvas,
+        commentaryCounter: null,
+        statusMessageEl: null,
+        onControlChange(seed, controls, camera) {
+            if (editWorkerBridge && editWorkerBridge.ready) {
+                editWorkerBridge.sendRender(seed, controls, getLocale());
+                editWorkerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
+            }
+        },
+        onRender(seed, controls, camera, name, commentary) {
+            if (!renderQueue) return;
+            renderQueue.enqueue(seed, controls, name, commentary);
+        },
+        async onSave(name, seed, controls, camera, commentary) {
+            const result = await handleSave(name, seed, controls, camera, commentary);
+            if (result) {
+                exitEditMode(true);
+            }
+            return result;
+        },
+        onFullscreen() {
+            if (fullscreenOverlay) closeFullscreen();
+            else openFullscreen();
+        },
+    });
+
+    // Wire up collapsible toggles in the edit config
+    galleryEditConfigEl.querySelectorAll('.gen-collapse-toggle[data-target]').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+            const expanded = toggle.getAttribute('aria-expanded') === 'true';
+            toggle.setAttribute('aria-expanded', String(!expanded));
+            const target = document.getElementById(toggle.dataset.target);
+            if (!target) return;
+            if (expanded) {
+                target.style.maxHeight = target.scrollHeight + 'px';
+                requestAnimationFrame(() => {
+                    target.classList.add('collapsed');
+                    target.style.maxHeight = '0';
+                });
+            } else {
+                target.classList.remove('collapsed');
+                target.style.maxHeight = target.scrollHeight + 'px';
+                const onEnd = () => {
+                    target.style.maxHeight = '';
+                    target.removeEventListener('transitionend', onEnd);
+                };
+                target.addEventListener('transitionend', onEnd);
+            }
+        });
+    });
+
+    editWorkerBridge.onReady(() => {
+        // Create render queue if not already created by the old gen panel
+        if (!renderQueue) {
+            renderQueue = createRenderQueue({
+                workerBridge: editWorkerBridge,
+                onUpdate(jobs) {
+                    if (rqMenu) rqMenu.update(jobs);
+                },
+                locale: getLocale(),
+            });
+        }
+
+        // Send initial render if we're already in edit mode
+        if (editMode && editPanel) {
+            const seed = editPanel.readSeed();
+            const controls = editPanel.readControls();
+            const camera = editPanel.readCamera();
+            editWorkerBridge.sendRenderImmediate(seed, controls, getLocale());
+            editWorkerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
+        }
+    });
+}
+
+function enterEditMode(mode, entry, fromPopstate) {
+    if (editMode) return; // already in edit mode
+    if (slideshowPlaying) stopSlideshow();
+
+    editMode = mode;
+    editSourceEntry = entry || null;
+
+    // Update URL (skip if triggered by popstate — URL already correct)
+    if (!fromPopstate) pushEditRoute();
+
+    // Initialize worker + panel on first use
+    initEditMode();
+
+    // Populate inputs
+    if (mode === 'edit' && entry?.profile) {
+        const displayName = entry.isPortrait ? entry.name + ' (User Version)' : entry.name;
+        editPanel.setValues(
+            entry.profile.seed,
+            entry.profile.controls,
+            entry.profile.camera,
+            displayName,
+            entry.profile.commentary,
+        );
+        editPanel.setUnlocked();
+    } else {
+        // 'add' mode — randomize
+        editPanel.randomize();
+    }
+
+    // Toggle editing class (triggers all CSS cross-fade transitions)
+    galleryContainerEl.classList.add('editing');
+
+    // Update button tooltips for edit mode
+    galleryBtnLeft.setAttribute('data-tooltip', 'Undo');
+    galleryBtnRight.setAttribute('data-tooltip', 'Redo');
+    galleryBtnEdit.setAttribute('data-tooltip', 'Cancel');
+    galleryBtnAdd.setAttribute('data-tooltip', 'Randomize');
+
+    // Send render if worker is ready
+    if (editWorkerBridge && editWorkerBridge.ready) {
+        const seed = editPanel.readSeed();
+        const controls = editPanel.readControls();
+        const camera = editPanel.readCamera();
+        editWorkerBridge.sendRenderImmediate(seed, controls, getLocale());
+        editWorkerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
+    }
+
+    // Filter carousel to user images only
+    filterCarouselForEditMode(true);
+}
+
+function exitEditMode(saved, fromPopstate) {
+    if (!editMode) return;
+
+    if (saved) {
+        // Refresh gallery to show the new/updated profile
+        refreshGallery();
+    }
+
+    // Remove editing class (triggers all CSS cross-fade transitions)
+    galleryContainerEl.classList.remove('editing');
+
+    // Navigate back to gallery URL (skip if triggered by popstate)
+    if (!fromPopstate) {
+        activeMode = 'gallery';
+        if (selected.name) {
+            pushProfileRoute(selected.name, selected.isPortrait, selected.assetId);
+        } else {
+            pushRoute();
+        }
+    }
+
+    // Restore button tooltips for browse mode
+    galleryBtnLeft.setAttribute('data-tooltip', 'Previous');
+    galleryBtnRight.setAttribute('data-tooltip', 'Next');
+    galleryBtnEdit.setAttribute('data-tooltip', 'Edit');
+    galleryBtnAdd.setAttribute('data-tooltip', 'Add new');
+
+    editMode = null;
+    editSourceEntry = null;
+
+    // Restore carousel
+    filterCarouselForEditMode(false);
+}
+
+function filterCarouselForEditMode(editActive) {
+    if (editActive) {
+        // Rebuild carousel showing only user images (generated + custom, no portraits)
+        carouselBrowser.clearItems();
+        const generated = carouselList.filter(e => e.assetId && !e.isPortrait);
+        const custom = carouselList.filter(e => !e.isPortrait && !e.assetId);
+        const addSection = (label, entries) => {
+            if (!entries.length) return;
+            const section = document.createElement('carousel-dropdown-browser-section');
+            section.label = label;
+            for (const entry of entries) {
+                const card = document.createElement('carousel-dropdown-browser-card');
+                card.key = entry.assetId || entry.name;
+                card.label = entry.name;
+                card.thumbSrc = resolveThumbSrc(entry);
+                card.deletable = true;
+                card.data = entry;
+                section.appendChild(card);
+            }
+            carouselBrowser.appendChild(section);
+        };
+        addSection('Generated', generated);
+        addSection('Custom', custom);
+    } else {
+        // Restore full carousel
+        updateBrowserItems();
+    }
+}
+
+// ── Edit/Add/Save/Render button handlers ──
+
+galleryBtnEdit.addEventListener('click', () => {
+    if (editMode) {
+        // Cancel — exit without saving
+        exitEditMode(false);
+    } else {
+        // Enter edit mode with selected profile
+        const entry = navigableList[currentIndex];
+        if (entry) enterEditMode('edit', entry);
+    }
+});
+
+galleryBtnAdd.addEventListener('click', () => {
+    if (editMode) {
+        // Randomize
+        if (editPanel) editPanel.randomize();
+    } else {
+        // Enter add mode with random config
+        enterEditMode('add', null);
+    }
+});
+
+gallerySaveBtn.addEventListener('click', () => {
+    if (editMode && editPanel) {
+        const name = editPanel.readName();
+        const seed = editPanel.readSeed();
+        const controls = editPanel.readControls();
+        const camera = editPanel.readCamera();
+        const commentary = editPanel.readCommentary();
+        handleSave(name, seed, controls, camera, commentary).then(result => {
+            if (result) exitEditMode(true);
+        });
+    }
+});
+
+galleryRenderBtn.addEventListener('click', () => {
+    if (editMode && editPanel && renderQueue) {
+        const seed = editPanel.readSeed();
+        const controls = editPanel.readControls();
+        const name = editPanel.readName();
+        const commentary = editPanel.readCommentary();
+        renderQueue.enqueue(seed, controls, name, commentary);
+    }
+});
+
 /* ── Keyboard navigation ── */
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+        if (editMode) {
+            exitEditMode(false);
+            return;
+        }
         if (fullscreenOverlay) {
             closeFullscreen();
             return;
@@ -2122,7 +2456,7 @@ updateMenuNavLinks();
 requestAnimationFrame(() => positionMenuSlider(false));
 
 if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
-    history.replaceState({ type: 'image', profile: null }, '', '/image');
+    history.replaceState({ type: 'image', profile: null }, '', '/images');
 }
 
 if (activeMode === 'create') {

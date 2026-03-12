@@ -135,6 +135,23 @@
     margin: 0 auto;
 }
 
+/* ── Centered toolbar — always at top ── */
+.gallery-toolbar {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 0.5rem 0 0.25rem;
+    flex-shrink: 0;
+}
+.gallery-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
 /* ── Selected image display ── */
 .gallery-selection-container {
     display: flex;
@@ -146,25 +163,13 @@
 .gallery-selection-header-container {
     width: 100%;
     padding: 0;
-    display: flex;
-    flex-direction: column-reverse;
-    align-items: stretch;
-    gap: 0;
+    display: grid;
 }
 .gallery-selection-header-text {
     min-width: 0;
     text-align: left;
     overflow: hidden;
     padding: 0.25rem 0 0.5rem;
-}
-.gallery-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.125rem;
-    padding: 0.5rem 0 0.25rem;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    justify-content: center;
 }
 .gallery-selection-header-title {
     font-size: 0.75rem;
@@ -180,6 +185,8 @@
     line-height: 1.4;
 }
 .gallery-selection-card {
+    position: relative;
+    z-index: 1;
     width: 100%;
     border: 1px solid var(--border);
     border-radius: 0 0 12px 12px;
@@ -228,7 +235,7 @@
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.3s ease;
     cursor: pointer;
 }
 .selected-video {
@@ -271,6 +278,7 @@
     padding: 0.25rem 0.75rem 0.5rem;
     text-align: center;
     border-top: 1px solid var(--border);
+    display: grid;
 }
 .selected-gen-title {
     font-size: 0.8125rem;
@@ -1329,4 +1337,179 @@
 .fullscreen-close:hover {
     background: rgba(255, 255, 255, 0.2);
     color: #fff;
+}
+
+/* ── Inline edit mode ── */
+
+/* Morph button dual-icon cross-fade */
+.gallery-morph-btn {
+    position: relative;
+}
+.gallery-morph-btn .icon-browse,
+.gallery-morph-btn .icon-edit {
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.gallery-morph-btn .icon-edit {
+    position: absolute;
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.6);
+}
+.gallery-morph-btn .icon-browse {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+.editing .gallery-morph-btn .icon-browse {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.6);
+}
+.editing .gallery-morph-btn .icon-edit {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+/* ── Browse ↔ Edit cross-fade ── */
+
+/* Header: stack browse text + edit identity in same grid cell */
+.gallery-selection-header-text,
+.gallery-edit-identity {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.gallery-edit-identity {
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+}
+.editing .gallery-selection-header-text {
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+}
+.editing .gallery-edit-identity {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Visual: cross-fade image ↔ canvas */
+.gallery-edit-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.editing .gallery-selection-visual {
+    opacity: 0;
+}
+.editing .gallery-edit-canvas {
+    opacity: 1;
+}
+
+/* Footer: stack browse + edit in same grid cell */
+.gallery-footer-browse,
+.gallery-footer-edit {
+    grid-row: 1;
+    grid-column: 1;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.gallery-footer-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    opacity: 0;
+    transform: translateY(4px);
+    pointer-events: none;
+}
+.editing .gallery-footer-browse {
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+}
+.editing .gallery-footer-edit {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Config panel — slides up from behind the image card */
+.gallery-edit-config {
+    position: relative;
+    z-index: 0;
+    width: 100%;
+    align-self: stretch;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(2rem);
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.35s ease 0.05s,
+                transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.editing .gallery-edit-config {
+    max-height: 80vh;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* Config sidebar base styles — top corners rounded, bottom flat against image card */
+.gallery-edit-config .gen-config {
+    border: 1px solid var(--border);
+    border-radius: 12px 12px 0 0;
+    border-bottom: none;
+    background: var(--surface);
+    overflow: hidden;
+}
+
+/* In edit mode, flatten image card top corners to join config above */
+.editing .gallery-selection-card {
+    border-radius: 0 0 12px 12px;
+    border-top: none;
+}
+
+/* Toolbar group slide transitions */
+.toolbar-browse-group,
+.toolbar-edit-group {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    overflow: hidden;
+    transition: max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.25s ease;
+}
+
+/* Browse group — visible by default, collapses in edit mode */
+.toolbar-browse-group {
+    max-width: 8rem;
+    opacity: 1;
+}
+.editing .toolbar-browse-group {
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Edit group — collapsed by default, expands in edit mode */
+.toolbar-edit-group {
+    max-width: 0;
+    opacity: 0;
+}
+.editing .toolbar-edit-group {
+    max-width: 8rem;
+    opacity: 1;
+}
+
+/* Status indicator for edit mode */
+.gallery-edit-status {
+    font-size: 0.5625rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
 }

@@ -178,6 +178,11 @@
         --icon-btn-icon: 14px;
     }
 
+    /* Inline edit mode — config is now inside selection container, no side column needed */
+    .gallery-container.editing .gallery-toolbar {
+        grid-area: toolbar;
+    }
+
     /* Menu pushes main content only (footer stays full-width) */
     .main-content {
         transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -240,29 +245,32 @@
     /* Generate — side-by-side layout at tablet+ */
     .gen-content {
         display: grid;
-        grid-template-columns: 1fr auto;
+        grid-template-columns: 1fr fit-content(14rem);
         grid-template-areas:
             "identity  header"
+            "identity  config"
             "preview   config"
             "saved     saved"
             "queue     queue";
+        row-gap: 0;
+        column-gap: var(--gen-gap);
         align-items: start;
     }
     .gen-identity     { grid-area: identity; }
     .gen-header       { grid-area: header; }
-    .gen-preview-card { grid-area: preview; }
-    .gen-config       { grid-area: config; margin-top: calc(-1 * var(--gen-gap)); }
-    .gen-saved        { grid-area: saved; }
+    .gen-preview-card { grid-area: preview; margin-top: var(--gen-gap); }
+    .gen-config       { grid-area: config; }
+    .gen-saved        { grid-area: saved; margin-top: var(--gen-gap); }
     .gen-queue        { grid-area: queue; }
 
-    /* Config — separate card beside identity+preview */
+    /* Config — separate card */
     .gen-config {
         border: 1px solid var(--border);
         border-radius: 12px;
     }
     .gen-preview-card {
         border-radius: 12px;
-        margin-top: 0;
+        margin-top: var(--gen-gap);
     }
 
     /* Stack identity labels above inputs */
@@ -270,7 +278,7 @@
         grid-template-columns: 1fr;
     }
 
-    /* Header: status above buttons, compact */
+    /* Header: status above buttons */
     .gen-header {
         display: flex;
         flex-direction: column;

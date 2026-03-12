@@ -578,7 +578,7 @@ export function initGeneratePanel(opts) {
         if (onControlChange) onControlChange(readSeed(), readControls(), readCamera());
     }
 
-    randomizeBtn.addEventListener('click', randomize);
+    if (randomizeBtn) randomizeBtn.addEventListener('click', randomize);
 
     // ── Render ──
 
@@ -724,6 +724,12 @@ export function initGeneratePanel(opts) {
         setRenderEnabled(enabled) {
             if (renderBtn) renderBtn.disabled = !enabled;
         },
+
+        /** Navigate undo stack backward. */
+        undo() { navigateUndo(-1); },
+
+        /** Navigate undo stack forward. */
+        redo() { navigateUndo(1); },
     };
 }
 
