@@ -1,0 +1,57 @@
+/* ── Styled menu — animated slider navigation ── */
+
+.styled-menu {
+    position: relative;
+}
+
+.styled-menu-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 0;
+    width: 100%;
+    border-radius: 6px 0 0 6px;
+    background: var(--accent-bg);
+    border-left: 2px solid var(--accent-text);
+    pointer-events: none;
+    z-index: 0;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.2s ease;
+    opacity: 0;
+}
+
+.styled-menu-slider.visible {
+    opacity: 1;
+}
+
+.styled-menu-item {
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 100%;
+    padding: 0.4375rem 0.5rem 0.4375rem 1.25rem;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+.styled-menu-item:hover {
+    background: none;
+    opacity: 1;
+}
+.styled-menu-item.active {
+    color: var(--accent-text);
+    font-weight: 600;
+    opacity: 1;
+    background: none;
+}
+.styled-menu-item.active:hover {
+    background: none;
+}

@@ -25,6 +25,10 @@ class ImageViewer extends HTMLElement {
     #altVisible = false;
     #fullscreen = false;
     #fsAltVisible = false;
+    /** @type {Animation|null} */
+    #fsAltAnim = null;
+    /** @type {Animation|null} */
+    #altAnim = null;
     #transitioning = false;
     #loading = false;
     #error = false;
@@ -41,6 +45,7 @@ class ImageViewer extends HTMLElement {
 
     // ── DOM refs (populated in connectedCallback) ──
     /** @type {HTMLElement} */  #wrap;
+    /** @type {HTMLImageElement} */  #prevImg;
     /** @type {HTMLImageElement} */  #img;
     /** @type {HTMLCanvasElement} */ #canvas;
     /** @type {HTMLVideoElement} */  #video;
@@ -66,6 +71,10 @@ class ImageViewer extends HTMLElement {
         // Build internal DOM
         this.#wrap = document.createElement('div');
         this.#wrap.className = 'iv-wrap';
+
+        this.#prevImg = document.createElement('img');
+        this.#prevImg.className = 'iv-media iv-img iv-img-prev';
+        this.#prevImg.alt = '';
 
         this.#img = document.createElement('img');
         this.#img.className = 'iv-media iv-img';
@@ -97,7 +106,7 @@ class ImageViewer extends HTMLElement {
             '<div class="iv-progress-label"></div>';
 
         this.#wrap.append(
-            this.#img, this.#canvas, this.#video,
+            this.#prevImg, this.#img, this.#canvas, this.#video,
             this.#altOverlay, this.#loadingOverlay, this.#errorOverlay, this.#progressOverlay
         );
 
@@ -251,6 +260,9 @@ class ImageViewer extends HTMLElement {
     /** Get the internal img element. */
     getImg() { return this.#img; }
 
+    /** Get the crossfade background img element. */
+    getPrevImg() { return this.#prevImg; }
+
     /** Get the internal video element. */
     getVideo() { return this.#video; }
 
@@ -276,19 +288,81 @@ class ImageViewer extends HTMLElement {
         return fresh;
     }
 
-    /** Show alt-text overlay. */
+    /** Show alt-text overlay — FLIP morph from text button via translate+scale. */
     showAltText() {
         if (!this.#altText) return;
+        if (this.#altAnim) { this.#altAnim.cancel(); this.#altAnim = null; }
+
+        // Hide the text button immediately so the overlay appears to replace it
+        const textBtn = this.#controlsEl.querySelector('.iv-text-btn');
+        if (textBtn) textBtn.style.visibility = 'hidden';
+
         this.#renderAltText();
+        this.#altOverlay.style.transition = 'none';
         this.#altOverlay.classList.add('visible');
         this.#altVisible = true;
         this.classList.add('alt-text-shown');
+
+        // FLIP: compute transform from overlay's final position back to button
+        const btnRect = textBtn?.getBoundingClientRect();
+        if (btnRect) {
+            this.#altOverlay.offsetHeight; // force layout
+            const olRect = this.#altOverlay.getBoundingClientRect();
+
+            // Center-to-center offset
+            const dx = (btnRect.left + btnRect.width / 2) - (olRect.left + olRect.width / 2);
+            const dy = (btnRect.top + btnRect.height / 2) - (olRect.top + olRect.height / 2);
+            // Scale ratio
+            const sx = btnRect.width / olRect.width;
+            const sy = btnRect.height / olRect.height;
+
+            // Compose with overlay's base CSS transform: translate(-50%, -50%)
+            this.#altAnim = this.#altOverlay.animate([
+                { transform: `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: 0 },
+                { transform: 'translate(-50%, -50%)', opacity: 1 }
+            ], { duration: 1500, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
+            this.#altAnim.finished.then(() => {
+                this.#altOverlay.style.transition = '';
+                this.#altAnim = null;
+            }).catch(() => {});
+        } else {
+            this.#altOverlay.style.transition = '';
+        }
+
         this.dispatchEvent(new CustomEvent('alt-text-toggle', { detail: { visible: true } }));
     }
 
-    /** Hide alt-text overlay. */
+    /** Hide alt-text overlay — reverse FLIP morph back to text button. */
     dismissAltText(resetScroll = false) {
-        this.#altOverlay.classList.remove('visible');
+        if (this.#altAnim) { this.#altAnim.cancel(); this.#altAnim = null; }
+
+        const textBtn = this.#controlsEl.querySelector('.iv-text-btn');
+        const btnRect = textBtn?.getBoundingClientRect();
+        const olRect  = this.#altOverlay.getBoundingClientRect();
+
+        if (btnRect && olRect.width > 0) {
+            const dx = (btnRect.left + btnRect.width / 2) - (olRect.left + olRect.width / 2);
+            const dy = (btnRect.top + btnRect.height / 2) - (olRect.top + olRect.height / 2);
+            const sx = btnRect.width / olRect.width;
+            const sy = btnRect.height / olRect.height;
+
+            this.#altOverlay.style.transition = 'none';
+            this.#altAnim = this.#altOverlay.animate([
+                { transform: 'translate(-50%, -50%)', opacity: 1 },
+                { transform: `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: 0 }
+            ], { duration: 1200, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' });
+            this.#altAnim.finished.then(() => {
+                this.#altOverlay.classList.remove('visible');
+                this.#altOverlay.style.transition = '';
+                this.#altOverlay.getAnimations().forEach(a => a.cancel());
+                this.#altAnim = null;
+                if (textBtn) textBtn.style.visibility = '';
+            }).catch(() => {});
+        } else {
+            this.#altOverlay.classList.remove('visible');
+            if (textBtn) textBtn.style.visibility = '';
+        }
+
         if (resetScroll) this.#altOverlay.scrollTop = 0;
         this.#altVisible = false;
         this.classList.remove('alt-text-shown');
@@ -451,14 +525,15 @@ class ImageViewer extends HTMLElement {
             const adx = (altFlipFrom.left + altFlipFrom.width / 2) - (toRect.left + toRect.width / 2);
             const ady = (altFlipFrom.top + altFlipFrom.height / 2) - (toRect.top + toRect.height / 2);
 
-            const altAnim = altOverlay.animate([
-                { transform: `translateX(-50%) translate(${adx}px, ${ady}px)` },
-                { transform: 'translateX(-50%)' }
-            ], { duration: 400, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
-            altAnim.finished.then(() => {
+            this.#fsAltAnim = altOverlay.animate([
+                { transform: `translateX(-50%) translate(${adx}px, ${ady}px)`, opacity: 0 },
+                { transform: 'translateX(-50%)', opacity: 1 }
+            ], { duration: 1500, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
+            this.#fsAltAnim.finished.then(() => {
                 altOverlay.style.transition = '';
                 altOverlay.classList.add('fs-alt-expanded');
-            });
+                this.#fsAltAnim = null;
+            }).catch(() => {});
         } else {
             this.#fsAltVisible = false;
         }
@@ -505,6 +580,9 @@ class ImageViewer extends HTMLElement {
 
         const altEl = overlay.querySelector('.fullscreen-alt-overlay');
 
+        // Cancel any in-flight alt animation
+        if (this.#fsAltAnim) { this.#fsAltAnim.cancel(); this.#fsAltAnim = null; }
+
         if (wasFsAltVisible && altEl) {
             altEl.classList.remove('fs-alt-expanded');
             const targetCenterX = wrapRect.left + wrapRect.width / 2;
@@ -518,8 +596,8 @@ class ImageViewer extends HTMLElement {
             altEl.style.transition = 'none';
             altEl.animate([
                 { transform: 'translateX(-50%)', opacity: 1 },
-                { transform: `translateX(-50%) translate(${altDx}px, ${altDy}px)`, opacity: 1 }
-            ], { duration: 300, easing: 'ease-in', fill: 'forwards' });
+                { transform: `translateX(-50%) translate(${altDx}px, ${altDy}px)`, opacity: 0 }
+            ], { duration: 1200, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' });
         } else if (altEl) {
             altEl.classList.remove('visible');
         }
@@ -687,19 +765,65 @@ class ImageViewer extends HTMLElement {
         if (!this.#fullscreenOverlay) return;
         const el = this.#fullscreenOverlay.querySelector('.fullscreen-alt-overlay');
         if (!el) return;
+
+        // Cancel any in-flight alt animation
+        if (this.#fsAltAnim) { this.#fsAltAnim.cancel(); this.#fsAltAnim = null; }
+
         el.innerHTML = '';
         const content = this.#buildAltContent
             ? this.#buildAltContent({ wrapExtras: true })
             : this.#buildSimpleAltContent();
         if (content) el.appendChild(content);
-        el.classList.add('visible', 'fs-alt-expanded');
+
+        // FLIP: animate from inline position to fullscreen position
+        el.style.transition = 'none';
+        el.classList.add('visible');
         this.#fsAltVisible = true;
+
+        el.offsetHeight; // force layout
+        const toRect = el.getBoundingClientRect();
+        const wrapRect = this.#wrap.getBoundingClientRect();
+        const adx = (wrapRect.left + wrapRect.width / 2) - (toRect.left + toRect.width / 2);
+        const ady = (wrapRect.top + wrapRect.height / 2) - (toRect.top + toRect.height / 2);
+
+        this.#fsAltAnim = el.animate([
+            { transform: `translateX(-50%) translate(${adx}px, ${ady}px)`, opacity: 0 },
+            { transform: 'translateX(-50%)', opacity: 1 }
+        ], { duration: 1500, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
+        this.#fsAltAnim.finished.then(() => {
+            el.style.transition = '';
+            el.classList.add('fs-alt-expanded');
+            this.#fsAltAnim = null;
+        }).catch(() => {});
     }
 
     #hideFsAlt() {
         if (!this.#fullscreenOverlay) return;
         const el = this.#fullscreenOverlay.querySelector('.fullscreen-alt-overlay');
-        if (el) el.classList.remove('visible', 'fs-alt-expanded');
+        if (!el) { this.#fsAltVisible = false; return; }
+
+        // Cancel any in-flight alt animation
+        if (this.#fsAltAnim) { this.#fsAltAnim.cancel(); this.#fsAltAnim = null; }
+
+        el.classList.remove('fs-alt-expanded');
+
+        // FLIP: animate back toward inline position
+        const fromRect = el.getBoundingClientRect();
+        const wrapRect = this.#wrap.getBoundingClientRect();
+        const dx = (wrapRect.left + wrapRect.width / 2) - (fromRect.left + fromRect.width / 2);
+        const dy = (wrapRect.top + wrapRect.height / 2) - (fromRect.top + fromRect.height / 2);
+
+        el.style.transition = 'none';
+        this.#fsAltAnim = el.animate([
+            { transform: 'translateX(-50%)', opacity: 1 },
+            { transform: `translateX(-50%) translate(${dx}px, ${dy}px)`, opacity: 0 }
+        ], { duration: 1200, easing: 'ease-in', fill: 'forwards' });
+        this.#fsAltAnim.finished.then(() => {
+            el.classList.remove('visible');
+            el.style.transition = '';
+            el.getAnimations().forEach(a => a.cancel());
+            this.#fsAltAnim = null;
+        }).catch(() => {});
         this.#fsAltVisible = false;
     }
 

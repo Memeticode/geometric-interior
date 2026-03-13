@@ -90,11 +90,7 @@
         font-size: 0.6875rem;
         padding: 0.25rem 1.375rem 0.25rem 0.5rem;
     }
-    .site-menu-toggle,
     .sidebar-toggle-btn {
-        margin: 0.25rem;
-    }
-    #shareBtn {
         margin: 0.25rem;
     }
 
@@ -122,31 +118,19 @@
         justify-content: center;
         flex: initial;
     }
-    .site-menu-toggle,
     .sidebar-toggle-btn {
         padding: 0.3125rem;
     }
-    .site-menu-toggle .panel-toggle-icon,
     .sidebar-toggle-btn .panel-toggle-icon {
         width: 18px;
         height: 18px;
     }
-    .site-menu-toggle .panel-toggle-icon .bar,
     .sidebar-toggle-btn .panel-toggle-icon .bar {
         width: 15px;
         margin-left: -7.5px;
     }
-    .site-menu-toggle .bar-top { transform: translateY(-5px) rotate(0deg) scaleX(1); }
-    .site-menu-toggle .bar-bot { transform: translateY(5px) rotate(0deg) scaleX(1); }
     .sidebar-toggle-btn .bar-top { transform: translateY(-5px) rotate(0deg) scaleX(1); }
     .sidebar-toggle-btn .bar-bot { transform: translateY(5px) rotate(0deg) scaleX(1); }
-    #shareBtn {
-        padding: 0.3125rem;
-    }
-    #shareBtn svg {
-        width: 18px;
-        height: 18px;
-    }
 
     /* Sidebar — fixed overlay with border (tablet) */
     .sidebar {
@@ -179,29 +163,6 @@
     /* Inline edit mode — config is now inside selection container, no side column needed */
     [data-layout="edit"] .gallery-toolbar {
         grid-area: toolbar;
-    }
-
-    /* Menu pushes main content only (footer stays full-width) */
-    .main-content {
-        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        margin-left: 0;
-    }
-    .menu-push .main-content {
-        margin-left: var(--menu-w, 0px);
-    }
-    /* No backdrop on desktop — menu pushes content */
-    .site-menu-backdrop {
-        display: none;
-    }
-    /* Keep menu fully opaque on desktop — no fade, just slide + push */
-    .site-menu {
-        opacity: 1;
-        bottom: var(--footer-h, 0px);
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                    visibility 0.3s;
-    }
-    .site-menu.site-menu-closed {
-        opacity: 1;
     }
 
     /* Collapsible toggle */
@@ -336,11 +297,6 @@
         display: none;
     }
 
-    /* App container borders */
-    .app-container {
-        border-left: 1px solid var(--border);
-        border-right: 1px solid var(--border);
-    }
 
     /* Larger icon buttons on desktop */
     .icon-btn-group {
@@ -358,13 +314,6 @@
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     }
 
-    /* Selected profile text — larger on desktop */
-    .morph-textarea {
-        font-size: 0.9rem;
-    }
-    .morph-select {
-        font-size: 0.825rem;
-    }
     .morph-commentary-field {
         font-size: 0.825rem;
     }
@@ -378,10 +327,6 @@
 
 /* ── lg — hi-dpi ── */
 @media (min-width: 1024px) and (min-resolution: 192dpi) {
-    .app-container {
-        border-left-width: 0.5px;
-        border-right-width: 0.5px;
-    }
 }
 
 /* ── xl (1440px+) — Large desktop ── */

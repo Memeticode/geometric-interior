@@ -292,6 +292,17 @@ export function initGeneratePanel(opts) {
     populateTagSelect(tagStrEl, localizedWords.structure.map(w => w.toLowerCase()));
     populateTagSelect(tagDetEl, localizedWords.detail.map(w => w.toLowerCase()));
 
+    // Re-populate on language change
+    document.addEventListener('localechange', () => {
+        const loc = getLocale();
+        const w = getLocalizedWords(loc);
+        const prevArr = tagArrEl.value, prevStr = tagStrEl.value, prevDet = tagDetEl.value;
+        populateTagSelect(tagArrEl, w.arrangement);
+        populateTagSelect(tagStrEl, w.structure.map(s => s.toLowerCase()));
+        populateTagSelect(tagDetEl, w.detail.map(s => s.toLowerCase()));
+        tagArrEl.value = prevArr; tagStrEl.value = prevStr; tagDetEl.value = prevDet;
+    });
+
     // Start with random seed tags
     tagArrEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));
     tagStrEl.value = String(Math.floor(Math.random() * TAG_LIST_LENGTH));
@@ -514,7 +525,7 @@ export function initGeneratePanel(opts) {
     function updateCommentaryCounter() {
         if (!commentaryCounter || !commentaryField) return;
         const len = commentaryField.value.length;
-        const max = parseInt(commentaryField.maxLength, 10) || 500;
+        const max = parseInt(commentaryField.maxLength, 10) || 250;
         commentaryCounter.textContent = len + '/' + max;
         commentaryCounter.classList.toggle('over-limit', len > max);
     }

@@ -18,16 +18,16 @@
 import '../../components/carousel-dropdown-browser.js';
 import '../../components/image-viewer.js';
 import { createHeader } from '../../components/create-header.js';
-import { createFooter } from '../../components/create-footer.js';
+import { createFooter, createFooterToggle } from '../../components/create-footer.js';
 import { initApp } from '../../components/app-init.js';
 import { initTheme } from '../../stores/theme.js';
 import { initLangSelector } from '../../i18n/lang-selector.js';
 import { initResolutionSelector, getResolution, getGenResolution, getLowerPreset, setResolution, getPresets } from '../../stores/resolution.js';
 import { t, getLocale } from '../../i18n/locale.js';
-import { loadProfiles, loadPortraits, getPortraitNames, loadPortraitSections, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder, saveProfiles } from '../../stores/profiles.js';
+import { loadProfiles, loadPortraits, getPortraitNames, loadPortraitSections, injectPortraitJsonLd, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder, saveProfiles } from '../../stores/profiles.js';
 import { getAllThumbs, deleteThumb } from '../../stores/thumb-cache.js';
 import { getAllAssets, getAsset, deleteAsset, putAsset, generateAssetId, getAllAnimAssets, deleteAnimAsset } from '../../stores/asset-store.js';
-import { syncGeneratedOrder, saveGeneratedOrder } from '../../stores/generated-order.js';
+import { syncGeneratedOrder, saveGeneratedOrder, loadGeneratedOrder } from '../../stores/generated-order.js';
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
 import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
 import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
@@ -36,19 +36,16 @@ import { toast } from '../../components/toast.js';
 import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
 import {
-    TRASH_SVG, EDIT_SVG, FULLSCREEN_SVG, CLOSE_SVG, ERROR_SVG, RETRY_SVG,
+    TRASH_SVG, RESTORE_SVG, EDIT_SVG, FULLSCREEN_SVG, CLOSE_SVG, ERROR_SVG, RETRY_SVG,
     UNDO_SVG, REDO_SVG, SAVE_SVG, RANDOMIZE_SVG, RENDER_SVG,
-    FIELD_DIAMOND_SVG, DOWNLOAD_SVG, IMAGE_SVG, BUNDLE_SVG, SHARE_SVG, LINK_SVG, ARROW_RIGHT_SVG,
+    FIELD_DIAMOND_SVG, DOWNLOAD_SVG, IMAGE_SVG, BUNDLE_SVG, SETTINGS_SVG, SHARE_SVG, LINK_SVG, ARROW_RIGHT_SVG,
     BLUESKY_SVG, FACEBOOK_SVG, GOOGLE_SVG, LINKEDIN_SVG, REDDIT_SVG, TWITTER_SVG, EMAIL_SVG,
 } from '../../components/icons.js';
 import { downloadBlob, injectPngTextChunks, safeName, toIsoLocalish } from '../../export/export.js';
 import { profileToConfig } from '@geometric-interior/core/config-schema.js';
-import { refreshTooltip } from '../../components/tooltips.js';
-import { initSharePopover } from '../../components/share-popover.js';
 import { initGalleryWorker } from './gallery-worker-bridge.js';
 import { createRenderQueue } from './render-queue.js';
 import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
-import { initRenderQueueMenu } from './render-queue-menu.js';
 // import { initCustomDropdown } from '../../components/custom-dropdown.js'; // slideshow removed
 import { initAnimationEditor, destroyAnimationEditor } from '../animation/anim-main.js';
 import { createLayoutMorph } from '../../components/layout-morph.js';
@@ -61,77 +58,29 @@ const footerRefs = createFooter(document.querySelector('.app-footer'), { page: '
 const { statement } = initApp({ page: 'gallery' });
 
 /* ── Gallery-specific init ── */
+injectPortraitJsonLd();
 initTheme(footerRefs.themeSwitcher);
 initLangSelector(footerRefs.langDropdown);
+const _footerToggle = createFooterToggle(document.querySelector('.app-footer'));
+window.footerToggle = {
+    toggle() { _footerToggle.toggle(); requestAnimationFrame(clampImageSize); },
+    show() { _footerToggle.show(); requestAnimationFrame(clampImageSize); },
+    hide() { _footerToggle.hide(); requestAnimationFrame(clampImageSize); },
+    get hidden() { return _footerToggle.hidden; },
+};
 // Image resolution selector set up later in viewer controls block
 // Gen resolution selector removed — now part of render flow
 
-/* ── Site menu toggle ── */
-const siteMenuToggle = document.getElementById('siteMenuToggle');
-const siteMenu = document.getElementById('siteMenu');
-const siteMenuBackdrop = document.getElementById('siteMenuBackdrop');
-const appContainer = document.querySelector('.app-container');
-
-const MENU_STATE_KEY = 'geo-site-menu-open';
-
-function openSiteMenu() {
-    const header = document.querySelector('.app-header');
-    if (header) {
-        document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px');
-    }
-    const footer = document.querySelector('.app-footer');
-    if (footer) {
-        document.documentElement.style.setProperty('--footer-h', footer.offsetHeight + 'px');
-    }
-    siteMenu.classList.remove('site-menu-closed');
-    siteMenu.setAttribute('aria-hidden', 'false');
-    siteMenuBackdrop.classList.remove('hidden');
-    siteMenuToggle.classList.add('menu-open');
-    siteMenuToggle.setAttribute('data-tooltip', 'Close menu');
-    siteMenuToggle.setAttribute('aria-label', 'Close menu');
-    refreshTooltip(siteMenuToggle);
-    document.documentElement.style.setProperty('--menu-w', siteMenu.offsetWidth + 'px');
-    appContainer.classList.add('menu-push');
-    localStorage.setItem(MENU_STATE_KEY, '1');
+/* ── Screen reader live region ── */
+const srAnnouncer = document.createElement('div');
+srAnnouncer.setAttribute('aria-live', 'polite');
+srAnnouncer.setAttribute('aria-atomic', 'true');
+srAnnouncer.className = 'sr-only';
+document.body.appendChild(srAnnouncer);
+function announce(msg) {
+    srAnnouncer.textContent = '';
+    requestAnimationFrame(() => { srAnnouncer.textContent = msg; });
 }
-
-function closeSiteMenu() {
-    siteMenu.classList.add('site-menu-closed');
-    siteMenu.setAttribute('aria-hidden', 'true');
-    siteMenuBackdrop.classList.add('hidden');
-    siteMenuToggle.classList.remove('menu-open');
-    siteMenuToggle.setAttribute('data-tooltip', 'Open menu');
-    siteMenuToggle.setAttribute('aria-label', 'Open menu');
-    refreshTooltip(siteMenuToggle);
-    appContainer.classList.remove('menu-push');
-    document.documentElement.style.removeProperty('--menu-w');
-    localStorage.setItem(MENU_STATE_KEY, '0');
-}
-
-// Restore menu state from previous session (skip transition)
-if (localStorage.getItem(MENU_STATE_KEY) === '1') {
-    siteMenu.style.transition = 'none';
-    siteMenuBackdrop.style.transition = 'none';
-    const main = document.querySelector('.main-content');
-    if (main) main.style.transition = 'none';
-    openSiteMenu();
-    // Force layout then re-enable transitions
-    siteMenu.offsetHeight; // eslint-disable-line no-unused-expressions
-    siteMenu.style.transition = '';
-    siteMenuBackdrop.style.transition = '';
-    if (main) main.style.transition = '';
-}
-
-function isSiteMenuOpen() {
-    return !siteMenu.classList.contains('site-menu-closed');
-}
-
-siteMenuToggle.addEventListener('click', () => {
-    if (isSiteMenuOpen()) closeSiteMenu();
-    else openSiteMenu();
-});
-
-siteMenuBackdrop.addEventListener('click', closeSiteMenu);
 
 /* ── Statement modal (initialized by initApp) ── */
 const { loadContent: loadStatementContent, closeStatementModal } = statement;
@@ -149,21 +98,6 @@ document.querySelectorAll('.gallery-section-header').forEach(header => {
     });
 });
 
-/* ── Settings group collapsible toggles ── */
-document.querySelectorAll('.settings-group-header').forEach(header => {
-    header.addEventListener('click', (e) => {
-        // Don't toggle when clicking action buttons inside the header
-        if (e.target.closest('button')) return;
-        // Skip non-collapsible nav headers
-        if (header.classList.contains('menu-nav-header')) return;
-        const expanded = header.getAttribute('aria-expanded') === 'true';
-        header.setAttribute('aria-expanded', String(!expanded));
-        const body = header.nextElementSibling;
-        if (body && body.classList.contains('settings-group-body')) {
-            body.classList.toggle('collapsed', expanded);
-        }
-    });
-});
 
 /* ── SVG icons (imported from shared/icons.js) ── */
 
@@ -178,6 +112,7 @@ function thumbCacheKey(seed, controls) {
 /** @type {import('../../components/image-viewer.js').ImageViewer} */
 const galleryViewer = document.getElementById('galleryViewer');
 const gallerySelectionVisual = galleryViewer.getImg();
+const galleryPrevVisual = galleryViewer.getPrevImg();
 const gallerySelectionCardVisualWrap = galleryViewer.getWrap();
 const gallerySelectionContainer = document.getElementById('gallerySelectionContainer');
 const galleryContentEl = document.getElementById('galleryContent');
@@ -230,12 +165,29 @@ const animGalleryEl = document.getElementById('animGallery');
 
 if (genRetryBtn) genRetryBtn.addEventListener('click', retryGenerate);
 
+/* ── Dynamic image size clamp — keep carousel visible on load ── */
+function clampImageSize() {
+    const headerH = document.querySelector('.app-header')?.offsetHeight ?? 0;
+    const carouselH = carouselBrowser?.offsetHeight ?? 0;
+    const footerH = document.querySelector('.app-footer:not(.footer-hidden)')?.offsetHeight ?? 0;
+    // Commentary estimate: 3 lines × (0.6875rem × 1.5 line-height × 16px) + title/padding
+    const commentaryH = 3 * 0.6875 * 1.5 * 16 + 16;
+    const padding = 16; // 1rem top padding on .main-content
+    const availableH = window.innerHeight - headerH - carouselH - footerH - commentaryH - padding;
+    const maxW = Math.max(200, availableH * (14 / 9));
+    const card = galleryViewer.closest('.gallery-selection-card');
+    if (card) card.style.maxWidth = maxW + 'px';
+    // Sync header container width with card
+    const container = galleryViewer.closest('.gallery-selection-container');
+    if (container) container.style.setProperty('--card-max-w', maxW + 'px');
+}
+
 let resizeRaf;
 window.addEventListener('resize', () => {
     if (resizeRaf) return;
     resizeRaf = requestAnimationFrame(() => {
         resizeRaf = null;
-        positionMenuSlider(false);
+        clampImageSize();
     });
 });
 
@@ -273,6 +225,7 @@ const editNameCounter = document.getElementById('editNameCounter');
 const editNameError = document.getElementById('editNameError');
 const editCommentaryField = document.getElementById('editCommentaryField');
 const editCommentaryCounter = document.getElementById('editCommentaryCounter');
+const morphCommentary = document.querySelector('.morph-commentary');
 const editTagArr = document.getElementById('editTagArr');
 const editTagStr = document.getElementById('editTagStr');
 const editTagDet = document.getElementById('editTagDet');
@@ -675,15 +628,13 @@ let generateInitialized = false;
 let currentVideoUrl = null; // object URL for active video playback
 let currentStaticUrl = null; // object URL for generated profile staticBlob display
 
-/* ── Render queue site menu section ── */
+/* ── Render queue view-job handler ── */
 function viewJob(job) {
     hideGenerateMode();
     activeMode = 'gallery';
-    updateMenuNavLinks();
     if (job.asset) {
         if (job.jobType === 'animation') {
             activeType = 'animation';
-            updateMenuNavLinks();
             animAssets = animAssets.filter(a => a.id !== job.asset.id);
             animAssets.unshift(job.asset);
             refreshGallery();
@@ -699,15 +650,6 @@ function viewJob(job) {
     }
 }
 
-const rqMenu = initRenderQueueMenu({
-    drawerEl: document.getElementById('rqMenu'),
-    barEl: document.getElementById('rqMenuBar'),
-    listEl: document.getElementById('rqJobList'),
-    countEl: document.getElementById('rqMenuCount'),
-    badgeEl: document.getElementById('renderQueueBadge'),
-    onCancel(jobId) { if (renderQueue) renderQueue.cancel(jobId); },
-    onView: viewJob,
-});
 
 
 /* ── URL routing ── */
@@ -770,7 +712,6 @@ function applyRoute() {
     const prevMode = activeMode;
     activeType = route.type;
     activeMode = route.mode;
-    updateMenuNavLinks();
 
     // Handle edit mode transitions (popstate: back/forward into or out of edit)
     if (activeMode === 'edit') {
@@ -973,12 +914,15 @@ function applySelection(name, profile, isPortrait, assetId) {
     // Lock footer height before fade so resize can animate
     gallerySelectionCardFooter.style.height = gallerySelectionCardFooter.offsetHeight + 'px';
 
-    // Fade out text + image + alt-text overlay together
+    // Fade out text + alt-text overlay; crossfade image
     morphNameRow.classList.add('fading');
     morphSeedRow.classList.add('fading');
     gallerySelectionCardFooter.classList.add('fading');
-    gallerySelectionVisual.style.opacity = '0';
     if (galleryViewer.altVisible) galleryViewer.getAltOverlay().classList.add('fading');
+
+    // Crossfade: show old image behind, new image fades in on top
+    galleryPrevVisual.src = gallerySelectionVisual.src;
+    gallerySelectionVisual.style.opacity = '0';
 
     // Cancel any pending fade-in from a previous rapid selection
     clearTimeout(selectionFadeTimer);
@@ -1037,7 +981,7 @@ function applySelection(name, profile, isPortrait, assetId) {
         galleryViewer.altText = gallerySelectionVisual.getAttribute('data-tooltip') || '';
         if (galleryViewer.altVisible) galleryViewer.getAltOverlay().scrollTop = 0;
 
-        // Swap image src (old image is now fully hidden)
+        // Set new image src — old image visible via prevImg behind
         if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
         if (snapshotUrl) { URL.revokeObjectURL(snapshotUrl); snapshotUrl = null; }
 
@@ -1063,6 +1007,9 @@ function applySelection(name, profile, isPortrait, assetId) {
         if (isPortrait) {
             installPortraitFallback(gallerySelectionVisual, slugify(name), getResolution().key);
         }
+
+        // Hide commentary box if empty (slide in/out via CSS transition)
+        morphCommentary.classList.toggle('collapsed', !editCommentaryField.value);
 
         // Animate footer height to fit new content
         const oldHeight = gallerySelectionCardFooter.offsetHeight;
@@ -1109,6 +1056,7 @@ function applySelection(name, profile, isPortrait, assetId) {
 function selectProfile(name, profile, isPortrait, assetId) {
     pushProfileRoute(name, isPortrait, assetId);
     applySelection(name, profile, isPortrait, assetId);
+    if (name) announce(`Selected ${name}`);
 }
 
 /**
@@ -1191,7 +1139,10 @@ genPreviewCanvas.addEventListener('click', () => {
 
 function navigateToEditor() {
     // Navigate to create mode within the SPA
-    handleMenuNav(activeType, 'create');
+    if (activeMode === 'create') return;
+    activeMode = 'create';
+    pushRoute();
+    showGenerateMode();
 }
 
 
@@ -1433,70 +1384,6 @@ function clearVideoPlayback() {
     selectedVideo.classList.add('hidden');
     gallerySelectionVisual.style.display = '';
 }
-
-/* ── Menu navigation links ── */
-
-const menuNavLinks = document.querySelectorAll('.menu-nav-link');
-const menuNavSlider = document.getElementById('menuNavSlider');
-
-function positionMenuSlider(animate) {
-    const activeLink = siteMenu.querySelector('.menu-nav-link.active');
-    if (!activeLink || !menuNavSlider) return;
-    const menuRect = siteMenu.getBoundingClientRect();
-    const linkRect = activeLink.getBoundingClientRect();
-    const top = linkRect.top - menuRect.top + siteMenu.scrollTop;
-    if (!animate) {
-        menuNavSlider.style.transition = 'none';
-    }
-    menuNavSlider.style.transform = `translateY(${top}px)`;
-    menuNavSlider.style.height = `${linkRect.height}px`;
-    menuNavSlider.classList.add('visible');
-    if (!animate) {
-        menuNavSlider.offsetHeight; // force reflow
-        menuNavSlider.style.transition = '';
-    }
-}
-
-function updateMenuNavLinks() {
-    menuNavLinks.forEach(link => {
-        const matches = link.dataset.navType === activeType && link.dataset.navMode === activeMode;
-        link.classList.toggle('active', matches);
-    });
-    positionMenuSlider(true);
-}
-
-function handleMenuNav(type, mode) {
-    const typeChanged = type !== activeType;
-    const modeChanged = mode !== activeMode;
-    if (!typeChanged && !modeChanged) return;
-
-    activeType = type;
-    activeMode = mode;
-    updateMenuNavLinks();
-    pushRoute();
-
-    if (modeChanged) {
-        if (mode === 'create') {
-            showGenerateMode();
-        } else {
-            hideGenerateMode();
-        }
-    }
-
-    if (typeChanged) {
-        selected = { name: null, isPortrait: false };
-        refreshGallery();
-    }
-
-    // Close menu on mobile only (desktop uses content-push, keep it open)
-    if (window.innerWidth < 768) closeSiteMenu();
-}
-
-menuNavLinks.forEach(link => {
-    link.addEventListener('click', () => {
-        handleMenuNav(link.dataset.navType, link.dataset.navMode);
-    });
-});
 
 /* ── Generate mode ── */
 
@@ -2110,7 +1997,6 @@ function initGenerate() {
                 });
 
                 // Update header render queue menu
-                if (rqMenu) rqMenu.update(jobs);
 
                 // Update progress overlay
                 const active = jobs.find(j => j.status === 'rendering');
@@ -2139,6 +2025,7 @@ function initGenerate() {
 
 function showGenerateMode() {
     if (layoutMorph.morphing) return;
+    announce('Entering generate mode');
 
     // Determine which create panel to show
     const isAnimCreate = activeType === 'animation';
@@ -2179,6 +2066,7 @@ function showGenerateMode() {
 
 function hideGenerateMode() {
     if (layoutMorph.morphing) return;
+    announce('Returning to gallery');
 
     // Hide whichever create panel is visible
     const visibleEl = !generatePanelEl.classList.contains('hidden') ? generatePanelEl
@@ -2327,9 +2215,7 @@ function initEditMode() {
         if (!renderQueue) {
             renderQueue = createRenderQueue({
                 workerBridge: editWorkerBridge,
-                onUpdate(jobs) {
-                    if (rqMenu) rqMenu.update(jobs);
-                },
+                onUpdate() {},
                 locale: getLocale(),
             });
         }
@@ -2523,6 +2409,9 @@ async function exitEditMode(saved, fromPopstate) {
         }
     }
 
+    // Collapse commentary if empty so it slides out during browse morph
+    morphCommentary.classList.toggle('collapsed', !editCommentaryField.value.trim());
+
     // Morph back to browse after card attributes are updated so CSS transitions animate smoothly
     layoutMorph.morph('browse', {
         onSwap() {
@@ -2556,42 +2445,91 @@ async function exitEditMode(saved, fromPopstate) {
     const isTouch = matchMedia('(pointer: coarse)').matches;
     const ctxBrowserKey = isTouch ? 'gallery.ctxBrowserTouch' : 'gallery.ctxBrowserDesktop';
 
-    ctxMenu.innerHTML =
-        // Share (expandable)
-        `<button class="gallery-ctx-item gallery-ctx-expandable" role="menuitem" data-expand="share">` +
-            `<span class="gallery-ctx-icon">${SHARE_SVG}</span>${t('gallery.ctxShare')}` +
-            `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
-        `</button>` +
-        `<div class="gallery-ctx-submenu" data-submenu="share"><div class="gallery-ctx-submenu-inner">` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-copy"><span class="gallery-ctx-icon">${LINK_SVG}</span>${t('share.copyLink')}</button>` +
-            `<div class="gallery-ctx-sep"></div>` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-bluesky"><span class="gallery-ctx-icon">${BLUESKY_SVG}</span>${t('share.bluesky')}</button>` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-facebook"><span class="gallery-ctx-icon">${FACEBOOK_SVG}</span>${t('share.facebook')}</button>` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-google"><span class="gallery-ctx-icon">${GOOGLE_SVG}</span>Google</button>` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-linkedin"><span class="gallery-ctx-icon">${LINKEDIN_SVG}</span>${t('share.linkedin')}</button>` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-reddit"><span class="gallery-ctx-icon">${REDDIT_SVG}</span>${t('share.reddit')}</button>` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-x"><span class="gallery-ctx-icon">${TWITTER_SVG}</span>X</button>` +
-            `<div class="gallery-ctx-sep"></div>` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-email"><span class="gallery-ctx-icon">${EMAIL_SVG}</span>${t('share.email')}</button>` +
-        `</div></div>` +
-        // Download (expandable)
-        `<button class="gallery-ctx-item gallery-ctx-expandable" role="menuitem" data-expand="download">` +
-            `<span class="gallery-ctx-icon">${DOWNLOAD_SVG}</span>${t('gallery.ctxDownload')}` +
-            `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
-        `</button>` +
-        `<div class="gallery-ctx-submenu" data-submenu="download"><div class="gallery-ctx-submenu-inner">` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-image"><span class="gallery-ctx-icon">${IMAGE_SVG}</span>${t('gallery.ctxDownloadImage')}</button>` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-bundle"><span class="gallery-ctx-icon">${BUNDLE_SVG}</span>${t('gallery.ctxDownloadBundle')}</button>` +
-        `</div></div>` +
-        // Edit
-        `<button class="gallery-ctx-item" role="menuitem" data-action="edit"><span class="gallery-ctx-icon">${EDIT_SVG}</span>${t('gallery.ctxEdit')}</button>` +
-        // Separator + browser hint
-        `<div class="gallery-ctx-sep"></div>` +
-        `<div class="gallery-ctx-browser">${t(ctxBrowserKey)}</div>`;
-    document.body.appendChild(ctxMenu);
+    /* ── Soft-delete buffer for generated images ── */
+    /** @type {{ entry: object, asset: object, orderIndex: number, deletedAt: number }[]} */
+    const recentlyDeleted = [];
+    const MAX_DELETED = 5;
+    const DELETE_EXPIRY_MS = 5 * 60 * 1000;
+    function pruneExpired() {
+        const now = Date.now();
+        for (let i = recentlyDeleted.length - 1; i >= 0; i--) {
+            if (now - recentlyDeleted[i].deletedAt > DELETE_EXPIRY_MS) recentlyDeleted.splice(i, 1);
+        }
+    }
+    function relativeTime(ms) {
+        const mins = Math.floor((Date.now() - ms) / 60000);
+        if (mins < 1) return '< 1m ago';
+        return `${mins}m ago`;
+    }
 
-    const ctxBrowserHint = ctxMenu.querySelector('.gallery-ctx-browser');
-    let allFocusable = /** @type {HTMLElement[]} */ ([...ctxMenu.querySelectorAll('.gallery-ctx-item')]);
+    /** Build context menu HTML dynamically based on current state. */
+    function buildCtxMenuHTML() {
+        const entry = navigableList[currentIndex];
+        const isGenerated = entry && entry.assetId;
+        pruneExpired();
+
+        let html =
+            // Share (expandable)
+            `<button class="gallery-ctx-item gallery-ctx-expandable" role="menuitem" data-expand="share">` +
+                `<span class="gallery-ctx-icon">${SHARE_SVG}</span>${t('gallery.ctxShare')}` +
+                `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
+            `</button>` +
+            `<div class="gallery-ctx-submenu" data-submenu="share"><div class="gallery-ctx-submenu-inner">` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-copy"><span class="gallery-ctx-icon">${LINK_SVG}</span>${t('share.copyLink')}</button>` +
+                `<div class="gallery-ctx-sep"></div>` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-bluesky"><span class="gallery-ctx-icon">${BLUESKY_SVG}</span>${t('share.bluesky')}</button>` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-facebook"><span class="gallery-ctx-icon">${FACEBOOK_SVG}</span>${t('share.facebook')}</button>` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-google"><span class="gallery-ctx-icon">${GOOGLE_SVG}</span>Google</button>` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-linkedin"><span class="gallery-ctx-icon">${LINKEDIN_SVG}</span>${t('share.linkedin')}</button>` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-reddit"><span class="gallery-ctx-icon">${REDDIT_SVG}</span>${t('share.reddit')}</button>` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-x"><span class="gallery-ctx-icon">${TWITTER_SVG}</span>X</button>` +
+                `<div class="gallery-ctx-sep"></div>` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-email"><span class="gallery-ctx-icon">${EMAIL_SVG}</span>${t('share.email')}</button>` +
+            `</div></div>` +
+            // Download (expandable)
+            `<button class="gallery-ctx-item gallery-ctx-expandable" role="menuitem" data-expand="download">` +
+                `<span class="gallery-ctx-icon">${DOWNLOAD_SVG}</span>${t('gallery.ctxDownload')}` +
+                `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
+            `</button>` +
+            `<div class="gallery-ctx-submenu" data-submenu="download"><div class="gallery-ctx-submenu-inner">` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-image"><span class="gallery-ctx-icon">${IMAGE_SVG}</span>${t('gallery.ctxDownloadImage')}</button>` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-config"><span class="gallery-ctx-icon">${SETTINGS_SVG}</span>${t('gallery.ctxDownloadConfig')}</button>` +
+                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-bundle"><span class="gallery-ctx-icon">${BUNDLE_SVG}</span>${t('gallery.ctxDownloadBundle')}</button>` +
+            `</div></div>` +
+            // Edit
+            `<button class="gallery-ctx-item" role="menuitem" data-action="edit"><span class="gallery-ctx-icon">${EDIT_SVG}</span>${t('gallery.ctxEdit')}</button>`;
+
+        // Delete (only for generated portraits)
+        if (isGenerated) {
+            html += `<button class="gallery-ctx-item" role="menuitem" data-action="delete"><span class="gallery-ctx-icon">${TRASH_SVG}</span>${t('gallery.ctxDelete')}</button>`;
+        }
+
+        // Restore deleted (only when buffer non-empty)
+        if (recentlyDeleted.length > 0) {
+            html +=
+                `<button class="gallery-ctx-item gallery-ctx-expandable" role="menuitem" data-expand="restore">` +
+                    `<span class="gallery-ctx-icon">${RESTORE_SVG}</span>${t('gallery.ctxRestore')}` +
+                    `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
+                `</button>` +
+                `<div class="gallery-ctx-submenu" data-submenu="restore"><div class="gallery-ctx-submenu-inner">`;
+            for (let i = 0; i < recentlyDeleted.length; i++) {
+                const d = recentlyDeleted[i];
+                const name = d.entry.name || 'Untitled';
+                const ago = relativeTime(d.deletedAt);
+                html += `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="restore" data-restore-index="${i}"><span class="gallery-ctx-icon">${RESTORE_SVG}</span>${name} <span class="gallery-ctx-dim">(${ago})</span></button>`;
+            }
+            html += `</div></div>`;
+        }
+
+        // Separator + browser hint
+        html += `<div class="gallery-ctx-sep"></div>` +
+            `<div class="gallery-ctx-browser">${t(ctxBrowserKey)}</div>`;
+
+        return html;
+    }
+
+    document.body.appendChild(ctxMenu);
+    let allFocusable = /** @type {HTMLElement[]} */ ([]);
     let ctxVisible = false;
 
     /** Rebuild the focusable list after submenu expand/collapse. */
@@ -2609,10 +2547,16 @@ async function exitEditMode(saved, fromPopstate) {
     }
 
     function showCtxMenu(x, y) {
-        // Collapse all submenus on open
-        ctxMenu.querySelectorAll('.gallery-ctx-submenu.expanded').forEach(s => s.classList.remove('expanded'));
-        ctxMenu.querySelectorAll('.gallery-ctx-expandable.expanded').forEach(b => b.classList.remove('expanded'));
+        // Rebuild menu HTML (dynamic: Delete, Restore depend on state)
+        ctxMenu.innerHTML = buildCtxMenuHTML();
         rebuildFocusable();
+
+        // Re-attach browser hint handlers
+        const hint = ctxMenu.querySelector('.gallery-ctx-browser');
+        if (hint) {
+            hint.addEventListener('contextmenu', () => { hideCtxMenu(); });
+            hint.addEventListener('click', () => { hideCtxMenu(); allowNativeCtx = true; });
+        }
 
         ctxMenu.style.left = '0';
         ctxMenu.style.top = '0';
@@ -2621,7 +2565,6 @@ async function exitEditMode(saved, fromPopstate) {
         ctxMenu.style.left = Math.min(x, window.innerWidth - rect.width - 4) + 'px';
         ctxMenu.style.top = Math.min(y, window.innerHeight - rect.height - 4) + 'px';
         ctxVisible = true;
-        if (allFocusable[0]) allFocusable[0].focus();
     }
 
     function hideCtxMenu() {
@@ -2683,6 +2626,11 @@ async function exitEditMode(saved, fromPopstate) {
             downloadCurrentImage();
             return;
         }
+        if (action === 'download-config') {
+            hideCtxMenu();
+            downloadConfig();
+            return;
+        }
         if (action === 'download-bundle') {
             hideCtxMenu();
             downloadBundle();
@@ -2694,6 +2642,59 @@ async function exitEditMode(saved, fromPopstate) {
             hideCtxMenu();
             const entry = navigableList[currentIndex];
             if (entry) enterEditMode('edit', entry);
+            return;
+        }
+
+        // Delete (generated only)
+        if (action === 'delete') {
+            hideCtxMenu();
+            const entry = navigableList[currentIndex];
+            if (!entry || !entry.assetId) return;
+            (async () => {
+                // Fetch full asset for restore
+                const asset = await getAsset(entry.assetId);
+                // Record position in generated order
+                const orderArr = loadGeneratedOrder();
+                const orderIndex = orderArr.indexOf(entry.assetId);
+                // Push to soft-delete buffer (newest first)
+                recentlyDeleted.unshift({
+                    entry: { ...entry },
+                    asset,
+                    orderIndex: orderIndex >= 0 ? orderIndex : generatedAssets.length,
+                    deletedAt: Date.now(),
+                });
+                if (recentlyDeleted.length > MAX_DELETED) recentlyDeleted.length = MAX_DELETED;
+                // Hard-delete from storage
+                await deleteAsset(entry.assetId);
+                generatedAssets = generatedAssets.filter(a => a.id !== entry.assetId);
+                toast(t('toast.imageDeleted'));
+                refreshGallery();
+            })();
+            return;
+        }
+
+        // Restore deleted
+        if (action === 'restore') {
+            hideCtxMenu();
+            const idx = Number(btn.dataset.restoreIndex);
+            pruneExpired();
+            if (idx >= recentlyDeleted.length) return;
+            const item = recentlyDeleted.splice(idx, 1)[0];
+            (async () => {
+                // Re-insert into IndexedDB
+                await putAsset(item.asset);
+                // Re-insert into generatedAssets at clamped position
+                const pos = Math.min(item.orderIndex, generatedAssets.length);
+                generatedAssets.splice(pos, 0, item.asset);
+                // Re-insert into generated order localStorage
+                const orderArr = loadGeneratedOrder();
+                const orderPos = Math.min(item.orderIndex, orderArr.length);
+                orderArr.splice(orderPos, 0, item.asset.id);
+                saveGeneratedOrder(orderArr);
+                toast(t('toast.imageRestored'));
+                refreshGallery();
+                selectProfile(item.entry.name, item.entry.profile, false, item.entry.assetId);
+            })();
             return;
         }
     });
@@ -2728,6 +2729,18 @@ async function exitEditMode(saved, fromPopstate) {
     }
 
     // ── Download: bundle (multi-resolution ZIP) ──
+    function downloadConfig() {
+        const entry = navigableList[currentIndex];
+        if (!entry) return;
+        const { profile } = entry;
+        if (!profile || !profile.seed || !profile.controls) return;
+        const config = profileToConfig(entry.name || '', { seed: profile.seed, controls: profile.controls });
+        const json = JSON.stringify(config, null, 2) + '\n';
+        const blob = new Blob([json], { type: 'application/json' });
+        const base = safeName(profile.seed) || 'config';
+        downloadBlob(`geometric-interior_${base}.json`, blob);
+    }
+
     async function downloadBundle() {
         const entry = navigableList[currentIndex];
         if (!entry) return;
@@ -2796,8 +2809,6 @@ async function exitEditMode(saved, fromPopstate) {
 
     // ── Browser hint: right-click passes to native menu ──
     let allowNativeCtx = false;
-    ctxBrowserHint.addEventListener('contextmenu', () => { hideCtxMenu(); });
-    ctxBrowserHint.addEventListener('click', () => { hideCtxMenu(); allowNativeCtx = true; });
 
     // Desktop: right-click
     gallerySelectionCardVisualWrap.addEventListener('contextmenu', (e) => {
@@ -2896,14 +2907,9 @@ document.addEventListener('keydown', (e) => {
             carouselBrowser.collapse();
             return;
         }
-        if (isSiteMenuOpen()) {
-            closeSiteMenu();
-            return;
-        }
         if (activeMode === 'create') {
             hideGenerateMode();
             activeMode = 'gallery';
-            updateMenuNavLinks();
             return;
         }
         closeStatementModal();
@@ -2925,9 +2931,6 @@ document.addEventListener('keydown', (e) => {
 const route = parseRoute();
 activeType = route.type;
 activeMode = route.mode;
-updateMenuNavLinks();
-// Position slider without animation on initial load
-requestAnimationFrame(() => positionMenuSlider(false));
 
 if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
     history.replaceState({ type: 'image', profile: null }, '', '/images');
@@ -2963,6 +2966,24 @@ loadStatementContent();
 /* ── Locale change: re-render text and gallery on locale switch ── */
 document.addEventListener('localechange', () => {
     document.title = t('page.gallery');
+    // Re-populate seed tag selects with new locale words
+    const locale = getLocale();
+    const words = getLocalizedWords(locale);
+    const fill = (sel, list) => {
+        const prev = sel.value;
+        sel.innerHTML = '';
+        for (let i = 0; i < list.length; i++) {
+            const opt = document.createElement('option');
+            opt.value = String(i);
+            opt.textContent = list[i];
+            sel.appendChild(opt);
+        }
+        if (prev) sel.value = prev;
+    };
+    fill(editTagArr, words.arrangement);
+    fill(editTagStr, words.structure.map(w => w.toLowerCase()));
+    fill(editTagDet, words.detail.map(w => w.toLowerCase()));
+    fitAllSelects();
     refreshGallery();
     // Re-generate text for selected profile
     if (selected.name) {
@@ -2995,16 +3016,7 @@ Promise.allSettled([
     refreshGallery();
     if (activeMode === 'create') refreshSavedGrid();
     if (activeMode === 'edit') enterEditMode('add', null, true);
+    // Clamp image after carousel is populated
+    requestAnimationFrame(clampImageSize);
 });
 
-/* ── Share ── */
-
-initSharePopover({
-    shareBtn: document.getElementById('shareBtn'),
-    sharePopover: document.getElementById('sharePopover'),
-    getShareURL: () => window.location.origin + window.location.pathname,
-    getShareTitle: () => {
-        const name = editNameField.value.trim();
-        return name ? `${name} — Geometric Interior` : 'Geometric Interior';
-    },
-});

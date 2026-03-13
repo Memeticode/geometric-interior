@@ -79,3 +79,15 @@ export function createFooter(footerEl, { page }) {
     };
 }
 
+/**
+ * Create a toggle API for footer visibility (for testing).
+ * @param {HTMLElement} footerEl
+ */
+export function createFooterToggle(footerEl) {
+    return {
+        toggle() { footerEl.classList.toggle('footer-hidden'); },
+        show() { footerEl.classList.remove('footer-hidden'); },
+        hide() { footerEl.classList.add('footer-hidden'); },
+        get hidden() { return footerEl.classList.contains('footer-hidden'); },
+    };
+}

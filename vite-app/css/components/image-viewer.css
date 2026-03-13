@@ -13,6 +13,8 @@ image-viewer {
     background: #000;
     overflow: hidden;
     position: relative;
+    border: 1px solid var(--border);
+    border-radius: 4px;
 }
 
 /* ── Media elements ── */
@@ -21,8 +23,17 @@ image-viewer {
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: opacity 0.25s ease;
+    transition: opacity var(--lm-fade, 0.25s) ease;
     cursor: pointer;
+}
+.iv-img-prev {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.iv-img-prev:not([src]),
+.iv-img-prev[src=""] {
+    display: none;
 }
 .iv-canvas {
     position: absolute;
@@ -152,7 +163,7 @@ image-viewer[mode="canvas"] .iv-controls {
     border-color: rgba(0, 0, 0, 0.2);
 }
 
-/* ── Frosted glass dropdown menu ── */
+/* ── Frosted glass dropdown menu (morph) ── */
 .iv-controls .custom-dropdown-menu {
     right: 0;
     left: auto;
@@ -161,6 +172,26 @@ image-viewer[mode="canvas"] .iv-controls {
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
     border-color: rgba(255, 255, 255, 0.08);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+    /* Morph animation — override hidden, use max-height */
+    margin-bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 1500ms cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 300ms ease;
+}
+.iv-controls .custom-dropdown-menu.hidden {
+    display: flex !important; /* override global .hidden to allow transition */
+}
+.iv-controls .custom-dropdown.open .custom-dropdown-menu {
+    max-height: 20rem;
+    opacity: 1;
+}
+.iv-controls .custom-dropdown.open > .custom-dropdown-trigger {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
 }
 .iv-controls .custom-dropdown-item {
     color: rgba(255, 255, 255, 0.7);
@@ -453,11 +484,12 @@ image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
 .fullscreen-alt-seed {
     color: rgba(255, 255, 255, 0.5);
     font-size: 0.75rem;
+    font-style: italic;
 }
 .fullscreen-alt-commentary {
     margin-top: 0.5rem;
-    font-style: italic;
     color: rgba(255, 255, 255, 0.8);
+    text-align: center;
 }
 .fullscreen-alt-sep {
     height: 1px;
@@ -575,6 +607,10 @@ image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
 .gallery-ctx-sub-item {
     font-size: 0.75rem;
     padding: 5px 14px 5px 22px;
+}
+.gallery-ctx-dim {
+    opacity: 0.45;
+    font-size: 0.6875rem;
 }
 /* Browser menu hint — no hover effect */
 .gallery-ctx-browser {

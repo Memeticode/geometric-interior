@@ -7,7 +7,8 @@ export const DBL_ARROW_LEFT_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="
 export const DBL_ARROW_RIGHT_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l5 5-5 5"/><path d="M10 3l5 5-5 5"/></svg>';
 
 // ── Actions ──
-export const TRASH_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M8 1l4.5 4.5L8 14.5 3.5 5.5z"/><path d="M5 7l3-1 3 2" stroke-width="1"/></svg>';
+export const TRASH_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5h11"/><path d="M5.5 4.5V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5"/><path d="M3.5 4.5l.7 8.4a1.5 1.5 0 0 0 1.5 1.35h4.6a1.5 1.5 0 0 0 1.5-1.35l.7-8.4"/></svg>';
+export const RESTORE_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 2.5v4h4"/><path d="M2.5 6.5a5.5 5.5 0 1 1 1 3.5"/></svg>';
 export const EDIT_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2.5l4 4L6 14H2v-4z"/><path d="M8 4l4 4"/></svg>';
 export const CLOSE_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="4" y1="4" x2="12" y2="12"/><line x1="12" y1="4" x2="4" y2="12"/></svg>';
 export const FULLSCREEN_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"/></svg>';

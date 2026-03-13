@@ -42,9 +42,10 @@ export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSele
         e.stopPropagation();
         const isOpen = !menu.classList.contains('hidden');
         if (isOpen) {
-            close(trigger, menu);
+            close(trigger, menu, dropdownEl);
         } else {
             menu.classList.remove('hidden');
+            dropdownEl.classList.add('open');
             trigger.setAttribute('aria-expanded', 'true');
         }
     });
@@ -56,25 +57,26 @@ export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSele
         const value = item.dataset.value;
         label.textContent = item.dataset.label || item.textContent;
         syncActive(menu, value);
-        close(trigger, menu);
+        close(trigger, menu, dropdownEl);
         if (onSelect) onSelect(value, item.textContent);
     });
 
     // Close on outside click
     document.addEventListener('click', (e) => {
         if (!dropdownEl.contains(e.target)) {
-            close(trigger, menu);
+            close(trigger, menu, dropdownEl);
         }
     });
 
     // Keyboard
     trigger.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            close(trigger, menu);
+            close(trigger, menu, dropdownEl);
         } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
             e.preventDefault();
             if (menu.classList.contains('hidden')) {
                 menu.classList.remove('hidden');
+                dropdownEl.classList.add('open');
                 trigger.setAttribute('aria-expanded', 'true');
             }
             const items = [...menu.querySelectorAll('.custom-dropdown-item')];
@@ -85,7 +87,7 @@ export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSele
 
     menu.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            close(trigger, menu);
+            close(trigger, menu, dropdownEl);
             trigger.focus();
         } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
             e.preventDefault();
@@ -99,7 +101,8 @@ export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSele
     });
 }
 
-function close(trigger, menu) {
+function close(trigger, menu, dropdownEl) {
+    dropdownEl.classList.remove('open');
     menu.classList.add('hidden');
     trigger.setAttribute('aria-expanded', 'false');
 }

@@ -262,6 +262,42 @@ export function getPortraitNames() {
     return names;
 }
 
+/** Inject JSON-LD structured data for starter portraits into <head>. */
+export function injectPortraitJsonLd() {
+    const artworks = [];
+    for (const sectionKey of starterProfiles['section-order']) {
+        const section = starterProfiles.sections[sectionKey];
+        if (!section) continue;
+        for (const [slug, portrait] of Object.entries(section.portraits)) {
+            const artwork = {
+                '@type': 'VisualArtwork',
+                name: portrait.name,
+                description: t(`portrait.commentary.${slug}`),
+                artMedium: 'Generative WebGL',
+                artform: 'Digital Art',
+            };
+            if (portrait.generated?.['alt-text']) {
+                // Use only the summary line (before the expanded description)
+                const summary = portrait.generated['alt-text'].split('\n')[0];
+                artwork.accessibilityHazard = 'none';
+                artwork.accessibilitySummary = summary;
+            }
+            artworks.push(artwork);
+        }
+    }
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'ImageGallery',
+        name: 'Geometric Interior',
+        description: 'Generative geometric art — crystalline forms rendered in real-time WebGL.',
+        hasPart: artworks,
+    };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = JSON.stringify(jsonLd);
+    document.head.appendChild(script);
+}
+
 /** Return sections with display names and portrait lists for gallery rendering. */
 export function loadPortraitSections() {
     return starterProfiles['section-order'].map(key => {

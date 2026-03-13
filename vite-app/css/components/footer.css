@@ -47,6 +47,10 @@
     gap: 0.375rem;
 }
 
+.app-footer.footer-hidden {
+    display: none;
+}
+
 /* ── Theme switcher (footer) ── */
 .theme-switcher {
     position: relative;

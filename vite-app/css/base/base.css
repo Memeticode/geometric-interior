@@ -85,19 +85,13 @@ body {
     color: var(--text);
     height: 100dvh;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 
 .app-container {
-    max-width: 100rem;
     width: 100%;
-    flex: 1;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    border-left: none;
-    border-right: none;
     min-height: 0;
 }
 
@@ -109,8 +103,37 @@ body {
     z-index: 9999;
 }
 
+/* ── Accessibility ── */
+.skip-link {
+    position: absolute;
+    top: -100%;
+    left: 0.5rem;
+    z-index: 9999;
+    padding: 0.5rem 1rem;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    text-decoration: none;
+}
+.skip-link:focus {
+    top: 0.5rem;
+}
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 /* ── Utility: hidden ── */
-.hidden:not(.canvas-overlay):not(.share-popover):not(.settings-popover):not(.custom-dropdown-menu) {
+.hidden:not(.canvas-overlay):not(.settings-popover):not(.custom-dropdown-menu) {
     display: none !important;
 }
 

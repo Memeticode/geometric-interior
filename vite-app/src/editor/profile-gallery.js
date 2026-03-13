@@ -6,7 +6,7 @@
 import { loadProfiles, saveProfiles, deleteProfile, loadPortraits, getPortraitNames, loadProfileOrder, saveProfileOrder, syncProfileOrder } from '../stores/profiles.js';
 import { seedTagToLabel } from '@geometric-interior/core/text-generation/seed-tags.js';
 import { slugify } from '../components/slugify.js';
-import { t } from '../i18n/locale.js';
+import { t, getLocale } from '../i18n/locale.js';
 import { TRASH_SVG, ARROW_UP_SVG, ARROW_DOWN_SVG } from '../components/icons.js';
 
 /**
@@ -84,7 +84,7 @@ export function createProfileGallery({ el, thumbRenderer, getCurrentSeed, readCo
         if (p.seed) {
             const seedEl = document.createElement('div');
             seedEl.className = 'profile-card-seed';
-            seedEl.textContent = Array.isArray(p.seed) ? seedTagToLabel(p.seed) : p.seed;
+            seedEl.textContent = Array.isArray(p.seed) ? seedTagToLabel(p.seed, getLocale()) : p.seed;
             body.appendChild(seedEl);
         }
 

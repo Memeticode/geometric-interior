@@ -21,68 +21,11 @@
 </head>
 
 <body>
+    <a href="#galleryContainer" class="skip-link">Skip to main content</a>
     <div class="app-container gallery-page">
-        <header class="app-header"></header>
+        <header class="app-header" role="banner" aria-label="Site header"></header>
 
-        <!-- Site menu drawer -->
-        <div class="site-menu site-menu-closed" id="siteMenu" aria-hidden="true">
-            <div class="menu-nav-slider" id="menuNavSlider"></div>
-            <div class="settings-group">
-                <div class="settings-group-header menu-nav-header" aria-expanded="true">
-                    <span class="settings-group-title" data-i18n="menu.gallery">Gallery</span>
-                </div>
-                <div class="settings-group-body">
-                    <button class="menu-nav-link active" data-nav-type="image" data-nav-mode="gallery"
-                        data-i18n="menu.images">Images</button>
-                    <button class="menu-nav-link" data-nav-type="animation" data-nav-mode="gallery"
-                        data-i18n="menu.animations">Animations</button>
-                </div>
-            </div>
-            <div class="settings-group">
-                <div class="settings-group-header menu-nav-header" aria-expanded="true">
-                    <span class="settings-group-title" data-i18n="menu.generate">Generate</span>
-                </div>
-                <div class="settings-group-body">
-                    <button class="menu-nav-link" data-nav-type="image" data-nav-mode="create"
-                        data-i18n="menu.generateImages">Images</button>
-                    <button class="menu-nav-link" data-nav-type="animation" data-nav-mode="create"
-                        data-i18n="menu.generateAnimations">Animations</button>
-                </div>
-            </div>
-            <!-- Render queue (pinned to bottom of menu, expands upward) -->
-            <div class="rq-menu rq-menu-hidden" id="rqMenu">
-                <div class="rq-menu-bar" id="rqMenuBar">
-                    <span class="rq-menu-title" data-i18n="renderQueue.title">Renders</span>
-                    <span class="rq-menu-count" id="rqMenuCount"></span>
-                    <span class="rq-menu-chevron">&#9662;</span>
-                </div>
-                <div class="rq-menu-body" id="rqMenuBody">
-                    <div class="rq-job-list" id="rqJobList">
-                        <div class="rq-section" id="rqActive">
-                            <div class="rq-section-label">Active</div>
-                            <div class="rq-section-jobs" id="rqActiveJobs"></div>
-                        </div>
-                        <div class="rq-section rq-collapsible" id="rqQueued">
-                            <div class="rq-section-header" aria-expanded="false">
-                                <span class="rq-section-label">Queued (0)</span>
-                                <span class="rq-section-chevron">&#9662;</span>
-                            </div>
-                            <div class="rq-section-body" id="rqQueuedJobs"></div>
-                        </div>
-                        <div class="rq-section rq-collapsible" id="rqCompleted">
-                            <div class="rq-section-header" aria-expanded="false">
-                                <span class="rq-section-label">Completed (0)</span>
-                                <span class="rq-section-chevron">&#9662;</span>
-                            </div>
-                            <div class="rq-section-body" id="rqCompletedJobs"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="site-menu-backdrop hidden" id="siteMenuBackdrop"></div>
-
-        <main class="main-content" data-layout="browse">
+        <main class="main-content" role="main" aria-label="Gallery" data-layout="browse">
             <div class="gallery-container" id="galleryContainer">
                 <!-- Centered toolbar — always at top -->
                 <div class="gallery-toolbar" id="galleryToolbar">
@@ -162,9 +105,9 @@
                             <div class="morph-commentary">
                                 <div class="morph-field">
                                     <textarea id="editCommentaryField" class="morph-textarea morph-commentary-field"
-                                        rows="1" maxlength="500" placeholder="No commentary"
+                                        rows="1" maxlength="250" placeholder="No commentary"
                                         data-lm-text-replace="move"></textarea>
-                                    <span id="editCommentaryCounter" class="morph-counter morph-commentary-counter">0/500</span>
+                                    <span id="editCommentaryCounter" class="morph-counter morph-commentary-counter">0/250</span>
                                 </div>
                             </div>
                         </div>
@@ -269,8 +212,8 @@
                                 <div class="gen-field-wrap">
                                     <span class="gen-field-icon" id="genCommentaryFieldIcon"></span>
                                     <textarea id="genCommentaryField" class="auto-grow gen-commentary-field" rows="2"
-                                        maxlength="500"></textarea>
-                                    <span id="genCommentaryCounter" class="gen-char-count">0/500</span>
+                                        maxlength="250"></textarea>
+                                    <span id="genCommentaryCounter" class="gen-char-count">0/250</span>
                                 </div>
                             </div>
                         </div>
@@ -367,7 +310,7 @@
             </div>
         </main>
 
-        <footer class="app-footer"></footer>
+        <footer class="app-footer" role="contentinfo" aria-label="Site footer"></footer>
 
     </div>
 

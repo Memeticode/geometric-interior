@@ -13,7 +13,7 @@
 }
 
 /* Host element must be block to form a proper containing block for phantoms */
-carousel-dropdown-browser { display: block; position: relative; font-family: var(--font-primary); }
+carousel-dropdown-browser { display: block; position: relative; font-family: var(--font-primary); max-width: 90%; margin-inline: auto; }
 
 /* Hide data elements */
 carousel-dropdown-browser-card,
@@ -345,6 +345,8 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     position: relative;
     width: 18px;
     height: 8px;
+    transition: transform 0.3s ease;
+    transform: translateY(2px);
 }
 .cdb-chevron-bar {
     position: absolute;
@@ -365,6 +367,10 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     right: 0;
     transform-origin: left center;
     transform: rotate(-25deg);
+}
+/* Expanded: center the ∧ shape */
+.cdb-toggle.cdb-expanded .cdb-chevron {
+    transform: translateY(-2px);
 }
 /* Expanded: flip to up-chevron */
 .cdb-toggle.cdb-expanded .cdb-chevron-l {
