@@ -1975,21 +1975,14 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (!item) return;
 
         if (idx !== this.#centerIdx) {
-            // Rotate to center first, then emit select
             this.#centerIdx = idx;
             this.#container.style.setProperty('--carousel-speed', '0.85s');
             this.#positionCards();
             this.#emitCenterChange();
-            setTimeout(() => {
-                this.dispatchEvent(new CustomEvent('item-select', {
-                    detail: { key: item.key, index: idx, item }
-                }));
-            }, 700);
-        } else {
-            this.dispatchEvent(new CustomEvent('item-select', {
-                detail: { key: item.key, index: idx, item }
-            }));
         }
+        this.dispatchEvent(new CustomEvent('item-select', {
+            detail: { key: item.key, index: idx, item }
+        }));
     }
 
     // ── Grid card rendering ──

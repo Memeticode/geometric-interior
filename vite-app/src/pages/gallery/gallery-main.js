@@ -21,7 +21,7 @@ import { createFooter } from '../../components/create-footer.js';
 import { initApp } from '../../components/app-init.js';
 import { initTheme } from '../../stores/theme.js';
 import { initLangSelector } from '../../i18n/lang-selector.js';
-import { initResolutionSelector, getResolution, getGenResolution, getLowerPreset, syncDropdown } from '../../stores/resolution.js';
+import { initResolutionSelector, getResolution, getGenResolution, getLowerPreset, syncDropdown, setResolution, getPresets } from '../../stores/resolution.js';
 import { t, getLocale } from '../../i18n/locale.js';
 import { loadProfiles, loadPortraits, getPortraitNames, loadPortraitSections, syncProfileOrder, deleteProfile, loadProfileOrder, saveProfileOrder, saveProfiles } from '../../stores/profiles.js';
 import { getAllThumbs, deleteThumb } from '../../stores/thumb-cache.js';
@@ -30,11 +30,11 @@ import { syncGeneratedOrder, saveGeneratedOrder } from '../../stores/generated-o
 import { generateTitle } from '@geometric-interior/core/text-generation/title-text.js';
 import { generateAltText } from '@geometric-interior/core/text-generation/alt-text.js';
 import { xmur3, mulberry32 } from '@geometric-interior/utils/prng.js';
-import { getLocalizedWords } from '@geometric-interior/core/text-generation/seed-tags.js';
+import { getLocalizedWords, seedTagToLabel } from '@geometric-interior/core/text-generation/seed-tags.js';
 import { toast } from '../../components/toast.js';
 import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
-import { TRASH_SVG } from '../../components/icons.js';
+import { TRASH_SVG, EDIT_SVG, FULLSCREEN_SVG, CLOSE_SVG } from '../../components/icons.js';
 import { refreshTooltip } from '../../components/tooltips.js';
 import { initSharePopover } from '../../components/share-popover.js';
 import { initGalleryWorker } from './gallery-worker-bridge.js';
@@ -276,6 +276,7 @@ const gallerySaveBtn = document.getElementById('gallerySaveBtn');
 const toolbarBrowseGroup = document.getElementById('toolbarBrowseGroup');
 // const galleryRenderBtn = document.getElementById('galleryRenderBtn'); // render button removed
 const galleryEditCanvas = document.getElementById('galleryEditCanvas');
+const galleryEditError = document.getElementById('galleryEditError');
 const galleryEditConfigEl = document.getElementById('galleryEditConfig');
 const editGenConfigSliders = document.getElementById('editGenConfigSliders');
 const editNameField = document.getElementById('editNameField');
@@ -378,6 +379,77 @@ function computeContainedRect(aspectRatio) {
     return { top: (vh - h) / 2, left: (vw - w) / 2, width: w, height: h };
 }
 
+/** Build fullscreen alt-text overlay content from current profile data. */
+function buildFsAltContent() {
+    const entry = navigableList[currentIndex];
+    if (!entry) return null;
+    const { profile } = entry;
+    const displayName = profile.displayName || entry.name;
+    const locale = getLocale();
+
+    let seedLabel = '';
+    if (Array.isArray(profile.seed)) {
+        seedLabel = seedTagToLabel(profile.seed, locale);
+    }
+
+    const commentary = editCommentaryField.value || '';
+    const altText = gallerySelectionVisual.getAttribute('data-tooltip') || '';
+
+    const frag = document.createDocumentFragment();
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'fullscreen-alt-name';
+    nameEl.textContent = displayName;
+    frag.appendChild(nameEl);
+
+    if (seedLabel) {
+        const seedEl = document.createElement('div');
+        seedEl.className = 'fullscreen-alt-seed';
+        seedEl.textContent = seedLabel;
+        frag.appendChild(seedEl);
+    }
+
+    if (commentary) {
+        const commentaryEl = document.createElement('div');
+        commentaryEl.className = 'fullscreen-alt-commentary';
+        commentaryEl.textContent = commentary;
+        frag.appendChild(commentaryEl);
+    }
+
+    if (altText) {
+        const sep = document.createElement('div');
+        sep.className = 'fullscreen-alt-sep';
+        frag.appendChild(sep);
+
+        const bodyEl = document.createElement('div');
+        bodyEl.className = 'fullscreen-alt-body';
+        bodyEl.textContent = altText;
+        frag.appendChild(bodyEl);
+    }
+
+    return frag;
+}
+
+let fsAltVisible = false;
+
+function showFsAlt() {
+    if (!fullscreenOverlay) return;
+    const el = fullscreenOverlay.querySelector('.fullscreen-alt-overlay');
+    if (!el) return;
+    el.innerHTML = '';
+    const content = buildFsAltContent();
+    if (content) el.appendChild(content);
+    el.classList.add('visible');
+    fsAltVisible = true;
+}
+
+function hideFsAlt() {
+    if (!fullscreenOverlay) return;
+    const el = fullscreenOverlay.querySelector('.fullscreen-alt-overlay');
+    if (el) el.classList.remove('visible');
+    fsAltVisible = false;
+}
+
 async function openFullscreen() {
     if (fullscreenOverlay) return;
 
@@ -422,12 +494,30 @@ async function openFullscreen() {
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'fullscreen-close';
-    closeBtn.innerHTML = '\u00d7';
+    closeBtn.innerHTML = CLOSE_SVG;
     closeBtn.setAttribute('aria-label', 'Close fullscreen');
     closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeFullscreen(); });
 
+    // Alt text overlay
+    const altOverlay = document.createElement('div');
+    altOverlay.className = 'fullscreen-alt-overlay';
+
+    // Click media to toggle alt text
+    media.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (fsAltVisible) hideFsAlt();
+        else showFsAlt();
+    });
+
+    // Click alt overlay to dismiss
+    altOverlay.addEventListener('click', (e) => {
+        e.stopPropagation();
+        hideFsAlt();
+    });
+
     overlay.appendChild(media);
     overlay.appendChild(closeBtn);
+    overlay.appendChild(altOverlay);
 
     // Click on backdrop (not media) to close
     overlay.addEventListener('click', (e) => {
@@ -436,6 +526,7 @@ async function openFullscreen() {
 
     document.body.appendChild(overlay);
     fullscreenOverlay = overlay;
+    fsAltVisible = false;
 
     // Hide the source image immediately
     gallerySelectionVisual.style.visibility = 'hidden';
@@ -452,6 +543,7 @@ function closeFullscreen() {
     if (!fullscreenOverlay) return;
     const overlay = fullscreenOverlay;
     fullscreenOverlay = null;
+    fsAltVisible = false;
 
     const media = overlay.querySelector('#fullscreenMedia');
     if (!media) { overlay.remove(); return; }
@@ -469,6 +561,10 @@ function closeFullscreen() {
     const sx = galleryRect.width / finalRect.width;
     const sy = galleryRect.height / finalRect.height;
 
+    // Hide alt overlay immediately during close animation
+    const altEl = overlay.querySelector('.fullscreen-alt-overlay');
+    if (altEl) altEl.classList.remove('visible');
+
     overlay.classList.remove('fs-visible');
     media.classList.remove('fs-animating');
     media.classList.add('fs-closing');
@@ -482,19 +578,39 @@ function closeFullscreen() {
 }
 
 /**
- * Update fullscreen media when the selected image changes (e.g. during slideshow).
+ * Update fullscreen media when the selected image changes.
+ * Fades out, swaps src, fades back in.
  */
 function syncFullscreenMedia() {
     if (!fullscreenOverlay) return;
     const media = fullscreenOverlay.querySelector('#fullscreenMedia');
     if (!media) return;
+
+    // Dismiss alt text (content will be stale)
+    hideFsAlt();
+
     const isVideo = !selectedVideo.classList.contains('hidden');
-    if (isVideo && media.tagName === 'VIDEO') {
-        media.src = selectedVideo.src;
-    } else if (!isVideo && media.tagName === 'IMG') {
-        media.src = gallerySelectionVisual.src;
-        media.alt = gallerySelectionVisual.alt;
-    }
+
+    // Fade out
+    media.classList.add('fs-fading');
+
+    media.addEventListener('transitionend', () => {
+        // Swap source
+        if (isVideo && media.tagName === 'VIDEO') {
+            media.src = selectedVideo.src;
+            media.classList.remove('fs-fading');
+        } else if (!isVideo && media.tagName === 'IMG') {
+            media.src = gallerySelectionVisual.src;
+            media.alt = gallerySelectionVisual.alt;
+            media.addEventListener('load', () => {
+                media.classList.remove('fs-fading');
+            }, { once: true });
+            // Fallback if load doesn't fire (cached image)
+            setTimeout(() => media.classList.remove('fs-fading'), 300);
+        } else {
+            media.classList.remove('fs-fading');
+        }
+    }, { once: true });
 }
 
 fullscreenBtn.addEventListener('click', () => {
@@ -925,6 +1041,7 @@ function applySelection(name, profile, isPortrait, assetId) {
     morphSeedRow.classList.add('fading');
     gallerySelectionCardFooter.classList.add('fading');
     gallerySelectionVisual.style.opacity = '0';
+    if (altTextVisible) altTextOverlay.classList.add('fading');
 
     // Cancel any pending fade-in from a previous rapid selection
     clearTimeout(selectionFadeTimer);
@@ -989,6 +1106,7 @@ function applySelection(name, profile, isPortrait, assetId) {
 
         gallerySelectionVisual.addEventListener('load', () => {
             gallerySelectionVisual.style.opacity = '1';
+            if (altTextVisible) altTextOverlay.classList.remove('fading');
         }, { once: true });
 
         if (assetId) {
@@ -1100,6 +1218,7 @@ galleryBtnRight.addEventListener('click', () => {
 /* ── Alt-text overlays (independent of tooltip system) ── */
 // Suppress hover tooltips on these elements (they use dedicated overlays instead)
 gallerySelectionVisual.setAttribute('data-tooltip-click', '');
+galleryEditCanvas.setAttribute('data-tooltip-click', '');
 genPreviewCanvas.setAttribute('data-tooltip-click', '');
 
 const altTextOverlay = document.getElementById('altTextOverlay');
@@ -1128,6 +1247,7 @@ function dismissAltText(resetScroll) {
     hideAltText(altTextOverlay);
     if (resetScroll) altTextOverlay.scrollTop = 0;
     altTextVisible = false;
+    galleryContainerEl.classList.remove('alt-text-shown');
 }
 
 gallerySelectionVisual.addEventListener('click', () => {
@@ -1138,11 +1258,23 @@ gallerySelectionVisual.addEventListener('click', () => {
     } else {
         showAltText(altTextOverlay, text);
         altTextVisible = true;
+        galleryContainerEl.classList.add('alt-text-shown');
     }
 });
 
 altTextOverlay.addEventListener('click', () => {
     if (altTextVisible) dismissAltText();
+});
+
+galleryEditCanvas.addEventListener('click', () => {
+    const text = galleryEditCanvas.getAttribute('data-tooltip');
+    if (!text) return;
+    if (altTextVisible) {
+        dismissAltText();
+    } else {
+        showAltText(altTextOverlay, text);
+        altTextVisible = true;
+    }
 });
 
 genPreviewCanvas.addEventListener('click', () => {
@@ -1581,7 +1713,7 @@ async function showGenFullscreenImage(blob) {
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'fullscreen-close';
-    closeBtn.innerHTML = '\u00d7';
+    closeBtn.innerHTML = CLOSE_SVG;
     closeBtn.setAttribute('aria-label', 'Close fullscreen');
     closeBtn.addEventListener('click', (e) => { e.stopPropagation(); closeGenFullscreen(); });
 
@@ -1641,29 +1773,43 @@ function closeGenFullscreen() {
  */
 function capturePreviewThumb() {
     const wb = editMode ? editWorkerBridge : workerBridge;
+    if (!wb || !wb.ready) return Promise.resolve('');
     return new Promise(resolve => {
-        if (!wb || !wb.ready) return resolve('');
         let settled = false;
         const reqId = 'save-thumb-' + Date.now();
+        const prevHandler = wb._frameCapturedHandler || null;
         const handler = (msg) => {
             if (msg.requestId !== reqId || settled) return;
             settled = true;
+            // Restore previous handler
+            if (prevHandler) wb.on('frame-captured', prevHandler);
             if (!msg.blob) return resolve('');
             const reader = new FileReader();
             reader.onload = () => resolve(reader.result);
             reader.onerror = () => resolve('');
             reader.readAsDataURL(msg.blob);
         };
+        wb._frameCapturedHandler = handler;
         wb.on('frame-captured', handler);
         wb.captureFrame(reqId);
         // Timeout fallback
-        setTimeout(() => { if (!settled) { settled = true; resolve(''); } }, 3000);
+        setTimeout(() => {
+            if (!settled) {
+                settled = true;
+                if (prevHandler) wb.on('frame-captured', prevHandler);
+                resolve('');
+            }
+        }, 3000);
     });
 }
 
 async function handleSave(name, seed, controls, camera, commentary, currentAssetId) {
-    // Capture preview thumbnail before saving
-    const thumbDataUrl = await capturePreviewThumb();
+    // Capture preview thumbnail before saving (retry once if empty)
+    let thumbDataUrl = await capturePreviewThumb();
+    if (!thumbDataUrl) {
+        await new Promise(r => setTimeout(r, 300));
+        thumbDataUrl = await capturePreviewThumb();
+    }
 
     // If editing an existing saved image, ask overwrite or save-as-new
     if (currentAssetId) {
@@ -1918,12 +2064,14 @@ function initGenerate() {
             });
             syncDropdown(document.getElementById('resolutionDropdown'), lower.key);
         });
-        workerBridge.on('frame-captured', (msg) => {
+        const fsFrameHandler = (msg) => {
             if (pendingFullscreenCaptureId && msg.requestId === pendingFullscreenCaptureId) {
                 pendingFullscreenCaptureId = null;
                 if (msg.blob) showGenFullscreenImage(msg.blob);
             }
-        });
+        };
+        workerBridge._frameCapturedHandler = fsFrameHandler;
+        workerBridge.on('frame-captured', fsFrameHandler);
         workerBridge.on('rendered', () => {
             if (pendingResizeRender) {
                 pendingResizeRender = false;
@@ -2125,20 +2273,23 @@ function showGenerateMode() {
     galleryContentEl.classList.add('view-fade-out');
 
     setTimeout(() => {
-        // Phase 2: swap visibility
-        gallerySelectionContainer.style.display = 'none';
-        galleryContentEl.style.display = 'none';
-        gallerySelectionContainer.classList.remove('view-fade-out');
-        galleryContentEl.classList.remove('view-fade-out');
+        try {
+            // Phase 2: swap visibility
+            gallerySelectionContainer.style.display = 'none';
+            galleryContentEl.style.display = 'none';
+            gallerySelectionContainer.classList.remove('view-fade-out');
+            galleryContentEl.classList.remove('view-fade-out');
 
-        targetEl.classList.remove('hidden');
-        targetEl.classList.add('view-fade-in');
-        // force reflow
-        targetEl.offsetHeight;     // eslint-disable-line no-unused-expressions
+            targetEl.classList.remove('hidden');
+            targetEl.classList.add('view-fade-in');
+            // force reflow
+            targetEl.offsetHeight;     // eslint-disable-line no-unused-expressions
 
-        // Phase 3: fade in create panel
-        targetEl.classList.remove('view-fade-in');
-        modeTransitioning = false;
+            // Phase 3: fade in create panel
+            targetEl.classList.remove('view-fade-in');
+        } finally {
+            modeTransitioning = false;
+        }
     }, 250);
 }
 
@@ -2164,21 +2315,24 @@ function hideGenerateMode() {
     visibleEl.classList.add('view-fade-out');
 
     setTimeout(() => {
-        // Phase 2: swap visibility
-        visibleEl.classList.add('hidden');
-        visibleEl.classList.remove('view-fade-out');
+        try {
+            // Phase 2: swap visibility
+            visibleEl.classList.add('hidden');
+            visibleEl.classList.remove('view-fade-out');
 
-        gallerySelectionContainer.style.display = '';
-        galleryContentEl.style.display = '';
-        gallerySelectionContainer.classList.add('view-fade-in');
-        galleryContentEl.classList.add('view-fade-in');
-        // force reflow
-        gallerySelectionContainer.offsetHeight;     // eslint-disable-line no-unused-expressions
+            gallerySelectionContainer.style.display = '';
+            galleryContentEl.style.display = '';
+            gallerySelectionContainer.classList.add('view-fade-in');
+            galleryContentEl.classList.add('view-fade-in');
+            // force reflow
+            gallerySelectionContainer.offsetHeight;     // eslint-disable-line no-unused-expressions
 
-        // Phase 3: fade in gallery views
-        gallerySelectionContainer.classList.remove('view-fade-in');
-        galleryContentEl.classList.remove('view-fade-in');
-        modeTransitioning = false;
+            // Phase 3: fade in gallery views
+            gallerySelectionContainer.classList.remove('view-fade-in');
+            galleryContentEl.classList.remove('view-fade-in');
+        } finally {
+            modeTransitioning = false;
+        }
     }, 250);
 }
 
@@ -2190,13 +2344,16 @@ function initEditMode() {
 
     // Create worker bridge for the edit preview canvas
     editWorkerBridge = initGalleryWorker(galleryEditCanvas);
-    if (!editWorkerBridge) return;
+    if (!editWorkerBridge) {
+        galleryEditError.classList.remove('hidden');
+        return;
+    }
 
     editWorkerBridge.on('rendered', () => {
         // preview updated
     });
     editWorkerBridge.on('error', () => {
-        // Could show error overlay
+        galleryEditError.classList.remove('hidden');
     });
 
     editPanel = initGeneratePanel({
@@ -2325,6 +2482,7 @@ async function enterEditMode(mode, entry, fromPopstate) {
     toolbarBrowseGroup.style.setProperty('--browse-offset-y', '0px');
 
     // Toggle editing class (triggers all CSS cross-fade transitions)
+    galleryContainerEl.style.setProperty('--editing-label', `"${t('gallery.editing')}"`);
     galleryContainerEl.classList.add('editing');
 
     // Hide alt text overlay when entering edit mode
@@ -2369,6 +2527,9 @@ async function exitEditMode(saved, fromPopstate) {
         // Refresh gallery to show the new/updated profile
         refreshGallery();
     }
+
+    // Hide alt text overlay when leaving edit mode
+    dismissAltText(true);
 
     // Restore commas + update browse-mode widths before removing class
     addSelectCommas();
@@ -2422,28 +2583,57 @@ async function exitEditMode(saved, fromPopstate) {
 
 // galleryBtnEdit removed — cancel via Escape key or navigating away
 
-// ── Right-click / long-press "Edit image" context menu on main visual ──
+// ── Right-click / long-press context menu on main visual ──
 {
     const ctxMenu = document.createElement('div');
     ctxMenu.className = 'gallery-ctx-menu';
     ctxMenu.setAttribute('role', 'menu');
     const isTouch = matchMedia('(pointer: coarse)').matches;
     const ctxBrowserKey = isTouch ? 'gallery.ctxBrowserTouch' : 'gallery.ctxBrowserDesktop';
+
+    // Build resolution submenu items
+    const presets = getPresets();
+    const curRes = getResolution();
+    const resItems = presets.map(p =>
+        `<button class="gallery-ctx-item gallery-ctx-res-item${p.key === curRes.key ? ' ctx-active' : ''}" role="menuitemradio" aria-checked="${p.key === curRes.key}" data-res="${p.key}">${p.label}</button>`
+    ).join('');
+
     ctxMenu.innerHTML =
-        `<button class="gallery-ctx-item" role="menuitem">${t('gallery.ctxEdit')}</button>` +
+        `<button class="gallery-ctx-item" role="menuitem" data-action="edit"><span class="gallery-ctx-icon">${EDIT_SVG}</span>${t('gallery.ctxEdit')}</button>` +
+        `<button class="gallery-ctx-item" role="menuitem" data-action="fullscreen"><span class="gallery-ctx-icon">${FULLSCREEN_SVG}</span>${t('gallery.ctxFullscreen')}</button>` +
+        `<div class="gallery-ctx-sep"></div>` +
+        `<div class="gallery-ctx-label">${t('gallery.ctxResolution')}</div>` +
+        `<div class="gallery-ctx-res-group" role="group">${resItems}</div>` +
+        `<div class="gallery-ctx-sep"></div>` +
         `<button class="gallery-ctx-item gallery-ctx-browser" role="menuitem">${t(ctxBrowserKey)}</button>`;
     document.body.appendChild(ctxMenu);
 
-    const ctxItem = ctxMenu.querySelector('.gallery-ctx-item');
+    const ctxEditItem = ctxMenu.querySelector('[data-action="edit"]');
+    const ctxFullscreenItem = ctxMenu.querySelector('[data-action="fullscreen"]');
+    const ctxResGroup = ctxMenu.querySelector('.gallery-ctx-res-group');
     const ctxBrowserItem = ctxMenu.querySelector('.gallery-ctx-browser');
+    const allFocusable = /** @type {HTMLElement[]} */ ([...ctxMenu.querySelectorAll('.gallery-ctx-item')]);
     let ctxVisible = false;
 
+    // Keep resolution checkmarks in sync with external changes
+    document.addEventListener('resolutionchange', (e) => {
+        ctxResGroup.querySelectorAll('.gallery-ctx-res-item').forEach(btn => {
+            const active = btn.dataset.res === e.detail.key;
+            btn.classList.toggle('ctx-active', active);
+            btn.setAttribute('aria-checked', String(active));
+        });
+    });
+
     function showCtxMenu(x, y) {
-        ctxMenu.style.left = Math.min(x, window.innerWidth - 160) + 'px';
-        ctxMenu.style.top = Math.min(y, window.innerHeight - 40) + 'px';
+        // Measure menu to clamp within viewport
+        ctxMenu.style.left = '0';
+        ctxMenu.style.top = '0';
         ctxMenu.classList.add('visible');
+        const rect = ctxMenu.getBoundingClientRect();
+        ctxMenu.style.left = Math.min(x, window.innerWidth - rect.width - 4) + 'px';
+        ctxMenu.style.top = Math.min(y, window.innerHeight - rect.height - 4) + 'px';
         ctxVisible = true;
-        ctxItem.focus();
+        ctxEditItem.focus();
     }
 
     function hideCtxMenu() {
@@ -2456,6 +2646,22 @@ async function exitEditMode(saved, fromPopstate) {
         const entry = navigableList[currentIndex];
         if (entry) enterEditMode('edit', entry);
     }
+
+    function triggerFullscreen() {
+        hideCtxMenu();
+        if (fullscreenOverlay) closeFullscreen();
+        else openFullscreen();
+    }
+
+    ctxEditItem.addEventListener('click', triggerEdit);
+    ctxFullscreenItem.addEventListener('click', triggerFullscreen);
+
+    ctxResGroup.addEventListener('click', (e) => {
+        const btn = e.target.closest('.gallery-ctx-res-item');
+        if (!btn) return;
+        setResolution(btn.dataset.res);
+        hideCtxMenu();
+    });
 
     let allowNativeCtx = false;
 
@@ -2500,16 +2706,30 @@ async function exitEditMode(saved, fromPopstate) {
     });
     gallerySelectionCardVisualWrap.addEventListener('touchcancel', () => { clearTimeout(lpTimer); });
 
-    ctxItem.addEventListener('click', triggerEdit);
     ctxMenu.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            if (e.target === ctxItem) triggerEdit();
-            else if (e.target === ctxBrowserItem) { hideCtxMenu(); allowNativeCtx = true; }
+            const btn = e.target.closest('.gallery-ctx-item');
+            if (!btn) return;
+            if (btn === ctxEditItem) triggerEdit();
+            else if (btn === ctxFullscreenItem) triggerFullscreen();
+            else if (btn.classList.contains('gallery-ctx-res-item')) {
+                setResolution(btn.dataset.res);
+                hideCtxMenu();
+            }
+            else if (btn === ctxBrowserItem) { hideCtxMenu(); allowNativeCtx = true; }
         }
         if (e.key === 'Escape') hideCtxMenu();
-        if (e.key === 'ArrowDown' && e.target === ctxItem) ctxBrowserItem.focus();
-        if (e.key === 'ArrowUp' && e.target === ctxBrowserItem) ctxItem.focus();
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const idx = allFocusable.indexOf(/** @type {HTMLElement} */ (e.target));
+            if (idx >= 0 && idx < allFocusable.length - 1) allFocusable[idx + 1].focus();
+        }
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const idx = allFocusable.indexOf(/** @type {HTMLElement} */ (e.target));
+            if (idx > 0) allFocusable[idx - 1].focus();
+        }
     });
 
     document.addEventListener('mousedown', (e) => {

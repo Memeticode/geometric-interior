@@ -87,13 +87,6 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
 }
 
 /* ── Nav arrows ── */
-.cdb-arrow {
-    opacity: 0.6;
-    transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
-}
-.cdb-arrow:hover {
-    opacity: 1;
-}
 .cdb-arrow:disabled {
     opacity: 0.15;
     pointer-events: none;
@@ -166,12 +159,14 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
                scale(var(--sc, 1));
     transition: transform 0.15s ease,
                 box-shadow 0.2s ease,
-                border-color 0.4s ease;
+                border-color 0.85s ease;
     transform-style: preserve-3d;
 }
 .cdb-card.active .cdb-card-frame {
     border-top-color: rgba(180, 130, 255, 0.6);
     border-bottom-color: rgba(180, 130, 255, 0.6);
+    border-top-width: 0.25rem;
+    border-bottom-width: 0.25rem;
     border-left-color: transparent;
     border-right-color: transparent;
 }
@@ -435,6 +430,8 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-grid-card.selected {
     border-top-color: rgba(180, 130, 255, 0.6);
     border-bottom-color: rgba(180, 130, 255, 0.6);
+    border-top-width: 0.25rem;
+    border-bottom-width: 0.25rem;
     border-left-color: transparent;
     border-right-color: transparent;
 }
@@ -625,7 +622,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-card.cdb-placeholder .cdb-card-img {
     background: transparent;
     position: relative;
-    transition: background 0.4s ease;
+    transition: background 0.85s ease;
 }
 .cdb-card.cdb-placeholder .cdb-card-img img {
     display: none;
@@ -666,7 +663,9 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     background: var(--accent-bg);
 }
 .editing .cdb-card.cdb-placeholder .cdb-card-img::after {
-    content: none;
+    content: var(--editing-label, '');
+    font-size: 0.8rem;
+    color: var(--accent-text);
 }
 .editing .cdb-card.cdb-placeholder .cdb-card-frame {
     border-style: solid;
@@ -679,7 +678,9 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     transition: background 0.4s ease;
 }
 .editing .cdb-grid-card.cdb-placeholder::after {
-    content: none;
+    content: var(--editing-label, '');
+    font-size: 0.8rem;
+    color: var(--accent-text);
 }
 
 

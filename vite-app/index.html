@@ -224,6 +224,15 @@
                             <div class="gallery-selection-card-visual-wrap" id="gallerySelectionCardVisualWrap">
                                 <img class="gallery-selection-visual" id="gallerySelectionVisual" alt="" />
                                 <canvas class="gallery-edit-canvas" id="galleryEditCanvas"></canvas>
+                                <div class="gallery-edit-error hidden" id="galleryEditError">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                                        width="28" height="28">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <path d="M12 8v4m0 4h.01" />
+                                    </svg>
+                                    <span>WebGL unavailable — close other tabs or enable hardware acceleration</span>
+                                    <button class="gallery-edit-retry" id="galleryEditRetry">Retry</button>
+                                </div>
                                 <video class="selected-video hidden" id="selectedVideo" controls loop
                                     playsinline></video>
                                 <div class="alt-text-overlay" id="altTextOverlay"></div>

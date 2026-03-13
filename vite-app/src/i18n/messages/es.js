@@ -270,7 +270,9 @@ export default {
     'gallery.moveUp': 'Subir',
     'gallery.moveDown': 'Bajar',
     'gallery.deleteProfile': 'Eliminar',
-    'gallery.ctxEdit': 'Editar imagen',
+    'gallery.ctxEdit': 'Editar',
+    'gallery.ctxFullscreen': 'Pantalla completa',
+    'gallery.ctxResolution': 'Resolución',
     'gallery.ctxBrowserDesktop': 'Clic derecho aquí para el menú del navegador',
     'gallery.ctxBrowserTouch': 'Mantén presionado aquí para el menú del navegador',
 
@@ -359,10 +361,10 @@ export default {
     'portrait.commentary.chlorophyll': 'Luz contenida en verde \u2014 como si la geometría misma estuviera fotosintentizando, convirtiendo estructura en calidez en silencio',
 
     /* ── Etiquetas de sección de galería ── */
-    'gallery.generated': 'Generadas',
+    'gallery.generated': 'Generadas por el usuario',
     'gallery.custom': 'Personalizadas',
-    'gallery.editor': 'Editor',
-    'gallery.editing': 'Editando',
+    'gallery.editor': 'Editar',
+    'gallery.editing': '(Activo)',
     'gallery.addImage': 'Agregar imagen',
 
     /* ── Render queue menu ── */

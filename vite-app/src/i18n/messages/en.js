@@ -270,7 +270,9 @@ export default {
     'gallery.moveUp': 'Move up',
     'gallery.moveDown': 'Move down',
     'gallery.deleteProfile': 'Delete',
-    'gallery.ctxEdit': 'Edit image',
+    'gallery.ctxEdit': 'Edit',
+    'gallery.ctxFullscreen': 'Fullscreen',
+    'gallery.ctxResolution': 'Resolution',
     'gallery.ctxBrowserDesktop': 'Right-click here for browser menu',
     'gallery.ctxBrowserTouch': 'Long-press here for browser menu',
 
@@ -359,10 +361,10 @@ export default {
     'portrait.commentary.chlorophyll': 'Light held in green \u2014 as if the geometry itself were photosynthesizing, quietly converting structure into warmth',
 
     /* ── Gallery section labels ── */
-    'gallery.generated': 'Generated',
+    'gallery.generated': 'User-Generated',
     'gallery.custom': 'Custom',
-    'gallery.editor': 'Editor',
-    'gallery.editing': 'Editing',
+    'gallery.editor': 'Edit',
+    'gallery.editing': '(Active)',
     'gallery.addImage': 'Add Image',
 
     /* ── Render queue menu ── */
