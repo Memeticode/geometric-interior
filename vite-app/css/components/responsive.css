@@ -290,6 +290,11 @@
         padding-right: 0;
     }
 
+    .gallery-selection-card-footer {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+
 }
 
 /* ── md — hi-dpi ── */

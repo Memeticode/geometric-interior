@@ -272,9 +272,12 @@ export default {
     'gallery.deleteProfile': 'Delete',
     'gallery.ctxEdit': 'Edit',
     'gallery.ctxFullscreen': 'Fullscreen',
+    'gallery.ctxExitFullscreen': 'Exit fullscreen',
     'gallery.ctxResolution': 'Resolution',
     'gallery.ctxBrowserDesktop': 'Right-click here for browser menu',
     'gallery.ctxBrowserTouch': 'Long-press here for browser menu',
+    'error.webglUnavailable': 'WebGL unavailable \u2014 close other tabs or enable hardware acceleration',
+    'error.retry': 'Retry',
 
     /* ── Site menu navigation ── */
     'menu.gallery': 'Gallery',

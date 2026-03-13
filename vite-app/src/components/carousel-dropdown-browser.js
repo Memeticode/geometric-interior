@@ -40,7 +40,7 @@
  * @fires expand-change — { expanded } when grid dropdown opens/closes
  */
 
-import { TRASH_SVG } from './icons.js';
+import { TRASH_SVG, ARROW_LEFT_SVG, ARROW_RIGHT_SVG, DBL_ARROW_LEFT_SVG, DBL_ARROW_RIGHT_SVG } from './icons.js';
 import './flip-layout.js';
 
 // ── Child element: <carousel-dropdown-browser-card> ──
@@ -83,12 +83,6 @@ class CarouselDropdownBrowserSection extends HTMLElement {
 customElements.define('carousel-dropdown-browser-card', CarouselDropdownBrowserCard);
 customElements.define('carousel-dropdown-browser-section', CarouselDropdownBrowserSection);
 
-// ── SVG arrows ──
-
-const ARROW_LEFT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M10 3l-5 5 5 5"/></svg>`;
-const ARROW_RIGHT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M6 3l5 5-5 5"/></svg>`;
-const DBL_ARROW_LEFT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M11 3l-5 5 5 5"/><path d="M6 3l-5 5 5 5"/></svg>`;
-const DBL_ARROW_RIGHT = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 3l5 5-5 5"/><path d="M10 3l5 5-5 5"/></svg>`;
 
 // ── Layout constants ──
 const SECTION_GAP = 0.2;         // extra card-widths of spacing at section boundaries
@@ -521,7 +515,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         const t = this.#parseTitlePos(this.#cardTitle);
         if (t.vAlign === 'tooltip') this.#applyTooltips(true);
         this.#dropdown.classList.add('expanded', 'cdb-measuring');
-        this.#toggle.classList.add('active');
+        this.#toggle.classList.add('cdb-expanded');
         void this.#grid.offsetHeight;
 
         // ── Pre-scroll dropdown so selected card is centered when grid appears ──
@@ -938,7 +932,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 this.#dropdown.style.opacity = '0';
                 this.#dropdown.style.pointerEvents = 'none';
                 for (const h of headers) h.style.opacity = '0';
-                this.#toggle.classList.remove('active');
+                this.#toggle.classList.remove('cdb-expanded');
 
                 // ── Capture controls position before un-flatten ──
                 const ctrlBefore = this.#controls.getBoundingClientRect();
@@ -1569,7 +1563,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#navLeft.className = 'gallery-arrow cdb-arrow cdb-arrow-left';
         this.#navLeft.setAttribute('aria-label', 'Previous');
         this.#navLeft.setAttribute('data-tooltip', 'Scroll left');
-        this.#navLeft.innerHTML = ARROW_LEFT;
+        this.#navLeft.innerHTML = ARROW_LEFT_SVG;
 
         this.#toggle = document.createElement('button');
         this.#toggle.className = 'cdb-toggle';
@@ -1582,19 +1576,19 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#navRight.className = 'gallery-arrow cdb-arrow cdb-arrow-right';
         this.#navRight.setAttribute('aria-label', 'Next');
         this.#navRight.setAttribute('data-tooltip', 'Scroll right');
-        this.#navRight.innerHTML = ARROW_RIGHT;
+        this.#navRight.innerHTML = ARROW_RIGHT_SVG;
 
         this.#secNavLeft = document.createElement('button');
         this.#secNavLeft.className = 'gallery-arrow cdb-arrow cdb-sec-arrow';
         this.#secNavLeft.setAttribute('aria-label', 'Previous section');
         this.#secNavLeft.setAttribute('data-tooltip', 'Scroll (previous section)');
-        this.#secNavLeft.innerHTML = DBL_ARROW_LEFT;
+        this.#secNavLeft.innerHTML = DBL_ARROW_LEFT_SVG;
 
         this.#secNavRight = document.createElement('button');
         this.#secNavRight.className = 'gallery-arrow cdb-arrow cdb-sec-arrow';
         this.#secNavRight.setAttribute('aria-label', 'Next section');
         this.#secNavRight.setAttribute('data-tooltip', 'Scroll (next section)');
-        this.#secNavRight.innerHTML = DBL_ARROW_RIGHT;
+        this.#secNavRight.innerHTML = DBL_ARROW_RIGHT_SVG;
 
         this.#controls.appendChild(this.#secNavLeft);
         this.#controls.appendChild(this.#navLeft);
@@ -2007,7 +2001,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             const card = document.createElement('div');
             card.className = 'cdb-grid-card';
             card.dataset.flipKey = item.key;
-            if (item.key === this.#selectedKey) card.classList.add('selected');
+            if (item.key === this.#selectedKey) card.classList.add('cdb-selected');
             if (item.placeholder) card.classList.add('cdb-placeholder');
 
             const img = document.createElement('img');
@@ -2057,9 +2051,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                 if (overflows) {
                     this.collapse();
                 } else {
-                    const prev = this.#grid.querySelector('.cdb-grid-card.selected');
-                    if (prev) prev.classList.remove('selected');
-                    card.classList.add('selected');
+                    const prev = this.#grid.querySelector('.cdb-grid-card.cdb-selected');
+                    if (prev) prev.classList.remove('cdb-selected');
+                    card.classList.add('cdb-selected');
                 }
                 this.dispatchEvent(new CustomEvent('item-select', {
                     detail: { key: item.key, index: i, item }
@@ -2746,7 +2740,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         for (const { element, index } of this.#cards) {
             const layout = this.#cardLayout.get(element);
 
-            element.classList.remove('active', 'cdb-centered');
+            element.classList.remove('cdb-selected', 'cdb-centered');
 
             if (!layout) {
                 // Push off-screen in the correct direction so CSS transition scrolls them out
@@ -2782,7 +2776,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 element.classList.add('cdb-centered');
             }
             if (item_key_matches(element.dataset.flipKey, this.#selectedKey)) {
-                element.classList.add('active');
+                element.classList.add('cdb-selected');
             }
         }
 
@@ -2896,13 +2890,13 @@ class CarouselDropdownBrowser extends HTMLElement {
 
     #updateActiveHighlight() {
         for (const { element } of this.#cards) {
-            element.classList.toggle('active',
+            element.classList.toggle('cdb-selected',
                 item_key_matches(element.dataset.flipKey, this.#selectedKey));
         }
         // Also update grid selection if expanded
         if (this.expanded) {
             for (const card of this.#grid.querySelectorAll('.cdb-grid-card')) {
-                card.classList.toggle('selected', item_key_matches(card.dataset.flipKey, this.#selectedKey));
+                card.classList.toggle('cdb-selected', item_key_matches(card.dataset.flipKey, this.#selectedKey));
             }
         }
     }

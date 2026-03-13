@@ -273,8 +273,11 @@ export default {
     'gallery.ctxEdit': 'Editar',
     'gallery.ctxFullscreen': 'Pantalla completa',
     'gallery.ctxResolution': 'Resolución',
+    'gallery.ctxExitFullscreen': 'Salir de pantalla completa',
     'gallery.ctxBrowserDesktop': 'Clic derecho aquí para el menú del navegador',
     'gallery.ctxBrowserTouch': 'Mantén presionado aquí para el menú del navegador',
+    'error.webglUnavailable': 'WebGL no disponible \u2014 cierra otras pesta\u00f1as o activa la aceleración de hardware',
+    'error.retry': 'Reintentar',
 
     /* ── Site menu navigation ── */
     'menu.gallery': 'Galer\u00eda',

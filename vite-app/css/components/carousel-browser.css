@@ -162,11 +162,11 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
                 border-color 0.85s ease;
     transform-style: preserve-3d;
 }
-.cdb-card.active .cdb-card-frame {
+.cdb-card.cdb-selected .cdb-card-frame {
     border-top-color: rgba(180, 130, 255, 0.6);
     border-bottom-color: rgba(180, 130, 255, 0.6);
-    border-top-width: 0.25rem;
-    border-bottom-width: 0.25rem;
+    border-top-width: 0.16rem;
+    border-bottom-width: 0.16rem;
     border-left-color: transparent;
     border-right-color: transparent;
 }
@@ -333,7 +333,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     color: var(--text);
     border-color: var(--border-strong);
 }
-.cdb-toggle.active {
+.cdb-toggle.cdb-expanded {
     color: var(--accent-text);
     border-color: var(--accent);
 }
@@ -364,11 +364,11 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     transform-origin: left center;
     transform: rotate(-25deg);
 }
-/* Active: flip to up-chevron */
-.cdb-toggle.active .cdb-chevron-l {
+/* Expanded: flip to up-chevron */
+.cdb-toggle.cdb-expanded .cdb-chevron-l {
     transform: rotate(-25deg);
 }
-.cdb-toggle.active .cdb-chevron-r {
+.cdb-toggle.cdb-expanded .cdb-chevron-r {
     transform: rotate(25deg);
 }
 
@@ -427,11 +427,11 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     border-radius: 6px;
 }
 
-.cdb-grid-card.selected {
+.cdb-grid-card.cdb-selected {
     border-top-color: rgba(180, 130, 255, 0.6);
     border-bottom-color: rgba(180, 130, 255, 0.6);
-    border-top-width: 0.25rem;
-    border-bottom-width: 0.25rem;
+    border-top-width: 0.16rem;
+    border-bottom-width: 0.16rem;
     border-left-color: transparent;
     border-right-color: transparent;
 }
@@ -616,11 +616,8 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 
 /* ── Placeholder card ── */
 
-.cdb-card.cdb-placeholder .cdb-card-frame {
-    border: 2px dashed var(--border);
-}
 .cdb-card.cdb-placeholder .cdb-card-img {
-    background: transparent;
+    background: var(--bg);
     position: relative;
     transition: background 0.85s ease;
 }
@@ -634,13 +631,12 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.75rem;
+    font-size: 2.5rem;
     color: var(--text-muted);
-    opacity: 0.5;
 }
 
 .cdb-grid-card.cdb-placeholder {
-    border-style: dashed;
+    background: var(--bg);
     position: relative;
     transition: background 0.4s ease;
 }
@@ -653,34 +649,43 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     align-items: center;
     justify-content: center;
     aspect-ratio: 14 / 9;
-    font-size: 1.75rem;
+    font-size: 2.5rem;
     color: var(--text-muted);
-    opacity: 0.5;
 }
 
-/* Editing state: placeholder card with accent background */
+/* Editing state: placeholder card with accent background + (Active) label */
 .editing .cdb-card.cdb-placeholder .cdb-card-img {
     background: var(--accent-bg);
 }
 .editing .cdb-card.cdb-placeholder .cdb-card-img::after {
     content: var(--editing-label, '');
     font-size: 0.8rem;
-    color: var(--accent-text);
-}
-.editing .cdb-card.cdb-placeholder .cdb-card-frame {
-    border-style: solid;
-    border-color: var(--accent-text);
+    color: var(--text-muted);
 }
 .editing .cdb-grid-card.cdb-placeholder {
     background: var(--accent-bg);
-    border-style: solid;
-    border-color: var(--accent-text);
-    transition: background 0.4s ease;
 }
 .editing .cdb-grid-card.cdb-placeholder::after {
     content: var(--editing-label, '');
     font-size: 0.8rem;
-    color: var(--accent-text);
+    color: var(--text-muted);
 }
 
+/* Error state for placeholder card (WebGL failure) */
+.cdb-card.cdb-placeholder .cdb-card-img.cdb-img-error {
+    background: var(--surface);
+}
+.cdb-card.cdb-placeholder .cdb-card-img.cdb-img-error::after {
+    content: '\26A0';
+    color: var(--danger-text);
+    font-size: 1.5rem;
+}
+.cdb-grid-card.cdb-placeholder.cdb-img-error {
+    background: var(--surface);
+}
+.cdb-grid-card.cdb-placeholder.cdb-img-error::after {
+    content: '\26A0';
+    color: var(--danger-text);
+    font-size: 1.5rem;
+}
 

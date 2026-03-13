@@ -131,7 +131,7 @@ export function syncDropdown(dropdownEl, activeKey) {
             const isActive = item.dataset.value === activeKey;
             item.classList.toggle('active', isActive);
             item.setAttribute('aria-selected', String(isActive));
-            if (isActive && label) label.textContent = item.textContent;
+            if (isActive && label) label.textContent = item.dataset.label || item.textContent;
         });
     }
 }

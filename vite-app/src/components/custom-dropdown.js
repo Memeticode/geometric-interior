@@ -34,7 +34,7 @@ export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSele
     if (labelText) label.textContent = labelText;
     else if (initialValue) {
         const activeItem = menu.querySelector(`.custom-dropdown-item[data-value="${initialValue}"]`);
-        if (activeItem) label.textContent = activeItem.textContent;
+        if (activeItem) label.textContent = activeItem.dataset.label || activeItem.textContent;
     }
 
     // Toggle menu
@@ -54,7 +54,7 @@ export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSele
         const item = e.target.closest('.custom-dropdown-item');
         if (!item || item.classList.contains('disabled')) return;
         const value = item.dataset.value;
-        label.textContent = item.textContent;
+        label.textContent = item.dataset.label || item.textContent;
         syncActive(menu, value);
         close(trigger, menu);
         if (onSelect) onSelect(value, item.textContent);
