@@ -15,7 +15,7 @@
     scrollbar-gutter: stable both-edges;
 }
 .gallery-page .gallery-content {
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    transition: opacity var(--lm-fade) ease, transform var(--lm-fade) ease;
 }
 .gallery-page .header-nav {
     display: flex;
@@ -180,7 +180,7 @@
     flex-direction: column;
     align-items: center;
     margin-bottom: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity var(--lm-fade) ease;
 }
 /* ── Morph header system (unified browse/edit elements) ── */
 
@@ -438,7 +438,7 @@
 
 /* Fading for profile switching (reuse existing pattern) */
 .morph-row {
-    transition: opacity 0.25s ease;
+    transition: opacity var(--lm-fade) ease;
 }
 .morph-row.fading {
     opacity: 0;
@@ -503,7 +503,7 @@ image-viewer#galleryViewer {
     display: flex;
     flex-direction: column;
     align-items: center;
-    transition: opacity 0.25s ease, height 0.3s ease;
+    transition: opacity var(--lm-fade) ease, height 0.3s ease;
     overflow: hidden;
 }
 .gallery-selection-card-footer.fading {
@@ -861,7 +861,7 @@ image-viewer#galleryViewer {
 #galleryContent {
     overflow: hidden;
     max-height: 100000px;
-    transition: max-height 0.35s ease, opacity 0.25s ease;
+    transition: max-height 0.35s ease, opacity var(--lm-fade) ease;
     opacity: 1;
 }
 
@@ -873,7 +873,7 @@ image-viewer#galleryViewer {
 .profile-gallery {
     overflow: hidden;
     max-height: 100000px;
-    transition: max-height 0.35s ease, opacity 0.25s ease;
+    transition: max-height 0.35s ease, opacity var(--lm-fade) ease;
     opacity: 1;
 }
 

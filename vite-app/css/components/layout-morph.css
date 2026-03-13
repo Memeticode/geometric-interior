@@ -27,6 +27,9 @@
     --lm-d1:     calc(var(--lm-d1-base)   * var(--lm-speed));
     --lm-d2:     calc(var(--lm-d2-base)   * var(--lm-speed));
     --lm-d3:     calc(var(--lm-d3-base)   * var(--lm-speed));
+
+    /* General fade duration (selection transitions etc.) */
+    --lm-fade:   calc(0.25s * var(--lm-speed));
 }
 
 /* Panel-swap morphs: grid-overlap children to prevent layout shift */

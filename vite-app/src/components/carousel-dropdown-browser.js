@@ -498,7 +498,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
 
         const sectionLabelRects = this.#captureSectionLabelRects();
-        const dur = this.#flipDuration;
+        const dur = this.#flipDuration * this.#readSpeed();
         const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
         const cardW = this.#readCardW();
 
@@ -887,7 +887,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#toggle.disabled = true;
         this.#toggle.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
 
-        const dur = this.#flipDuration;
+        const dur = this.#flipDuration * this.#readSpeed();
         const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
         const cardW = this.#readCardW();
 
@@ -1403,6 +1403,11 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (arcY === this.#arcY) return; // no change — skip layout
         this.#arcY = arcY;
         this.#syncArcYExtra();
+    }
+
+    /** Read global speed multiplier (--lm-speed) for transition scaling. */
+    #readSpeed() {
+        return parseFloat(getComputedStyle(this).getPropertyValue('--lm-speed')) || 1;
     }
 
     #updateEasing() {
@@ -1970,7 +1975,7 @@ class CarouselDropdownBrowser extends HTMLElement {
 
         if (idx !== this.#centerIdx) {
             this.#centerIdx = idx;
-            this.#container.style.setProperty('--carousel-speed', '0.85s');
+            this.#container.style.setProperty('--carousel-speed', (0.85 * this.#readSpeed()) + 's');
             this.#positionCards();
             this.#emitCenterChange();
         }
@@ -3115,7 +3120,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             const t = this.#items.length;
             const nearest = ((Math.round(this.#dragFractionalCenter) % t) + t) % t;
             this.#centerIdx = nearest;
-            this.#container.style.setProperty('--carousel-speed', '0.85s');
+            this.#container.style.setProperty('--carousel-speed', (0.85 * this.#readSpeed()) + 's');
             track.classList.remove('cdb-dragging');
             this.#positionCards();
             this.#emitCenterChange();
@@ -3246,7 +3251,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 this.#centerIdx = Math.max(0, Math.min(total - 1, this.#centerIdx + n));
             }
             this.#track.classList.add('cdb-dragging');
-            this.#container.style.setProperty('--carousel-speed', '0.85s');
+            this.#container.style.setProperty('--carousel-speed', (0.85 * this.#readSpeed()) + 's');
             this.#positionCards();
             this.#emitCenterChange();
             if (this.#arrowAutoSelect) {
@@ -3396,7 +3401,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#resetHoverState();
             this.#centerIdx = targetIdx;
             this.#track.classList.add('cdb-dragging');
-            this.#container.style.setProperty('--carousel-speed', '0.85s');
+            this.#container.style.setProperty('--carousel-speed', (0.85 * this.#readSpeed()) + 's');
             this.#positionCards();
             this.#emitCenterChange();
             setTimeout(() => this.#track.classList.remove('cdb-dragging'), 900);

@@ -161,7 +161,7 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
                scale(var(--sc, 1));
     transition: transform 0.15s ease,
                 box-shadow 0.2s ease,
-                border-color 0.85s ease;
+                border-color var(--carousel-speed, 0.85s) ease;
     transform-style: preserve-3d;
 }
 .cdb-card.cdb-selected .cdb-card-frame {
@@ -508,7 +508,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     color: var(--text-muted);
     padding-bottom: 0.25rem;
     transition: transform var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
-                opacity 0.85s ease,
+                opacity var(--carousel-speed, 0.85s) ease,
                 --underline-width var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1));
     will-change: transform;
 }
@@ -621,7 +621,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-card.cdb-placeholder .cdb-card-img {
     background: var(--bg);
     position: relative;
-    transition: background 0.85s ease;
+    transition: background var(--carousel-speed, 0.85s) ease;
 }
 .cdb-card.cdb-placeholder .cdb-card-img img {
     display: none;

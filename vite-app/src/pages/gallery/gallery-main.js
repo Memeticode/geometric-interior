@@ -38,7 +38,7 @@ import { slugify } from '../../components/slugify.js';
 import {
     TRASH_SVG, EDIT_SVG, FULLSCREEN_SVG, CLOSE_SVG, ERROR_SVG, RETRY_SVG,
     UNDO_SVG, REDO_SVG, SAVE_SVG, RANDOMIZE_SVG, RENDER_SVG,
-    FIELD_DIAMOND_SVG, DOWNLOAD_SVG, SHARE_SVG, LINK_SVG, ARROW_RIGHT_SVG,
+    FIELD_DIAMOND_SVG, DOWNLOAD_SVG, IMAGE_SVG, BUNDLE_SVG, SHARE_SVG, LINK_SVG, ARROW_RIGHT_SVG,
     BLUESKY_SVG, FACEBOOK_SVG, GOOGLE_SVG, LINKEDIN_SVG, REDDIT_SVG, TWITTER_SVG, EMAIL_SVG,
 } from '../../components/icons.js';
 import { downloadBlob, injectPngTextChunks, safeName, toIsoLocalish } from '../../export/export.js';
@@ -967,7 +967,8 @@ let selectionFadeTimer = 0;
 
 function applySelection(name, profile, isPortrait, assetId) {
     selected = { name, isPortrait, assetId };
-    const fadeDuration = 250;
+    const speed = parseFloat(getComputedStyle(galleryMainEl).getPropertyValue('--lm-speed')) || 1;
+    const fadeDuration = 250 * speed;
 
     // Lock footer height before fade so resize can animate
     gallerySelectionCardFooter.style.height = gallerySelectionCardFooter.offsetHeight + 'px';
@@ -2561,7 +2562,7 @@ async function exitEditMode(saved, fromPopstate) {
             `<span class="gallery-ctx-icon">${SHARE_SVG}</span>${t('gallery.ctxShare')}` +
             `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
         `</button>` +
-        `<div class="gallery-ctx-submenu" data-submenu="share">` +
+        `<div class="gallery-ctx-submenu" data-submenu="share"><div class="gallery-ctx-submenu-inner">` +
             `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-copy"><span class="gallery-ctx-icon">${LINK_SVG}</span>${t('share.copyLink')}</button>` +
             `<div class="gallery-ctx-sep"></div>` +
             `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-bluesky"><span class="gallery-ctx-icon">${BLUESKY_SVG}</span>${t('share.bluesky')}</button>` +
@@ -2572,16 +2573,16 @@ async function exitEditMode(saved, fromPopstate) {
             `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-x"><span class="gallery-ctx-icon">${TWITTER_SVG}</span>X</button>` +
             `<div class="gallery-ctx-sep"></div>` +
             `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-email"><span class="gallery-ctx-icon">${EMAIL_SVG}</span>${t('share.email')}</button>` +
-        `</div>` +
+        `</div></div>` +
         // Download (expandable)
         `<button class="gallery-ctx-item gallery-ctx-expandable" role="menuitem" data-expand="download">` +
             `<span class="gallery-ctx-icon">${DOWNLOAD_SVG}</span>${t('gallery.ctxDownload')}` +
             `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
         `</button>` +
-        `<div class="gallery-ctx-submenu" data-submenu="download">` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-image">${t('gallery.ctxDownloadImage')}</button>` +
-            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-bundle">${t('gallery.ctxDownloadBundle')}</button>` +
-        `</div>` +
+        `<div class="gallery-ctx-submenu" data-submenu="download"><div class="gallery-ctx-submenu-inner">` +
+            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-image"><span class="gallery-ctx-icon">${IMAGE_SVG}</span>${t('gallery.ctxDownloadImage')}</button>` +
+            `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-bundle"><span class="gallery-ctx-icon">${BUNDLE_SVG}</span>${t('gallery.ctxDownloadBundle')}</button>` +
+        `</div></div>` +
         // Edit
         `<button class="gallery-ctx-item" role="menuitem" data-action="edit"><span class="gallery-ctx-icon">${EDIT_SVG}</span>${t('gallery.ctxEdit')}</button>` +
         // Separator + browser hint
@@ -2598,20 +2599,12 @@ async function exitEditMode(saved, fromPopstate) {
         allFocusable = /** @type {HTMLElement[]} */ ([...ctxMenu.querySelectorAll('.gallery-ctx-item:not(.gallery-ctx-submenu:not(.expanded) .gallery-ctx-item)')]);
     }
 
-    /** Toggle an expandable submenu, closing any other open one. */
+    /** Toggle an expandable submenu (independent — multiple can be open). */
     function toggleSubmenu(expandBtn) {
         const key = expandBtn.dataset.expand;
         const submenu = ctxMenu.querySelector(`[data-submenu="${key}"]`);
-        const wasOpen = submenu.classList.contains('expanded');
-
-        // Close all submenus first
-        ctxMenu.querySelectorAll('.gallery-ctx-submenu.expanded').forEach(s => s.classList.remove('expanded'));
-        ctxMenu.querySelectorAll('.gallery-ctx-expandable.expanded').forEach(b => b.classList.remove('expanded'));
-
-        if (!wasOpen) {
-            submenu.classList.add('expanded');
-            expandBtn.classList.add('expanded');
-        }
+        expandBtn.classList.toggle('expanded');
+        submenu.classList.toggle('expanded');
         rebuildFocusable();
     }
 

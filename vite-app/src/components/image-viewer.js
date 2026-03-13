@@ -608,8 +608,11 @@ class ImageViewer extends HTMLElement {
         });
 
         // Click outside alt-text overlay dismisses it
+        // (exclude controls bar so the text-button toggle works correctly)
         this.#onDocClick = (e) => {
-            if (this.#altVisible && !this.#altOverlay.contains(e.target)) {
+            if (this.#altVisible
+                && !this.#altOverlay.contains(e.target)
+                && !this.#controlsEl.contains(e.target)) {
                 this.dismissAltText();
             }
         };

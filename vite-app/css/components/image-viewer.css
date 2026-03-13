@@ -73,8 +73,12 @@ image-viewer.iv-controls-active .iv-controls {
     pointer-events: auto;
 }
 
-/* Hide controls in edit mode */
+/* Hide controls when viewer shows a live canvas (e.g. gen preview) */
 image-viewer[mode="canvas"] .iv-controls {
+    display: none;
+}
+/* Hide controls in gallery edit mode */
+[data-layout="edit"] .iv-controls {
     display: none;
 }
 
@@ -556,12 +560,17 @@ image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
 .gallery-ctx-expandable.expanded .gallery-ctx-chevron {
     transform: rotate(90deg);
 }
-/* Inline submenu (collapsed by default) */
+/* Inline submenu (collapsed by default, animated via grid row) */
 .gallery-ctx-submenu {
-    display: none;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 200ms ease;
+}
+.gallery-ctx-submenu > .gallery-ctx-submenu-inner {
+    overflow: hidden;
 }
 .gallery-ctx-submenu.expanded {
-    display: block;
+    grid-template-rows: 1fr;
 }
 .gallery-ctx-sub-item {
     font-size: 0.75rem;
