@@ -1,40 +1,74 @@
-/* ── Layout Morph — three-phase timing ──
- *   Phase 1 (out):  outgoing elements fade/shrink     (--lm-d1)
- *   Phase 2 (move): shared elements reposition/resize  (--lm-d2)
- *   Phase 3 (in):   incoming elements fade/grow         (--lm-d3)
+/* ── Layout transition timing ──
  *
- * --lm-speed: scalar multiplier (1 = normal, 2 = half speed, 0.5 = double).
- * --lm-*-base: phase durations/delays before speed scaling.
- *   Override per-element via JS setMorphTiming() to change phase order.
+ * --lm-speed is the GLOBAL speed multiplier for all layout transitions:
+ *   - Layout morphs (gallery ↔ edit/generate panel swap)
+ *   - Carousel expand/collapse and card navigation
+ *   - Image selection crossfade
+ *   - Resolution dropdown expand/collapse
+ *   - Fullscreen open/close and alt-text morph
  *
- * JS reads max(d + dur) across all phases to derive total duration.
+ * Set --lm-speed: 1 for production, higher values to slow down for debugging.
+ * All JS components read this via getComputedStyle().getPropertyValue('--lm-speed').
+ * All CSS transitions consume the speed-scaled variables below.
+ *
+ * ── Three-phase morph system ──
+ *
+ * Layout morphs (e.g. gallery → edit) run three overlapping phases:
+ *
+ *   Phase 1 (out):   outgoing elements fade out / shrink away
+ *   Phase 2 (move):  shared elements reposition / resize to new layout
+ *   Phase 3 (in):    incoming elements fade in / grow into place
+ *
+ * Timeline (at --lm-speed: 1):
+ *
+ *   0ms      150ms    200ms    350ms    550ms
+ *   |--out---|         |         |         |
+ *            |---move--|---------|         |
+ *                                |---in---|
+ *   d1=0     d2=150ms           d3=350ms
+ *
+ * Total duration = max(d1+out, d2+move, d3+in) = max(200, 450, 550) = 550ms.
+ * JS (layout-morph.js readDuration()) computes this from the base values.
+ *
+ * Per-element phase assignment is set via JS setMorphTiming(), which writes
+ * the --lm-*-base variables as inline styles to override the defaults.
  */
 :root {
-    --lm-speed:  20;
+    --lm-speed:  5;
 
-    /* Base durations and delays (before speed scaling) */
-    --lm-out-base:   0.2s;
-    --lm-move-base:  0.3s;
-    --lm-in-base:    0.2s;
-    --lm-d1-base:    0s;
-    --lm-d2-base:    0.15s;
-    --lm-d3-base:    0.35s;
+    /* ── Base durations (before speed scaling) ── */
+    --lm-out-base:   0.2s;    /* how long phase 1 (out) runs */
+    --lm-move-base:  0.3s;    /* how long phase 2 (move) runs */
+    --lm-in-base:    0.2s;    /* how long phase 3 (in) runs */
 
-    /* Speed-scaled — consumed by transition rules */
-    --lm-out:    calc(var(--lm-out-base)  * var(--lm-speed));
-    --lm-move:   calc(var(--lm-move-base) * var(--lm-speed));
-    --lm-in:     calc(var(--lm-in-base)   * var(--lm-speed));
-    --lm-d1:     calc(var(--lm-d1-base)   * var(--lm-speed));
-    --lm-d2:     calc(var(--lm-d2-base)   * var(--lm-speed));
-    --lm-d3:     calc(var(--lm-d3-base)   * var(--lm-speed));
+    /* ── Base delays — when each phase starts ── */
+    --lm-d1-base:    0s;      /* phase 1 starts immediately */
+    --lm-d2-base:    0.15s;   /* phase 2 starts 150ms in (overlaps tail of phase 1) */
+    --lm-d3-base:    0.35s;   /* phase 3 starts 350ms in (after phase 2 begins) */
 
-    /* General fade duration (selection transitions etc.) */
+    /* ── Speed-scaled — consumed by CSS transition rules ── */
+    --lm-out:    calc(var(--lm-out-base)  * var(--lm-speed)); /* phase 1 duration */
+    --lm-move:   calc(var(--lm-move-base) * var(--lm-speed)); /* phase 2 duration */
+    --lm-in:     calc(var(--lm-in-base)   * var(--lm-speed)); /* phase 3 duration */
+    --lm-d1:     calc(var(--lm-d1-base)   * var(--lm-speed)); /* phase 1 delay */
+    --lm-d2:     calc(var(--lm-d2-base)   * var(--lm-speed)); /* phase 2 delay */
+    --lm-d3:     calc(var(--lm-d3-base)   * var(--lm-speed)); /* phase 3 delay */
+
+    /* ── General fade — used by image selection crossfade, etc. ── */
     --lm-fade:   calc(0.25s * var(--lm-speed));
+}
+
+/* Full-page overlay — blocks all interactions during morph transitions */
+.lm-block-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
 }
 
 /* Panel-swap morphs: grid-overlap children to prevent layout shift */
 .main-content[data-morph-to] {
     display: grid;
+    pointer-events: none;
 }
 .main-content[data-morph-to] > * {
     grid-area: 1 / 1;

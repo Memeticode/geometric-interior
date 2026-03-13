@@ -16,6 +16,8 @@
  * @param {{ initial?: string }} [options]
  */
 
+import { showBlockOverlay, hideBlockOverlay } from './transition-overlay.js';
+
 function parseDur(v) {
     v = v.trim();
     if (!v) return 275; // fallback half-duration
@@ -31,7 +33,7 @@ const PHASE_VARS = {
 export function createLayoutMorph(container, options = {}) {
     let state = options.initial ?? container.dataset.layout ?? '';
     let morphing = false;
-    let pending = null; // { timer, onAfter, cleanup }
+    let pending = null; // { timer, onAfter, cleanup, resolve }
 
     if (state) container.dataset.layout = state;
 
@@ -46,23 +48,40 @@ export function createLayoutMorph(container, options = {}) {
         ) * speed;
     }
 
-    return {
+    /** Snap current morph to its end state immediately. */
+    function finishPending() {
+        if (!pending) return;
+        const p = pending;
+        pending = null;
+        clearTimeout(p.timer);
+        hideBlockOverlay();
+        try { p.onAfter?.(); }
+        finally {
+            p.cleanup?.();
+            delete container.dataset.morphTo;
+            morphing = false;
+            p.resolve?.(state);
+        }
+    }
+
+    const api = {
         get state() { return state; },
         get morphing() { return morphing; },
+
+        /** Skip the in-flight morph — snap to end state. */
+        skip() {
+            if (pending) console.log('[layout-morph] SKIP morph →', state);
+            finishPending();
+        },
 
         morph(to, { onBefore, onAfter, onSwap } = {}) {
             if (to === state && !morphing) return Promise.resolve(state);
             // Cancel in-flight morph — snap forward
-            if (pending) {
-                clearTimeout(pending.timer);
-                pending.cleanup?.();
-                delete container.dataset.morphTo;
-                pending.onAfter?.();
-                pending = null;
-            }
+            if (pending) finishPending();
             if (to === state) { morphing = false; return Promise.resolve(state); }
             morphing = true;
             const from = state;
+            showBlockOverlay(() => api.skip());
 
             onBefore?.(from, to);
 
@@ -95,33 +114,23 @@ export function createLayoutMorph(container, options = {}) {
             };
 
             const duration = readDuration();
+
             return new Promise(resolve => {
                 const timer = setTimeout(() => {
-                    try { onAfter?.(from, to); }
-                    finally {
-                        cleanup();
-                        delete container.dataset.morphTo;
-                        morphing = false;
-                        pending = null;
-                        resolve(to);
-                    }
+                    finishPending();
                 }, duration);
-                pending = { timer, onAfter, cleanup };
+                pending = { timer, onAfter, cleanup, resolve };
             });
         },
 
         set(to) {
-            if (pending) {
-                clearTimeout(pending.timer);
-                pending.cleanup?.();
-                delete container.dataset.morphTo;
-                pending = null;
-            }
+            if (pending) finishPending();
             state = to;
             morphing = false;
             container.dataset.layout = to;
         },
     };
+    return api;
 }
 
 /* ── Phase-order presets ── */

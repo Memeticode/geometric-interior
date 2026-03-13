@@ -2,7 +2,7 @@
  * Resolution preference — localStorage-backed with custom event.
  */
 
-import { initCustomDropdown } from '../components/custom-dropdown.js';
+import { initCustomDropdown, syncAnimateOffset } from '../components/custom-dropdown.js';
 
 const STORAGE_KEY = 'geo-self-portrait-resolution';
 
@@ -40,13 +40,14 @@ export function setResolution(key) {
     }));
 }
 
-export function initResolutionSelector(dropdownEl) {
+export function initResolutionSelector(dropdownEl, { animate } = {}) {
     if (!dropdownEl) return;
     const cur = getResolution();
 
     initCustomDropdown(dropdownEl, {
         initialValue: cur.key,
         onSelect(value) { setResolution(value); },
+        animate,
     });
 
     document.addEventListener('resolutionchange', (e) => {
@@ -134,4 +135,5 @@ export function syncDropdown(dropdownEl, activeKey) {
             if (isActive && label) label.textContent = item.dataset.label || item.textContent;
         });
     }
+    syncAnimateOffset(dropdownEl);
 }

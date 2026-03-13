@@ -49,6 +49,7 @@ import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
 // import { initCustomDropdown } from '../../components/custom-dropdown.js'; // slideshow removed
 import { initAnimationEditor, destroyAnimationEditor } from '../animation/anim-main.js';
 import { createLayoutMorph } from '../../components/layout-morph.js';
+import { showBlockOverlay, hideBlockOverlay } from '../../components/transition-overlay.js';
 
 /* ── Build header & footer DOM ── */
 createHeader(document.querySelector('.app-header'), { page: 'gallery' });
@@ -178,8 +179,8 @@ function clampImageSize() {
     const card = galleryViewer.closest('.gallery-selection-card');
     if (card) card.style.maxWidth = maxW + 'px';
     // Sync header container width with card
-    const container = galleryViewer.closest('.gallery-selection-container');
-    if (container) container.style.setProperty('--card-max-w', maxW + 'px');
+    const galleryContainer = document.getElementById('galleryContainer');
+    if (galleryContainer) galleryContainer.style.setProperty('--card-max-w', maxW + 'px');
 }
 
 let resizeRaf;
@@ -291,7 +292,7 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
     });
 
     galleryViewer.setControls(textBtn, resDropdown, fsBtn);
-    initResolutionSelector(resDropdown);
+    initResolutionSelector(resDropdown, { animate: true });
 
     // Error overlay content
     galleryViewer.setErrorContent(
@@ -582,6 +583,15 @@ carouselBrowser.addEventListener('item-select', (e) => {
 carouselBrowser.addEventListener('center-change', () => {
     // slideshow stop removed — carousel is primary navigation
 });
+
+// Block all input during carousel expand/collapse transitions; skip on interaction
+carouselBrowser.addEventListener('expand-start', () => {
+    showBlockOverlay(() => {
+        console.log('[gallery] SKIP carousel expand/collapse');
+        carouselBrowser.skipExpandCollapse();
+    });
+});
+carouselBrowser.addEventListener('expand-change', () => hideBlockOverlay());
 
 carouselBrowser.addEventListener('item-delete', (e) => {
     const entry = e.detail.item.data;
@@ -905,30 +915,55 @@ function getDisplaySrc(name, profile, isPortrait) {
  * No animation, no history push.
  */
 let selectionFadeTimer = 0;
+let crossfadeTimer = 0;
+let crossfadeLoadHandler = null;
+let crossfadeErrorHandler = null;
+
+/** Complete crossfade: reveal main image, remove prevImg. */
+function crossfadeComplete() {
+    clearTimeout(crossfadeTimer);
+    crossfadeTimer = 0;
+    gallerySelectionVisual.style.opacity = '1';
+    galleryPrevVisual.removeAttribute('src');
+    if (galleryViewer.altVisible) galleryViewer.getAltOverlay().classList.remove('fading');
+    // Clean up handlers
+    if (crossfadeLoadHandler) {
+        gallerySelectionVisual.removeEventListener('load', crossfadeLoadHandler);
+        crossfadeLoadHandler = null;
+    }
+    if (crossfadeErrorHandler) {
+        gallerySelectionVisual.removeEventListener('error', crossfadeErrorHandler);
+        crossfadeErrorHandler = null;
+    }
+    hideBlockOverlay();
+}
 
 function applySelection(name, profile, isPortrait, assetId) {
     selected = { name, isPortrait, assetId };
+    const instant = document.documentElement.classList.contains('no-transitions');
     const speed = parseFloat(getComputedStyle(galleryMainEl).getPropertyValue('--lm-speed')) || 1;
     const fadeDuration = 250 * speed;
 
-    // Lock footer height before fade so resize can animate
-    gallerySelectionCardFooter.style.height = gallerySelectionCardFooter.offsetHeight + 'px';
-
-    // Fade out text + alt-text overlay; crossfade image
-    morphNameRow.classList.add('fading');
-    morphSeedRow.classList.add('fading');
-    gallerySelectionCardFooter.classList.add('fading');
-    if (galleryViewer.altVisible) galleryViewer.getAltOverlay().classList.add('fading');
-
-    // Crossfade: show old image behind, new image fades in on top
-    galleryPrevVisual.src = gallerySelectionVisual.src;
-    gallerySelectionVisual.style.opacity = '0';
-
-    // Cancel any pending fade-in from a previous rapid selection
+    // Cancel any pending crossfade from a previous rapid selection
     clearTimeout(selectionFadeTimer);
+    crossfadeComplete();
 
-    // After fade-out completes, swap content and fade back in
-    selectionFadeTimer = setTimeout(() => {
+    if (!instant) {
+        // Lock footer height before fade so resize can animate
+        gallerySelectionCardFooter.style.height = gallerySelectionCardFooter.offsetHeight + 'px';
+
+        // Fade out text + alt-text overlay; crossfade image
+        morphNameRow.classList.add('fading');
+        morphSeedRow.classList.add('fading');
+        gallerySelectionCardFooter.classList.add('fading');
+        if (galleryViewer.altVisible) galleryViewer.getAltOverlay().classList.add('fading');
+
+        // Crossfade: show old image behind, new image fades in on top
+        galleryPrevVisual.src = gallerySelectionVisual.src;
+        gallerySelectionVisual.style.opacity = '0';
+    }
+
+    const updateContent = () => {
         // Update unified morph elements
         const displayName = profile.displayName || name;
         editNameField.value = displayName;
@@ -985,23 +1020,40 @@ function applySelection(name, profile, isPortrait, assetId) {
         if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
         if (snapshotUrl) { URL.revokeObjectURL(snapshotUrl); snapshotUrl = null; }
 
-        gallerySelectionVisual.addEventListener('load', () => {
-            gallerySelectionVisual.style.opacity = '1';
-            if (galleryViewer.altVisible) galleryViewer.getAltOverlay().classList.remove('fading');
-        }, { once: true });
-
+        // Determine new src
+        let newSrc = '';
         if (assetId) {
             const asset = generatedAssets.find(a => a.id === assetId);
-            if (asset && asset.thumbDataUrl) gallerySelectionVisual.src = asset.thumbDataUrl;
+            if (asset && asset.thumbDataUrl) newSrc = asset.thumbDataUrl;
+        } else {
+            newSrc = getDisplaySrc(name, profile, isPortrait);
+        }
+
+        if (!instant) {
+            // Same URL — skip crossfade (load won't fire for same src)
+            if (newSrc && gallerySelectionVisual.src === newSrc) {
+                crossfadeComplete();
+            } else {
+                // Set up load/error handlers + safety timeout
+                crossfadeLoadHandler = () => crossfadeComplete();
+                crossfadeErrorHandler = () => crossfadeComplete();
+                gallerySelectionVisual.addEventListener('load', crossfadeLoadHandler, { once: true });
+                gallerySelectionVisual.addEventListener('error', crossfadeErrorHandler, { once: true });
+                crossfadeTimer = setTimeout(crossfadeComplete, 2000);
+            }
+        }
+
+        if (newSrc) gallerySelectionVisual.src = newSrc;
+
+        // For generated assets, upgrade to full-res after thumb loads
+        if (assetId) {
+            const capturedAssetId = assetId;
             getAsset(assetId).then(full => {
-                if (full && full.staticBlob && selected.assetId === assetId) {
+                if (full && full.staticBlob && selected.assetId === capturedAssetId) {
                     currentStaticUrl = URL.createObjectURL(full.staticBlob);
                     gallerySelectionVisual.src = currentStaticUrl;
                 }
             });
-        } else {
-            const src = getDisplaySrc(name, profile, isPortrait);
-            if (src) gallerySelectionVisual.src = src;
         }
 
         if (isPortrait) {
@@ -1010,32 +1062,52 @@ function applySelection(name, profile, isPortrait, assetId) {
 
         // Hide commentary box if empty (slide in/out via CSS transition)
         morphCommentary.classList.toggle('collapsed', !editCommentaryField.value);
+        // Hide entire footer when no content at all
+        gallerySelectionCardFooter.classList.toggle('footer-hidden',
+            !editCommentaryField.value && !selectedGenTitle.textContent);
 
-        // Animate footer height to fit new content
-        const oldHeight = gallerySelectionCardFooter.offsetHeight;
-        gallerySelectionCardFooter.style.height = 'auto';
-        const newHeight = gallerySelectionCardFooter.offsetHeight;
-        if (oldHeight !== newHeight) {
-            gallerySelectionCardFooter.style.height = oldHeight + 'px';
-            void gallerySelectionCardFooter.offsetHeight; // force layout
-            gallerySelectionCardFooter.style.height = newHeight + 'px';
-            const onEnd = (e) => {
-                if (e.propertyName === 'height') {
-                    gallerySelectionCardFooter.style.height = '';
-                    gallerySelectionCardFooter.removeEventListener('transitionend', onEnd);
-                }
-            };
-            gallerySelectionCardFooter.addEventListener('transitionend', onEnd);
+        if (!instant) {
+            // Animate footer height to fit new content
+            const oldHeight = gallerySelectionCardFooter.offsetHeight;
+            gallerySelectionCardFooter.style.height = 'auto';
+            const newHeight = gallerySelectionCardFooter.offsetHeight;
+            if (oldHeight !== newHeight) {
+                gallerySelectionCardFooter.style.height = oldHeight + 'px';
+                void gallerySelectionCardFooter.offsetHeight; // force layout
+                gallerySelectionCardFooter.style.height = newHeight + 'px';
+                const onEnd = (e) => {
+                    if (e.propertyName === 'height') {
+                        gallerySelectionCardFooter.style.height = '';
+                        gallerySelectionCardFooter.removeEventListener('transitionend', onEnd);
+                    }
+                };
+                gallerySelectionCardFooter.addEventListener('transitionend', onEnd);
+            } else {
+                gallerySelectionCardFooter.style.height = '';
+            }
+
+            // Fade text back in
+            morphNameRow.classList.remove('fading');
+            morphSeedRow.classList.remove('fading');
+            gallerySelectionCardFooter.classList.remove('fading');
         } else {
             gallerySelectionCardFooter.style.height = '';
         }
+    };
 
-        // Fade text back in
-        morphNameRow.classList.remove('fading');
-        morphSeedRow.classList.remove('fading');
-        gallerySelectionCardFooter.classList.remove('fading');
-
-    }, fadeDuration);
+    if (instant) {
+        updateContent();
+    } else {
+        showBlockOverlay(() => {
+            console.log('[gallery] SKIP image selection crossfade');
+            clearTimeout(selectionFadeTimer);
+            updateContent();
+            crossfadeComplete();
+            // Snap carousel to final position (no-transitions handled by fireSkip)
+            carouselBrowser.syncToKey(assetId || name);
+        });
+        selectionFadeTimer = setTimeout(updateContent, fadeDuration);
+    }
 
     currentIndex = navigableList.findIndex(p =>
         assetId ? p.assetId === assetId : p.name === name
@@ -2411,6 +2483,8 @@ async function exitEditMode(saved, fromPopstate) {
 
     // Collapse commentary if empty so it slides out during browse morph
     morphCommentary.classList.toggle('collapsed', !editCommentaryField.value.trim());
+    gallerySelectionCardFooter.classList.toggle('footer-hidden',
+        !editCommentaryField.value.trim() && !selectedGenTitle.textContent);
 
     // Morph back to browse after card attributes are updated so CSS transitions animate smoothly
     layoutMorph.morph('browse', {
@@ -2936,6 +3010,9 @@ if (window.location.pathname === '/' || window.location.pathname === '/index.htm
     history.replaceState({ type: 'image', profile: null }, '', '/images');
 }
 
+// Suppress carousel transitions during initial render
+carouselBrowser.style.setProperty('--carousel-speed', '0s');
+
 if (activeMode === 'create') {
     const isAnim = activeType === 'animation';
     if (!isAnim) { initGenerate(); }
@@ -2962,6 +3039,17 @@ if (activeMode === 'create') {
 }
 
 loadStatementContent();
+
+// Enable transitions after first paint (suppressed by .no-transitions on <html>).
+// Deferred until after async data (IndexedDB) loads to prevent a second animated rebuild.
+const enableTransitions = () => {
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            document.documentElement.classList.remove('no-transitions');
+            carouselBrowser.style.removeProperty('--carousel-speed');
+        });
+    });
+};
 
 /* ── Locale change: re-render text and gallery on locale switch ── */
 document.addEventListener('localechange', () => {
@@ -3018,5 +3106,7 @@ Promise.allSettled([
     if (activeMode === 'edit') enterEditMode('add', null, true);
     // Clamp image after carousel is populated
     requestAnimationFrame(clampImageSize);
+    // Enable transitions now that all data is loaded and gallery is populated
+    enableTransitions();
 });
 

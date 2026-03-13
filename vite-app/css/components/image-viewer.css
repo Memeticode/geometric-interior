@@ -14,7 +14,7 @@ image-viewer {
     overflow: hidden;
     position: relative;
     border: 1px solid var(--border);
-    border-radius: 4px;
+    border-radius: 0;
 }
 
 /* ── Media elements ── */
@@ -63,7 +63,7 @@ image-viewer {
     align-items: center;
     gap: 0.25rem;
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.5s ease;
     pointer-events: none;
 }
 .iv-controls:empty { display: none; }
@@ -82,14 +82,11 @@ image-viewer[controls-pos$="-right"] .iv-controls  { right: 0.5rem; }
 image-viewer.iv-controls-active .iv-controls {
     opacity: 1;
     pointer-events: auto;
+    transition: opacity 0.25s ease;
 }
 
 /* Hide controls when viewer shows a live canvas (e.g. gen preview) */
 image-viewer[mode="canvas"] .iv-controls {
-    display: none;
-}
-/* Hide controls in gallery edit mode */
-[data-layout="edit"] .iv-controls {
     display: none;
 }
 
@@ -163,49 +160,98 @@ image-viewer[mode="canvas"] .iv-controls {
     border-color: rgba(0, 0, 0, 0.2);
 }
 
-/* ── Frosted glass dropdown menu (morph) ── */
+/* ── Expanding dropdown ── */
+
+/* Trigger fades when menu expands over it */
+.iv-controls .custom-dropdown-trigger {
+    transition: opacity calc(150ms * var(--lm-speed, 1)) ease;
+    position: relative;
+    z-index: 1;
+}
+.iv-controls .custom-dropdown.open > .custom-dropdown-trigger {
+    opacity: 0;
+    pointer-events: none;
+}
+/* Keep trigger on top when collapsed so clicks reach it */
+.iv-controls .custom-dropdown.dd-animate:not(.open) > .custom-dropdown-trigger {
+    z-index: 3;
+}
+
+/* Menu overlaps trigger position and expands outward */
 .iv-controls .custom-dropdown-menu {
     right: 0;
     left: auto;
+    bottom: 0;
+    margin: 0;
     background: rgba(10, 12, 18, 0.55);
     backdrop-filter: blur(16px) saturate(1.4);
     -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-    /* Morph animation — override hidden, use max-height */
-    margin-bottom: 0;
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
-    max-height: 0;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    box-shadow: none;
+    max-height: var(--dd-collapsed-h, 0);
     overflow: hidden;
-    opacity: 0;
-    transition: max-height 1500ms cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 300ms ease;
+    opacity: 1;
+    padding: 0;
+    justify-content: flex-end;
+    transform: none;
+    visibility: visible;
+    pointer-events: none;
+    z-index: 2;
+    transition: max-height calc(300ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+                padding calc(300ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1),
+                border-color calc(300ms * var(--lm-speed, 1)) ease,
+                box-shadow calc(300ms * var(--lm-speed, 1)) ease;
 }
 .iv-controls .custom-dropdown-menu.hidden {
-    display: flex !important; /* override global .hidden to allow transition */
+    opacity: 1;
+    transform: none;
+    visibility: visible;
 }
 .iv-controls .custom-dropdown.open .custom-dropdown-menu {
-    max-height: 20rem;
-    opacity: 1;
-}
-.iv-controls .custom-dropdown.open > .custom-dropdown-trigger {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+    max-height: 12rem;
+    padding: 0.25rem;
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+    pointer-events: none;
 }
 .iv-controls .custom-dropdown-item {
     color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    pointer-events: auto;
+}
+/* Inner wrapper for resize-based animation */
+.iv-controls .dd-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    flex-shrink: 0;
+    transition: transform calc(300ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+}
+/* Active bg cross-fade on selection change */
+.iv-controls .custom-dropdown.dd-animate .custom-dropdown-item {
+    transition: background-color calc(200ms * var(--lm-speed, 1)) ease,
+                color calc(200ms * var(--lm-speed, 1)) ease;
+}
+/* Block item clicks when collapsed */
+.iv-controls .custom-dropdown.dd-animate:not(.open) .custom-dropdown-item {
+    pointer-events: none;
 }
 .iv-controls .custom-dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.1);
     color: #fff;
 }
 .iv-controls .custom-dropdown-item.active {
+    position: relative;
+    z-index: 1;
     background: rgba(180, 130, 255, 0.2);
     color: rgb(200, 160, 255);
 }
 [data-theme="light"] .iv-controls .custom-dropdown-menu {
     background: rgba(255, 255, 255, 0.55);
+    border-color: transparent;
+}
+[data-theme="light"] .iv-controls .custom-dropdown.open .custom-dropdown-menu {
     border-color: rgba(0, 0, 0, 0.08);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
 }
@@ -213,7 +259,6 @@ image-viewer[mode="canvas"] .iv-controls {
     color: rgba(0, 0, 0, 0.6);
 }
 [data-theme="light"] .iv-controls .custom-dropdown-item:hover {
-    background: rgba(0, 0, 0, 0.08);
     color: #000;
 }
 [data-theme="light"] .iv-controls .custom-dropdown-item.active {
@@ -225,6 +270,15 @@ image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
     left: 0;
     right: auto;
 }
+/* Downward expansion when controls are on top */
+image-viewer[controls-pos^="top"] .iv-controls .custom-dropdown-menu {
+    bottom: auto;
+    top: 0;
+    justify-content: flex-start;
+}
+image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
+    flex-direction: column-reverse;
+}
 
 /* ── Alt-text overlay ── */
 .iv-alt-text {
@@ -233,7 +287,7 @@ image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
     left: 50%;
     transform: translate(-50%, -50%);
     width: min(50rem, 75vw);
-    max-height: calc(100% - 5rem);
+    max-height: calc(100% - 2.5rem);
     overflow-y: auto;
     text-align: left;
     background: rgba(10, 12, 18, 0.55);
@@ -395,7 +449,7 @@ image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
     z-index: 1100;
     background: rgba(0, 0, 0, 0);
     cursor: pointer;
-    transition: background 0.4s ease;
+    transition: background calc(400ms * var(--lm-speed, 1)) ease;
 }
 .fullscreen-overlay.fs-visible {
     background: rgba(0, 0, 0, 1);
@@ -408,14 +462,14 @@ image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
     will-change: transform;
 }
 .fullscreen-overlay .fs-animating {
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform calc(400ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1);
 }
 .fullscreen-overlay .fs-closing {
-    transition: transform 0.3s ease-in;
+    transition: transform calc(300ms * var(--lm-speed, 1)) ease-in;
 }
 .fullscreen-overlay .fs-fading {
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity calc(200ms * var(--lm-speed, 1)) ease;
 }
 
 /* ── Fullscreen close button ── */
@@ -453,7 +507,7 @@ image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
     transform: translateX(-50%);
     z-index: 1102;
     width: min(40rem, 80vw);
-    max-height: calc(100vh - 5rem);
+    max-height: calc(100vh - 2.5rem);
     overflow-y: auto;
     background: rgba(10, 12, 18, 0.55);
     backdrop-filter: blur(16px) saturate(1.4);
@@ -466,7 +520,7 @@ image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
     line-height: 1.5;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity calc(250ms * var(--lm-speed, 1)) ease, transform calc(300ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
     cursor: default;
 }

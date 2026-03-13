@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG Icon Preview</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #111;
+      color: #ccc;
+      font-family: system-ui, sans-serif;
+      padding: 1.5rem;
+      max-width: 64rem;
+    }
+
+    h1 {
+      font-size: 0.875rem;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 1.5rem;
+    }
+
+
+    /* ── Section ── */
+    .svg-section {
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .svg-section h2 {
+      font-size: 0.6875rem;
+      font-weight: 400;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 0.75rem;
+    }
+
+    /* ── Grid — auto-flow dense packs variable-width cards efficiently ── */
+    .svg-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(var(--col-min, 4.5rem), 1fr));
+      grid-auto-flow: dense;
+      gap: 0.75rem;
+      align-items: start;
+    }
+
+    /* ── Card (icon-only) ── */
+    .svg-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* ── Card with animations — bordered unit, title top-left ── */
+    .svg-card.has-anims {
+      grid-column: span 3;
+      border: 1px solid #222;
+      border-radius: 6px;
+      padding: 0.625rem;
+      gap: 0.5rem;
+      align-items: flex-start;
+    }
+
+    .card-header {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+
+    .card-body {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    /* Vertical separator between icon and transitions */
+    .card-sep {
+      width: 1px;
+      align-self: stretch;
+      background: #222;
+    }
+
+    /* ── Display frame — 64×64 everywhere ── */
+    .svg-display {
+      width: 64px;
+      height: 64px;
+      min-width: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #222;
+      border-radius: 6px;
+      background: #1a1a1a;
+      color: #bbb;
+    }
+
+    .svg-display svg {
+      width: 36px;
+      height: 36px;
+    }
+
+    /* Morph stage — SVG fills entire 64×64 frame */
+    .morph-stage {
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .morph-stage:hover {
+      border-color: #333;
+    }
+
+    .morph-stage svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── Text ── */
+    .svg-name {
+      font-size: 0.8125rem;
+      color: #aaa;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .svg-desc {
+      font-size: 0.5625rem;
+      color: #444;
+    }
+
+    /* ── Animations area (right of separator) ── */
+    .svg-anims {
+      display: flex;
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+
+    .anim-cat {
+      font-size: 0.5rem;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .anim-row {
+      display: flex;
+      gap: 0.625rem;
+      flex-wrap: wrap;
+    }
+
+    .anim-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .anim-label {
+      font-size: 0.5625rem;
+      color: #555;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      body {
+        padding: 1rem;
+      }
+
+      .svg-card.has-anims {
+        grid-column: span 2;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Geometric Interior — SVG Icon Preview</h1>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="svg-section">
+    <h2>Custom SVGs</h2>
+    <div class="svg-grid" style="--col-min: 5rem;">
+
+      <!-- dots -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">dots</div>
+          <div class="svg-desc">5 dots in cross pattern</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display"><svg viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="4" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="20" r="1.5" fill="currentColor" />
+              <circle cx="4" cy="12" r="1.5" fill="currentColor" />
+              <circle cx="20" cy="12" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="12" r="2" fill="currentColor" />
+              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="0.75" fill="none" opacity="0.3" />
+            </svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-dots-edit">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">active-edit</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- cross -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">cross</div>
+          <div class="svg-desc">cross arms with dots</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display"><svg viewBox="0 0 24 24" fill="none">
+              <line x1="12" y1="4" x2="12" y2="20" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              <circle cx="12" cy="4" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="20" r="1.5" fill="currentColor" />
+              <circle cx="4" cy="12" r="1.5" fill="currentColor" />
+              <circle cx="20" cy="12" r="1.5" fill="currentColor" />
+              <circle cx="12" cy="12" r="2" fill="currentColor" />
+              <circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="0.75" fill="none" opacity="0.3" />
+            </svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-cross-edit">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">active-edit</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- active-edit -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">active-edit</div>
+          <div class="svg-desc">currentColor — pentagon</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display"><svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 3.5L5 9l2.5 8h9L19 9z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"
+                stroke-dasharray="3.5 2" opacity="0.55" />
+              <line x1="12" y1="11" x2="12" y2="3.5" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
+              <line x1="12" y1="11" x2="5" y2="9" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
+              <line x1="12" y1="11" x2="19" y2="9" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
+              <circle cx="12" cy="3.5" r="1.75" fill="currentColor" />
+              <circle cx="5" cy="9" r="1.4" fill="currentColor" opacity="0.6" />
+              <circle cx="19" cy="9" r="1.4" fill="currentColor" opacity="0.6" />
+              <circle cx="7.5" cy="17" r="1.1" fill="currentColor" opacity="0.3" />
+              <circle cx="16.5" cy="17" r="1.1" fill="currentColor" opacity="0.3" />
+              <circle cx="12" cy="3.5" r="3.5" stroke="currentColor" stroke-width="0.75" fill="none" opacity="0.4" />
+            </svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-edit-dots">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">dots</div>
+              </div>
+              <div class="anim-item" id="morph-edit-cross">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">cross</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- active-edit-alt (no animations) -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">active-edit-alt</div>
+          <div class="svg-desc">white fills — CSS mask-image (luminance)</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display" style="background:#111; color:#fff;"><svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 3.5L5 9l2.5 8h9L19 9z" stroke="white" stroke-width="1.25" stroke-linejoin="round"
+                stroke-dasharray="3.5 2" opacity="0.55" />
+              <line x1="12" y1="11" x2="12" y2="3.5" stroke="white" stroke-width="0.75" opacity="0.25" />
+              <line x1="12" y1="11" x2="5" y2="9" stroke="white" stroke-width="0.75" opacity="0.25" />
+              <line x1="12" y1="11" x2="19" y2="9" stroke="white" stroke-width="0.75" opacity="0.25" />
+              <circle cx="12" cy="3.5" r="1.75" fill="white" />
+              <circle cx="5" cy="9" r="1.4" fill="white" opacity="0.6" />
+              <circle cx="19" cy="9" r="1.4" fill="white" opacity="0.6" />
+              <circle cx="7.5" cy="17" r="1.1" fill="white" opacity="0.3" />
+              <circle cx="16.5" cy="17" r="1.1" fill="white" opacity="0.3" />
+              <circle cx="12" cy="3.5" r="3.5" stroke="white" stroke-width="0.75" fill="none" opacity="0.4" />
+            </svg></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="svg-section">
+    <h2>Navigation</h2>
+    <div class="svg-grid">
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 10l5-5 5 5" />
+          </svg></div>
+        <div class="svg-name">ARROW_UP</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6l5 5 5-5" />
+          </svg></div>
+        <div class="svg-name">ARROW_DOWN</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 3l-5 5 5 5" />
+          </svg></div>
+        <div class="svg-name">ARROW_LEFT</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 3l5 5-5 5" />
+          </svg></div>
+        <div class="svg-name">ARROW_RIGHT</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M11 3l-5 5 5 5" />
+            <path d="M6 3l-5 5 5 5" />
+          </svg></div>
+        <div class="svg-name">DBL_ARROW_LEFT</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 3l5 5-5 5" />
+            <path d="M10 3l5 5-5 5" />
+          </svg></div>
+        <div class="svg-name">DBL_ARROW_RIGHT</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="svg-section">
+    <h2>Actions</h2>
+    <div class="svg-grid">
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.5 4.5h11" />
+            <path d="M5.5 4.5V3a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v1.5" />
+            <path d="M3.5 4.5l.7 8.4a1.5 1.5 0 0 0 1.5 1.35h4.6a1.5 1.5 0 0 0 1.5-1.35l.7-8.4" />
+          </svg></div>
+        <div class="svg-name">TRASH</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2.5 2.5v4h4" />
+            <path d="M2.5 6.5a5.5 5.5 0 1 1 1 3.5" />
+          </svg></div>
+        <div class="svg-name">RESTORE</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9.5 2.5l4 4L6 14H2v-4z" />
+            <path d="M8 4l4 4" />
+          </svg></div>
+        <div class="svg-name">EDIT</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round">
+            <line x1="4" y1="4" x2="12" y2="12" />
+            <line x1="12" y1="4" x2="4" y2="12" />
+          </svg></div>
+        <div class="svg-name">CLOSE</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" />
+          </svg></div>
+        <div class="svg-name">FULLSCREEN</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linejoin="round">
+            <path d="M2 2h9l3 3v9H2z" />
+            <path d="M11 2v3h3" />
+            <rect x="5" y="2" width="4" height="3" rx="0.5" stroke-width="0.75" />
+            <rect x="4.5" y="9" width="7" height="5" rx="0.5" stroke-width="0.75" />
+          </svg></div>
+        <div class="svg-name">SAVE</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7h7a4 4 0 0 1 0 8H8" />
+            <path d="M6 4L3 7l3 3" />
+          </svg></div>
+        <div class="svg-name">UNDO</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M13 7H6a4 4 0 0 0 0 8h2" />
+            <path d="M10 4l3 3-3 3" />
+          </svg></div>
+        <div class="svg-name">REDO</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linejoin="round">
+            <rect x="2" y="2" width="12" height="12" rx="1.5" />
+            <circle cx="5.5" cy="4.5" r="0.9" fill="currentColor" stroke="none" />
+            <circle cx="5.5" cy="8" r="0.9" fill="currentColor" stroke="none" />
+            <circle cx="5.5" cy="11.5" r="0.9" fill="currentColor" stroke="none" />
+            <circle cx="10.5" cy="4.5" r="0.9" fill="currentColor" stroke="none" />
+            <circle cx="10.5" cy="8" r="0.9" fill="currentColor" stroke="none" />
+            <circle cx="10.5" cy="11.5" r="0.9" fill="currentColor" stroke="none" />
+          </svg></div>
+        <div class="svg-name">RANDOMIZE</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25"
+            stroke-linejoin="round">
+            <path d="M5.5 3.5l3 4.5-3 4.5-3-4.5z" />
+            <path d="M10.5 3.5l3 4.5-3 4.5-3-4.5z" />
+            <path d="M14.5 3.5a7 7 0 1 1-5.5-2.5" stroke-linecap="round" />
+            <path d="M11.5 1l-2 0 0.75 2" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round" />
+          </svg></div>
+        <div class="svg-name">RENDER</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="8" cy="8" r="2" />
+            <path
+              d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M13.07 2.93l-1.41 1.41M4.34 11.66l-1.41 1.41" />
+          </svg></div>
+        <div class="svg-name">SETTINGS</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 2v8" />
+            <path d="M4.5 7.5L8 11l3.5-3.5" />
+            <path d="M2.5 13.5h11" />
+          </svg></div>
+        <div class="svg-name">DOWNLOAD</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="12" height="12" rx="1.5" />
+            <circle cx="5.5" cy="5.5" r="1.25" stroke-width="1.25" />
+            <path d="M2 11l3.5-3.5L8 10l2.5-2.5L14 11" />
+          </svg></div>
+        <div class="svg-name">IMAGE</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 1h8l3 3v9a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V4z" />
+            <path d="M6 8h4M6 11h4" />
+            <path d="M4 1v3h3" />
+          </svg></div>
+        <div class="svg-name">BUNDLE</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="svg-section">
+    <h2>Status</h2>
+    <div class="svg-grid">
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 1.5L1 14h14z" />
+            <path d="M8 6.5v3" />
+            <circle cx="8" cy="12" r="0.01" stroke-width="2" />
+          </svg></div>
+        <div class="svg-name">ERROR</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1.5 8a6.5 6.5 0 0 1 11-4.5" />
+            <path d="M14.5 8a6.5 6.5 0 0 1-11 4.5" />
+            <path d="M12.5 1v3h-3" />
+            <path d="M3.5 15v-3h3" />
+          </svg></div>
+        <div class="svg-name">RETRY</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v4m0 4h.01" />
+          </svg></div>
+        <div class="svg-name">WARNING</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="svg-section">
+    <h2>Misc</h2>
+    <div class="svg-grid">
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="currentColor">
+            <circle cx="8" cy="8" r="2.5" />
+          </svg></div>
+        <div class="svg-name">DOT</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linejoin="round">
+            <path d="M3 6l5-4 5 4-5 9z" />
+            <path d="M5.5 10L8 15.5l2.5-5.5z" fill="currentColor" stroke="none" />
+          </svg></div>
+        <div class="svg-name">FIELD_DIAMOND</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="svg-section">
+    <h2>Social</h2>
+    <div class="svg-grid">
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16">
+            <circle cx="12" cy="3" r="2" fill="currentColor" />
+            <circle cx="4" cy="8" r="2" fill="currentColor" />
+            <circle cx="12" cy="13" r="2" fill="currentColor" />
+            <line x1="6" y1="7" x2="10" y2="4" stroke="currentColor" stroke-width="1.5" />
+            <line x1="6" y1="9" x2="10" y2="12" stroke="currentColor" stroke-width="1.5" />
+          </svg></div>
+        <div class="svg-name">SHARE</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6.5 9.5a3 3 0 0 0 4.24 0l2-2a3 3 0 0 0-4.24-4.24l-1 1" />
+            <path d="M9.5 6.5a3 3 0 0 0-4.24 0l-2 2a3 3 0 0 0 4.24 4.24l1-1" />
+          </svg></div>
+        <div class="svg-name">LINK</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1.5" y="3" width="13" height="10" rx="2" />
+            <path d="M1.5 5l6.5 4 6.5-4" />
+          </svg></div>
+        <div class="svg-name">EMAIL</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M3.47 2.34c1.58 1.19 3.28 3.6 3.98 4.89.7-1.3 2.4-3.7 3.98-4.89C12.52 1.52 15 .57 15 3.23c0 .53-.3 4.45-.48 5.08-.62 2.2-2.89 2.76-4.88 2.42 3.49.6 4.37 2.58 2.46 4.56-3.63 3.77-5.22-.95-5.63-2.16a3.3 3.3 0 0 1-.12-.39c-.02.12-.06.25-.12.4-.4 1.2-2 5.92-5.63 2.15-1.91-1.98-1.03-3.96 2.46-4.56-2-.34-4.26-.22-4.88-2.42C3.01 7.68 2.7 3.76 2.7 3.23c0-2.66 2.48-1.71 3.58-.89z" />
+          </svg></div>
+        <div class="svg-name">BLUESKY</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M14 8a6 6 0 1 0-6.94 5.93v-4.2H5.56V8h1.5V6.56c0-1.48.88-2.3 2.23-2.3.65 0 1.32.11 1.32.11V5.8h-.74c-.73 0-.96.46-.96.92V8h1.64l-.26 1.73h-1.38v4.2A6 6 0 0 0 14 8z" />
+          </svg></div>
+        <div class="svg-name">FACEBOOK</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M9.33 6.93L14.15 1.5h-1.14L8.83 6.18 5.47 1.5H1.5l5.06 7.37L1.5 14.5h1.14l4.42-5.14 3.53 5.14h3.97L9.33 6.93zm-1.57 1.82l-.51-.73L3.1 2.38h1.75l3.29 4.7.51.73 4.27 6.11h-1.75L7.76 8.75z" />
+          </svg></div>
+        <div class="svg-name">TWITTER/X</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+          </svg></div>
+        <div class="svg-name">GITHUB</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M3.6 13.5H1.1V5.6h2.5v7.9zM2.35 4.55a1.45 1.45 0 1 1 0-2.9 1.45 1.45 0 0 1 0 2.9zM14.5 13.5H12v-3.85c0-.92-.02-2.1-1.28-2.1-1.28 0-1.48 1-1.48 2.03v3.92H6.76V5.6h2.38v1.08h.03c.33-.63 1.14-1.3 2.35-1.3 2.52 0 2.98 1.66 2.98 3.81v4.31z" />
+          </svg></div>
+        <div class="svg-name">LINKEDIN</div>
+      </div>
+      <div class="svg-card">
+        <div class="svg-display"><svg viewBox="0 0 16 16" fill="currentColor">
+            <path
+              d="M14.5 8a1.5 1.5 0 0 0-2.53-1.09 7.37 7.37 0 0 0-3.45-1.08l.7-2.48 1.92.43a1.07 1.07 0 1 0 .13-.63l-2.18-.49a.36.36 0 0 0-.42.25l-.8 2.85a7.52 7.52 0 0 0-3.6 1.08A1.5 1.5 0 1 0 2.17 9.1a2.7 2.7 0 0 0-.04.46c0 2.22 2.76 4.03 6.16 4.03s6.16-1.8 6.16-4.03c0-.15-.01-.3-.04-.45A1.5 1.5 0 0 0 14.5 8zM5.14 9.36a.93.93 0 1 1 1.86 0 .93.93 0 0 1-1.86 0zm5.37 2.52c-.67.47-1.55.7-2.51.7s-1.84-.23-2.51-.7a.36.36 0 0 1 .41-.58c.52.37 1.26.57 2.1.57s1.58-.2 2.1-.57a.36.36 0 0 1 .41.58zm-.22-1.6a.93.93 0 1 1 0-1.85.93.93 0 0 1 0 1.86z" />
+          </svg></div>
+        <div class="svg-name">REDDIT</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Shared morph engine ──
+    const DURATION = 3000;
+    const EASE = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+    function parseDa(s) { return s.split(' ').map(Number); }
+    function lerpDa(a, b, t) { return a.map((v, i) => v + (b[i] - v) * t).join(' '); }
+    function lerpColor(a, b, t) {
+      return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`;
+    }
+
+    const plusBg = [26, 26, 26], editBg = [26, 21, 32];
+    const plusBd = [34, 34, 34], editBd = [42, 31, 53];
+
+    // Shared edit state (both morphs end here)
+    const editState = {
+      e1: { x1: 12, y1: 3.5, x2: 5, y2: 9, da: '3.5 2', o: 0.55 },
+      e2: { x1: 5, y1: 9, x2: 7.5, y2: 17, da: '3.5 2', o: 0.55 },
+      e3: { x1: 7.5, y1: 17, x2: 16.5, y2: 17, da: '3.5 2', o: 0.55 },
+      e4: { x1: 16.5, y1: 17, x2: 19, y2: 9, da: '3.5 2', o: 0.55 },
+      e5: { x1: 19, y1: 9, x2: 12, y2: 3.5, da: '3.5 2', o: 0.55 },
+      r1: { x1: 12, y1: 11, x2: 12, y2: 3.5, o: 0.25 },
+      r2: { x1: 12, y1: 11, x2: 5, y2: 9, o: 0.25 },
+      r3: { x1: 12, y1: 11, x2: 19, y2: 9, o: 0.25 },
+      n1: { cx: 12, cy: 3.5, r: 1.75, o: 1 },
+      n2: { cx: 5, cy: 9, r: 1.4, o: 0.6 },
+      n3: { cx: 19, cy: 9, r: 1.4, o: 0.6 },
+      n4: { cx: 7.5, cy: 17, r: 1.1, o: 0.3 },
+      n5: { cx: 16.5, cy: 17, r: 1.1, o: 0.3 },
+      pulse: { cx: 12, cy: 3.5, r: 3.5, o: 0.4 },
+    };
+
+    // V2: Dots — edges collapsed at node positions (zero-length, invisible)
+    const dotsState = {
+      e1: { x1: 12, y1: 4, x2: 12, y2: 4, da: '100 0', o: 0 },
+      e2: { x1: 12, y1: 20, x2: 12, y2: 20, da: '100 0', o: 0 },
+      e3: { x1: 4, y1: 12, x2: 4, y2: 12, da: '100 0', o: 0 },
+      e4: { x1: 20, y1: 12, x2: 20, y2: 12, da: '100 0', o: 0 },
+      e5: { x1: 12, y1: 12, x2: 12, y2: 12, da: '100 0', o: 0 },
+      r1: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
+      r2: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
+      r3: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
+      n1: { cx: 12, cy: 4, r: 1.5, o: 1 },
+      n2: { cx: 12, cy: 20, r: 1.5, o: 1 },
+      n3: { cx: 4, cy: 12, r: 1.5, o: 1 },
+      n4: { cx: 20, cy: 12, r: 1.5, o: 1 },
+      n5: { cx: 12, cy: 12, r: 2, o: 1 },
+      pulse: { cx: 12, cy: 12, r: 4, o: 0.3 },
+    };
+
+    // V1: Cross — visible cross arms (full-length lines)
+    const crossState = {
+      e1: { x1: 12, y1: 4, x2: 12, y2: 12, da: '100 0', o: 0.7 },
+      e2: { x1: 12, y1: 12, x2: 12, y2: 20, da: '100 0', o: 0.7 },
+      e3: { x1: 4, y1: 12, x2: 12, y2: 12, da: '100 0', o: 0.7 },
+      e4: { x1: 12, y1: 12, x2: 20, y2: 12, da: '100 0', o: 0.7 },
+      e5: { x1: 12, y1: 12, x2: 12, y2: 12, da: '100 0', o: 0 },
+      r1: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
+      r2: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
+      r3: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
+      n1: { cx: 12, cy: 4, r: 1.5, o: 1 },
+      n2: { cx: 12, cy: 20, r: 1.5, o: 1 },
+      n3: { cx: 4, cy: 12, r: 1.5, o: 1 },
+      n4: { cx: 20, cy: 12, r: 1.5, o: 1 },
+      n5: { cx: 12, cy: 12, r: 2, o: 1 },
+      pulse: { cx: 12, cy: 12, r: 4, o: 0.3 },
+    };
+
+    // ── Build SVG elements into a stage ──
+    const NS = 'http://www.w3.org/2000/svg';
+    function buildMorphSVG(svgEl) {
+      const elMap = {};
+      const line = (id, sw, cap) => {
+        const el = document.createElementNS(NS, 'line');
+        el.setAttribute('stroke', 'currentColor');
+        el.setAttribute('stroke-width', sw);
+        if (cap) el.setAttribute('stroke-linecap', cap);
+        svgEl.appendChild(el);
+        elMap[id] = el;
+      };
+      const circle = (id, fill) => {
+        const el = document.createElementNS(NS, 'circle');
+        el.setAttribute('fill', fill ? 'currentColor' : 'none');
+        if (!fill) { el.setAttribute('stroke', 'currentColor'); el.setAttribute('stroke-width', '0.75'); }
+        svgEl.appendChild(el);
+        elMap[id] = el;
+      };
+      line('e1', '1.25', 'butt'); line('e2', '1.25', 'butt'); line('e3', '1.25', 'butt');
+      line('e4', '1.25', 'butt'); line('e5', '1.25', 'butt');
+      line('r1', '0.75'); line('r2', '0.75'); line('r3', '0.75');
+      circle('n1', true); circle('n2', true); circle('n3', true);
+      circle('n4', true); circle('n5', true);
+      circle('pulse', false);
+      return elMap;
+    }
+
+    function applyState(elMap, from, to, t) {
+      for (const key of Object.keys(from)) {
+        const el = elMap[key], a = from[key], b = to[key];
+        if ('x1' in a) {
+          el.setAttribute('x1', a.x1 + (b.x1 - a.x1) * t);
+          el.setAttribute('y1', a.y1 + (b.y1 - a.y1) * t);
+          el.setAttribute('x2', a.x2 + (b.x2 - a.x2) * t);
+          el.setAttribute('y2', a.y2 + (b.y2 - a.y2) * t);
+        }
+        if ('cx' in a) {
+          el.setAttribute('cx', a.cx + (b.cx - a.cx) * t);
+          el.setAttribute('cy', a.cy + (b.cy - a.cy) * t);
+          el.setAttribute('r', a.r + (b.r - a.r) * t);
+        }
+        if ('da' in a) el.setAttribute('stroke-dasharray', lerpDa(parseDa(a.da), parseDa(b.da), t));
+        el.setAttribute('opacity', a.o + (b.o - a.o) * t);
+      }
+    }
+
+    // ── Create morph instance ──
+    // initAt: 0 = show startState, 1 = show endState
+    function createMorph(itemId, startState, endState, initAt) {
+      const item = document.getElementById(itemId);
+      const stage = item.querySelector('.morph-stage');
+      const svg = stage.querySelector('svg');
+      const elMap = buildMorphSVG(svg);
+      let isEdit = initAt === 1, animId = null;
+
+      if (isEdit) {
+        applyState(elMap, endState, endState, 0);
+        stage.style.background = lerpColor(plusBg, editBg, 1);
+        stage.style.borderColor = lerpColor(plusBd, editBd, 1);
+      } else {
+        applyState(elMap, startState, startState, 0);
+      }
+
+      function animate(toEdit) {
+        if (animId) cancelAnimationFrame(animId);
+        const from = toEdit ? startState : endState;
+        const to = toEdit ? endState : startState;
+        const bgF = toEdit ? plusBg : editBg, bgT = toEdit ? editBg : plusBg;
+        const bdF = toEdit ? plusBd : editBd, bdT = toEdit ? editBd : plusBd;
+        const start = performance.now();
+        (function tick(now) {
+          const raw = Math.min((now - start) / DURATION, 1);
+          const t = EASE(raw);
+          applyState(elMap, from, to, t);
+          stage.style.background = lerpColor(bgF, bgT, t);
+          stage.style.borderColor = lerpColor(bdF, bdT, t);
+          if (raw < 1) animId = requestAnimationFrame(tick);
+          else animId = null;
+        })(performance.now());
+      }
+
+      item.addEventListener('click', () => {
+        isEdit = !isEdit;
+        animate(isEdit);
+      });
+    }
+
+    // Under dots/cross cards: show target (edit) state initially
+    createMorph('morph-dots-edit', dotsState, editState, 1);
+    createMorph('morph-cross-edit', crossState, editState, 1);
+    // Under active-edit card: show target (dots/cross) state initially
+    createMorph('morph-edit-dots', dotsState, editState, 0);
+    createMorph('morph-edit-cross', crossState, editState, 0);
+  </script>
+
+</body>
+
+</html>

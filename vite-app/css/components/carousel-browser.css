@@ -29,9 +29,7 @@ carousel-dropdown-browser-section { display: none; }
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: var(--cdb-controls-gap, 0.6rem);
     padding: 0;
-    margin-top: 1rem;
 }
 
 .cdb-controls {
@@ -41,6 +39,11 @@ carousel-dropdown-browser-section { display: none; }
     justify-content: center;
     align-items: center;
     gap: 0.5rem;
+    padding: 0.5rem 0;
+    position: relative;
+    z-index: 1001;
+    width: 100%;
+    background: var(--bg);
 }
 
 .cdb-container {
@@ -49,6 +52,7 @@ carousel-dropdown-browser-section { display: none; }
     padding: var(--cdb-container-pad, 0);
     max-height: 300px;
     transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.3s ease;
+    clip-path: inset(0 -9999px -9999px -9999px);
 }
 
 .cdb-viewport {
@@ -75,7 +79,6 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
     min-height: calc(var(--card-w) * 9 / 14 + 1.25rem + 1.5em + var(--arc-y-extra, 0px));
 }
 
-/* Flattened state when grid is expanded */
 .cdb-strip.cdb-flattened .cdb-container {
     max-height: 0;
     padding: 0;
@@ -150,7 +153,7 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
     width: 100%;
     border-radius: 8px;
     overflow: hidden;
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
     background: var(--bg);
     display: flex;
     flex-direction: column;
@@ -205,11 +208,14 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
 
 /* ── Image error state (border + ×) ── */
 .cdb-img-error img {
-    visibility: hidden;
+    display: none;
 }
 .cdb-card-img.cdb-img-error,
 .cdb-grid-card.cdb-img-error {
     background: var(--surface);
+}
+.cdb-grid-card.cdb-img-error {
+    aspect-ratio: 14 / 9;
 }
 .cdb-card-img.cdb-img-error::after,
 .cdb-grid-card.cdb-img-error::after {
@@ -340,44 +346,14 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     border-color: var(--accent);
 }
 
-/* Chevron icon — two bars that morph between ∨ and ∧ */
-.cdb-chevron {
-    position: relative;
+/* Chevron icon — single SVG path, no overlap at center */
+.cdb-chevron-svg {
     width: 18px;
-    height: 8px;
-    transition: transform 0.3s ease;
-    transform: translateY(2px);
-}
-.cdb-chevron-bar {
-    position: absolute;
-    top: 50%;
-    width: 10px;
-    height: 1.5px;
-    margin-top: -0.75px;
-    background: currentColor;
-    border-radius: 0.75px;
+    height: 10px;
     transition: transform 0.3s ease;
 }
-.cdb-chevron-l {
-    left: 0;
-    transform-origin: right center;
-    transform: rotate(25deg);
-}
-.cdb-chevron-r {
-    right: 0;
-    transform-origin: left center;
-    transform: rotate(-25deg);
-}
-/* Expanded: center the ∧ shape */
-.cdb-toggle.cdb-expanded .cdb-chevron {
-    transform: translateY(-2px);
-}
-/* Expanded: flip to up-chevron */
-.cdb-toggle.cdb-expanded .cdb-chevron-l {
-    transform: rotate(-25deg);
-}
-.cdb-toggle.cdb-expanded .cdb-chevron-r {
-    transform: rotate(25deg);
+.cdb-toggle.cdb-expanded .cdb-chevron-svg {
+    transform: scaleY(-1);
 }
 
 /* ── Dropdown (grid) ── */
@@ -400,15 +376,39 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 }
 /* Instant repositioning — suppress transitions during resize/layout shifts */
 .cdb-track.cdb-instant,
-.cdb-track.cdb-instant * {
+.cdb-track.cdb-instant *,
+.cdb-section-label-container.cdb-instant,
+.cdb-section-label-container.cdb-instant * {
     transition: none !important;
 }
 
 .cdb-grid {
     padding: 0.5rem 0.75rem;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    grid-template-columns: repeat(auto-fill, var(--card-w));
     gap: 0.5rem;
+    justify-content: start;
+}
+
+/* Grid card alignment — controls how items sit in incomplete rows */
+carousel-dropdown-browser.cdb-grid-align-center .cdb-grid { justify-content: center; }
+carousel-dropdown-browser.cdb-grid-align-right .cdb-grid { justify-content: end; }
+
+/* Grid items alignment — controls where cards sit within their grid cells */
+carousel-dropdown-browser.cdb-grid-items-left .cdb-grid,
+carousel-dropdown-browser.cdb-grid-items-center .cdb-grid,
+carousel-dropdown-browser.cdb-grid-items-right .cdb-grid {
+    grid-template-columns: repeat(auto-fill, minmax(var(--card-w), 1fr));
+}
+carousel-dropdown-browser.cdb-grid-items-left .cdb-grid { justify-items: start; }
+carousel-dropdown-browser.cdb-grid-items-center .cdb-grid { justify-items: center; }
+carousel-dropdown-browser.cdb-grid-items-right .cdb-grid { justify-items: end; }
+
+carousel-dropdown-browser.cdb-grid-items-left .cdb-grid-card,
+carousel-dropdown-browser.cdb-grid-items-center .cdb-grid-card,
+carousel-dropdown-browser.cdb-grid-items-right .cdb-grid-card {
+    max-width: var(--card-w);
+    width: 100%;
 }
 
 .cdb-grid-card {
@@ -416,7 +416,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     flex-direction: column;
     cursor: pointer;
     position: relative;
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
     border-radius: 8px;
     overflow: hidden;
     background: var(--bg);
@@ -436,12 +436,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 }
 
 .cdb-grid-card.cdb-selected {
-    border-top-color: rgba(180, 130, 255, 0.6);
-    border-bottom-color: rgba(180, 130, 255, 0.6);
-    border-top-width: 0.16rem;
-    border-bottom-width: 0.16rem;
-    border-left-color: transparent;
-    border-right-color: transparent;
+    box-shadow: inset 0 2px 0 rgba(180, 130, 255, 0.6), inset 0 -2px 0 rgba(180, 130, 255, 0.6);
 }
 
 .cdb-grid-card-actions {
@@ -551,38 +546,32 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     padding-top: 0;
 }
 
+/* Section title alignment — applies to grid headers */
+carousel-dropdown-browser.cdb-sec-align-center .cdb-grid-section-header { text-align: center; }
+carousel-dropdown-browser.cdb-sec-align-right .cdb-grid-section-header { text-align: right; }
+
 /* ── Responsive overrides ── */
 
 /* ── xs (375px+) ── */
 @media (min-width: 375px) {
     :root { --card-w: 90px; }
-    .cdb-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
 }
 
 /* ── sm (480px+) ── */
 @media (min-width: 480px) {
     :root { --card-w: 110px; }
-    .cdb-grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        padding: 0.75rem 1rem;
-    }
+    .cdb-grid { padding: 0.75rem 1rem; }
 }
 
 /* ── md (640px+) ── */
 @media (min-width: 640px) {
     :root { --card-w: 130px; }
-    .cdb-grid {
-        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    }
 }
 
 /* ── lg (768px+) ── */
 @media (min-width: 768px) {
     :root { --card-w: 160px; }
-    .cdb-grid {
-        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-        gap: 0.75rem;
-    }
+    .cdb-grid { gap: 0.75rem; }
 }
 
 /* ── xl (1024px+) ── */
@@ -627,72 +616,136 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-card.cdb-placeholder .cdb-card-img {
     background: var(--bg);
     position: relative;
-    transition: background var(--carousel-speed, 0.85s) ease;
+    transition: background var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1);
 }
 .cdb-card.cdb-placeholder .cdb-card-img img {
     display: none;
-}
-.cdb-card.cdb-placeholder .cdb-card-img::after {
-    content: '+';
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2.5rem;
-    color: var(--text-muted);
 }
 
 .cdb-grid-card.cdb-placeholder {
     background: var(--bg);
     position: relative;
-    transition: background 0.4s ease;
+    aspect-ratio: 14 / 9;
+    transition: background var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1);
 }
 .cdb-grid-card.cdb-placeholder img {
     display: none;
 }
-.cdb-grid-card.cdb-placeholder::after {
-    content: '+';
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    aspect-ratio: 14 / 9;
-    font-size: 2.5rem;
+
+/* ── Morph icon — inline SVG that transitions between plus and active-edit ── */
+.cdb-morph-icon {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
     color: var(--text-muted);
 }
 
-/* Editing state: placeholder card with accent background + (Active) label */
+/* Transition geometry, opacity, and stroke on all child elements */
+.cdb-morph-icon line,
+.cdb-morph-icon circle {
+    transition:
+        x1 var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
+        y1 var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
+        x2 var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
+        y2 var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
+        cx var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
+        cy var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
+        r  var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
+        opacity var(--cdb-morph-dur, 0.85s) ease,
+        stroke-dasharray var(--cdb-morph-dur, 0.85s) ease;
+}
+
+/* ── Plus state (default) — edges collapsed at node positions (zero-length) ── */
+/* Lines grow out from dots during morph. stroke-dasharray: 100 0 = solid, matches edit's 2-value pattern */
+.cdb-morph-icon .mi-e1 { x1: 12; y1: 4;  x2: 12; y2: 4;  stroke-dasharray: 100 0; opacity: 0; }
+.cdb-morph-icon .mi-e2 { x1: 12; y1: 20; x2: 12; y2: 20; stroke-dasharray: 100 0; opacity: 0; }
+.cdb-morph-icon .mi-e3 { x1: 4;  y1: 12; x2: 4;  y2: 12; stroke-dasharray: 100 0; opacity: 0; }
+.cdb-morph-icon .mi-e4 { x1: 20; y1: 12; x2: 20; y2: 12; stroke-dasharray: 100 0; opacity: 0; }
+.cdb-morph-icon .mi-e5 { x1: 12; y1: 12; x2: 12; y2: 12; stroke-dasharray: 100 0; opacity: 0; }
+
+/* Plus state — radials hidden */
+.cdb-morph-icon .mi-r1 { x1: 12; y1: 12; x2: 12; y2: 12; opacity: 0; }
+.cdb-morph-icon .mi-r2 { x1: 12; y1: 12; x2: 12; y2: 12; opacity: 0; }
+.cdb-morph-icon .mi-r3 { x1: 12; y1: 12; x2: 12; y2: 12; opacity: 0; }
+
+/* Plus state — node circles at cross endpoints + center */
+.cdb-morph-icon .mi-n1 { cx: 12;  cy: 4;  r: 1.5; }
+.cdb-morph-icon .mi-n2 { cx: 12;  cy: 20; r: 1.5; }
+.cdb-morph-icon .mi-n3 { cx: 4;   cy: 12; r: 1.5; }
+.cdb-morph-icon .mi-n4 { cx: 20;  cy: 12; r: 1.5; }
+.cdb-morph-icon .mi-n5 { cx: 12;  cy: 12; r: 2;   }
+
+/* Plus state — pulse ring at center */
+.cdb-morph-icon .mi-pulse { cx: 12; cy: 12; r: 4; opacity: 0.3; }
+
+/* ── Edit state — edges form a dashed pentagon ── */
+[data-layout="edit"] .cdb-morph-icon .mi-e1 { x1: 12;   y1: 3.5; x2: 5;    y2: 9;    stroke-dasharray: 3.5 2; }
+[data-layout="edit"] .cdb-morph-icon .mi-e2 { x1: 5;    y1: 9;   x2: 7.5;  y2: 17;   stroke-dasharray: 3.5 2; }
+[data-layout="edit"] .cdb-morph-icon .mi-e3 { x1: 7.5;  y1: 17;  x2: 16.5; y2: 17;   stroke-dasharray: 3.5 2; }
+[data-layout="edit"] .cdb-morph-icon .mi-e4 { x1: 16.5; y1: 17;  x2: 19;   y2: 9;    stroke-dasharray: 3.5 2; }
+[data-layout="edit"] .cdb-morph-icon .mi-e5 { x1: 19;   y1: 9;   x2: 12;   y2: 3.5;  stroke-dasharray: 3.5 2; opacity: 0.55; }
+
+/* Edit state — edge opacity (matches active-edit.svg) */
+[data-layout="edit"] .cdb-morph-icon .mi-e1,
+[data-layout="edit"] .cdb-morph-icon .mi-e2,
+[data-layout="edit"] .cdb-morph-icon .mi-e3,
+[data-layout="edit"] .cdb-morph-icon .mi-e4 { opacity: 0.55; }
+
+/* Edit state — radials visible, emanating from center */
+[data-layout="edit"] .cdb-morph-icon .mi-r1 { x1: 12; y1: 11; x2: 12; y2: 3.5; opacity: 0.25; }
+[data-layout="edit"] .cdb-morph-icon .mi-r2 { x1: 12; y1: 11; x2: 5;  y2: 9;   opacity: 0.25; }
+[data-layout="edit"] .cdb-morph-icon .mi-r3 { x1: 12; y1: 11; x2: 19; y2: 9;   opacity: 0.25; }
+
+/* Edit state — nodes fly to pentagon vertices */
+[data-layout="edit"] .cdb-morph-icon .mi-n1 { cx: 12;   cy: 3.5; r: 1.75; }
+[data-layout="edit"] .cdb-morph-icon .mi-n2 { cx: 5;    cy: 9;   r: 1.4;  opacity: 0.6; }
+[data-layout="edit"] .cdb-morph-icon .mi-n3 { cx: 19;   cy: 9;   r: 1.4;  opacity: 0.6; }
+[data-layout="edit"] .cdb-morph-icon .mi-n4 { cx: 7.5;  cy: 17;  r: 1.1;  opacity: 0.3; }
+[data-layout="edit"] .cdb-morph-icon .mi-n5 { cx: 16.5; cy: 17;  r: 1.1;  opacity: 0.3; }
+
+/* Edit state — pulse ring moves to apex */
+[data-layout="edit"] .cdb-morph-icon .mi-pulse { cx: 12; cy: 3.5; r: 3.5; opacity: 0.4; }
+
+/* Edit state — background */
 [data-layout="edit"] .cdb-card.cdb-placeholder .cdb-card-img {
     background: var(--accent-bg);
 }
-[data-layout="edit"] .cdb-card.cdb-placeholder .cdb-card-img::after {
-    content: var(--editing-label, '');
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
 [data-layout="edit"] .cdb-grid-card.cdb-placeholder {
     background: var(--accent-bg);
-}
-[data-layout="edit"] .cdb-grid-card.cdb-placeholder::after {
-    content: var(--editing-label, '');
-    font-size: 0.8rem;
-    color: var(--text-muted);
 }
 
 /* Error state for placeholder card (WebGL failure) */
 .cdb-card.cdb-placeholder .cdb-card-img.cdb-img-error {
     background: var(--surface);
 }
+.cdb-card.cdb-placeholder .cdb-card-img.cdb-img-error .cdb-morph-icon {
+    display: none;
+}
 .cdb-card.cdb-placeholder .cdb-card-img.cdb-img-error::after {
     content: '\26A0';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--danger-text);
     font-size: 1.5rem;
 }
 .cdb-grid-card.cdb-placeholder.cdb-img-error {
     background: var(--surface);
 }
+.cdb-grid-card.cdb-placeholder.cdb-img-error .cdb-morph-icon {
+    display: none;
+}
 .cdb-grid-card.cdb-placeholder.cdb-img-error::after {
     content: '\26A0';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--danger-text);
     font-size: 1.5rem;
 }

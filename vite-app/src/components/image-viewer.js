@@ -18,6 +18,8 @@ import { CLOSE_SVG, FULLSCREEN_SVG } from './icons.js';
 
 class ImageViewer extends HTMLElement {
 
+    static get observedAttributes() { return []; }
+
     // ── Internal state ──
 
     /** @type {'image'|'canvas'|'video'} */
@@ -125,6 +127,8 @@ class ImageViewer extends HTMLElement {
         this.#attachListeners();
     }
 
+    attributeChangedCallback() {}
+
     disconnectedCallback() {
         clearTimeout(this.#selectionFadeTimer);
         clearTimeout(this.#controlsTimer);
@@ -143,6 +147,13 @@ class ImageViewer extends HTMLElement {
     }
 
     // ── Public properties ──
+
+    /** Animation speed multiplier from `--lm-speed` CSS variable (default 1). */
+    get animSpeed() { return Math.max(0.1, parseFloat(getComputedStyle(this).getPropertyValue('--lm-speed')) || 1); }
+
+    /** Base durations (ms) scaled by animSpeed. */
+    get #openDur()  { return 400 * this.animSpeed; }
+    get #closeDur() { return 300 * this.animSpeed; }
 
     get src() { return this.#img.src; }
     set src(v) { this.#img.src = v; }
@@ -288,14 +299,24 @@ class ImageViewer extends HTMLElement {
         return fresh;
     }
 
-    /** Show alt-text overlay — FLIP morph from text button via translate+scale. */
+    /** Show alt-text overlay — morphs from text button rect via layout animation. */
     showAltText() {
         if (!this.#altText) return;
         if (this.#altAnim) { this.#altAnim.cancel(); this.#altAnim = null; }
 
-        // Hide the text button immediately so the overlay appears to replace it
         const textBtn = this.#controlsEl.querySelector('.iv-text-btn');
-        if (textBtn) textBtn.style.visibility = 'hidden';
+
+        // Hide text button immediately (overlay morphs from its position)
+        if (textBtn) {
+            textBtn.style.visibility = 'hidden';
+        }
+
+        // Fade out sibling controls (resolution, fullscreen)
+        const siblingBtns = [...this.#controlsEl.children].filter(el => el !== textBtn);
+        for (const sib of siblingBtns) {
+            sib.animate([{ opacity: 1 }, { opacity: 0 }],
+                { duration: this.#openDur * 0.3, easing: 'ease-out', fill: 'forwards' });
+        }
 
         this.#renderAltText();
         this.#altOverlay.style.transition = 'none';
@@ -303,27 +324,51 @@ class ImageViewer extends HTMLElement {
         this.#altVisible = true;
         this.classList.add('alt-text-shown');
 
-        // FLIP: compute transform from overlay's final position back to button
         const btnRect = textBtn?.getBoundingClientRect();
         if (btnRect) {
             this.#altOverlay.offsetHeight; // force layout
             const olRect = this.#altOverlay.getBoundingClientRect();
+            const wrapRect = this.#wrap.getBoundingClientRect();
 
-            // Center-to-center offset
-            const dx = (btnRect.left + btnRect.width / 2) - (olRect.left + olRect.width / 2);
-            const dy = (btnRect.top + btnRect.height / 2) - (olRect.top + olRect.height / 2);
-            // Scale ratio
-            const sx = btnRect.width / olRect.width;
-            const sy = btnRect.height / olRect.height;
+            // Rects relative to wrap (overlay's offset parent)
+            const fromTop  = btnRect.top  - wrapRect.top;
+            const fromLeft = btnRect.left - wrapRect.left;
+            const toTop    = olRect.top   - wrapRect.top;
+            const toLeft   = olRect.left  - wrapRect.left;
 
-            // Compose with overlay's base CSS transform: translate(-50%, -50%)
+            // Clip text while box is small
+            this.#altOverlay.style.overflow = 'hidden';
+
+            // Fade in content starting at 50% of the expand
+            const fadeDur = this.#openDur * 0.5;
+            for (const child of this.#altOverlay.children) {
+                child.animate([{ opacity: 0 }, { opacity: 1 }],
+                    { duration: fadeDur, delay: this.#openDur * 0.5,
+                      easing: 'ease-out', fill: 'both' });
+            }
+
             this.#altAnim = this.#altOverlay.animate([
-                { transform: `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: 0 },
-                { transform: 'translate(-50%, -50%)', opacity: 1 }
-            ], { duration: 1500, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
+                {
+                    top: fromTop + 'px', left: fromLeft + 'px',
+                    width: btnRect.width + 'px', height: btnRect.height + 'px',
+                    transform: 'none', borderRadius: '12px',
+                },
+                {
+                    top: toTop + 'px', left: toLeft + 'px',
+                    width: olRect.width + 'px', height: olRect.height + 'px',
+                    transform: 'none', borderRadius: '8px',
+                }
+            ], { duration: this.#openDur, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
             this.#altAnim.finished.then(() => {
+                // Clear child fade animations
+                for (const child of this.#altOverlay.children) {
+                    child.getAnimations().forEach(a => a.cancel());
+                    child.style.opacity = '';
+                }
+                this.#altOverlay.style.overflow = '';
                 this.#altOverlay.style.transition = '';
                 this.#altAnim = null;
+                // Keep siblings hidden (animations hold forwards)
             }).catch(() => {});
         } else {
             this.#altOverlay.style.transition = '';
@@ -332,7 +377,7 @@ class ImageViewer extends HTMLElement {
         this.dispatchEvent(new CustomEvent('alt-text-toggle', { detail: { visible: true } }));
     }
 
-    /** Hide alt-text overlay — reverse FLIP morph back to text button. */
+    /** Hide alt-text overlay — morphs back to text button rect. */
     dismissAltText(resetScroll = false) {
         if (this.#altAnim) { this.#altAnim.cancel(); this.#altAnim = null; }
 
@@ -341,32 +386,88 @@ class ImageViewer extends HTMLElement {
         const olRect  = this.#altOverlay.getBoundingClientRect();
 
         if (btnRect && olRect.width > 0) {
-            const dx = (btnRect.left + btnRect.width / 2) - (olRect.left + olRect.width / 2);
-            const dy = (btnRect.top + btnRect.height / 2) - (olRect.top + olRect.height / 2);
-            const sx = btnRect.width / olRect.width;
-            const sy = btnRect.height / olRect.height;
+            const wrapRect = this.#wrap.getBoundingClientRect();
+            const fromTop  = olRect.top   - wrapRect.top;
+            const fromLeft = olRect.left  - wrapRect.left;
+            const toTop    = btnRect.top  - wrapRect.top;
+            const toLeft   = btnRect.left - wrapRect.left;
 
             this.#altOverlay.style.transition = 'none';
+            this.#altOverlay.style.overflow = 'hidden';
+
+            // Fade out content immediately, completing at 50% of the close
+            const fadeDur = this.#closeDur * 0.5;
+            for (const child of this.#altOverlay.children) {
+                child.animate([{ opacity: 1 }, { opacity: 0 }],
+                    { duration: fadeDur, easing: 'ease-in', fill: 'forwards' });
+            }
+
+            // Show text button immediately; fade in its label in second half
+            if (textBtn) {
+                textBtn.style.visibility = '';
+                textBtn.style.opacity = '0';
+                textBtn.animate([{ opacity: 0 }, { opacity: 1 }],
+                    { duration: this.#closeDur * 0.5, delay: this.#closeDur * 0.5,
+                      easing: 'ease-out', fill: 'forwards' });
+            }
+
+            // Keep controls visible throughout
+            this.#showControlsPersistent();
+
+            // Fade sibling controls (resolution, fullscreen) back in during second half
+            const siblingBtns = [...this.#controlsEl.children].filter(el => el !== textBtn);
+            for (const sib of siblingBtns) {
+                sib.getAnimations().forEach(a => a.cancel());
+                sib.style.opacity = '0';
+                sib.animate([{ opacity: 0 }, { opacity: 1 }],
+                    { duration: this.#closeDur * 0.5, delay: this.#closeDur * 0.5,
+                      easing: 'ease-out', fill: 'forwards' });
+            }
+
             this.#altAnim = this.#altOverlay.animate([
-                { transform: 'translate(-50%, -50%)', opacity: 1 },
-                { transform: `translate(-50%, -50%) translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: 0 }
-            ], { duration: 1200, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' });
+                {
+                    top: fromTop + 'px', left: fromLeft + 'px',
+                    width: olRect.width + 'px', height: olRect.height + 'px',
+                    transform: 'none', borderRadius: '8px',
+                },
+                {
+                    top: toTop + 'px', left: toLeft + 'px',
+                    width: btnRect.width + 'px', height: btnRect.height + 'px',
+                    transform: 'none', borderRadius: '12px',
+                }
+            ], { duration: this.#closeDur, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' });
             this.#altAnim.finished.then(() => {
                 this.#altOverlay.classList.remove('visible');
+                this.#altOverlay.style.overflow = '';
                 this.#altOverlay.style.transition = '';
                 this.#altOverlay.getAnimations().forEach(a => a.cancel());
+                // Clear child content fade animations
+                for (const child of this.#altOverlay.children) {
+                    child.getAnimations().forEach(a => a.cancel());
+                    child.style.opacity = '';
+                }
                 this.#altAnim = null;
-                if (textBtn) textBtn.style.visibility = '';
+                if (textBtn) {
+                    textBtn.getAnimations().forEach(a => a.cancel());
+                    textBtn.style.opacity = '';
+                }
+                // Reset auto-hide timer — siblings stay visible via fill:'forwards'
+                // until the controls bar itself fades out naturally
+                this.#resetControlsTimer();
             }).catch(() => {});
         } else {
             this.#altOverlay.classList.remove('visible');
             if (textBtn) textBtn.style.visibility = '';
+            // Restore sibling controls immediately
+            for (const sib of [...this.#controlsEl.children].filter(el => el !== textBtn)) {
+                sib.getAnimations().forEach(a => a.cancel());
+                sib.style.opacity = '';
+            }
         }
 
         if (resetScroll) this.#altOverlay.scrollTop = 0;
         this.#altVisible = false;
         this.classList.remove('alt-text-shown');
-        if (this.#controlsHovered) this.#showControlsPersistent();
         this.dispatchEvent(new CustomEvent('alt-text-toggle', { detail: { visible: false } }));
     }
 
@@ -424,7 +525,6 @@ class ImageViewer extends HTMLElement {
 
         const overlay = document.createElement('div');
         overlay.className = 'fullscreen-overlay';
-
         // Clone or create media
         const isVideo = this.#mode === 'video';
         let media;
@@ -528,7 +628,7 @@ class ImageViewer extends HTMLElement {
             this.#fsAltAnim = altOverlay.animate([
                 { transform: `translateX(-50%) translate(${adx}px, ${ady}px)`, opacity: 0 },
                 { transform: 'translateX(-50%)', opacity: 1 }
-            ], { duration: 1500, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
+            ], { duration: this.#openDur, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
             this.#fsAltAnim.finished.then(() => {
                 altOverlay.style.transition = '';
                 altOverlay.classList.add('fs-alt-expanded');
@@ -545,6 +645,7 @@ class ImageViewer extends HTMLElement {
         // Animate in
         media.offsetHeight;
         overlay.classList.add('fs-visible');
+        media.style.transition = `transform ${this.#openDur}ms cubic-bezier(0.16, 1, 0.3, 1)`;
         media.classList.add('fs-animating');
         media.style.transform = 'none';
 
@@ -597,13 +698,14 @@ class ImageViewer extends HTMLElement {
             altEl.animate([
                 { transform: 'translateX(-50%)', opacity: 1 },
                 { transform: `translateX(-50%) translate(${altDx}px, ${altDy}px)`, opacity: 0 }
-            ], { duration: 1200, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' });
+            ], { duration: this.#closeDur, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' });
         } else if (altEl) {
             altEl.classList.remove('visible');
         }
 
         overlay.classList.remove('fs-visible');
         media.classList.remove('fs-animating');
+        media.style.transition = `transform ${this.#closeDur}ms ease-in`;
         media.classList.add('fs-closing');
         media.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
 
@@ -679,7 +781,7 @@ class ImageViewer extends HTMLElement {
             this.#hideControls();
         });
         this.#altOverlay.addEventListener('click', () => {
-            this.#hideControls();
+            if (this.#altVisible) this.dismissAltText();
         });
         this.#altOverlay.addEventListener('scroll', () => {
             this.#hideControls();
@@ -722,6 +824,7 @@ class ImageViewer extends HTMLElement {
     }
 
     #hideControls() {
+        if (this.#controlsEl.querySelector('.custom-dropdown.open')) return;
         clearTimeout(this.#controlsTimer);
         this.#controlsTimer = 0;
         this.#controlsActive = false;
@@ -730,6 +833,7 @@ class ImageViewer extends HTMLElement {
 
     #resetControlsTimer() {
         clearTimeout(this.#controlsTimer);
+        if (this.#controlsEl.querySelector('.custom-dropdown.open')) return;
         this.#controlsTimer = setTimeout(() => this.#hideControls(), 2500);
     }
 
@@ -789,7 +893,7 @@ class ImageViewer extends HTMLElement {
         this.#fsAltAnim = el.animate([
             { transform: `translateX(-50%) translate(${adx}px, ${ady}px)`, opacity: 0 },
             { transform: 'translateX(-50%)', opacity: 1 }
-        ], { duration: 1500, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
+        ], { duration: this.#openDur, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
         this.#fsAltAnim.finished.then(() => {
             el.style.transition = '';
             el.classList.add('fs-alt-expanded');
@@ -817,7 +921,7 @@ class ImageViewer extends HTMLElement {
         this.#fsAltAnim = el.animate([
             { transform: 'translateX(-50%)', opacity: 1 },
             { transform: `translateX(-50%) translate(${dx}px, ${dy}px)`, opacity: 0 }
-        ], { duration: 1200, easing: 'ease-in', fill: 'forwards' });
+        ], { duration: this.#closeDur, easing: 'ease-in', fill: 'forwards' });
         this.#fsAltAnim.finished.then(() => {
             el.classList.remove('visible');
             el.style.transition = '';

@@ -1,0 +1,25 @@
+<!-- Active-edit icon (alt): geometric shape under construction with luminous nodes.
+     Uses white fills for CSS mask-image (luminance mode). Apply color via
+     background-color on the masked element. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+  <!-- Dashed geometric frame — shape under construction -->
+  <path d="M12 3.5L5 9l2.5 8h9L19 9z"
+        stroke="white" stroke-width="1.25" stroke-linejoin="round"
+        stroke-dasharray="3.5 2" opacity="0.55"/>
+
+  <!-- Interior radials — structural scaffolding -->
+  <line x1="12" y1="11" x2="12" y2="3.5" stroke="white" stroke-width="0.75" opacity="0.25"/>
+  <line x1="12" y1="11" x2="5"  y2="9"   stroke="white" stroke-width="0.75" opacity="0.25"/>
+  <line x1="12" y1="11" x2="19" y2="9"   stroke="white" stroke-width="0.75" opacity="0.25"/>
+
+  <!-- Vertex nodes — luminous points, brighter toward apex -->
+  <circle cx="12"   cy="3.5" r="1.75" fill="white"/>
+  <circle cx="5"    cy="9"   r="1.4"  fill="white" opacity="0.6"/>
+  <circle cx="19"   cy="9"   r="1.4"  fill="white" opacity="0.6"/>
+  <circle cx="7.5"  cy="17"  r="1.1"  fill="white" opacity="0.3"/>
+  <circle cx="16.5" cy="17"  r="1.1"  fill="white" opacity="0.3"/>
+
+  <!-- Active pulse ring on apex node -->
+  <circle cx="12" cy="3.5" r="3.5"
+          stroke="white" stroke-width="0.75" fill="none" opacity="0.4"/>
+</svg>

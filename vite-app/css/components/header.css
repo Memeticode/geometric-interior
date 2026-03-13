@@ -6,7 +6,9 @@
     align-items: flex-start;
     gap: 0.125rem;
     padding: 1rem 0.75rem 0.5rem;
-    border-bottom: 1px solid var(--accent);
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: var(--accent);
     background: var(--surface);
     flex-shrink: 0;
     position: relative;
@@ -40,7 +42,7 @@
 .header-link {
     background: none;
     border: none;
-    color: var(--text-dim);
+    color: var(--text-muted);
     font-size: 0.65rem;
     cursor: pointer;
     padding: 0.25rem 0.25rem 0.125rem;
@@ -53,7 +55,7 @@
 }
 
 .header-link:hover {
-    color: var(--text-muted);
+    color: var(--text);
     background: var(--surface-hover);
 }
 
@@ -81,7 +83,7 @@
     display: flex;
     align-items: center;
     color: var(--accent-text);
-    opacity: 0.3;
+    opacity: 0.67;
     cursor: default;
     user-select: none;
 }

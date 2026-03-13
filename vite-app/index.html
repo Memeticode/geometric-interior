@@ -1,9 +1,10 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" class="no-transitions">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <style>.no-transitions,.no-transitions *,.no-transitions *::before,.no-transitions *::after{transition-duration:0s!important;animation-duration:0s!important}</style>
     <title>Gallery — Geometric Interior</title>
     <meta name="description"
         content="Browse generative geometric art self-portraits. Real-time WebGL rendering of crystalline forms." />
@@ -99,7 +100,7 @@
                     </div>
                     <!-- Image + text card -->
                     <div class="gallery-selection-card">
-                        <image-viewer id="galleryViewer"></image-viewer>
+                        <image-viewer id="galleryViewer" controls-pos="top-center"></image-viewer>
                         <div class="gallery-selection-card-footer">
                             <span class="selected-gen-title" id="selectedGenTitle"></span>
                             <div class="morph-commentary">
@@ -115,7 +116,7 @@
                 </div>
                 <div class="gallery-content" id="galleryContent">
                     <carousel-dropdown-browser id="carouselBrowser" controls-position="above" infinite="false"
-                        bounce="0.35"></carousel-dropdown-browser>
+                        bounce="0.35" debug-show-controls></carousel-dropdown-browser>
                     <!-- Animations -->
                     <div class="gallery-section" id="animSection" style="display:none">
                         <div class="gallery-section-header" data-target="animGallery" aria-expanded="true">

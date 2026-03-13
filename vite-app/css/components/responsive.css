@@ -94,6 +94,19 @@
         margin: 0.25rem;
     }
 
+    /* Commentary — match header-link font size */
+    .gen-commentary-field {
+        font-size: 0.8125rem;
+    }
+    .morph-commentary-field {
+        font-size: 0.8125rem;
+    }
+
+    /* Name — match page title font size */
+    .morph-name .morph-textarea {
+        font-size: 0.8125rem;
+    }
+
 }
 
 /* ── sm — hi-dpi ── */
@@ -108,6 +121,10 @@
         padding: 0.5rem 2rem;
     }
     .header-brand h1 {
+        font-size: 0.875rem;
+    }
+    /* Name — match page title font size */
+    .morph-name .morph-textarea {
         font-size: 0.875rem;
     }
     .header-statement {
@@ -145,15 +162,6 @@
     /* Gallery */
     .gallery-page .main-content {
         padding: 1rem 2rem 0;
-    }
-    .gallery-selection-header-container {
-        grid-template-columns: 1fr 1fr;
-        align-items: center;
-        gap: 0.5rem;
-    }
-    .gallery-selection-header-container > .morph-row {
-        grid-column: span 1;
-        grid-template-columns: auto 1fr;
     }
     .gallery-controls {
         --icon-btn-size: 24px;
@@ -304,18 +312,9 @@
         --icon-btn-icon: 18px;
     }
 
-    /* Commentary — slightly larger on desktop */
-    .gen-commentary-field {
-        font-size: 0.8125rem;
-    }
-
     /* Saved images grid — larger cards on desktop */
     .gen-saved-grid {
         grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    }
-
-    .morph-commentary-field {
-        font-size: 0.825rem;
     }
 
     /* Generate — narrower grid at desktop */

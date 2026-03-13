@@ -179,7 +179,7 @@ function readCard(el) {
 // ── Main component ──
 
 class CarouselDropdownBrowser extends HTMLElement {
-    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'debug-show-controls', 'debug-transition-animation'];
+    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'grid-align', 'grid-items-align', 'section-align', 'debug-show-controls', 'debug-transition-animation'];
 
     // ── Configuration ──
     #arcZ = 24;
@@ -192,6 +192,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     #debugShowControls = false;     // show debug controls panel
     #debugTransitionAnimation = false; // log transition/FLIP debug info to console
     #animatingExpand = false;       // guard against overlapping expand/collapse
+    #expandTimers = [];             // setTimeout IDs for expand/collapse phases
+    #expandSkipFn = null;           // closure to snap expand/collapse to end state
     #isFirstRender = true;          // fade-in on initial load
 
     // ── Programmatic control ──
@@ -207,6 +209,9 @@ class CarouselDropdownBrowser extends HTMLElement {
     //   v-align: above | top | center | bottom | below | none (default: none = hidden)
     //   h-align: left | center | right (default: center)
     #cardTitle = 'none';
+    #gridAlign = 'left';       // 'left' | 'center' | 'right'
+    #gridItemsAlign = 'stretch'; // 'stretch' | 'left' | 'center' | 'right'
+    #sectionAlign = 'left';    // 'left' | 'center' | 'right'
 
     // ── Data ──
     #items = [];           // [{ key, label, thumbSrc, fallbackSrc, deletable, data, section, sectionIndex }]
@@ -476,6 +481,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (this.expanded || this.#animatingExpand || this.#locked || this.#controlsHidden) return;
         this.#animatingExpand = true;
         this.#scrollCancelled = noScroll;
+        this.dispatchEvent(new CustomEvent('expand-start'));
 
         // Disable controls during animation
         this.#navLeft.disabled = true;
@@ -499,6 +505,7 @@ class CarouselDropdownBrowser extends HTMLElement {
 
         const sectionLabelRects = this.#captureSectionLabelRects();
         const dur = this.#flipDuration * this.#readSpeed();
+        this.style.setProperty('--cdb-morph-dur', dur + 'ms');
         const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
         const cardW = this.#readCardW();
 
@@ -552,6 +559,12 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Now release cdb-measuring so dropdown transitions can proceed
         this.#dropdown.classList.remove('cdb-measuring');
 
+        // ── Lock dropdown scroll during animation ──
+        const frozenScroll = this.#dropdown.scrollTop;
+        const blockWheel = (e) => e.preventDefault();
+        this.#dropdown.addEventListener('wheel', blockWheel, { passive: false });
+        this.#dropdown.style.overflowY = 'hidden';
+
         // ── FLIP controls to smooth position change ──
         const ctrlAfter = this.#controls.getBoundingClientRect();
         const cdy = ctrlBefore.top - ctrlAfter.top;
@@ -564,7 +577,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
 
         // Store scroll parent for post-animation scroll
-        this.#scrollParent = this.closest('.main-content') || this.parentElement;
+        this.#scrollParent = this.#findScrollParent();
 
         // ── Prevent viewport clipping during animation ──
         this.#viewport.style.overflow = 'visible';
@@ -806,8 +819,13 @@ class CarouselDropdownBrowser extends HTMLElement {
             }
         }
 
-        // ── Cleanup after all animations complete ──
-        setTimeout(() => {
+        // ── Cleanup closure — shared by normal completion and skip ──
+        const expandCleanup = () => {
+            // Unlock dropdown scroll
+            this.#dropdown.removeEventListener('wheel', blockWheel);
+            this.#dropdown.style.overflowY = '';
+            this.#dropdown.scrollTop = frozenScroll;
+
             // Cancel Web Animations — CSS custom properties already hold targets
             this.#cancelFlipAnimations();
 
@@ -869,17 +887,23 @@ class CarouselDropdownBrowser extends HTMLElement {
                 }));
             }
 
+            this.#expandTimers = [];
+            this.#expandSkipFn = null;
             this.#teardownScrollListener();
             this.#scrollCancelled = false;
             this.#animatingExpand = false;
             this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: true } }));
-        }, totalDur + 50);
+        };
+
+        this.#expandSkipFn = expandCleanup;
+        this.#expandTimers.push(setTimeout(expandCleanup, totalDur + 50));
     }
 
     async collapse({ noScroll = false } = {}) {
         if (!this.expanded || this.#animatingExpand || this.#locked || this.#controlsHidden) return;
         this.#animatingExpand = true;
         this.#scrollCancelled = noScroll;
+        this.dispatchEvent(new CustomEvent('expand-start'));
 
         // Disable controls during animation
         this.#navLeft.disabled = true;
@@ -888,6 +912,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#toggle.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
 
         const dur = this.#flipDuration * this.#readSpeed();
+        this.style.setProperty('--cdb-morph-dur', dur + 'ms');
         const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
         const cardW = this.#readCardW();
 
@@ -911,7 +936,84 @@ class CarouselDropdownBrowser extends HTMLElement {
         const cardDelay = Math.round(dur * 0.15);
 
         await new Promise(resolve => {
-            setTimeout(() => {
+            // ── Collapse skip closure — snaps to final collapsed state ──
+            const collapseCleanup = () => {
+                // Cancel all Web Animations
+                this.#cancelFlipAnimations();
+
+                // Un-flatten carousel
+                this.#strip.classList.remove('cdb-flattened');
+                this.#toggle.classList.remove('cdb-expanded');
+
+                // Clean up dropdown
+                this.#dropdown.style.transition = '';
+                this.#dropdown.style.opacity = '';
+                this.#dropdown.style.pointerEvents = '';
+                this.#dropdown.style.overflow = '';
+                this.#dropdown.style.maxHeight = '';
+                this.#dropdown.classList.add('cdb-measuring');
+                this.#dropdown.classList.remove('expanded');
+                void this.#dropdown.offsetHeight;
+                this.#dropdown.classList.remove('cdb-measuring');
+
+                // Clean up all card inline styles
+                for (const { element } of this.#cards) {
+                    element.style.transition = '';
+                    element.style.zIndex = '';
+                    const img = element.querySelector('.cdb-card-frame');
+                    if (img) {
+                        img.style.transition = '';
+                        img.style.webkitMaskImage = '';
+                        img.style.maskImage = '';
+                    }
+                }
+
+                // Clean up grid styles
+                for (const card of gridCards) card.style.opacity = '';
+                for (const h of headers) h.style.opacity = '';
+                this.#cleanupGridAnimationStyles();
+
+                // Clean up container/viewport
+                this.#container.style.transition = '';
+                this.#container.style.marginBottom = '';
+                this.#viewport.style.overflow = '';
+
+                // Remove section phantoms (query DOM — may or may not exist yet)
+                for (const o of this.querySelectorAll('.cdb-section-phantom')) o.remove();
+
+                // Position cards instantly
+                this.#controls.style.transition = '';
+                this.#controls.style.transform = '';
+                this.#sectionLabelContainer.style.transition = '';
+                this.#sectionLabelContainer.style.transform = '';
+                this.#sectionLabelContainer.style.opacity = '';
+                this.#track.style.transition = '';
+                for (const sec of this.#sectionLabels) {
+                    sec.element.style.transition = '';
+                    sec.element.style.opacity = '';
+                }
+                this.#positionCardsInstant();
+                this.#isTransitioning = false;
+                this.#track.classList.remove('cdb-transitioning');
+
+                // Re-enable controls
+                this.#navLeft.disabled = false;
+                this.#navRight.disabled = false;
+                this.#toggle.disabled = false;
+                this.#toggle.setAttribute('data-tooltip', 'Expand');
+
+                this.#expandTimers = [];
+                this.#expandSkipFn = null;
+                this.#teardownScrollListener();
+                this.#scrollCancelled = false;
+                this.#animatingExpand = false;
+                this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: false } }));
+                resolve();
+            };
+
+            this.#expandSkipFn = collapseCleanup;
+
+            this.#expandTimers.push(setTimeout(() => {
                 // ── Suppress all transitions ──
                 for (const { element } of this.#cards) {
                     element.style.transition = 'none';
@@ -926,13 +1028,21 @@ class CarouselDropdownBrowser extends HTMLElement {
                     sec.element.style.opacity = '0';
                 }
 
-                // ── Hide grid content BEFORE un-flatten to prevent visible shift ──
-                this.#dropdown.style.transition = 'none';
+                // ── Hide grid content & smoothly collapse dropdown height ──
                 for (const card of gridCards) card.style.opacity = '0';
                 this.#dropdown.style.opacity = '0';
                 this.#dropdown.style.pointerEvents = 'none';
                 for (const h of headers) h.style.opacity = '0';
                 this.#toggle.classList.remove('cdb-expanded');
+
+                // Measure actual height, lock it, then transition to 0
+                const dropdownH = this.#dropdown.offsetHeight;
+                this.#dropdown.style.transition = 'none';
+                this.#dropdown.style.overflow = 'hidden';
+                this.#dropdown.style.maxHeight = dropdownH + 'px';
+                void this.#dropdown.offsetHeight;
+                this.#dropdown.style.transition = `max-height ${dur}ms ${easing}`;
+                this.#dropdown.style.maxHeight = '0';
 
                 // ── Capture controls position before un-flatten ──
                 const ctrlBefore = this.#controls.getBoundingClientRect();
@@ -1084,7 +1194,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 const totalDur = Math.max(dur + maxVisibleDelay, dur + offScreenBaseDelay);
 
                 // ── Synchronized scroll: scroll to post-collapse position during animation ──
-                this.#scrollParent = this.closest('.main-content') || this.parentElement;
+                this.#scrollParent = this.#findScrollParent();
                 if (this.#scrollParent) {
                     const componentRect = this.getBoundingClientRect();
                     const parentRect = this.#scrollParent.getBoundingClientRect();
@@ -1101,7 +1211,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 }
 
                 // ── Cleanup after animation ──
-                setTimeout(() => {
+                this.#expandTimers.push(setTimeout(() => {
                     this.#cancelFlipAnimations();
                     for (const { element } of this.#cards) {
                         element.style.transition = '';
@@ -1134,9 +1244,13 @@ class CarouselDropdownBrowser extends HTMLElement {
                             vpWidthBefore, trackHeightBefore, ctrlBefore2.top, lblBefore2.top, scrollBefore);
                     }
 
+                    // Clean up dropdown — already collapsed visually by the
+                    // max-height transition started at animation begin
                     this.#dropdown.style.transition = '';
                     this.#dropdown.style.opacity = '';
                     this.#dropdown.style.pointerEvents = '';
+                    this.#dropdown.style.overflow = '';
+                    this.#dropdown.style.maxHeight = '';
                     this.#dropdown.classList.add('cdb-measuring');
                     this.#dropdown.classList.remove('expanded');
                     void this.#dropdown.offsetHeight;
@@ -1202,7 +1316,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                     }
 
                     // Clear FLIP styles, remove phantoms, reveal labels AFTER FLIP completes
-                    setTimeout(() => {
+                    this.#expandTimers.push(setTimeout(() => {
                         if (_dbg) {
                             console.group('[CDB collapse] final recompute phase (+350ms)');
                         }
@@ -1277,23 +1391,42 @@ class CarouselDropdownBrowser extends HTMLElement {
                                 }));
                             }
 
+                            this.#expandTimers = [];
+                            this.#expandSkipFn = null;
+                            this.#teardownScrollListener();
+                            this.#scrollCancelled = false;
+                            this.#animatingExpand = false;
+                            this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: false } }));
                             resolve();
                         });
-                    }, 350);
-                }, totalDur + 50);
-            }, cardDelay);
+                    }, 350));
+                }, totalDur + 50));
+            }, cardDelay));
         });
-
-        this.#teardownScrollListener();
-        this.#scrollCancelled = false;
-        this.#animatingExpand = false;
-        this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: false } }));
     }
 
     toggle() {
         if (this.#locked || this.#controlsHidden) return;
         if (this.expanded) this.collapse();
         else this.expand();
+    }
+
+    /**
+     * Skip any in-flight expand/collapse animation — snap to end state.
+     * Called by the transition overlay when user interacts during animation.
+     */
+    skipExpandCollapse() {
+        if (!this.#animatingExpand || !this.#expandSkipFn) return;
+        console.log('[carousel] SKIP expand/collapse');
+        // Clear all phase timers
+        for (const t of this.#expandTimers) clearTimeout(t);
+        this.#expandTimers = [];
+        // Cancel all Web Animations
+        this.#cancelFlipAnimations();
+        // Run the stored cleanup closure (snaps to final state)
+        const fn = this.#expandSkipFn;
+        this.#expandSkipFn = null;
+        fn();
     }
 
     // ── Attributes ──
@@ -1320,6 +1453,19 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (name === 'card-title') {
             this.#cardTitle = val || 'none';
             this.#applyTitleClasses();
+        }
+        if (name === 'grid-align') {
+            this.#gridAlign = val || 'left';
+            this.#applyGridAlignClass();
+        }
+        if (name === 'grid-items-align') {
+            this.#gridItemsAlign = val || 'stretch';
+            this.#applyGridItemsAlignClass();
+        }
+        if (name === 'section-align') {
+            this.#sectionAlign = val || 'left';
+            this.#applySectionAlignClass();
+            if (this.#domBuilt) this.#positionCards();
         }
         if (name === 'debug-show-controls') {
             this.#debugShowControls = val !== null && val !== 'false';
@@ -1355,6 +1501,32 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.classList.add(`cdb-t-${t.vAlign}`, `cdb-t-h-${t.hAlign}`);
         }
         this.#applyTooltips(t.vAlign === 'tooltip');
+    }
+
+    /** Apply CSS class for grid card alignment (left/center/right). */
+    #applyGridAlignClass() {
+        for (const cls of [...this.classList]) {
+            if (cls.startsWith('cdb-grid-align-')) this.classList.remove(cls);
+        }
+        this.classList.add(`cdb-grid-align-${this.#gridAlign}`);
+    }
+
+    /** Apply CSS class for grid items alignment within cells (stretch/left/center/right). */
+    #applyGridItemsAlignClass() {
+        for (const cls of [...this.classList]) {
+            if (cls.startsWith('cdb-grid-items-')) this.classList.remove(cls);
+        }
+        if (this.#gridItemsAlign !== 'stretch') {
+            this.classList.add(`cdb-grid-items-${this.#gridItemsAlign}`);
+        }
+    }
+
+    /** Apply CSS class for section title alignment (left/center/right). */
+    #applySectionAlignClass() {
+        for (const cls of [...this.classList]) {
+            if (cls.startsWith('cdb-sec-align-')) this.classList.remove(cls);
+        }
+        this.classList.add(`cdb-sec-align-${this.#sectionAlign}`);
     }
 
     /** Set or clear data-tooltip on card elements for tooltip title mode. */
@@ -1435,6 +1607,9 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#updateEasing();
         this.#syncArcYExtra();
         this.#applyTitleClasses();
+        this.#applyGridAlignClass();
+        this.#applyGridItemsAlignClass();
+        this.#applySectionAlignClass();
         this.#initResponsiveArcY();
         this.#attachResizeObserver();
         this.#attachMutationObserver();
@@ -1575,7 +1750,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#toggle.style.display = 'none';
         this.#toggle.setAttribute('aria-label', 'View all');
         this.#toggle.setAttribute('data-tooltip', 'Expand');
-        this.#toggle.innerHTML = '<span class="cdb-chevron"><span class="cdb-chevron-bar cdb-chevron-l"></span><span class="cdb-chevron-bar cdb-chevron-r"></span></span>';
+        this.#toggle.innerHTML = '<svg class="cdb-chevron-svg" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l7 6 7-6"/></svg>';
 
         this.#navRight = document.createElement('button');
         this.#navRight.className = 'gallery-arrow cdb-arrow cdb-arrow-right';
@@ -1744,6 +1919,29 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#debugPanel.appendChild(mkLabel('Card title:', titleSel));
         this.#debugPanel.appendChild(mkLabel('Title align:', titleAlignSel));
 
+        // Grid alignment
+        const gridAlignOpts = [['left','Left'],['center','Center'],['right','Right']];
+        const gridAlignSel = mkSelect(gridAlignOpts, this.#gridAlign, () => {
+            this.setAttribute('grid-align', gridAlignSel.value);
+        });
+        this.#debugPanel.appendChild(mkLabel('Grid align:', gridAlignSel));
+
+        // Grid items alignment
+        const gridItemsOpts = [['stretch','Stretch'],['left','Left'],['center','Center'],['right','Right']];
+        const gridItemsSel = mkSelect(gridItemsOpts, this.#gridItemsAlign, () => {
+            const v = gridItemsSel.value;
+            if (v === 'stretch') this.removeAttribute('grid-items-align');
+            else this.setAttribute('grid-items-align', v);
+        });
+        this.#debugPanel.appendChild(mkLabel('Grid items:', gridItemsSel));
+
+        // Section title alignment
+        const secAlignOpts = [['left','Left'],['center','Center'],['right','Right']];
+        const secAlignSel = mkSelect(secAlignOpts, this.#sectionAlign, () => {
+            this.setAttribute('section-align', secAlignSel.value);
+        });
+        this.#debugPanel.appendChild(mkLabel('Section align:', secAlignSel));
+
         // Append rendered DOM — dropdown inside strip so controls-position="below" flows smoothly
         this.#appendStripChildren();
         this.appendChild(this.#strip);
@@ -1795,34 +1993,44 @@ class CarouselDropdownBrowser extends HTMLElement {
             const idx = this.#items.findIndex(it => it.key === this.#selectedKey);
             if (idx >= 0) this.#centerIdx = idx;
         }
+        // Skip transitions on first render when .no-transitions is active
+        const instantFirst = this.#isFirstRender
+            && document.documentElement.classList.contains('no-transitions');
+
         // Hide section labels during initial unfold via CSS class
-        if (this.#isFirstRender) {
+        if (this.#isFirstRender && !instantFirst) {
             this.#sectionLabelContainer.classList.add('cdb-labels-deferred');
         }
-        this.#positionCards();
+        if (instantFirst) {
+            this.#positionCardsInstant();
+        } else {
+            this.#positionCards();
+        }
         this.#updateToggleVisibility();
         this.#updateSectionNavVisibility();
         if (this.expanded) {
             this.collapse();
         }
 
-        // Fade in on first render
+        // Fade in on first render (skip when transitions are suppressed)
         if (this.#isFirstRender && this.#cards.length > 0) {
             this.#isFirstRender = false;
 
-            // Cards + section labels start invisible, fade in via double-rAF
-            for (const { element } of this.#cards) {
-                element.style.setProperty('--card-opacity', '0');
-            }
-            requestAnimationFrame(() => {
+            if (!instantFirst) {
+                // Cards + section labels start invisible, fade in via double-rAF
+                for (const { element } of this.#cards) {
+                    element.style.setProperty('--card-opacity', '0');
+                }
                 requestAnimationFrame(() => {
-                    for (const { element } of this.#cards) {
-                        const layout = this.#cardLayout.get(element);
-                        element.style.setProperty('--card-opacity', layout ? String(layout.opacity) : '0');
-                    }
-                    this.#sectionLabelContainer.classList.remove('cdb-labels-deferred');
+                    requestAnimationFrame(() => {
+                        for (const { element } of this.#cards) {
+                            const layout = this.#cardLayout.get(element);
+                            element.style.setProperty('--card-opacity', layout ? String(layout.opacity) : '0');
+                        }
+                        this.#sectionLabelContainer.classList.remove('cdb-labels-deferred');
+                    });
                 });
-            });
+            }
         }
     }
 
@@ -1869,6 +2077,12 @@ class CarouselDropdownBrowser extends HTMLElement {
 
             const imgWrap = card.querySelector('.cdb-card-img');
             const img = imgWrap?.querySelector('img');
+            if (imgWrap) {
+                // Add/remove morph icon for placeholder state
+                const hasMorph = !!imgWrap.querySelector('.cdb-morph-icon');
+                if (item.placeholder && !hasMorph) imgWrap.appendChild(this.#createMorphIcon());
+                else if (!item.placeholder && hasMorph) imgWrap.querySelector('.cdb-morph-icon').remove();
+            }
             if (img && imgWrap) {
                 imgWrap.classList.remove('cdb-img-error');
                 if (item.placeholder) {
@@ -1904,6 +2118,11 @@ class CarouselDropdownBrowser extends HTMLElement {
 
             gridCard.classList.toggle('cdb-placeholder', !!item.placeholder);
 
+            // Add/remove morph icon for placeholder state
+            const hasMorph = !!gridCard.querySelector('.cdb-morph-icon');
+            if (item.placeholder && !hasMorph) gridCard.appendChild(this.#createMorphIcon());
+            else if (!item.placeholder && hasMorph) gridCard.querySelector('.cdb-morph-icon').remove();
+
             const img = gridCard.querySelector('img');
             if (img) {
                 if (item.placeholder) {
@@ -1915,6 +2134,61 @@ class CarouselDropdownBrowser extends HTMLElement {
                 }
             }
         }
+    }
+
+    // ── Morph icon (inline SVG for plus ↔ active-edit transition) ──
+
+    #createMorphIcon() {
+        const NS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(NS, 'svg');
+        svg.setAttribute('viewBox', '0 0 24 24');
+        svg.setAttribute('fill', 'none');
+        svg.classList.add('cdb-morph-icon');
+
+        const line = (cls, sw, cap) => {
+            const el = document.createElementNS(NS, 'line');
+            el.classList.add(cls);
+            el.setAttribute('stroke', 'currentColor');
+            el.setAttribute('stroke-width', sw);
+            if (cap) el.setAttribute('stroke-linecap', cap);
+            svg.appendChild(el);
+            return el;
+        };
+        const circle = (cls, fill) => {
+            const el = document.createElementNS(NS, 'circle');
+            el.classList.add(cls);
+            el.setAttribute('fill', fill ? 'currentColor' : 'none');
+            if (!fill) {
+                el.setAttribute('stroke', 'currentColor');
+                el.setAttribute('stroke-width', '0.75');
+            }
+            svg.appendChild(el);
+            return el;
+        };
+
+        // 5 edge lines (dots expand into pentagon edges; butt caps avoid overlap at vertices)
+        line('mi-e1', '1.25', 'butt');
+        line('mi-e2', '1.25', 'butt');
+        line('mi-e3', '1.25', 'butt');
+        line('mi-e4', '1.25', 'butt');
+        line('mi-e5', '1.25', 'butt');
+
+        // 3 radial lines (hidden in plus, visible in edit)
+        line('mi-r1', '0.75');
+        line('mi-r2', '0.75');
+        line('mi-r3', '0.75');
+
+        // 5 node circles (filled)
+        circle('mi-n1', true);
+        circle('mi-n2', true);
+        circle('mi-n3', true);
+        circle('mi-n4', true);
+        circle('mi-n5', true);
+
+        // Pulse ring (stroke only)
+        circle('mi-pulse', false);
+
+        return svg;
     }
 
     // ── Carousel card rendering ──
@@ -1941,7 +2215,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             const img = document.createElement('img');
             img.alt = item.label;
             if (item.placeholder) {
-                // Placeholder cards: no image, CSS handles visual
+                imgWrap.appendChild(this.#createMorphIcon());
             } else if (item.thumbSrc) {
                 img.src = item.thumbSrc;
                 const markError = () => { img.onerror = null; img.removeAttribute('src'); imgWrap.classList.add('cdb-img-error'); };
@@ -2012,7 +2286,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             const img = document.createElement('img');
             img.alt = item.label;
             if (item.placeholder) {
-                // Placeholder cards: no image, CSS handles visual
+                card.appendChild(this.#createMorphIcon());
             } else if (item.thumbSrc) {
                 img.src = item.thumbSrc;
                 const markGridError = () => { img.onerror = null; img.removeAttribute('src'); card.classList.add('cdb-img-error'); };
@@ -2051,7 +2325,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             card.addEventListener('click', () => {
                 this.#centerIdx = i;
                 // Check if grid overflows the scroll parent
-                this.#scrollParent = this.closest('.main-content') || this.parentElement;
+                this.#scrollParent = this.#findScrollParent();
                 const overflows = this.#scrollParent && this.#scrollParent.scrollHeight > this.#scrollParent.clientHeight;
                 if (overflows) {
                     this.collapse();
@@ -2362,6 +2636,17 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#scrollParent.removeEventListener('scroll', this.#scrollListener);
         }
         this.#scrollListener = null;
+    }
+
+    #findScrollParent() {
+        let el = this.parentElement;
+        while (el && el !== document.documentElement) {
+            const { overflow, overflowY } = getComputedStyle(el);
+            if (overflow === 'auto' || overflow === 'scroll' ||
+                overflowY === 'auto' || overflowY === 'scroll') return el;
+            el = el.parentElement;
+        }
+        return document.documentElement;
     }
 
     #animateGridNamesIn(dur) {
@@ -2853,8 +3138,16 @@ class CarouselDropdownBrowser extends HTMLElement {
             }
 
             if (!skipOpacity) sec.element.style.opacity = '';
-            sec.element.style.transform = `translateX(${clampedLeft}px)`;
             const textWidth = sec.element.scrollWidth;
+            let labelX;
+            if (this.#sectionAlign === 'center') {
+                labelX = (clampedLeft + clampedRight) / 2 - textWidth / 2;
+            } else if (this.#sectionAlign === 'right') {
+                labelX = clampedRight - textWidth;
+            } else {
+                labelX = clampedLeft;
+            }
+            sec.element.style.transform = `translateX(${labelX}px)`;
             const underlineWidth = Math.min(textWidth, availableWidth);
             sec.element.style.setProperty('--underline-width', underlineWidth + 'px');
 
@@ -2876,6 +3169,10 @@ class CarouselDropdownBrowser extends HTMLElement {
     // ── Coverflow layout entry point ──
 
     #positionCards() {
+        // Respect page-level transition suppression (e.g. initial load)
+        if (document.documentElement.classList.contains('no-transitions')) {
+            return this.#positionCardsInstant();
+        }
         const frame = this.#computeLayout();
         this.#isTransitioning = true;
         this.#track.classList.add('cdb-transitioning');
@@ -2888,9 +3185,11 @@ class CarouselDropdownBrowser extends HTMLElement {
         const frame = this.#computeLayout();
         this.#resetHoverState();
         this.#track.classList.add('cdb-instant');
+        this.#sectionLabelContainer.classList.add('cdb-instant');
         this.#applyLayout(frame);
         void this.#track.offsetHeight;
         this.#track.classList.remove('cdb-instant');
+        this.#sectionLabelContainer.classList.remove('cdb-instant');
     }
 
     #updateActiveHighlight() {
