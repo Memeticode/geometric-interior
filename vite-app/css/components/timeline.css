@@ -269,7 +269,7 @@
     background: var(--surface);
     color: var(--text);
     font-size: 0.6875rem;
-    font-family: inherit;
+    font-family: var(--font-secondary);
     font-variant-numeric: tabular-nums;
     text-align: right;
 }

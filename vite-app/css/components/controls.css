@@ -119,6 +119,7 @@
 
 /* ── Slider value label ── */
 .slider-value {
+    font-family: var(--font-secondary);
     font-variant-numeric: tabular-nums;
     font-size: 0.6875rem;
     opacity: 0.7;

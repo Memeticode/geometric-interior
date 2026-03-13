@@ -1,0 +1,49 @@
+/* ── Layout Morph — three-phase timing ──
+ *   Phase 1 (out):  outgoing elements fade/shrink     (--lm-d1)
+ *   Phase 2 (move): shared elements reposition/resize  (--lm-d2)
+ *   Phase 3 (in):   incoming elements fade/grow         (--lm-d3)
+ *
+ * --lm-speed: scalar multiplier (1 = normal, 2 = half speed, 0.5 = double).
+ * --lm-*-base: phase durations/delays before speed scaling.
+ *   Override per-element via JS setMorphTiming() to change phase order.
+ *
+ * JS reads max(d + dur) across all phases to derive total duration.
+ */
+:root {
+    --lm-speed:  20;
+
+    /* Base durations and delays (before speed scaling) */
+    --lm-out-base:   0.2s;
+    --lm-move-base:  0.3s;
+    --lm-in-base:    0.2s;
+    --lm-d1-base:    0s;
+    --lm-d2-base:    0.15s;
+    --lm-d3-base:    0.35s;
+
+    /* Speed-scaled — consumed by transition rules */
+    --lm-out:    calc(var(--lm-out-base)  * var(--lm-speed));
+    --lm-move:   calc(var(--lm-move-base) * var(--lm-speed));
+    --lm-in:     calc(var(--lm-in-base)   * var(--lm-speed));
+    --lm-d1:     calc(var(--lm-d1-base)   * var(--lm-speed));
+    --lm-d2:     calc(var(--lm-d2-base)   * var(--lm-speed));
+    --lm-d3:     calc(var(--lm-d3-base)   * var(--lm-speed));
+}
+
+/* Panel-swap morphs: grid-overlap children to prevent layout shift */
+.main-content[data-morph-to] {
+    display: grid;
+}
+.main-content[data-morph-to] > * {
+    grid-area: 1 / 1;
+}
+
+/* Text cross-fade: V-shaped opacity dip, phase-aware via data attribute.
+ * Mark elements with data-lm-text-replace="out|move|in" in HTML.
+ * The morph controller adds/removes .lm-text-replacing when onSwap is provided. */
+@keyframes lm-text-replace {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+.lm-text-replacing[data-lm-text-replace="out"]  { animation: lm-text-replace var(--lm-out)  ease var(--lm-d1) both; }
+.lm-text-replacing[data-lm-text-replace="move"] { animation: lm-text-replace var(--lm-move) ease var(--lm-d2) both; }
+.lm-text-replacing[data-lm-text-replace="in"]   { animation: lm-text-replace var(--lm-in)   ease var(--lm-d3) both; }

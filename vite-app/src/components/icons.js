@@ -17,11 +17,15 @@ export const REDO_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentCol
 export const RANDOMIZE_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="1.5"/><circle cx="5.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="5.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="4.5" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="8" r="0.9" fill="currentColor" stroke="none"/><circle cx="10.5" cy="11.5" r="0.9" fill="currentColor" stroke="none"/></svg>';
 export const RENDER_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"><path d="M5.5 3.5l3 4.5-3 4.5-3-4.5z"/><path d="M10.5 3.5l3 4.5-3 4.5-3-4.5z"/><path d="M14.5 3.5a7 7 0 1 1-5.5-2.5" stroke-linecap="round"/><path d="M11.5 1l-2 0 0.75 2" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 export const SETTINGS_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M13.07 2.93l-1.41 1.41M4.34 11.66l-1.41 1.41"/></svg>';
+export const DOWNLOAD_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2v8"/><path d="M4.5 7.5L8 11l3.5-3.5"/><path d="M2.5 13.5h11"/></svg>';
 
 // ── Status ──
 export const ERROR_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5L1 14h14z"/><path d="M8 6.5v3"/><circle cx="8" cy="12" r="0.01" stroke-width="2"/></svg>';
 export const RETRY_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 8a6.5 6.5 0 0 1 11-4.5"/><path d="M14.5 8a6.5 6.5 0 0 1-11 4.5"/><path d="M12.5 1v3h-3"/><path d="M3.5 15v-3h3"/></svg>';
 export const WARNING_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>';
+
+// ── Separators ──
+export const DOT_SVG = '<svg viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="2.5"/></svg>';
 
 // ── Field markers ──
 export const FIELD_DIAMOND_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3 6l5-4 5 4-5 9z"/><path d="M5.5 10L8 15.5l2.5-5.5z" fill="currentColor" stroke="none"/></svg>';

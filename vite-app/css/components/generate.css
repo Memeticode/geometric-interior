@@ -152,6 +152,7 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: 0.5625rem;
+    font-family: var(--font-secondary);
     color: var(--text-muted);
     opacity: 0.5;
     font-variant-numeric: tabular-nums;
@@ -296,6 +297,7 @@
     min-width: 0;
 }
 .seed-tag-select {
+    font-family: var(--font-secondary);
     flex: 1 1 0;
     min-width: 0;
     width: 0;
@@ -435,12 +437,12 @@
 input.gen-slider-value { grid-column: 3; }
 input.gen-slider-value {
     font-size: 0.625rem;
+    font-family: var(--font-secondary);
     font-variant-numeric: tabular-nums;
     background: var(--bg);
     border: 1px solid var(--border);
     border-radius: 3px;
     color: var(--text);
-    font-family: inherit;
     text-align: center;
     width: 2.5rem;
     flex: 0 0 2.5rem;

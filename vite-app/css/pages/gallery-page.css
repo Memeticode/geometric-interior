@@ -1,6 +1,7 @@
 /* Gallery page — single CSS entry point for index.html */
 @import '../base/base.css';
 @import '../components/header.css';
+@import '../components/layout-morph.css';
 @import './gallery.css';
 @import '../components/carousel-browser.css';
 @import '../base/buttons.css';
@@ -8,6 +9,7 @@
 @import '../components/controls.css';
 @import '../components/generate.css';
 @import '../components/modals.css';
+@import '../components/image-viewer.css';
 @import '../components/footer.css';
 @import './animation-editor.css';
 @import '../components/timeline.css';

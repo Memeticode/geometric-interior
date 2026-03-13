@@ -10,7 +10,7 @@
 }
 .gallery-page .main-content {
     flex: 1;
-    padding: 0 0.75rem 0.25rem;
+    padding: 0.375rem 0.75rem 0.5rem;
     overflow-y: auto;
     scrollbar-gutter: stable both-edges;
 }
@@ -118,17 +118,6 @@
     pointer-events: none;
 }
 
-/* ── View transitions ── */
-.view-fade-out {
-    opacity: 0 !important;
-    transform: translateY(10px) !important;
-    pointer-events: none;
-}
-.view-fade-in {
-    opacity: 0;
-    transform: translateY(10px);
-}
-
 /* ── Gallery column ── */
 .gallery-container {
     width: 100%;
@@ -143,15 +132,16 @@
     padding: 0;
     flex-shrink: 0;
     max-height: 0;
-    overflow: visible;          /* allow browse-group to show below */
-    transition: max-height var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
-                padding var(--morph-move) ease var(--morph-d2);
+    overflow: visible;
 }
-.editing .gallery-toolbar {
+[data-layout="edit"] .gallery-toolbar {
     max-height: 3rem;
     padding: 0.25rem 0;
-    transition: max-height var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
-                padding var(--morph-move) ease var(--morph-d2);
+}
+[data-morph-to="edit"] .gallery-toolbar,
+[data-morph-to="browse"] .gallery-toolbar {
+    transition: max-height var(--lm-move) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d2),
+                padding var(--lm-move) ease var(--lm-d2);
 }
 .gallery-controls {
     --icon-btn-size: 28px;
@@ -170,14 +160,18 @@
     max-width: 0;
     opacity: 0;
     overflow: hidden;
-    transition: max-width var(--morph-disappear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d1),
-                opacity var(--morph-disappear) ease var(--morph-d1);
 }
-.editing .toolbar-edit-group {
+[data-layout="edit"] .toolbar-edit-group {
     max-width: 12rem;
     opacity: 1;
-    transition: max-width var(--morph-appear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d3),
-                opacity var(--morph-appear) ease var(--morph-d3);
+}
+[data-morph-to="edit"] .toolbar-edit-group {
+    transition: max-width var(--lm-in) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d3),
+                opacity var(--lm-in) ease var(--lm-d3);
+}
+[data-morph-to="browse"] .toolbar-edit-group {
+    transition: max-width var(--lm-out) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d1),
+                opacity var(--lm-out) ease var(--lm-d1);
 }
 
 /* ── Selected image display ── */
@@ -190,41 +184,21 @@
 }
 /* ── Morph header system (unified browse/edit elements) ── */
 
-/* Morph timing — three sequential phases: disappear → move/morph → appear.
-   Enter edit: commas disappear → borders/gaps morph → labels/icons appear.
-   Exit edit:  labels/icons disappear → borders/gaps morph → commas appear.
-   Currently 10× for debugging. Divide all values by 10 for production. */
-:root {
-    --morph-disappear: 2s;     /* phase 1 duration  (prod: 0.2s) */
-    --morph-move:      3s;     /* phase 2 duration  (prod: 0.3s) */
-    --morph-appear:    2s;     /* phase 3 duration  (prod: 0.2s) */
-    --morph-d1:        0s;     /* phase 1 start     (prod: 0s)   */
-    --morph-d2:        1.5s;   /* phase 2 start     (prod: 0.15s)*/
-    --morph-d3:        3.5s;   /* phase 3 start     (prod: 0.35s)*/
-}
-
-/* Suppress all morph transitions on initial page load */
-.gallery-container.no-transition,
-.gallery-container.no-transition *,
-.gallery-container.no-transition *::before,
-.gallery-container.no-transition *::after {
-    transition: none !important;
-}
-
 .gallery-selection-header-container {
     width: 100%;
     display: grid;
     grid-template-columns: auto 1fr;
     gap: 0;
     padding: 0.25rem 0;
-    transition: gap var(--morph-move) ease var(--morph-d2),
-                padding var(--morph-move) ease var(--morph-d2);
 }
-.editing .gallery-selection-header-container {
+[data-layout="edit"] .gallery-selection-header-container {
     gap: 0.375rem;
     padding: 0.25rem 0 0.5rem;
-    transition: gap var(--morph-move) ease var(--morph-d2),
-                padding var(--morph-move) ease var(--morph-d2);
+}
+[data-morph-to="edit"] .gallery-selection-header-container,
+[data-morph-to="browse"] .gallery-selection-header-container {
+    transition: gap var(--lm-move) ease var(--lm-d2),
+                padding var(--lm-move) ease var(--lm-d2);
 }
 
 /* Each row: label + field share parent columns via subgrid */
@@ -255,19 +229,21 @@
     display: flex;
     align-items: center;
     gap: 0.3125rem;
-    /* Exit: opacity disappears (d1), max-width/height move (d2) */
-    transition: max-width var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
-                max-height var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
-                opacity var(--morph-disappear) ease var(--morph-d1);
 }
-.editing .morph-label {
+[data-layout="edit"] .morph-label {
     max-width: 5rem;
     max-height: 2rem;
     opacity: 1;
-    /* Enter: max-width/height move (d2), opacity appears (d3) */
-    transition: max-width var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
-                max-height var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
-                opacity var(--morph-appear) ease var(--morph-d3);
+}
+[data-morph-to="edit"] .morph-label {
+    transition: max-width var(--lm-move) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d2),
+                max-height var(--lm-move) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d2),
+                opacity var(--lm-in) ease var(--lm-d3);
+}
+[data-morph-to="browse"] .morph-label {
+    transition: opacity var(--lm-out) ease var(--lm-d1),
+                max-width var(--lm-move) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d2),
+                max-height var(--lm-move) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d2);
 }
 
 /* Morph field wrapper */
@@ -281,7 +257,7 @@
     font-size: 0.75rem;
     font-weight: 600;
     color: var(--text);
-    font-family: inherit;
+    font-family: var(--font-primary);
     word-break: break-word;
     border: 1px solid transparent;
     background: transparent;
@@ -293,19 +269,22 @@
     min-height: 1.5em;
     cursor: default;
     pointer-events: none;
-    transition: border-color var(--morph-move) ease var(--morph-d2),
-                background-color var(--morph-move) ease var(--morph-d2),
-                padding var(--morph-move) ease var(--morph-d2);
 }
-.editing .morph-textarea {
+[data-layout="edit"] .morph-textarea {
     border-color: var(--border);
     padding: 0.25rem 2.5rem 0.25rem 1.375rem;
     cursor: text;
     pointer-events: auto;
 }
-.editing .morph-textarea:focus {
+[data-layout="edit"] .morph-textarea:focus {
     border-color: var(--accent);
     outline: none;
+}
+[data-morph-to="edit"] .morph-textarea,
+[data-morph-to="browse"] .morph-textarea {
+    transition: border-color var(--lm-move) ease var(--lm-d2),
+                background-color var(--lm-move) ease var(--lm-d2),
+                padding var(--lm-move) ease var(--lm-d2);
 }
 
 /* Name field icon (fades in for edit) */
@@ -319,17 +298,19 @@
     opacity: 0;
     pointer-events: none;
     display: flex;
-    /* Exit: disappear (d1) */
-    transition: opacity var(--morph-disappear) ease var(--morph-d1);
 }
 .morph-field-icon svg {
     width: 100%;
     height: 100%;
 }
-.editing .morph-field-icon {
+[data-layout="edit"] .morph-field-icon {
     opacity: 0.4;
-    /* Enter: appear (d3) */
-    transition: opacity var(--morph-appear) ease var(--morph-d3);
+}
+[data-morph-to="edit"] .morph-field-icon {
+    transition: opacity var(--lm-in) ease var(--lm-d3);
+}
+[data-morph-to="browse"] .morph-field-icon {
+    transition: opacity var(--lm-out) ease var(--lm-d1);
 }
 
 /* Name char counter (fades in for edit) */
@@ -339,18 +320,21 @@
     top: 50%;
     transform: translateY(-50%);
     font-size: 0.5625rem;
+    font-family: var(--font-secondary);
     color: var(--text-muted);
     opacity: 0;
     font-variant-numeric: tabular-nums;
     pointer-events: none;
     line-height: 1;
-    /* Exit: disappear (d1) */
-    transition: opacity var(--morph-disappear) ease var(--morph-d1);
 }
-.editing .morph-counter {
+[data-layout="edit"] .morph-counter {
     opacity: 0.5;
-    /* Enter: appear (d3) */
-    transition: opacity var(--morph-appear) ease var(--morph-d3);
+}
+[data-morph-to="edit"] .morph-counter {
+    transition: opacity var(--lm-in) ease var(--lm-d3);
+}
+[data-morph-to="browse"] .morph-counter {
+    transition: opacity var(--lm-out) ease var(--lm-d1);
 }
 
 /* ── Seed: selects styled as plain italic text in browse ── */
@@ -359,11 +343,14 @@
     align-items: baseline;
     gap: 0.1em;
     min-width: 0;
-    transition: gap var(--morph-move) ease var(--morph-d2);
+    overflow: hidden;
 }
-.editing .morph-seed-field {
+[data-layout="edit"] .morph-seed-field {
     gap: 0.375rem;
-    transition: gap var(--morph-move) ease var(--morph-d2);
+}
+[data-morph-to="edit"] .morph-seed-field,
+[data-morph-to="browse"] .morph-seed-field {
+    transition: gap var(--lm-move) ease var(--lm-d2);
 }
 
 /* Wrapper: holds select + comma (via ::after), manages width transition */
@@ -372,17 +359,20 @@
     align-items: baseline;
     min-width: 0;
     width: var(--morph-select-w);
-    /* Exit: width moves (d2) */
-    transition: width var(--morph-move) ease var(--morph-d2);
+    flex-shrink: 1;
+    overflow: hidden;
 }
-.editing .morph-select-wrap {
+[data-layout="edit"] .morph-select-wrap {
     width: calc((100% - 0.75rem) / 3);
-    /* Enter: width moves (d2) */
-    transition: width var(--morph-move) ease var(--morph-d2);
+}
+[data-morph-to="edit"] .morph-select-wrap,
+[data-morph-to="browse"] .morph-select-wrap {
+    transition: width var(--lm-move) ease var(--lm-d2);
 }
 
 
 .morph-select {
+    font-family: var(--font-secondary);
     appearance: none;
     -webkit-appearance: none;
     border: 1px solid transparent;
@@ -402,23 +392,16 @@
     pointer-events: none;
     outline: none;
     border-radius: 0;
-    /* Exit transitions: most props move (d2), chevron disappears (d1) */
-    transition: border-color var(--morph-move) ease var(--morph-d2),
-                background-color var(--morph-move) ease var(--morph-d2),
-                padding var(--morph-move) ease var(--morph-d2),
-                color var(--morph-move) ease var(--morph-d2),
-                border-radius var(--morph-move) ease var(--morph-d2),
-                background-size var(--morph-disappear) ease var(--morph-d1);
 }
 /* Sentence case: capitalize first select in browse mode */
 .morph-select-wrap:first-child .morph-select {
     text-transform: capitalize;
 }
-.editing .morph-select-wrap:first-child .morph-select {
+[data-layout="edit"] .morph-select-wrap:first-child .morph-select {
     text-transform: none;
 }
 
-.editing .morph-select {
+[data-layout="edit"] .morph-select {
     color: var(--text);
     border-color: var(--border);
     background-color: transparent;
@@ -428,20 +411,29 @@
     cursor: pointer;
     pointer-events: auto;
     min-width: 0;
-    /* Enter transitions: most props move (d2), chevron appears (d3) */
-    transition: border-color var(--morph-move) ease var(--morph-d2),
-                background-color var(--morph-move) ease var(--morph-d2),
-                padding var(--morph-move) ease var(--morph-d2),
-                color var(--morph-move) ease var(--morph-d2),
-                border-radius var(--morph-move) ease var(--morph-d2),
-                background-size var(--morph-appear) ease var(--morph-d3);
 }
-.editing .morph-select:hover {
+[data-layout="edit"] .morph-select:hover {
     border-color: var(--border-strong);
 }
-.editing .morph-select:focus-visible {
+[data-layout="edit"] .morph-select:focus-visible {
     border-color: var(--accent);
     box-shadow: 0 0 0 2px var(--accent-bg);
+}
+[data-morph-to="edit"] .morph-select {
+    transition: padding var(--lm-move) ease var(--lm-d2),
+                color var(--lm-move) ease var(--lm-d2),
+                background-color var(--lm-move) ease var(--lm-d2),
+                border-color var(--lm-in) ease var(--lm-d3),
+                border-radius var(--lm-in) ease var(--lm-d3),
+                background-size var(--lm-in) ease var(--lm-d3);
+}
+[data-morph-to="browse"] .morph-select {
+    transition: padding var(--lm-move) ease var(--lm-d2),
+                color var(--lm-move) ease var(--lm-d2),
+                background-color var(--lm-move) ease var(--lm-d2),
+                border-color var(--lm-out) ease var(--lm-d1),
+                border-radius var(--lm-out) ease var(--lm-d1),
+                background-size var(--lm-out) ease var(--lm-d1);
 }
 
 /* Fading for profile switching (reuse existing pattern) */
@@ -461,7 +453,7 @@
     background: var(--surface);
     transition: border-radius 0.3s ease, border-color 0.3s ease;
 }
-.gallery-selection-card-visual-area {
+image-viewer#galleryViewer {
     display: flex;
     width: 100%;
     justify-content: center;
@@ -495,128 +487,6 @@
     opacity: 0.25;
     cursor: default;
 }
-.gallery-selection-card-visual-wrap {
-    width: 100%;
-    aspect-ratio: 14 / 9;
-    background: #000;
-    overflow: hidden;
-    position: relative;
-}
-
-/* In-image controls (fullscreen + resolution) */
-.image-controls {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 8;
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    pointer-events: none;
-}
-.gallery-selection-card-visual-area:hover .image-controls,
-.alt-text-shown .image-controls,
-.image-controls:focus-within {
-    opacity: 1;
-    pointer-events: auto;
-}
-.editing .image-controls {
-    display: none;
-}
-.image-controls .icon-btn {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-}
-.image-controls .icon-btn,
-.image-controls .select-base {
-    box-sizing: border-box;
-    background-color: rgba(10, 12, 18, 0.55);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.8);
-}
-.image-controls .icon-btn:hover,
-.image-controls .select-base:hover {
-    background-color: rgba(10, 12, 18, 0.7);
-    border-color: rgba(255, 255, 255, 0.15);
-    color: #fff;
-}
-[data-theme="light"] .image-controls .icon-btn,
-[data-theme="light"] .image-controls .select-base {
-    background-color: rgba(255, 255, 255, 0.5);
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
-    color: rgba(0, 0, 0, 0.7);
-}
-[data-theme="light"] .image-controls .icon-btn:hover,
-[data-theme="light"] .image-controls .select-base:hover {
-    background-color: rgba(255, 255, 255, 0.7);
-    border-color: rgba(0, 0, 0, 0.15);
-    color: #000;
-}
-.image-controls .select-base {
-    height: 24px;
-    padding-top: 0;
-    padding-bottom: 0;
-    border-radius: 12px;
-    font-size: 0.625rem;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(255,255,255,0.8)' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
-}
-[data-theme="light"] .image-controls .select-base {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='rgba(0,0,0,0.7)' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
-}
-.image-controls .icon-btn svg {
-    width: 12px;
-    height: 12px;
-    display: block;
-}
-/* Frosted glass dropdown menu */
-.image-controls .custom-dropdown-menu {
-    right: 0;
-    left: auto;
-    background: rgba(10, 12, 18, 0.55);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-}
-.image-controls .custom-dropdown-item {
-    color: rgba(255, 255, 255, 0.7);
-}
-.image-controls .custom-dropdown-item:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: #fff;
-}
-.image-controls .custom-dropdown-item.active {
-    background: rgba(180, 130, 255, 0.2);
-    color: rgb(200, 160, 255);
-}
-[data-theme="light"] .image-controls .custom-dropdown-menu {
-    background: rgba(255, 255, 255, 0.55);
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
-}
-[data-theme="light"] .image-controls .custom-dropdown-item {
-    color: rgba(0, 0, 0, 0.6);
-}
-[data-theme="light"] .image-controls .custom-dropdown-item:hover {
-    background: rgba(0, 0, 0, 0.08);
-    color: #000;
-}
-[data-theme="light"] .image-controls .custom-dropdown-item.active {
-    background: rgba(120, 40, 200, 0.12);
-    color: rgb(100, 30, 180);
-}
 
 /* Toolbar resolution dropdown height — match 28px buttons */
 .gallery-controls .select-base {
@@ -624,66 +494,6 @@
     box-sizing: border-box;
     padding-top: 0;
     padding-bottom: 0;
-}
-.gallery-selection-visual {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: opacity 0.25s ease;
-    cursor: pointer;
-}
-.selected-video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    background: #000;
-}
-.selected-video.hidden { display: none; }
-.alt-text-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: min(50rem, 75vw);
-    max-height: calc(100% - 5rem);
-    overflow-y: auto;
-    text-align: left;
-    background: rgba(10, 12, 18, 0.55);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    color: var(--text);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 0.5rem 0.625rem;
-    font-size: 0.6875rem;
-    line-height: 1.5;
-    white-space: pre-line;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.25s ease;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-    z-index: 10;
-}
-[data-theme="light"] .alt-text-overlay {
-    background: rgba(255, 255, 255, 0.5);
-    border-color: rgba(0, 0, 0, 0.08);
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
-}
-.alt-text-overlay.visible {
-    opacity: 1;
-    pointer-events: auto;
-}
-.alt-text-overlay.visible.fading {
-    opacity: 0;
-    pointer-events: none;
-}
-.alt-text-overlay .fullscreen-alt-sep:first-child {
-    margin-top: 0;
-}
-.alt-text-overlay .fullscreen-alt-sep:last-child {
-    margin-bottom: 0;
 }
 .gallery-selection-card-footer {
     width: 100%;
@@ -706,11 +516,15 @@
     font-weight: 600;
     letter-spacing: 0.3px;
     color: var(--text);
-    transition: opacity var(--morph-appear) ease var(--morph-d3);
 }
-.editing .selected-gen-title {
+[data-layout="edit"] .selected-gen-title {
     opacity: 0;
-    transition: opacity var(--morph-disappear) ease var(--morph-d1);
+}
+[data-morph-to="edit"] .selected-gen-title {
+    transition: opacity var(--lm-out) ease var(--lm-d1);
+}
+[data-morph-to="browse"] .selected-gen-title {
+    transition: opacity var(--lm-in) ease var(--lm-d3);
 }
 
 /* Commentary morph wrapper */
@@ -732,31 +546,28 @@
     field-sizing: content;
     white-space: pre-wrap;
     text-align: center;
-    /* Exit transitions (d2) */
-    transition: border-color var(--morph-move) ease var(--morph-d2),
-                background-color var(--morph-move) ease var(--morph-d2),
-                padding var(--morph-move) ease var(--morph-d2),
-                color var(--morph-move) ease var(--morph-d2);
 }
 .morph-commentary-field::placeholder {
     font-style: italic;
     color: var(--text-muted);
     opacity: 0.5;
 }
-.editing .morph-commentary-field {
+[data-layout="edit"] .morph-commentary-field {
     text-align: center;
     color: var(--text);
     background-color: var(--bg);
     padding: 0.25rem 0.5rem 0.75rem;
-    /* Enter transitions (d2) */
-    transition: border-color var(--morph-move) ease var(--morph-d2),
-                background-color var(--morph-move) ease var(--morph-d2),
-                padding var(--morph-move) ease var(--morph-d2),
-                color var(--morph-move) ease var(--morph-d2);
 }
-.editing .morph-commentary-field::placeholder {
+[data-layout="edit"] .morph-commentary-field::placeholder {
     font-style: normal;
     opacity: 0.4;
+}
+[data-morph-to="edit"] .morph-commentary-field,
+[data-morph-to="browse"] .morph-commentary-field {
+    transition: border-color var(--lm-move) ease var(--lm-d2),
+                background-color var(--lm-move) ease var(--lm-d2),
+                padding var(--lm-move) ease var(--lm-d2),
+                color var(--lm-move) ease var(--lm-d2);
 }
 .morph-commentary-counter {
     top: auto;
@@ -1741,134 +1552,6 @@
     overflow-y: auto;
 }
 
-/* ── Fullscreen overlay ── */
-
-.fullscreen-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 1100;
-    background: rgba(0, 0, 0, 0);
-    cursor: pointer;
-    transition: background 0.4s ease;
-}
-.fullscreen-overlay.fs-visible {
-    background: rgba(0, 0, 0, 1);
-}
-
-.fullscreen-overlay img,
-.fullscreen-overlay video {
-    position: fixed;
-    transform-origin: 0 0;
-    cursor: default;
-    will-change: transform;
-}
-.fullscreen-overlay .fs-animating {
-    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.fullscreen-overlay .fs-closing {
-    transition: transform 0.3s ease-in;
-}
-
-.fullscreen-overlay .fs-fading {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.fullscreen-close {
-    position: fixed;
-    top: 1rem;
-    right: 1rem;
-    z-index: 1101;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.7);
-    border-radius: 50%;
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-}
-.fullscreen-close svg {
-    width: 18px;
-    height: 18px;
-}
-
-.fullscreen-close:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-}
-
-/* Fullscreen alt-text overlay */
-.fullscreen-alt-overlay {
-    position: fixed;
-    bottom: 1.25rem;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1102;
-    width: min(40rem, 80vw);
-    max-height: calc(100vh - 5rem);
-    overflow-y: auto;
-    background: rgba(10, 12, 18, 0.55);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    color: #e9eefc;
-    font-size: 0.8125rem;
-    line-height: 1.5;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-    cursor: default;
-}
-.fullscreen-alt-overlay.visible {
-    opacity: 1;
-    pointer-events: auto;
-}
-.fullscreen-alt-name {
-    font-weight: 600;
-    font-size: 0.9375rem;
-    margin-bottom: 0.125rem;
-}
-.fullscreen-alt-seed {
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.75rem;
-}
-.fullscreen-alt-commentary {
-    margin-top: 0.5rem;
-    font-style: italic;
-    color: rgba(255, 255, 255, 0.8);
-}
-.fullscreen-alt-sep {
-    height: 1px;
-    background: rgba(255, 255, 255, 0.1);
-    margin: 0.75rem 0;
-}
-.fullscreen-alt-body {
-    white-space: pre-line;
-}
-
-/* Collapsible extras for fullscreen alt text transition */
-.fs-alt-extra {
-    display: grid;
-    grid-template-rows: 0fr;
-    opacity: 0;
-    transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.35s ease;
-}
-.fs-alt-extra > div {
-    overflow: hidden;
-}
-.fs-alt-expanded .fs-alt-extra {
-    grid-template-rows: 1fr;
-    opacity: 1;
-}
-
 /* ── Inline edit mode ── */
 
 /* Morph button dual-icon cross-fade (removed — buttons now have single icons) */
@@ -1876,111 +1559,22 @@
 /* ── Browse ↔ Edit cross-fade ── */
 
 /* Visual: cross-fade image ↔ canvas — move phase (d2) */
-.gallery-edit-canvas {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 4px;
+[data-layout="edit"] .iv-img {
     opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--morph-move) ease var(--morph-d2);
 }
-.editing .gallery-selection-visual {
-    opacity: 0;
-    transition: opacity var(--morph-move) ease var(--morph-d2);
-}
-.editing .gallery-edit-canvas {
+[data-layout="edit"] .iv-canvas {
     pointer-events: auto;
     opacity: 1;
 }
-.editing .gallery-edit-canvas.hidden,
-.gallery-edit-canvas.hidden {
+[data-layout="edit"] .iv-canvas.hidden,
+.iv-canvas.hidden {
     display: none;
 }
-.gallery-edit-error {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    background: var(--surface-alt);
-    opacity: 1;
-    z-index: 2;
-    color: var(--danger-text);
-    font-size: 0.8125rem;
-    text-align: center;
-    padding: 1rem;
-}
-.gallery-edit-error.hidden {
-    display: none;
-}
-.gallery-edit-error-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    display: flex;
-}
-.gallery-edit-error-icon svg {
-    width: 100%;
-    height: 100%;
-}
-.gallery-edit-retry {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s;
-}
-.gallery-edit-retry svg {
-    width: 18px;
-    height: 18px;
-}
-.gallery-edit-retry:hover {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-}
-[data-theme="light"] .gallery-edit-retry {
-    background: rgba(0, 0, 0, 0.06);
-    border-color: rgba(0, 0, 0, 0.15);
-}
-[data-theme="light"] .gallery-edit-retry:hover {
-    background: rgba(0, 0, 0, 0.12);
-    color: var(--text);
-}
-
-/* Edit canvas loading spinner */
-.gallery-edit-loading {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1;
-    pointer-events: none;
-}
-.gallery-edit-loading.hidden { display: none; }
-.gallery-edit-spinner {
-    width: 28px;
-    height: 28px;
-    border: 2.5px solid rgba(255, 255, 255, 0.1);
-    border-top-color: rgba(255, 255, 255, 0.6);
-    border-radius: 50%;
-    animation: edit-spin 0.7s linear infinite;
-}
-[data-theme="light"] .gallery-edit-spinner {
-    border-color: rgba(0, 0, 0, 0.08);
-    border-top-color: rgba(0, 0, 0, 0.4);
-}
-@keyframes edit-spin {
-    to { transform: rotate(360deg); }
+[data-morph-to="edit"] .iv-canvas,
+[data-morph-to="browse"] .iv-canvas,
+[data-morph-to="edit"] .iv-img,
+[data-morph-to="browse"] .iv-img {
+    transition: opacity var(--lm-move) ease var(--lm-d2);
 }
 
 /* Footer commentary — morph handled by .morph-textarea / .morph-label rules above */
@@ -1995,19 +1589,21 @@
     max-height: 0;
     opacity: 0;
     transform: translateY(2rem);
-    /* Exit: disappear (d1) */
-    transition: max-height var(--morph-disappear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d1),
-                opacity var(--morph-disappear) ease var(--morph-d1),
-                transform var(--morph-disappear) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d1);
 }
-.editing .gallery-edit-config {
+[data-layout="edit"] .gallery-edit-config {
     max-height: 80vh;
     opacity: 1;
     transform: translateY(0);
-    /* Enter: move (d2) */
-    transition: max-height var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2),
-                opacity var(--morph-move) ease var(--morph-d2),
-                transform var(--morph-move) cubic-bezier(0.4, 0, 0.2, 1) var(--morph-d2);
+}
+[data-morph-to="edit"] .gallery-edit-config {
+    transition: max-height var(--lm-move) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d2),
+                opacity var(--lm-move) ease var(--lm-d2),
+                transform var(--lm-move) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d2);
+}
+[data-morph-to="browse"] .gallery-edit-config {
+    transition: max-height var(--lm-out) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d1),
+                opacity var(--lm-out) ease var(--lm-d1),
+                transform var(--lm-out) cubic-bezier(0.4, 0, 0.2, 1) var(--lm-d1);
 }
 
 
@@ -2021,7 +1617,7 @@
 }
 
 /* In edit mode, flatten image card top corners to join config above */
-.editing .gallery-selection-card {
+[data-layout="edit"] .gallery-selection-card {
     border-radius: 0 0 12px 12px;
     border-top: none;
 }
@@ -2039,90 +1635,35 @@
     gap: 0.25rem;
 }
 
-/* ── Right-click / long-press context menu ── */
-.gallery-ctx-menu {
-    position: fixed;
-    z-index: 9999;
-    min-width: 140px;
-    padding: 4px 0;
-    background: var(--modal-bg);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid var(--border-strong);
-    border-radius: 6px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.96);
-    transition: opacity 120ms ease, transform 120ms ease;
+/* ── Panel-switch layout states (browse ↔ generate ↔ animate) ── */
+
+/* Gallery fades out when leaving browse/edit */
+[data-layout="generate"] .gallery-container,
+[data-layout="animate"] .gallery-container  { opacity: 0; pointer-events: none; }
+
+/* Gen panel / animation editor fade in when active */
+[data-layout="generate"] .gen-panel         { opacity: 1; }
+[data-layout="animate"] .animation-editor   { opacity: 1; }
+
+/* Default opacity for panels entering from hidden */
+.gen-panel, .animation-editor               { opacity: 0; }
+
+/* Panel-switch transitions */
+[data-morph-to="generate"] .gallery-container,
+[data-morph-to="animate"] .gallery-container {
+    transition: opacity var(--lm-out) ease var(--lm-d1);
 }
-.gallery-ctx-menu.visible {
-    opacity: 1;
-    pointer-events: auto;
-    transform: scale(1);
+[data-morph-to="generate"] .gen-panel {
+    transition: opacity var(--lm-in) ease var(--lm-d3);
 }
-.gallery-ctx-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 6px 14px;
-    background: none;
-    border: none;
-    color: var(--text);
-    font: inherit;
-    font-size: 0.8125rem;
-    text-align: left;
-    cursor: pointer;
-    white-space: nowrap;
+[data-morph-to="animate"] .animation-editor {
+    transition: opacity var(--lm-in) ease var(--lm-d3);
 }
-.gallery-ctx-icon {
-    display: flex;
-    width: 14px;
-    height: 14px;
-    flex-shrink: 0;
+[data-morph-to="browse"] .gallery-container {
+    transition: opacity var(--lm-in) ease var(--lm-d3);
 }
-.gallery-ctx-icon svg {
-    width: 100%;
-    height: 100%;
+[data-morph-to="browse"] .gen-panel,
+[data-morph-to="browse"] .animation-editor {
+    transition: opacity var(--lm-out) ease var(--lm-d1);
 }
-.gallery-ctx-item:hover,
-.gallery-ctx-item:focus-visible {
-    background: var(--surface-hover);
-    outline: none;
-}
-.gallery-ctx-sep {
-    height: 1px;
-    margin: 4px 10px;
-    background: var(--border);
-}
-.gallery-ctx-label {
-    padding: 4px 14px 2px;
-    color: var(--text-dim);
-    font-size: 0.6875rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    pointer-events: none;
-}
-.gallery-ctx-res-group {
-    display: flex;
-    gap: 2px;
-    padding: 2px 10px 4px;
-}
-.gallery-ctx-res-item {
-    width: auto;
-    flex: 1;
-    padding: 4px 0;
-    text-align: center;
-    font-size: 0.6875rem;
-    border-radius: 3px;
-}
-.gallery-ctx-res-item.ctx-active {
-    background: var(--accent-bg);
-    color: var(--accent-text);
-}
-.gallery-ctx-browser {
-    color: var(--text-muted);
-    font-size: 0.6875rem;
-    white-space: normal;
-}
+

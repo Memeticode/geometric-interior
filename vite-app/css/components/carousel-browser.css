@@ -13,7 +13,7 @@
 }
 
 /* Host element must be block to form a proper containing block for phantoms */
-carousel-dropdown-browser { display: block; position: relative; }
+carousel-dropdown-browser { display: block; position: relative; font-family: var(--font-primary); }
 
 /* Hide data elements */
 carousel-dropdown-browser-card,
@@ -35,6 +35,8 @@ carousel-dropdown-browser-section { display: none; }
 }
 
 .cdb-controls {
+    --icon-btn-size: 22px;
+    --icon-btn-icon: 12px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -654,18 +656,18 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 }
 
 /* Editing state: placeholder card with accent background + (Active) label */
-.editing .cdb-card.cdb-placeholder .cdb-card-img {
+[data-layout="edit"] .cdb-card.cdb-placeholder .cdb-card-img {
     background: var(--accent-bg);
 }
-.editing .cdb-card.cdb-placeholder .cdb-card-img::after {
+[data-layout="edit"] .cdb-card.cdb-placeholder .cdb-card-img::after {
     content: var(--editing-label, '');
     font-size: 0.8rem;
     color: var(--text-muted);
 }
-.editing .cdb-grid-card.cdb-placeholder {
+[data-layout="edit"] .cdb-grid-card.cdb-placeholder {
     background: var(--accent-bg);
 }
-.editing .cdb-grid-card.cdb-placeholder::after {
+[data-layout="edit"] .cdb-grid-card.cdb-placeholder::after {
     content: var(--editing-label, '');
     font-size: 0.8rem;
     color: var(--text-muted);

@@ -83,6 +83,7 @@
     .header-sep {
         display: revert;
         font-size: 2.3rem;
+        line-height: 0;
         margin-bottom: 0;
     }
     .lang-select {
@@ -120,9 +121,6 @@
         flex-wrap: nowrap;
         justify-content: center;
         flex: initial;
-    }
-    .header-sep {
-        padding-bottom: 0.3rem;
     }
     .site-menu-toggle,
     .sidebar-toggle-btn {
@@ -179,7 +177,7 @@
     }
 
     /* Inline edit mode — config is now inside selection container, no side column needed */
-    .gallery-container.editing .gallery-toolbar {
+    [data-layout="edit"] .gallery-toolbar {
         grid-area: toolbar;
     }
 

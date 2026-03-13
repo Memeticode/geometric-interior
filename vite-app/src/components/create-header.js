@@ -1,4 +1,4 @@
-import { SHARE_SVG, LINK_SVG, EMAIL_SVG, BLUESKY_SVG, FACEBOOK_SVG, GOOGLE_SVG, LINKEDIN_SVG, REDDIT_SVG, TWITTER_SVG } from './icons.js';
+import { DOT_SVG, SHARE_SVG, LINK_SVG, EMAIL_SVG, BLUESKY_SVG, FACEBOOK_SVG, GOOGLE_SVG, LINKEDIN_SVG, REDDIT_SVG, TWITTER_SVG } from './icons.js';
 
 /**
  * Shared header builder — populates an empty <header> element with the correct
@@ -53,7 +53,7 @@ export function createHeader(headerEl, { page }) {
     ];
 
     const allLinks = [...navLinks, ...statementBtns];
-    const linksHTML = allLinks.join('<span class="header-sep">&middot;</span>');
+    const linksHTML = allLinks.join(`<span class="header-sep">${DOT_SVG}</span>`);
 
     // ── Share button (gallery only) ──
     const shareHTML = isGallery

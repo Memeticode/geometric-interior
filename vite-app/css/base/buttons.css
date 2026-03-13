@@ -156,6 +156,8 @@
 }
 
 .share-option svg {
+    width: 16px;
+    height: 16px;
     flex-shrink: 0;
     color: var(--accent-text);
     opacity: 0.65;
