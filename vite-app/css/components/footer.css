@@ -25,7 +25,7 @@
     padding: 0;
     text-decoration: none;
     opacity: 0.6;
-    transition: opacity 0.2s;
+    transition: opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
@@ -61,7 +61,7 @@
     border: 1px solid var(--border-strong);
     background: var(--surface);
     padding: 0;
-    transition: background-color 0.3s ease, border-color 0.3s ease;
+    transition: background-color calc(var(--t-menu) * var(--t-speed)) ease, border-color calc(var(--t-menu) * var(--t-speed)) ease;
 }
 
 .theme-slider {
@@ -72,10 +72,10 @@
     border-radius: 7px;
     background: var(--accent-bg);
     border: 1px solid var(--accent);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                background-color 0.3s ease,
-                border-color 0.3s ease;
+    transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+                width calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+                background-color calc(var(--t-menu) * var(--t-speed)) ease,
+                border-color calc(var(--t-menu) * var(--t-speed)) ease;
     pointer-events: none;
     z-index: 0;
 }
@@ -91,7 +91,7 @@
     cursor: pointer;
     border-radius: 7px;
     white-space: nowrap;
-    transition: color 0.25s ease;
+    transition: color calc(var(--t-content) * var(--t-speed)) ease;
 }
 
 .theme-option:hover {
@@ -167,7 +167,7 @@
     gap: 0.125rem;
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+    transition: opacity calc(var(--t-accent) * 1.2 * var(--t-speed)) ease, transform calc(var(--t-accent) * 1.2 * var(--t-speed)) ease, visibility calc(var(--t-accent) * 1.2 * var(--t-speed));
     visibility: visible;
 }
 
@@ -203,7 +203,7 @@
     border-radius: 6px;
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color 0.15s, color 0.15s;
+    transition: background-color calc(var(--t-accent) * var(--t-speed)) ease, color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .custom-dropdown-item:hover {

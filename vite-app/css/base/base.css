@@ -74,7 +74,7 @@ html[data-theme="light"] {
 /* ── Smooth theme transitions ── */
 body, .app-header, .app-footer, .panel, button, select, input, textarea,
 .modal-box, .profile-card, .theme-switcher, .theme-slider {
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+    transition: background-color calc(var(--t-menu) * var(--t-speed)) ease, color calc(var(--t-menu) * var(--t-speed)) ease, border-color calc(var(--t-menu) * var(--t-speed)) ease;
 }
 
 /* ── Base ── */
@@ -153,7 +153,7 @@ body {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.375rem center;
-    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: background-color calc(var(--t-menu) * var(--t-speed)) ease, color calc(var(--t-menu) * var(--t-speed)) ease, border-color calc(var(--t-menu) * var(--t-speed)) ease, box-shadow calc(var(--t-menu) * var(--t-speed)) ease;
 }
 .select-base:hover {
     border-color: var(--border-strong);

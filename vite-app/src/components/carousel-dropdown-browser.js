@@ -179,7 +179,7 @@ function readCard(el) {
 // ── Main component ──
 
 class CarouselDropdownBrowser extends HTMLElement {
-    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'grid-align', 'grid-items-align', 'section-align', 'debug-show-controls', 'debug-transition-animation'];
+    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'grid-align', 'grid-items-align', 'section-align'];
 
     // ── Configuration ──
     #arcZ = 24;
@@ -189,8 +189,6 @@ class CarouselDropdownBrowser extends HTMLElement {
     #infinite = true;              // wrap around or clamp at edges
     #bounce = 0.35;                // overshoot amount (0 = smooth, 1 = pronounced bounce)
     #expandable = true;            // whether the grid-expand toggle is available
-    #debugShowControls = false;     // show debug controls panel
-    #debugTransitionAnimation = false; // log transition/FLIP debug info to console
     #animatingExpand = false;       // guard against overlapping expand/collapse
     #expandTimers = [];             // setTimeout IDs for expand/collapse phases
     #expandSkipFn = null;           // closure to snap expand/collapse to end state
@@ -209,8 +207,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     //   v-align: above | top | center | bottom | below | none (default: none = hidden)
     //   h-align: left | center | right (default: center)
     #cardTitle = 'none';
-    #gridAlign = 'left';       // 'left' | 'center' | 'right'
-    #gridItemsAlign = 'stretch'; // 'stretch' | 'left' | 'center' | 'right'
+    #gridAlign = 'center';     // 'left' | 'center' | 'right'
+    #gridItemsAlign = 'center'; // 'stretch' | 'left' | 'center' | 'right'
     #sectionAlign = 'left';    // 'left' | 'center' | 'right'
 
     // ── Data ──
@@ -266,7 +264,6 @@ class CarouselDropdownBrowser extends HTMLElement {
     #flipAnimations = [];  // Web Animations created by #animateCardsWA
     #sectionLabelContainer = null;
     #sectionLabels = [];
-    #debugPanel = null;
 
 
     // ── MutationObserver ──
@@ -1235,15 +1232,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                     const lblBefore2 = this.#sectionLabelContainer.getBoundingClientRect();
                     const scrollBefore = scrollParent ? scrollParent.scrollTop : 0;
                     const rectBefore = this.getBoundingClientRect();
-                    const _dbg = this.#debugTransitionAnimation;
-                    let vpWidthBefore, trackHeightBefore;
-                    if (_dbg) {
-                        vpWidthBefore = this.#viewport.clientWidth;
-                        trackHeightBefore = this.#track.getBoundingClientRect().height;
-                        console.group('[CDB collapse] dropdown collapse phase');
-                        console.log('before: vpWidth=%d trackH=%.1f ctrlY=%.1f lblY=%.1f scrollTop=%d',
-                            vpWidthBefore, trackHeightBefore, ctrlBefore2.top, lblBefore2.top, scrollBefore);
-                    }
 
                     // Clean up dropdown — already collapsed visually by the
                     // max-height transition started at animation begin
@@ -1257,20 +1245,10 @@ class CarouselDropdownBrowser extends HTMLElement {
                     void this.#dropdown.offsetHeight;
                     this.#dropdown.classList.remove('cdb-measuring');
 
-                    let vpWidthAfterDropdown;
-                    if (_dbg) {
-                        vpWidthAfterDropdown = this.#viewport.clientWidth;
-                        const trackHeightAfterDropdown = this.#track.getBoundingClientRect().height;
-                        console.log('after dropdown collapse: vpWidth=%d (Δ%d) trackH=%.1f (Δ%.1f)',
-                            vpWidthAfterDropdown, vpWidthAfterDropdown - vpWidthBefore,
-                            trackHeightAfterDropdown, trackHeightAfterDropdown - trackHeightBefore);
-                    }
-
                     // Compensate for any residual layout shift from dropdown collapse
                     if (scrollParent) {
                         const rectAfter = this.getBoundingClientRect();
                         const layoutShift = rectBefore.top - rectAfter.top;
-                        if (_dbg) console.log('layout shift: %.1fpx, scroll compensate: %s', layoutShift, Math.abs(layoutShift) > 1);
                         if (Math.abs(layoutShift) > 1) {
                             scrollParent.scrollTop = scrollBefore - layoutShift;
                         }
@@ -1279,7 +1257,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                     // FLIP controls for dropdown collapse shift
                     const ctrlAfter2 = this.#controls.getBoundingClientRect();
                     const cdy2 = ctrlBefore2.top - ctrlAfter2.top;
-                    if (_dbg) console.log('controls FLIP: Δy=%.1f (animate: %s)', cdy2, Math.abs(cdy2) > 1);
                     if (Math.abs(cdy2) > 1) {
                         this.#controls.style.transition = 'none';
                         this.#controls.style.transform = `translateY(${cdy2}px)`;
@@ -1291,7 +1268,6 @@ class CarouselDropdownBrowser extends HTMLElement {
                     // FLIP section label container for dropdown collapse shift
                     const lblAfter2 = this.#sectionLabelContainer.getBoundingClientRect();
                     const lblDy = lblBefore2.top - lblAfter2.top;
-                    if (_dbg) console.log('label FLIP: Δy=%.1f (animate: %s)', lblDy, Math.abs(lblDy) > 1);
                     if (Math.abs(lblDy) > 1) {
                         this.#sectionLabelContainer.style.transition = 'none';
                         this.#sectionLabelContainer.style.transform = `translateY(${lblDy}px)`;
@@ -1311,21 +1287,8 @@ class CarouselDropdownBrowser extends HTMLElement {
                         sec.element.style.opacity = '0';
                     }
 
-                    if (_dbg) {
-                        console.log('applied pre-computed layout (frame vpWidth may differ from current)');
-                        console.groupEnd();
-                    }
-
                     // Clear FLIP styles, remove phantoms, reveal labels AFTER FLIP completes
                     this.#expandTimers.push(setTimeout(() => {
-                        if (_dbg) {
-                            console.group('[CDB collapse] final recompute phase (+350ms)');
-                        }
-                        let trackHeightPreRecompute, ctrlBeforeRecompute, lblBeforeRecompute;
-                        if (_dbg) {
-                            trackHeightPreRecompute = this.#track.getBoundingClientRect().height;
-                        }
-
                         this.#controls.style.transition = 'none';
                         this.#controls.style.transform = '';
                         this.#sectionLabelContainer.style.transition = 'none';
@@ -1339,29 +1302,12 @@ class CarouselDropdownBrowser extends HTMLElement {
                         }
                         this.#track.style.transition = 'none';
 
-                        if (_dbg) {
-                            ctrlBeforeRecompute = this.#controls.getBoundingClientRect();
-                            lblBeforeRecompute = this.#sectionLabelContainer.getBoundingClientRect();
-                        }
-
                         this.#positionCards();
                         // Remove cdb-transitioning immediately — no transitionend
                         // will fire since transitions are suppressed.
                         this.#isTransitioning = false;
                         this.#track.classList.remove('cdb-transitioning');
                         void this.#track.offsetHeight;
-
-                        if (_dbg) {
-                            const vpWidthFinal = this.#viewport.clientWidth;
-                            const trackHeightPostRecompute = this.#track.getBoundingClientRect().height;
-                            const ctrlAfterRecompute = this.#controls.getBoundingClientRect();
-                            const lblAfterRecompute = this.#sectionLabelContainer.getBoundingClientRect();
-                            console.log('vpWidth: %d (Δ%d from collapse)', vpWidthFinal, vpWidthFinal - vpWidthAfterDropdown);
-                            console.log('trackH: %.1f → %.1f (Δ%.1f)', trackHeightPreRecompute, trackHeightPostRecompute, trackHeightPostRecompute - trackHeightPreRecompute);
-                            console.log('controls: y %.1f → %.1f (Δ%.1f)', ctrlBeforeRecompute.top, ctrlAfterRecompute.top, ctrlAfterRecompute.top - ctrlBeforeRecompute.top);
-                            console.log('labels: y %.1f → %.1f (Δ%.1f)', lblBeforeRecompute.top, lblAfterRecompute.top, lblAfterRecompute.top - lblBeforeRecompute.top);
-                            console.groupEnd();
-                        }
 
                         // Let the browser settle scrollbar state before
                         // restoring transitions so a late resize can't cause
@@ -1456,24 +1402,17 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#applyTitleClasses();
         }
         if (name === 'grid-align') {
-            this.#gridAlign = val || 'left';
+            this.#gridAlign = val || 'center';
             this.#applyGridAlignClass();
         }
         if (name === 'grid-items-align') {
-            this.#gridItemsAlign = val || 'stretch';
+            this.#gridItemsAlign = val || 'center';
             this.#applyGridItemsAlignClass();
         }
         if (name === 'section-align') {
             this.#sectionAlign = val || 'left';
             this.#applySectionAlignClass();
             if (this.#domBuilt) this.#positionCards();
-        }
-        if (name === 'debug-show-controls') {
-            this.#debugShowControls = val !== null && val !== 'false';
-            if (this.#debugPanel) this.#debugPanel.style.display = this.#debugShowControls ? '' : 'none';
-        }
-        if (name === 'debug-transition-animation') {
-            this.#debugTransitionAnimation = val !== null && val !== 'false';
         }
     }
 
@@ -1819,129 +1758,6 @@ class CarouselDropdownBrowser extends HTMLElement {
 
         this.#flipLayout.appendChild(this.#grid);
         this.#dropdown.appendChild(this.#flipLayout);
-
-        // Debug controls panel (only visible with debug-show-controls attribute)
-        this.#debugPanel = document.createElement('div');
-        this.#debugPanel.className = 'cdb-debug-controls';
-        this.#debugPanel.style.display = this.#debugShowControls ? '' : 'none';
-
-        const mkLabel = (text, input) => {
-            const lbl = document.createElement('label');
-            lbl.textContent = text + ' ';
-            lbl.appendChild(input);
-            return lbl;
-        };
-
-        // Controls position select
-        const posSelect = document.createElement('select');
-        for (const v of ['above', 'below']) {
-            const opt = document.createElement('option');
-            opt.value = v; opt.textContent = v.charAt(0).toUpperCase() + v.slice(1);
-            if (v === this.#controlsPosition) opt.selected = true;
-            posSelect.appendChild(opt);
-        }
-        posSelect.addEventListener('change', () => {
-            this.#controlsPosition = posSelect.value === 'below' ? 'below' : 'above';
-            this.#appendStripChildren();
-        });
-        this.#debugPanel.appendChild(mkLabel('Buttons:', posSelect));
-
-        // Infinite checkbox
-        const infCheck = document.createElement('input');
-        infCheck.type = 'checkbox';
-        infCheck.checked = this.#infinite;
-        infCheck.addEventListener('change', () => { this.#infinite = infCheck.checked; });
-        this.#debugPanel.appendChild(mkLabel('Infinite', infCheck));
-
-        // Number input helper
-        const mkNum = (value, min, max, step, onInput) => {
-            const inp = document.createElement('input');
-            inp.type = 'number'; inp.min = min; inp.max = max; inp.step = step;
-            inp.value = value;
-            inp.addEventListener('input', () => {
-                const v = parseFloat(inp.value);
-                if (isNaN(v)) return;
-                onInput(Math.max(parseFloat(min), Math.min(parseFloat(max), v)));
-            });
-            inp.addEventListener('change', () => {
-                const v = parseFloat(inp.value);
-                if (isNaN(v)) { inp.value = value; return; }
-                const clamped = Math.max(parseFloat(min), Math.min(parseFloat(max), v));
-                inp.value = clamped;
-            });
-            return inp;
-        };
-
-        // Arc-Z
-        this.#debugPanel.appendChild(mkLabel('Arc-Z:', mkNum(this.#arcZ, '0', '50', '1', (v) => {
-            this.#arcZ = v;
-            if (this.#domBuilt) this.#positionCards();
-        })));
-
-        // Arc-Y
-        this.#debugPanel.appendChild(mkLabel('Arc-Y:', mkNum(this.#arcY, '-50', '50', '1', (v) => {
-            this.#arcY = v;
-            this.#syncArcYExtra();
-            if (this.#domBuilt) this.#positionCards();
-        })));
-
-        // Bounce
-        this.#debugPanel.appendChild(mkLabel('Bounce:', mkNum(this.#bounce, '0', '1', '0.05', (v) => {
-            this.#bounce = v;
-            this.#updateEasing();
-        })));
-
-        // Select helper
-        const mkSelect = (options, selected, onChange) => {
-            const sel = document.createElement('select');
-            for (const [val, text] of options) {
-                const opt = document.createElement('option');
-                opt.value = val; opt.textContent = text;
-                if (val === selected) opt.selected = true;
-                sel.appendChild(opt);
-            }
-            sel.addEventListener('change', onChange);
-            return sel;
-        };
-
-        // Title controls
-        const titleOpts = [['none','None'],['above','Above'],['top','Top'],['center','Center'],['bottom','Bottom'],['below','Below'],['tooltip','Tooltip']];
-        const alignOpts = [['left','Left'],['center','Center'],['right','Right']];
-
-        const titleSel = mkSelect(titleOpts, 'none', () => updateTitles());
-        const titleAlignSel = mkSelect(alignOpts, 'center', () => updateTitles());
-
-        const updateTitles = () => {
-            const hAlign = titleAlignSel.value;
-            const v = titleSel.value;
-            this.setAttribute('card-title', v === 'none' ? 'none' : `${v} ${hAlign}`);
-        };
-
-        this.#debugPanel.appendChild(mkLabel('Card title:', titleSel));
-        this.#debugPanel.appendChild(mkLabel('Title align:', titleAlignSel));
-
-        // Grid alignment
-        const gridAlignOpts = [['left','Left'],['center','Center'],['right','Right']];
-        const gridAlignSel = mkSelect(gridAlignOpts, this.#gridAlign, () => {
-            this.setAttribute('grid-align', gridAlignSel.value);
-        });
-        this.#debugPanel.appendChild(mkLabel('Grid align:', gridAlignSel));
-
-        // Grid items alignment
-        const gridItemsOpts = [['stretch','Stretch'],['left','Left'],['center','Center'],['right','Right']];
-        const gridItemsSel = mkSelect(gridItemsOpts, this.#gridItemsAlign, () => {
-            const v = gridItemsSel.value;
-            if (v === 'stretch') this.removeAttribute('grid-items-align');
-            else this.setAttribute('grid-items-align', v);
-        });
-        this.#debugPanel.appendChild(mkLabel('Grid items:', gridItemsSel));
-
-        // Section title alignment
-        const secAlignOpts = [['left','Left'],['center','Center'],['right','Right']];
-        const secAlignSel = mkSelect(secAlignOpts, this.#sectionAlign, () => {
-            this.setAttribute('section-align', secAlignSel.value);
-        });
-        this.#debugPanel.appendChild(mkLabel('Section align:', secAlignSel));
 
         // Append rendered DOM — dropdown inside strip so controls-position="below" flows smoothly
         this.#appendStripChildren();
@@ -2718,7 +2534,6 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#strip.appendChild(this.#container);
             this.#strip.appendChild(this.#dropdown);
         }
-        if (this.#debugPanel) this.#strip.prepend(this.#debugPanel);
     }
 
     // ═══════════════════════════════════════════════════════

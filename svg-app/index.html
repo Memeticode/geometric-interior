@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG Icon Showcase</title>
+  <link rel="stylesheet" href="./css/main.css">
+  <style>
+    .hub {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 24rem;
+    }
+    .hub a {
+      display: block;
+      padding: 0.75rem 1rem;
+      border: 1px solid #222;
+      border-radius: 6px;
+      background: #1a1a1a;
+      color: #aaa;
+      font-size: 0.8125rem;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .hub a:hover {
+      border-color: #444;
+      color: #ddd;
+    }
+    .hub .desc {
+      font-size: 0.625rem;
+      color: #555;
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>SVG Icon Showcase</h1>
+
+  <div class="hub">
+    <a href="./pages/browser.html">
+      Browser
+      <div class="desc">Browse all icons with morph transitions and materialize/dematerialize</div>
+    </a>
+    <a href="./pages/matrix.html">
+      Transition Matrix
+      <div class="desc">17x17 grid showing every state-to-state morph</div>
+    </a>
+  </div>
+</body>
+
+</html>

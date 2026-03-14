@@ -3047,6 +3047,7 @@ const enableTransitions = () => {
         requestAnimationFrame(() => {
             document.documentElement.classList.remove('no-transitions');
             carouselBrowser.style.removeProperty('--carousel-speed');
+            document.querySelector('.app-container').style.opacity = '1';
         });
     });
 };

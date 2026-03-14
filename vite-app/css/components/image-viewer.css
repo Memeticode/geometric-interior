@@ -63,7 +63,7 @@ image-viewer {
     align-items: center;
     gap: 0.25rem;
     opacity: 0;
-    transition: opacity 0.5s ease;
+    transition: opacity calc(var(--t-menu) * 1.67 * var(--t-speed)) ease;
     pointer-events: none;
 }
 .iv-controls:empty { display: none; }
@@ -82,7 +82,7 @@ image-viewer[controls-pos$="-right"] .iv-controls  { right: 0.5rem; }
 image-viewer.iv-controls-active .iv-controls {
     opacity: 1;
     pointer-events: auto;
-    transition: opacity 0.25s ease;
+    transition: opacity calc(var(--t-content) * var(--t-speed)) ease;
 }
 
 /* Hide controls when viewer shows a live canvas (e.g. gen preview) */
@@ -302,7 +302,7 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     white-space: pre-line;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity calc(var(--t-content) * var(--t-speed)) ease;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
     z-index: 10;
 }
@@ -391,7 +391,7 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     border-radius: 50%;
     color: var(--text-muted);
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background calc(var(--t-accent) * var(--t-speed)) ease, color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 .iv-error-retry svg {
     width: 18px;
@@ -434,7 +434,7 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     height: 100%;
     background: var(--accent-bg, rgba(180, 130, 255, 0.7));
     border-radius: 2px;
-    transition: width 0.2s ease;
+    transition: width calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
     width: 0;
 }
 .iv-progress-label {
@@ -488,7 +488,7 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: background calc(var(--t-accent) * var(--t-speed)) ease, color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 .fullscreen-close svg {
     width: 18px;
@@ -559,8 +559,8 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     display: grid;
     grid-template-rows: 0fr;
     opacity: 0;
-    transition: grid-template-rows 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.35s ease;
+    transition: grid-template-rows calc(var(--t-menu) * 1.33 * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
+                opacity calc(var(--t-menu) * 1.17 * var(--t-speed)) ease;
 }
 .fs-alt-extra > div {
     overflow: hidden;
@@ -585,7 +585,7 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     opacity: 0;
     pointer-events: none;
     transform: scale(0.96);
-    transition: opacity 120ms ease, transform 120ms ease;
+    transition: opacity calc(var(--t-accent) * 0.8 * var(--t-speed)) ease, transform calc(var(--t-accent) * 0.8 * var(--t-speed)) ease;
 }
 .gallery-ctx-menu.visible {
     opacity: 1;
@@ -637,7 +637,7 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     height: 10px;
     margin-left: auto;
     opacity: 0.5;
-    transition: transform 150ms ease;
+    transition: transform calc(var(--t-accent) * var(--t-speed)) ease;
 }
 .gallery-ctx-chevron svg {
     width: 100%;
@@ -650,7 +650,7 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
 .gallery-ctx-submenu {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 200ms ease;
+    transition: grid-template-rows calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 .gallery-ctx-submenu > .gallery-ctx-submenu-inner {
     overflow: hidden;

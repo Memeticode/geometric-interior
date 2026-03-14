@@ -41,7 +41,7 @@
     background: var(--accent-text);
     pointer-events: none;
     z-index: 10;
-    transition: left 0.05s linear;
+    transition: left calc(var(--t-accent) * 0.33 * var(--t-speed)) linear;
 }
 
 .timeline-playhead-handle {
@@ -159,7 +159,7 @@
     padding: 0;
     line-height: 1;
     opacity: 0.6;
-    transition: opacity 0.15s, color 0.15s;
+    transition: opacity calc(var(--t-accent) * var(--t-speed)) ease, color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .timeline-lane-add-btn:hover {
@@ -186,7 +186,7 @@
     border-top: 1px solid var(--accent);
     border-bottom: 1px solid var(--accent);
     cursor: pointer;
-    transition: background-color 0.15s;
+    transition: background-color calc(var(--t-accent) * var(--t-speed)) ease;
     font-size: 0.5rem;
     color: var(--text-muted);
     display: flex;
@@ -302,7 +302,7 @@
     font-size: 0.6875rem;
     font-family: inherit;
     cursor: pointer;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition: border-color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .span-popover-actions button:hover {

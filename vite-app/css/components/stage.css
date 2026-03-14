@@ -14,7 +14,7 @@
     flex-direction: column;
     gap: 0.625rem;
     padding: 0.75rem 0.5rem;
-    transition: max-width 0.3s ease;
+    transition: max-width calc(var(--t-menu) * var(--t-speed)) ease;
 }
 
 .panel.panel-collapsed + .stage .stage-content {
@@ -49,7 +49,7 @@
     border-radius: 0 0 6px 6px;
     overflow: hidden;
     max-height: 0;
-    transition: max-height 0.35s ease;
+    transition: max-height calc(var(--t-menu) * 1.17 * var(--t-speed)) ease;
 }
 
 .render-card .generated-title {
@@ -92,7 +92,7 @@
     background: var(--modal-backdrop);
     z-index: 10;
     opacity: 1;
-    transition: opacity 0.2s ease-out;
+    transition: opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease-out;
     pointer-events: auto;
 }
 
@@ -150,14 +150,14 @@
     background: rgba(255, 255, 255, 0.08);
     z-index: 11;
     pointer-events: none;
-    transition: opacity 0.3s ease-out;
+    transition: opacity calc(var(--t-menu) * var(--t-speed)) ease-out;
 }
 .morph-timebar.hidden { opacity: 0; }
 .morph-timebar-fill {
     height: 100%;
     width: 0%;
     background: var(--accent-text, rgba(180, 140, 255, 0.6));
-    transition: width 0.05s linear;
+    transition: width calc(var(--t-accent) * 0.33 * var(--t-speed)) linear;
 }
 
 /* ── Fullscreen ── */
@@ -208,7 +208,7 @@
     cursor: pointer;
     padding: 0.375rem;
     line-height: 0;
-    transition: color 0.2s, background 0.2s;
+    transition: color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, background calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 
 .fullscreen-close:hover {

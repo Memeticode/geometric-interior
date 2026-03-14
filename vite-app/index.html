@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <style>.no-transitions,.no-transitions *,.no-transitions *::before,.no-transitions *::after{transition-duration:0s!important;animation-duration:0s!important}</style>
+    <style>.no-transitions,.no-transitions *,.no-transitions *::before,.no-transitions *::after{transition-duration:0s!important;animation-duration:0s!important}.app-container{opacity:0}</style>
     <title>Gallery — Geometric Interior</title>
     <meta name="description"
         content="Browse generative geometric art self-portraits. Real-time WebGL rendering of crystalline forms." />
@@ -116,7 +116,7 @@
                 </div>
                 <div class="gallery-content" id="galleryContent">
                     <carousel-dropdown-browser id="carouselBrowser" controls-position="above" infinite="false"
-                        bounce="0.35" debug-show-controls></carousel-dropdown-browser>
+                        bounce="0.35"></carousel-dropdown-browser>
                     <!-- Animations -->
                     <div class="gallery-section" id="animSection" style="display:none">
                         <div class="gallery-section-header" data-target="animGallery" aria-expanded="true">

@@ -51,7 +51,7 @@ carousel-dropdown-browser-section { display: none; }
     width: 100%;
     padding: var(--cdb-container-pad, 0);
     max-height: 300px;
-    transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.3s ease;
+    transition: max-height calc(var(--t-menu) * 1.33 * var(--t-speed)) ease, padding calc(var(--t-menu) * 1.33 * var(--t-speed)) ease, opacity calc(var(--t-menu) * var(--t-speed)) ease;
     clip-path: inset(0 -9999px -9999px -9999px);
 }
 
@@ -65,12 +65,12 @@ carousel-dropdown-browser-section { display: none; }
     align-items: center;
     justify-content: center;
     min-height: calc(var(--card-w) * 9 / 14 + 1.25rem + var(--arc-y-extra, 0px));
-    transition: opacity 0.4s ease;
+    transition: opacity calc(var(--t-menu) * 1.33 * var(--t-speed)) ease;
 }
 /* Only animate track height during intentional carousel navigation */
 .cdb-track.cdb-transitioning {
-    transition: min-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.4s ease;
+    transition: min-height calc(var(--t-menu) * 1.67 * var(--t-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+                opacity calc(var(--t-menu) * 1.33 * var(--t-speed)) ease;
 }
 
 /* Extra height when card titles sit outside the image */
@@ -84,7 +84,7 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
     padding: 0;
     overflow: hidden;
     opacity: 0;
-    transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.3s ease;
+    transition: max-height calc(var(--t-menu) * 1.33 * var(--t-speed)) ease, padding calc(var(--t-menu) * 1.33 * var(--t-speed)) ease, opacity calc(var(--t-menu) * var(--t-speed)) ease;
 }
 .cdb-strip.cdb-flattened .cdb-arrow {
     opacity: 0;
@@ -95,38 +95,6 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
 .cdb-arrow:disabled {
     opacity: 0.15;
     pointer-events: none;
-}
-/* ── Debug controls ── */
-.cdb-debug-controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem 1rem;
-    padding: 0.25rem 0.5rem;
-    font-size: 0.7rem;
-    opacity: 0.6;
-}
-.cdb-debug-controls label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-}
-.cdb-debug-controls input[type="number"] {
-    width: 52px;
-    background: transparent;
-    border: 1px solid var(--border-strong);
-    color: inherit;
-    padding: 0.1rem 0.2rem;
-    border-radius: 3px;
-    font-size: inherit;
-}
-.cdb-debug-controls select {
-    background: transparent;
-    border: 1px solid var(--border-strong);
-    color: inherit;
-    font-size: inherit;
-    border-radius: 3px;
 }
 
 /* ── Carousel cards ── */
@@ -162,8 +130,8 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
                rotateX(var(--rx, 0deg))
                translateZ(var(--tz, 0px))
                scale(var(--sc, 1));
-    transition: transform 0.15s ease,
-                box-shadow 0.2s ease,
+    transition: transform calc(var(--t-accent) * var(--t-speed)) ease,
+                box-shadow calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
                 border-color var(--carousel-speed, 0.85s) ease;
     transform-style: preserve-3d;
 }
@@ -306,20 +274,20 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-mask-left .cdb-card-frame {
     -webkit-mask-image: linear-gradient(to right, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
     mask-image: linear-gradient(to right, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
-    transition: transform 0.15s ease, --mask-size 0.075s ease, box-shadow 0.2s ease;
+    transition: transform calc(var(--t-accent) * var(--t-speed)) ease, --mask-size calc(var(--t-accent) * 0.5 * var(--t-speed)) ease, box-shadow calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 .cdb-mask-right .cdb-card-frame {
     -webkit-mask-image: linear-gradient(to left, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
     mask-image: linear-gradient(to left, transparent calc(var(--mask-size) - 8px), black var(--mask-size));
-    transition: transform 0.15s ease, --mask-size 0.075s ease, box-shadow 0.2s ease;
+    transition: transform calc(var(--t-accent) * var(--t-speed)) ease, --mask-size calc(var(--t-accent) * 0.5 * var(--t-speed)) ease, box-shadow calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 
 /* Rest-state mask (center card during rotation) — matches carousel transition speed */
 .cdb-card.cdb-rest-mask.cdb-mask-left .cdb-card-frame,
 .cdb-card.cdb-rest-mask.cdb-mask-right .cdb-card-frame {
-    transition: transform 0.15s ease,
+    transition: transform calc(var(--t-accent) * var(--t-speed)) ease,
                 --mask-size var(--carousel-speed, 0.85s) ease,
-                box-shadow 0.2s ease;
+                box-shadow calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 
 /* ── View All toggle ── */
@@ -335,7 +303,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     border-radius: 6px;
     cursor: pointer;
     color: var(--text-muted);
-    transition: color 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+    transition: color calc(var(--t-menu) * var(--t-speed)) ease, border-color calc(var(--t-menu) * var(--t-speed)) ease, background calc(var(--t-menu) * var(--t-speed)) ease;
 }
 .cdb-toggle:hover {
     color: var(--text);
@@ -350,7 +318,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-chevron-svg {
     width: 18px;
     height: 10px;
-    transition: transform 0.3s ease;
+    transition: transform calc(var(--t-menu) * var(--t-speed)) ease;
 }
 .cdb-toggle.cdb-expanded .cdb-chevron-svg {
     transform: scaleY(-1);
@@ -361,8 +329,8 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
     width: 100%;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.4s ease;
+    transition: max-height calc(var(--t-menu) * 1.67 * var(--t-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+                opacity calc(var(--t-menu) * 1.33 * var(--t-speed)) ease;
     opacity: 0;
 }
 .cdb-dropdown.expanded {
@@ -427,7 +395,7 @@ carousel-dropdown-browser.cdb-grid-items-right .cdb-grid-section-header {
     border-radius: 8px;
     overflow: hidden;
     background: var(--bg);
-    transition: transform 0.15s ease;
+    transition: transform calc(var(--t-accent) * var(--t-speed)) ease;
 }
 .cdb-grid-card:hover {
     transform: scale(1.05);
@@ -453,7 +421,7 @@ carousel-dropdown-browser.cdb-grid-items-right .cdb-grid-section-header {
     display: flex;
     gap: 0.125rem;
     opacity: 0;
-    transition: opacity 0.15s;
+    transition: opacity calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .cdb-grid-card:hover .cdb-grid-card-actions {
@@ -470,7 +438,7 @@ carousel-dropdown-browser.cdb-grid-items-right .cdb-grid-section-header {
     align-items: center;
     justify-content: center;
     color: rgba(255, 255, 255, 0.7);
-    transition: color 0.15s, background-color 0.15s;
+    transition: color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .cdb-grid-card-actions button:hover {
@@ -503,7 +471,7 @@ carousel-dropdown-browser.cdb-grid-items-right .cdb-grid-section-header {
 .cdb-strip.cdb-flattened .cdb-section-label-container {
     opacity: 0;
     max-height: 0;
-    transition: opacity 0.3s ease, max-height 0.4s ease;
+    transition: opacity calc(var(--t-menu) * var(--t-speed)) ease, max-height calc(var(--t-menu) * 1.33 * var(--t-speed)) ease;
 }
 .cdb-section-label {
     position: absolute;

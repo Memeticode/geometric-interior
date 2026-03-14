@@ -16,7 +16,7 @@
     cursor: pointer;
     flex-shrink: 0;
     padding: 0;
-    transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+    transition: background calc(var(--t-menu) * var(--t-speed)) ease, color calc(var(--t-menu) * var(--t-speed)) ease, border-color calc(var(--t-menu) * var(--t-speed)) ease, opacity calc(var(--t-menu) * var(--t-speed)) ease;
 }
 .icon-btn-group .icon-btn:hover:not(:disabled) {
     background: var(--surface-active);
@@ -77,7 +77,7 @@
     gap: 0.125rem;
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+    transition: opacity calc(var(--t-accent) * 1.2 * var(--t-speed)) ease, transform calc(var(--t-accent) * 1.2 * var(--t-speed)) ease, visibility calc(var(--t-accent) * 1.2 * var(--t-speed));
     visibility: visible;
 }
 
@@ -96,7 +96,7 @@
     padding: 0.5rem 0.625rem;
     border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.15s;
+    transition: background-color calc(var(--t-accent) * var(--t-speed)) ease;
     white-space: nowrap;
 }
 
@@ -116,7 +116,7 @@
     background: var(--surface-active);
     border-radius: 9px;
     border: 1px solid var(--border);
-    transition: background-color 0.2s, border-color 0.2s;
+    transition: background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, border-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
     flex-shrink: 0;
     display: inline-block;
 }
@@ -134,7 +134,7 @@
     height: 12px;
     border-radius: 50%;
     background: var(--text);
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform calc(var(--t-accent) * 1.33 * var(--t-speed)) cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .settings-toggle-switch[aria-checked="true"] .settings-toggle-knob {

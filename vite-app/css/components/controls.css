@@ -19,7 +19,7 @@
     border-top: 1px solid var(--border);
     cursor: pointer;
     border-radius: 6px;
-    transition: background-color 0.2s;
+    transition: background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 
 .param-section-header:hover {
@@ -40,7 +40,7 @@
 .param-section-header .collapsible-chevron {
     font-size: 0.6875rem;
     color: var(--text-muted);
-    transition: transform 0.25s ease;
+    transition: transform calc(var(--t-content) * var(--t-speed)) ease;
 }
 
 .param-section-header[aria-expanded="false"] .collapsible-chevron {
@@ -51,7 +51,7 @@
 .param-section-rows {
     overflow: hidden;
     max-height: 100000px;
-    transition: max-height 0.35s ease, opacity 0.25s ease;
+    transition: max-height calc(var(--t-menu) * 1.17 * var(--t-speed)) ease, opacity calc(var(--t-content) * var(--t-speed)) ease;
     opacity: 1;
 }
 
@@ -80,7 +80,7 @@
     border-bottom: 0.05rem solid var(--accent-text);
     pointer-events: none;
     opacity: 0.5;
-    transition: opacity 0.2s;
+    transition: opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 
 .engine-slider:hover .slider-track-bg {
@@ -207,7 +207,7 @@ textarea.auto-grow {
     border-radius: 10px;
     background: var(--surface);
     cursor: pointer;
-    transition: border-color 0.2s, background-color 0.2s;
+    transition: border-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
     color: var(--text-muted);
 }
 
@@ -277,7 +277,7 @@ button {
     cursor: pointer;
     font-size: 0.75rem;
     font-family: inherit;
-    transition: opacity 0.3s ease;
+    transition: opacity calc(var(--t-menu) * var(--t-speed)) ease;
 }
 
 button:hover {
@@ -352,7 +352,7 @@ button[disabled] {
     padding: 0.5rem 0.625rem 0.5rem 1.25rem;
     box-shadow: 0 4px 20px var(--accent);
     opacity: 0;
-    transition: opacity 0.35s ease;
+    transition: opacity calc(var(--t-menu) * 1.17 * var(--t-speed)) ease;
     pointer-events: none;
     z-index: 9999;
     white-space: nowrap;
@@ -376,7 +376,7 @@ button[disabled] {
     cursor: pointer;
     border-radius: 4px;
     flex-shrink: 0;
-    transition: color 0.15s, background-color 0.15s;
+    transition: color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .toast-close:hover {

@@ -2,7 +2,7 @@
 
 .gen-panel {
     padding: 0;
-    transition: opacity 0.25s ease, transform 0.25s ease;
+    transition: opacity calc(var(--t-content) * var(--t-speed)) ease, transform calc(var(--t-content) * var(--t-speed)) ease;
 }
 .gen-panel.hidden {
     display: none;
@@ -132,7 +132,7 @@
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
-    transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease, opacity 0.3s ease;
+    transition: background calc(var(--t-menu) * var(--t-speed)) ease, color calc(var(--t-menu) * var(--t-speed)) ease, border-color calc(var(--t-menu) * var(--t-speed)) ease, opacity calc(var(--t-menu) * var(--t-speed)) ease;
 }
 .gen-action-btn svg {
     flex-shrink: 0;
@@ -199,7 +199,7 @@
     flex-shrink: 0;
     display: flex;
     transform: rotate(30deg);
-    transition: opacity 0.2s;
+    transition: opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 .gen-field-icon svg {
     width: 100%;
@@ -222,7 +222,7 @@
     resize: none;
     overflow: hidden;
     width: 100%;
-    transition: border-color 0.2s;
+    transition: border-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
     field-sizing: content;
     min-height: 1.5em;
 }
@@ -255,7 +255,7 @@
     resize: none;
     overflow: hidden;
     width: 100%;
-    transition: border-color 0.2s;
+    transition: border-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
     field-sizing: content;
     min-height: 2.5em;
 }
@@ -321,7 +321,7 @@
     background: none;
     border: none;
     color: var(--text-muted);
-    transition: color 0.2s;
+    transition: color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 .gen-collapse-toggle:hover {
     color: var(--text);
@@ -333,7 +333,7 @@
 .gen-collapse-body {
     overflow: hidden;
     max-height: 5000px;
-    transition: max-height 0.35s ease, opacity 0.25s ease;
+    transition: max-height calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, opacity calc(var(--t-accent) * var(--t-speed)) ease;
     opacity: 1;
 }
 .gen-collapse-body.collapsed {
@@ -393,7 +393,7 @@
 
 .gen-chevron {
     font-size: 0.8125rem;
-    transition: transform 0.25s ease;
+    transition: transform calc(var(--t-content) * var(--t-speed)) ease;
     flex-shrink: 0;
 }
 
@@ -447,7 +447,7 @@ input.gen-slider-value {
     width: 2.5rem;
     flex: 0 0 2.5rem;
     padding: 0.125rem 0.125rem;
-    transition: border-color 0.2s, color 0.2s;
+    transition: border-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 .gen-slider-value:hover {
     color: var(--text);
@@ -489,7 +489,7 @@ input.gen-slider-value {
     background: var(--accent-text);
     border: none;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform calc(var(--t-accent) * var(--t-speed)) ease, box-shadow calc(var(--t-accent) * var(--t-speed)) ease;
 }
 .gen-slider-track input[type="range"]::-webkit-slider-thumb:hover {
     transform: scale(1.35);
@@ -506,7 +506,7 @@ input.gen-slider-value {
     background: var(--accent-text);
     border: none;
     cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform calc(var(--t-accent) * var(--t-speed)) ease, box-shadow calc(var(--t-accent) * var(--t-speed)) ease;
 }
 .gen-slider-track input[type="range"]::-moz-range-thumb:hover {
     transform: scale(1.35);
@@ -576,7 +576,7 @@ input.gen-slider-value {
     height: 100%;
     background: var(--progress);
     border-radius: 2px;
-    transition: width 0.2s ease;
+    transition: width calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 .gen-progress-label {
     font-size: 0.6875rem;
@@ -644,7 +644,7 @@ input.gen-slider-value {
     color: rgba(255, 255, 255, 0.8);
     font-size: 0.75rem;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background calc(var(--t-accent) * var(--t-speed)) ease;
 }
 .gen-retry-btn:hover {
     background: rgba(255, 255, 255, 0.2);
@@ -699,7 +699,7 @@ input.gen-slider-value {
     height: 100%;
     background: var(--progress);
     border-radius: 1.5px;
-    transition: width 0.3s ease;
+    transition: width calc(var(--t-menu) * var(--t-speed)) ease;
 }
 .gen-queue-label {
     font-size: 0.625rem;
@@ -723,7 +723,7 @@ input.gen-slider-value {
     border: 1px solid var(--border);
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 .gen-queue-btn:hover {
     background: var(--surface-hover);
@@ -775,7 +775,7 @@ input.gen-slider-value {
     overflow: hidden;
     background: var(--surface);
     cursor: pointer;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition: border-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, box-shadow calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
     position: relative;
 }
 .gen-saved-card:hover {
@@ -835,7 +835,7 @@ input.gen-slider-value {
     cursor: pointer;
     padding: 0;
     line-height: 1;
-    transition: background 0.15s, color 0.15s;
+    transition: background calc(var(--t-accent) * var(--t-speed)) ease, color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 .gen-saved-action-btn.gen-saved-delete {
     background: var(--danger);
@@ -910,7 +910,7 @@ input.gen-slider-value {
     background: var(--surface);
     color: var(--text-muted);
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 .gen-modal-btn:hover {
     background: var(--surface-hover);

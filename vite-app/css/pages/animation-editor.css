@@ -45,7 +45,7 @@
     border-radius: 10px;
     background: var(--surface);
     padding: 0.5rem;
-    transition: border-color 0.2s, background-color 0.2s;
+    transition: border-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
     cursor: pointer;
     position: relative;
 }
@@ -164,7 +164,7 @@
     font-family: var(--font-secondary);
     font-variant-numeric: tabular-nums;
     text-align: right;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition: border-color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .duration-input:hover {
@@ -205,7 +205,7 @@
     border-radius: 3px;
     font-size: 0.6875rem;
     line-height: 1;
-    transition: color 0.15s, background-color 0.15s;
+    transition: color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -241,7 +241,7 @@
     font-size: 0.75rem;
     font-family: inherit;
     cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+    transition: border-color calc(var(--t-accent) * var(--t-speed)) ease, color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .add-event-btn:hover {
@@ -285,7 +285,7 @@
     font-family: inherit;
     cursor: pointer;
     text-align: left;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition: border-color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .add-event-type-option:hover:not(:disabled) {
@@ -319,7 +319,7 @@
     font-size: 0.6875rem;
     font-family: inherit;
     cursor: pointer;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition: border-color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .add-event-picker-actions button:hover {
@@ -451,7 +451,7 @@
     font-family: inherit;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.15s, opacity 0.15s;
+    transition: background-color calc(var(--t-accent) * var(--t-speed)) ease, opacity calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .anim-render-btn:hover:not(:disabled) {
@@ -472,7 +472,7 @@
     font-size: 0.75rem;
     font-family: inherit;
     cursor: pointer;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition: border-color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .anim-preview-btn:hover:not(:disabled) {
@@ -536,7 +536,7 @@
     border-radius: 8px;
     padding: 0.375rem;
     border: 1px solid transparent;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition: border-color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .profile-picker-cell:hover {
@@ -602,7 +602,7 @@
     background: var(--surface);
     cursor: pointer;
     text-align: left;
-    transition: border-color 0.15s, background-color 0.15s;
+    transition: border-color calc(var(--t-accent) * var(--t-speed)) ease, background-color calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 .template-card:hover {

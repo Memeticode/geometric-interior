@@ -10,7 +10,7 @@
     align-items: center;
     justify-content: center;
     aspect-ratio: 1;
-    transition: color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    transition: color calc(var(--t-menu) * var(--t-speed)) ease, border-color calc(var(--t-menu) * var(--t-speed)) ease, box-shadow calc(var(--t-menu) * var(--t-speed)) ease;
     flex-shrink: 0;
 }
 
@@ -35,7 +35,7 @@
     margin-top: -0.75px;
     background: currentColor;
     border-radius: 0.75px;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    transition: transform calc(var(--t-menu) * var(--t-speed)) ease, opacity calc(var(--t-menu) * var(--t-speed)) ease;
 }
 
 /* Closed: two equal horizontal lines */
@@ -95,9 +95,9 @@
     flex-direction: column;
     gap: 0.25rem;
     transform: translateX(0);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                opacity 0.3s ease,
-                visibility 0.3s;
+    transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+                opacity calc(var(--t-menu) * var(--t-speed)) ease,
+                visibility calc(var(--t-menu) * var(--t-speed));
     opacity: 1;
     visibility: visible;
     box-shadow: none;
@@ -130,7 +130,7 @@
     z-index: 499;
     opacity: 1;
     visibility: visible;
-    transition: opacity 0.3s ease, visibility 0.3s;
+    transition: opacity calc(var(--t-menu) * var(--t-speed)) ease, visibility calc(var(--t-menu) * var(--t-speed));
 }
 
 .sidebar-backdrop.hidden {
@@ -153,7 +153,7 @@
 #imageModeSection .row {
     padding: 0.375rem 0.5rem;
     border-radius: 10px;
-    transition: background-color 0.2s ease;
+    transition: background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 
 
@@ -187,7 +187,7 @@ input[type="range"]::-webkit-slider-thumb {
     border: 2px solid var(--bg);
     box-shadow: 0 0 8px var(--accent), 0 0 2px var(--shadow-color);
     cursor: pointer;
-    transition: box-shadow 0.2s, transform 0.15s;
+    transition: box-shadow calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, transform calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
