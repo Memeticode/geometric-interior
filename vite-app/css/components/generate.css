@@ -333,7 +333,7 @@
 .gen-collapse-body {
     overflow: hidden;
     max-height: 5000px;
-    transition: max-height calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, opacity calc(var(--t-accent) * var(--t-speed)) ease;
+    transition: max-height calc(var(--t-accent) * 1.33 * var(--t-speed)) ease, opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
     opacity: 1;
 }
 .gen-collapse-body.collapsed {

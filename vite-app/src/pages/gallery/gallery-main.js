@@ -262,24 +262,23 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
         textBtn.classList.toggle('iv-text-active', e.detail.visible);
     });
 
-    // Resolution dropdown (opens upward, pixel-count labels)
-    const resDropdown = document.createElement('div');
-    resDropdown.className = 'custom-dropdown';
+    // Resolution dropdown (morph mode — single unified element)
+    const resDropdown = document.createElement('dd-morph');
+    resDropdown.className = 'select-base';
     resDropdown.id = 'imageResolutionDropdown';
+    resDropdown.setAttribute('role', 'listbox');
+    resDropdown.setAttribute('aria-haspopup', 'listbox');
+    resDropdown.setAttribute('aria-expanded', 'false');
+    resDropdown.setAttribute('aria-label', 'Resolution');
+    resDropdown.setAttribute('data-i18n-aria', 'footer.resolutionLabel');
+    resDropdown.setAttribute('tabindex', '0');
     resDropdown.innerHTML = `
-        <button class="custom-dropdown-trigger select-base" aria-haspopup="listbox"
-            aria-expanded="false" aria-label="Resolution"
-            data-i18n-aria="footer.resolutionLabel">
-            <span class="custom-dropdown-label">540p</span>
-        </button>
-        <div class="custom-dropdown-menu hidden" role="listbox">
-            <button class="custom-dropdown-item" role="option" data-value="4k" data-label="2160p" aria-selected="false">2160p</button>
-            <button class="custom-dropdown-item" role="option" data-value="qhd" data-label="1620p" aria-selected="false">1620p</button>
-            <button class="custom-dropdown-item" role="option" data-value="fhd" data-label="1080p" aria-selected="false">1080p</button>
-            <button class="custom-dropdown-item" role="option" data-value="hd" data-label="900p" aria-selected="false">900p</button>
-            <button class="custom-dropdown-item active" role="option" data-value="sd" data-label="540p" aria-selected="true">540p</button>
-            <button class="custom-dropdown-item" role="option" data-value="pre" data-label="270p" aria-selected="false">270p</button>
-        </div>`;
+        <button class="custom-dropdown-item" role="option" data-value="4k" data-label="2160p" aria-selected="false">2160p</button>
+        <button class="custom-dropdown-item" role="option" data-value="qhd" data-label="1620p" aria-selected="false">1620p</button>
+        <button class="custom-dropdown-item" role="option" data-value="fhd" data-label="1080p" aria-selected="false">1080p</button>
+        <button class="custom-dropdown-item" role="option" data-value="hd" data-label="900p" aria-selected="false">900p</button>
+        <button class="custom-dropdown-item active" role="option" data-value="sd" data-label="540p" aria-selected="true">540p</button>
+        <button class="custom-dropdown-item" role="option" data-value="pre" data-label="270p" aria-selected="false">270p</button>`;
 
     // Fullscreen button
     const fsBtn = document.createElement('button');

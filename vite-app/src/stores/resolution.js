@@ -2,7 +2,7 @@
  * Resolution preference — localStorage-backed with custom event.
  */
 
-import { initCustomDropdown, syncAnimateOffset } from '../components/custom-dropdown.js';
+import { initCustomDropdown, syncMorph } from '../components/custom-dropdown.js';
 
 const STORAGE_KEY = 'geo-self-portrait-resolution';
 
@@ -125,15 +125,20 @@ export function getLowerPreset(key) {
 
 /** Sync a dropdown's visual state to a resolution key. */
 export function syncDropdown(dropdownEl, activeKey) {
+    // dd-morph element: use syncMorph for smooth transition
+    if (dropdownEl.tagName === 'DD-MORPH') {
+        syncMorph(dropdownEl, activeKey);
+        return;
+    }
+
+    // Standard dropdown
     const label = dropdownEl.querySelector('.custom-dropdown-label');
     const menu = dropdownEl.querySelector('.custom-dropdown-menu');
-    if (menu) {
-        menu.querySelectorAll('.custom-dropdown-item').forEach(item => {
-            const isActive = item.dataset.value === activeKey;
-            item.classList.toggle('active', isActive);
-            item.setAttribute('aria-selected', String(isActive));
-            if (isActive && label) label.textContent = item.dataset.label || item.textContent;
-        });
-    }
-    syncAnimateOffset(dropdownEl);
+    if (!menu) return;
+    menu.querySelectorAll('.custom-dropdown-item').forEach(item => {
+        const isActive = item.dataset.value === activeKey;
+        item.classList.toggle('active', isActive);
+        item.setAttribute('aria-selected', String(isActive));
+        if (isActive && label) label.textContent = item.dataset.label || item.textContent;
+    });
 }

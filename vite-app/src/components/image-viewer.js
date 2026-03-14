@@ -824,7 +824,7 @@ class ImageViewer extends HTMLElement {
     }
 
     #hideControls() {
-        if (this.#controlsEl.querySelector('.custom-dropdown.open')) return;
+        if (this.#controlsEl.querySelector('.custom-dropdown.open, dd-morph.open')) return;
         clearTimeout(this.#controlsTimer);
         this.#controlsTimer = 0;
         this.#controlsActive = false;
@@ -833,7 +833,7 @@ class ImageViewer extends HTMLElement {
 
     #resetControlsTimer() {
         clearTimeout(this.#controlsTimer);
-        if (this.#controlsEl.querySelector('.custom-dropdown.open')) return;
+        if (this.#controlsEl.querySelector('.custom-dropdown.open, dd-morph.open')) return;
         this.#controlsTimer = setTimeout(() => this.#hideControls(), 2500);
     }
 

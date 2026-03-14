@@ -282,25 +282,27 @@ export const bloomState = {
   P1: { cx: 12, cy: 12, r: 7, o: 0.3, sw: 0.75 },
 };
 
-// Void — runic vortex: ritual circle with sweeping arcs and inner glyphs
+// Void — nebular vortex: compact gaseous wisps
 export const voidState = {
-  // Outer sweeping arcs — asymmetric curves forming a vortex
-  L1: { x1: 3, y1: 6, qx: 6, qy: 2, x2: 14, y2: 3, sw: 1.25, da: '100 0', o: 0.55 },
-  L2: { x1: 18, y1: 3, qx: 22, qy: 8, x2: 20, y2: 14, sw: 1.25, da: '100 0', o: 0.5 },
-  L3: { x1: 21, y1: 18, qx: 17, qy: 22, x2: 10, y2: 21, sw: 1.25, da: '100 0', o: 0.45 },
-  L4: { x1: 6, y1: 21, qx: 2, qy: 16, x2: 3, y2: 10, sw: 1.25, da: '100 0', o: 0.5 },
-  // Inner runic marks radiating from center — short asymmetric strokes
-  L5: { x1: 10, y1: 8, qx: 11, qy: 10, x2: 12, y2: 10.5, sw: 0.75, da: '4 2', o: 0.4 },
-  L6: { x1: 14.5, y1: 9, qx: 13, qy: 10.5, x2: 12.5, y2: 11, sw: 0.75, da: '4 2', o: 0.35 },
-  L7: { x1: 15, y1: 14, qx: 13.5, qy: 13, x2: 12.5, y2: 12.5, sw: 0.75, da: '4 2', o: 0.35 },
-  L8: { x1: 9, y1: 15, qx: 10.5, qy: 13.5, x2: 11.5, y2: 12.5, sw: 0.75, da: '4 2', o: 0.4 },
-  C1: { cx: 12, cy: 12, r: 1.5, o: 1 },        // void singularity
-  C2: { cx: 3, cy: 6, r: 0.7, o: 0.4 },         // arc anchor NW
-  C3: { cx: 20, cy: 14, r: 0.6, o: 0.35 },      // arc anchor E
-  C4: { cx: 10, cy: 21, r: 0.6, o: 0.3 },       // arc anchor S
-  C5: { cx: 18, cy: 3, r: 0.5, o: 0.25 },       // arc anchor NE
-  C6: HC, C7: HC,
-  P1: { cx: 12, cy: 12, r: 8.5, o: 0.35, sw: 0.75 },  // binding circle
+  // Short wispy arms — closer to center, matching animation scale
+  L1: { x1: 9, y1: 8, qx: 7, qy: 10.5, x2: 9, y2: 13, sw: 0.8, da: '2 2', o: 0.4 },
+  L2: { x1: 9, y1: 13, qx: 11, qy: 15, x2: 12.5, y2: 12.5, sw: 0.8, da: '2 2', o: 0.35 },
+  // Second arm — opposite side
+  L3: { x1: 15, y1: 16, qx: 17, qy: 13.5, x2: 15, y2: 11, sw: 0.8, da: '2 2', o: 0.4 },
+  L4: { x1: 15, y1: 11, qx: 13, qy: 9, x2: 11.5, y2: 11.5, sw: 0.8, da: '2 2', o: 0.35 },
+  // Gas wisps — small puffy curves
+  L5: { x1: 10, y1: 10, qx: 11.5, qy: 8, x2: 13, y2: 10, sw: 0.5, da: '2 2', o: 0.25 },
+  L6: { x1: 11, y1: 14, qx: 12.5, qy: 16, x2: 14, y2: 14, sw: 0.5, da: '2 2', o: 0.22 },
+  L7: { x1: 9, y1: 11.5, qx: 10, qy: 13, x2: 10.5, y2: 11.5, sw: 0.4, da: '2 3', o: 0.18 },
+  L8: { x1: 13.5, y1: 12.5, qx: 14, qy: 11, x2: 15, y2: 12.5, sw: 0.4, da: '2 3', o: 0.18 },
+  C1: { cx: 12, cy: 12, r: 1.2, o: 0.85 },     // vortex eye
+  C2: { cx: 9.5, cy: 9.5, r: 1, o: 0.28 },     // gas knot
+  C3: { cx: 14.5, cy: 14.5, r: 0.8, o: 0.25 }, // gas knot
+  C4: { cx: 10, cy: 14, r: 0.6, o: 0.18 },     // wisp node
+  C5: { cx: 14, cy: 10, r: 0.6, o: 0.18 },     // wisp node
+  C6: { cx: 13, cy: 11, r: 0.4, o: 0.15 },     // inner mist
+  C7: HC,
+  P1: { cx: 12, cy: 12, r: 5, o: 0.18, sw: 0.4 },    // tight containment
 };
 
 // Seer — double-layered alien eye with inner iris aperture
@@ -324,24 +326,25 @@ export const seerState = {
   P1: { cx: 12, cy: 12, r: 4.5, o: 0.35, sw: 0.75 },
 };
 
-// Pulse — crystalline dissolution: hex structure fracturing apart
+// Pulse — runic dissolution: carved rune fracturing apart
 export const pulseState = {
-  // Intact hex edges (upper structure still holding)
-  L1: { ...S(12, 4, 18.93, 8), sw: 1.25, da: '3 2', o: 0.6 },
-  L2: { ...S(18.93, 8, 18.93, 16), sw: 1.25, da: '3 2', o: 0.55 },
-  L3: { ...S(5.07, 8, 12, 4), sw: 1.25, da: '3 2', o: 0.6 },
-  // Displaced/broken edges (lower structure fracturing)
-  L4: { x1: 19, y1: 16.5, qx: 16, qy: 21, x2: 13, y2: 21.5, sw: 1, da: '4 3', o: 0.4 },
-  L5: { x1: 11, y1: 21, qx: 7, qy: 20, x2: 4.5, y2: 16.5, sw: 1, da: '4 3', o: 0.35 },
-  // Flying debris shards
-  L6: { ...S(3, 14, 2, 11), sw: 0.75, da: '100 0', o: 0.3 },
-  L7: { ...S(21, 13, 22.5, 10), sw: 0.75, da: '100 0', o: 0.25 },
-  L8: { ...S(14, 22, 16, 23.5), sw: 0.5, da: '100 0', o: 0.2 },
-  C1: { cx: 12, cy: 10, r: 0.4, o: 0.5 },      // tiny stress point
-  C2: { cx: 15.5, cy: 6, r: 0.3, o: 0.35 },    // fracture joint
-  C3: { cx: 8.5, cy: 6, r: 0.3, o: 0.35 },     // fracture joint
-  C4: { cx: 19, cy: 16.5, r: 0.3, o: 0.2 },    // break point
-  C5: { cx: 4.5, cy: 16.5, r: 0.3, o: 0.2 },   // break point
+  // Rune spine — central vertical stroke
+  L1: { ...S(12, 4, 12, 20), sw: 1.5, da: '100 0', o: 0.65 },
+  // Upper branches — angled from spine (intact)
+  L2: { ...S(12, 7, 18, 4), sw: 1.25, da: '3 2', o: 0.55 },
+  L3: { ...S(12, 7, 6, 4), sw: 1.25, da: '3 2', o: 0.55 },
+  // Lower branches — fracturing away
+  L4: { x1: 13, y1: 14, qx: 16, qy: 15, x2: 19, y2: 17, sw: 1, da: '4 3', o: 0.4 },
+  L5: { x1: 11, y1: 14, qx: 8, qy: 15, x2: 5, y2: 17, sw: 1, da: '4 3', o: 0.35 },
+  // Flying debris shards (pulled inward)
+  L6: { ...S(18, 12, 20, 10), sw: 0.75, da: '100 0', o: 0.3 },
+  L7: { ...S(5, 11, 3, 9), sw: 0.75, da: '100 0', o: 0.25 },
+  L8: { ...S(14, 19, 15, 21), sw: 0.5, da: '100 0', o: 0.2 },
+  C1: { cx: 12, cy: 7, r: 0.5, o: 0.6 },       // upper junction
+  C2: { cx: 12, cy: 14, r: 0.4, o: 0.45 },     // fracture point
+  C3: { cx: 12, cy: 4, r: 0.3, o: 0.35 },      // spine tip
+  C4: { cx: 17, cy: 16, r: 0.3, o: 0.2 },      // break point
+  C5: { cx: 7, cy: 16, r: 0.3, o: 0.2 },       // break point
   C6: HC, C7: HC,
   P1: { cx: 12, cy: 12, r: 7, o: 0.2, sw: 0.75 },
 };

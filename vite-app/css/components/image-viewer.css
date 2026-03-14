@@ -160,68 +160,29 @@ image-viewer[mode="canvas"] .iv-controls {
     border-color: rgba(0, 0, 0, 0.2);
 }
 
-/* ── Expanding dropdown ── */
+/* ── dd-morph: unified expanding dropdown ── */
 
-/* Trigger fades when menu expands over it */
-.iv-controls .custom-dropdown-trigger {
-    transition: opacity calc(var(--t-accent) * var(--t-speed)) ease;
+/* The element itself — looks like a pill button when collapsed */
+.iv-controls dd-morph {
     position: relative;
-    z-index: 1;
-}
-.iv-controls .custom-dropdown.open > .custom-dropdown-trigger {
-    opacity: 0;
-    pointer-events: none;
-}
-/* Keep trigger on top when collapsed so clicks reach it */
-.iv-controls .custom-dropdown.dd-animate:not(.open) > .custom-dropdown-trigger {
-    z-index: 3;
-}
-
-/* Menu overlaps trigger position and expands outward */
-.iv-controls .custom-dropdown-menu {
-    right: 0;
-    left: auto;
-    bottom: 0;
-    margin: 0;
-    background: rgba(10, 12, 18, 0.55);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border: 1px solid transparent;
-    border-radius: 10px;
-    box-shadow: none;
-    max-height: var(--dd-collapsed-h, 0);
     overflow: hidden;
-    opacity: 1;
-    padding: 0;
-    justify-content: flex-end;
-    transform: none;
-    visibility: visible;
-    pointer-events: none;
-    z-index: 2;
+    max-height: var(--ddm-item-h, 24px);
+    border-radius: 10px;
+    cursor: pointer;
     transition: max-height calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
                 padding calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
                 border-color calc(var(--t-menu) * var(--t-speed)) ease,
                 box-shadow calc(var(--t-menu) * var(--t-speed)) ease;
 }
-.iv-controls .custom-dropdown-menu.hidden {
-    opacity: 1;
-    transform: none;
-    visibility: visible;
-}
-.iv-controls .custom-dropdown.open .custom-dropdown-menu {
+.iv-controls dd-morph.open {
     max-height: 12rem;
     padding: 0.25rem;
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
-    pointer-events: none;
 }
-.iv-controls .custom-dropdown-item {
-    color: rgba(255, 255, 255, 0.7);
-    text-align: center;
-    pointer-events: auto;
-}
-/* Inner wrapper for resize-based animation */
-.iv-controls .dd-inner {
+
+/* Inner wrapper — translateY slides active item into view when collapsed */
+.iv-controls .ddm-inner {
     position: relative;
     display: flex;
     flex-direction: column;
@@ -229,54 +190,46 @@ image-viewer[mode="canvas"] .iv-controls {
     flex-shrink: 0;
     transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
 }
-/* Active bg cross-fade on selection change */
-.iv-controls .custom-dropdown.dd-animate .custom-dropdown-item {
+
+/* Items */
+.iv-controls dd-morph .custom-dropdown-item {
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
     transition: background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
                 color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
-/* Block item clicks when collapsed */
-.iv-controls .custom-dropdown.dd-animate:not(.open) .custom-dropdown-item {
+/* Block item clicks when collapsed — the element handles open */
+.iv-controls dd-morph:not(.open) .custom-dropdown-item {
     pointer-events: none;
 }
-.iv-controls .custom-dropdown-item:hover {
+.iv-controls dd-morph .custom-dropdown-item:hover {
     color: #fff;
 }
-.iv-controls .custom-dropdown-item.active {
+.iv-controls dd-morph .custom-dropdown-item.active {
     position: relative;
     z-index: 1;
     background: rgba(180, 130, 255, 0.2);
     color: rgb(200, 160, 255);
 }
-[data-theme="light"] .iv-controls .custom-dropdown-menu {
-    background: rgba(255, 255, 255, 0.55);
-    border-color: transparent;
-}
-[data-theme="light"] .iv-controls .custom-dropdown.open .custom-dropdown-menu {
-    border-color: rgba(0, 0, 0, 0.08);
+
+/* Light theme */
+[data-theme="light"] .iv-controls dd-morph.open {
+    border-color: rgba(0, 0, 0, 0.12);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
 }
-[data-theme="light"] .iv-controls .custom-dropdown-item {
+[data-theme="light"] .iv-controls dd-morph .custom-dropdown-item {
     color: rgba(0, 0, 0, 0.6);
 }
-[data-theme="light"] .iv-controls .custom-dropdown-item:hover {
+[data-theme="light"] .iv-controls dd-morph .custom-dropdown-item:hover {
     color: #000;
 }
-[data-theme="light"] .iv-controls .custom-dropdown-item.active {
+[data-theme="light"] .iv-controls dd-morph .custom-dropdown-item.active {
     background: rgba(120, 40, 200, 0.12);
     color: rgb(100, 30, 180);
 }
-/* Dropdown alignment follows controls-pos */
-image-viewer[controls-pos$="-left"] .iv-controls .custom-dropdown-menu {
-    left: 0;
-    right: auto;
-}
+
 /* Downward expansion when controls are on top */
-image-viewer[controls-pos^="top"] .iv-controls .custom-dropdown-menu {
-    bottom: auto;
-    top: 0;
-    justify-content: flex-start;
-}
-image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
+image-viewer[controls-pos^="top"] .iv-controls .ddm-inner {
     flex-direction: column-reverse;
 }
 
