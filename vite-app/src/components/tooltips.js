@@ -113,12 +113,14 @@ export function initTooltips() {
     paramTooltip = document.getElementById('paramTooltip');
 
     let recentTouch = false;
-    let pressTarget = null;
+    let touchTimer = 0;
+    const TOUCH_TRANSITION_MS = 800;
 
     function findTooltip(target) {
         return target && target.closest ? target.closest('[data-tooltip]') : null;
     }
 
+    /* --- Desktop: hover shows/hides tooltips --- */
     document.addEventListener('mouseover', (e) => {
         if (recentTouch) return;
         const el = findTooltip(e.target);
@@ -126,43 +128,41 @@ export function initTooltips() {
     });
 
     document.addEventListener('mouseout', (e) => {
+        if (recentTouch) return;
         const el = findTooltip(e.target);
         if (!el || el.hasAttribute('data-tooltip-click')) return;
-        // Only hide if we're actually leaving the tooltip element
         const related = e.relatedTarget;
         if (related && el.contains(related)) return;
         hideTooltip();
     });
 
-    /* Touch tap-to-toggle: detect short taps on [data-tooltip] elements */
-    document.addEventListener('touchstart', (e) => {
-        pressTarget = findTooltip(e.target);
+    /* --- Touch: only info-icon / label-info taps show tooltips --- */
+    document.addEventListener('touchstart', () => {
+        recentTouch = true;
+        clearTimeout(touchTimer);
+        touchTimer = setTimeout(() => { recentTouch = false; }, TOUCH_TRANSITION_MS);
     }, { passive: true });
 
-    document.addEventListener('touchend', () => {
-        recentTouch = true;
-        setTimeout(() => { recentTouch = false; }, 500);
-        pressTarget = null;
-    });
-
-    /* On touch devices, click toggles the tooltip (recentTouch gates this) */
     document.addEventListener('click', (e) => {
         if (!recentTouch) return;
-        const el = findTooltip(e.target);
-        if (!el || el.hasAttribute('data-tooltip-click')) {
-            /* Tap outside tooltip element — dismiss */
-            if (paramTooltip.classList.contains('visible')) hideTooltip();
-            return;
-        }
-        if (tooltipSource === el && paramTooltip.classList.contains('visible')) {
-            hideTooltip();
-        } else {
-            const rect = el.getBoundingClientRect();
-            showTooltip(el, rect.left + rect.width / 2, rect.bottom);
-        }
-    });
 
-    document.addEventListener('touchmove', () => {
-        pressTarget = null;
-    }, { passive: true });
+        /* Tapped an info-icon or its label-info parent? Toggle that tooltip. */
+        const infoIcon = e.target.closest('.info-icon');
+        const labelInfo = e.target.closest('.label-info');
+        if (infoIcon || labelInfo) {
+            const el = findTooltip(infoIcon || labelInfo);
+            if (el) {
+                if (tooltipSource === el && paramTooltip.classList.contains('visible')) {
+                    hideTooltip();
+                } else {
+                    const rect = el.getBoundingClientRect();
+                    showTooltip(el, rect.left + rect.width / 2, rect.bottom);
+                }
+                return;
+            }
+        }
+
+        /* Any other tap dismisses a visible tooltip */
+        if (paramTooltip.classList.contains('visible')) hideTooltip();
+    });
 }

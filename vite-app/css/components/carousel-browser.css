@@ -394,20 +394,27 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 carousel-dropdown-browser.cdb-grid-align-center .cdb-grid { justify-content: center; }
 carousel-dropdown-browser.cdb-grid-align-right .cdb-grid { justify-content: end; }
 
-/* Grid items alignment — controls where cards sit within their grid cells */
+/* Grid items alignment — switches to flexbox so incomplete rows center naturally */
 carousel-dropdown-browser.cdb-grid-items-left .cdb-grid,
 carousel-dropdown-browser.cdb-grid-items-center .cdb-grid,
 carousel-dropdown-browser.cdb-grid-items-right .cdb-grid {
-    grid-template-columns: repeat(auto-fill, minmax(var(--card-w), 1fr));
+    display: flex;
+    flex-wrap: wrap;
 }
-carousel-dropdown-browser.cdb-grid-items-left .cdb-grid { justify-items: start; }
-carousel-dropdown-browser.cdb-grid-items-center .cdb-grid { justify-items: center; }
-carousel-dropdown-browser.cdb-grid-items-right .cdb-grid { justify-items: end; }
+carousel-dropdown-browser.cdb-grid-items-left .cdb-grid { justify-content: flex-start; }
+carousel-dropdown-browser.cdb-grid-items-center .cdb-grid { justify-content: center; }
+carousel-dropdown-browser.cdb-grid-items-right .cdb-grid { justify-content: flex-end; }
 
 carousel-dropdown-browser.cdb-grid-items-left .cdb-grid-card,
 carousel-dropdown-browser.cdb-grid-items-center .cdb-grid-card,
 carousel-dropdown-browser.cdb-grid-items-right .cdb-grid-card {
-    max-width: var(--card-w);
+    width: var(--card-w);
+}
+
+/* Section headers span full width in flexbox mode */
+carousel-dropdown-browser.cdb-grid-items-left .cdb-grid-section-header,
+carousel-dropdown-browser.cdb-grid-items-center .cdb-grid-section-header,
+carousel-dropdown-browser.cdb-grid-items-right .cdb-grid-section-header {
     width: 100%;
 }
 

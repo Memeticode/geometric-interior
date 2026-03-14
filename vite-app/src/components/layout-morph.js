@@ -40,7 +40,7 @@ export function createLayoutMorph(container, options = {}) {
     /** Read total morph duration (ms) from CSS vars on the container. */
     function readDuration() {
         const s = getComputedStyle(container);
-        const speed = parseFloat(s.getPropertyValue('--lm-speed')) || 1;
+        const speed = parseFloat(s.getPropertyValue('--t-speed')) || 1;
         return Math.max(
             parseDur(s.getPropertyValue('--lm-d1-base')) + parseDur(s.getPropertyValue('--lm-out-base')),
             parseDur(s.getPropertyValue('--lm-d2-base')) + parseDur(s.getPropertyValue('--lm-move-base')),
@@ -96,7 +96,7 @@ export function createLayoutMorph(container, options = {}) {
                 const vars = PHASE_VARS[phase];
                 if (vars) {
                     const s = getComputedStyle(container);
-                    const speed = parseFloat(s.getPropertyValue('--lm-speed')) || 1;
+                    const speed = parseFloat(s.getPropertyValue('--t-speed')) || 1;
                     const delay = parseDur(s.getPropertyValue(vars.delay)) * speed;
                     const dur = parseDur(s.getPropertyValue(vars.dur)) * speed;
                     swapTimer = setTimeout(() => onSwap(from, to), delay + dur * 0.5);
@@ -149,7 +149,7 @@ export const MORPH_TIMING = {
  * Configure morph phase timing on an element.
  *
  * Sets `--lm-*-base` CSS vars so the speed scalar still applies via CSS calc().
- * Different elements can have independent phase configs while sharing --lm-speed.
+ * Different elements can have independent phase configs while sharing --t-speed.
  *
  * @param {HTMLElement} el
  * @param {object} config

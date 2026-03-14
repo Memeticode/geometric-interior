@@ -941,7 +941,7 @@ function crossfadeComplete() {
 function applySelection(name, profile, isPortrait, assetId) {
     selected = { name, isPortrait, assetId };
     const instant = document.documentElement.classList.contains('no-transitions');
-    const speed = parseFloat(getComputedStyle(galleryMainEl).getPropertyValue('--lm-speed')) || 1;
+    const speed = parseFloat(getComputedStyle(galleryMainEl).getPropertyValue('--t-speed')) || 1;
     const fadeDuration = 250 * speed;
 
     // Cancel any pending crossfade from a previous rapid selection

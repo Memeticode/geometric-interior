@@ -148,8 +148,8 @@ class ImageViewer extends HTMLElement {
 
     // ── Public properties ──
 
-    /** Animation speed multiplier from `--lm-speed` CSS variable (default 1). */
-    get animSpeed() { return Math.max(0.1, parseFloat(getComputedStyle(this).getPropertyValue('--lm-speed')) || 1); }
+    /** Animation speed multiplier from `--t-speed` CSS variable (default 1). */
+    get animSpeed() { return Math.max(0.1, parseFloat(getComputedStyle(this).getPropertyValue('--t-speed')) || 1); }
 
     /** Base durations (ms) scaled by animSpeed. */
     get #openDur()  { return 400 * this.animSpeed; }

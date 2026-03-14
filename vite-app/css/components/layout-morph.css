@@ -1,17 +1,28 @@
-/* ── Layout transition timing ──
+/* ── Tiered transition duration system ──
  *
- * --lm-speed is the GLOBAL speed multiplier for all layout transitions:
- *   - Layout morphs (gallery ↔ edit/generate panel swap)
- *   - Carousel expand/collapse and card navigation
- *   - Image selection crossfade
- *   - Resolution dropdown expand/collapse
- *   - Fullscreen open/close and alt-text morph
+ * Four tiers of transition, each with an independent base duration:
  *
- * Set --lm-speed: 1 for production, higher values to slow down for debugging.
- * All JS components read this via getComputedStyle().getPropertyValue('--lm-speed').
- * All CSS transitions consume the speed-scaled variables below.
+ *   layout  (550ms) — page rearrangements that block interaction
+ *                     gallery ↔ edit/generate morph, carousel expand/collapse
+ *   content (250ms) — content swaps within the same layout
+ *                     image selection crossfade, image swap
+ *   menu    (300ms) — overlays and panels that don't rearrange the page
+ *                     fullscreen open/close, dropdown, alt-text morph
+ *   accent  (150ms) — subtle micro-interactions
+ *                     button hover bg, controls fade, active item highlight
  *
- * ── Three-phase morph system ──
+ * --t-speed is the GLOBAL speed multiplier (1 = production, higher = debug).
+ * All JS components read this via getComputedStyle().getPropertyValue('--t-speed').
+ *
+ * CSS usage:
+ *   transition: X calc(var(--t-menu) * var(--t-speed)) ease;        base
+ *   transition: X calc(var(--t-menu) * 1.33 * var(--t-speed)) ease; long variant
+ *   transition: X calc(var(--t-accent) * 0.5 * var(--t-speed)) ease; short variant
+ *
+ * Inline multipliers (0.5–1.5) keep each use tagged to its tier
+ * while allowing per-element tuning.
+ *
+ * ── Layout morph: three-phase system ──
  *
  * Layout morphs (e.g. gallery → edit) run three overlapping phases:
  *
@@ -19,7 +30,7 @@
  *   Phase 2 (move):  shared elements reposition / resize to new layout
  *   Phase 3 (in):    incoming elements fade in / grow into place
  *
- * Timeline (at --lm-speed: 1):
+ * Timeline (at --t-speed: 1):
  *
  *   0ms      150ms    200ms    350ms    550ms
  *   |--out---|         |         |         |
@@ -34,28 +45,34 @@
  * the --lm-*-base variables as inline styles to override the defaults.
  */
 :root {
-    --lm-speed:  5;
+    /* ── Global speed multiplier (1 = production, higher = debug slow-mo) ── */
+    --t-speed:   5;
 
-    /* ── Base durations (before speed scaling) ── */
-    --lm-out-base:   0.2s;    /* how long phase 1 (out) runs */
-    --lm-move-base:  0.3s;    /* how long phase 2 (move) runs */
-    --lm-in-base:    0.2s;    /* how long phase 3 (in) runs */
+    /* ── Tier base durations ── */
+    --t-content: 0.25s;
+    --t-menu:    0.3s;
+    --t-accent:  0.15s;
 
-    /* ── Base delays — when each phase starts ── */
+    /* ── Layout morph phase durations (before speed scaling) ── */
+    --lm-out-base:   0.2s;    /* phase 1 (out) duration */
+    --lm-move-base:  0.3s;    /* phase 2 (move) duration */
+    --lm-in-base:    0.2s;    /* phase 3 (in) duration */
+
+    /* ── Layout morph phase delays — when each phase starts ── */
     --lm-d1-base:    0s;      /* phase 1 starts immediately */
     --lm-d2-base:    0.15s;   /* phase 2 starts 150ms in (overlaps tail of phase 1) */
     --lm-d3-base:    0.35s;   /* phase 3 starts 350ms in (after phase 2 begins) */
 
-    /* ── Speed-scaled — consumed by CSS transition rules ── */
-    --lm-out:    calc(var(--lm-out-base)  * var(--lm-speed)); /* phase 1 duration */
-    --lm-move:   calc(var(--lm-move-base) * var(--lm-speed)); /* phase 2 duration */
-    --lm-in:     calc(var(--lm-in-base)   * var(--lm-speed)); /* phase 3 duration */
-    --lm-d1:     calc(var(--lm-d1-base)   * var(--lm-speed)); /* phase 1 delay */
-    --lm-d2:     calc(var(--lm-d2-base)   * var(--lm-speed)); /* phase 2 delay */
-    --lm-d3:     calc(var(--lm-d3-base)   * var(--lm-speed)); /* phase 3 delay */
+    /* ── Speed-scaled morph phases — consumed by CSS transition rules ── */
+    --lm-out:    calc(var(--lm-out-base)  * var(--t-speed)); /* phase 1 duration */
+    --lm-move:   calc(var(--lm-move-base) * var(--t-speed)); /* phase 2 duration */
+    --lm-in:     calc(var(--lm-in-base)   * var(--t-speed)); /* phase 3 duration */
+    --lm-d1:     calc(var(--lm-d1-base)   * var(--t-speed)); /* phase 1 delay */
+    --lm-d2:     calc(var(--lm-d2-base)   * var(--t-speed)); /* phase 2 delay */
+    --lm-d3:     calc(var(--lm-d3-base)   * var(--t-speed)); /* phase 3 delay */
 
-    /* ── General fade — used by image selection crossfade, etc. ── */
-    --lm-fade:   calc(0.25s * var(--lm-speed));
+    /* ── Content-tier fade — image crossfade, morph row fading, etc. ── */
+    --lm-fade:   calc(var(--t-content) * var(--t-speed));
 }
 
 /* Full-page overlay — blocks all interactions during morph transitions */

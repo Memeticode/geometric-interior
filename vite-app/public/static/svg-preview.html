@@ -93,7 +93,7 @@
       background: #222;
     }
 
-    /* ── Display frame — 64×64 everywhere ── */
+    /* ── Display frame — 64x64 everywhere ── */
     .svg-display {
       width: 64px;
       height: 64px;
@@ -112,7 +112,7 @@
       height: 36px;
     }
 
-    /* Morph stage — SVG fills entire 64×64 frame */
+    /* Morph stage — SVG fills entire 64x64 frame */
     .morph-stage {
       position: relative;
       cursor: pointer;
@@ -175,6 +175,53 @@
       color: #555;
     }
 
+    /* ── Subcategory headers ── */
+    .svg-section h3 {
+      font-size: 0.5625rem;
+      font-weight: 400;
+      letter-spacing: 0.75px;
+      text-transform: uppercase;
+      color: #444;
+      margin: 0.875rem 0 0.5rem;
+    }
+
+    .svg-section h3:first-of-type {
+      margin-top: 0;
+    }
+
+    /* ── Die controls ── */
+    .die-controls {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+      font-size: 0.6875rem;
+      color: #666;
+      padding: 0.25rem 0 0;
+      width: 100%;
+    }
+
+    .die-controls label {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .die-controls input[type="range"] {
+      width: 72px;
+      accent-color: #555;
+    }
+
+    .die-controls input[type="checkbox"] {
+      accent-color: #555;
+    }
+
+    .die-controls .val {
+      color: #888;
+      min-width: 2.5em;
+      font-variant-numeric: tabular-nums;
+    }
+
     /* ── Responsive ── */
     @media (max-width: 480px) {
       body {
@@ -195,6 +242,8 @@
   <!-- ══════════════════════════════════════════════ -->
   <div class="svg-section">
     <h2>Custom SVGs</h2>
+
+    <h3>Alien</h3>
     <div class="svg-grid" style="--col-min: 5rem;">
 
       <!-- dots -->
@@ -263,17 +312,17 @@
         </div>
         <div class="card-body">
           <div class="svg-display"><svg viewBox="0 0 24 24" fill="none">
-              <path d="M12 3.5L5 9l2.5 8h9L19 9z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"
+              <path d="M12 6.5L6.8 11l1.8 5.5h6.8L17.2 11z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"
                 stroke-dasharray="3.5 2" opacity="0.55" />
-              <line x1="12" y1="11" x2="12" y2="3.5" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
-              <line x1="12" y1="11" x2="5" y2="9" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
-              <line x1="12" y1="11" x2="19" y2="9" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
-              <circle cx="12" cy="3.5" r="1.75" fill="currentColor" />
-              <circle cx="5" cy="9" r="1.4" fill="currentColor" opacity="0.6" />
-              <circle cx="19" cy="9" r="1.4" fill="currentColor" opacity="0.6" />
-              <circle cx="7.5" cy="17" r="1.1" fill="currentColor" opacity="0.3" />
-              <circle cx="16.5" cy="17" r="1.1" fill="currentColor" opacity="0.3" />
-              <circle cx="12" cy="3.5" r="3.5" stroke="currentColor" stroke-width="0.75" fill="none" opacity="0.4" />
+              <line x1="12" y1="12" x2="12" y2="6.5" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
+              <line x1="12" y1="12" x2="6.8" y2="11" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
+              <line x1="12" y1="12" x2="17.2" y2="11" stroke="currentColor" stroke-width="0.75" opacity="0.25" />
+              <circle cx="12" cy="6.5" r="1.5" fill="currentColor" />
+              <circle cx="6.8" cy="11" r="1.2" fill="currentColor" opacity="0.6" />
+              <circle cx="17.2" cy="11" r="1.2" fill="currentColor" opacity="0.6" />
+              <circle cx="8.6" cy="16.5" r="0.9" fill="currentColor" opacity="0.3" />
+              <circle cx="15.4" cy="16.5" r="0.9" fill="currentColor" opacity="0.3" />
+              <circle cx="12" cy="6.5" r="2.5" stroke="currentColor" stroke-width="0.75" fill="none" opacity="0.4" />
             </svg></div>
           <div class="card-sep"></div>
           <div class="svg-anims">
@@ -292,26 +341,407 @@
         </div>
       </div>
 
-      <!-- active-edit-alt (no animations) -->
+      <!-- eye -->
       <div class="svg-card has-anims">
         <div class="card-header">
-          <div class="svg-name">active-edit-alt</div>
-          <div class="svg-desc">white fills — CSS mask-image (luminance)</div>
+          <div class="svg-name">eye</div>
+          <div class="svg-desc">view / preview</div>
         </div>
         <div class="card-body">
-          <div class="svg-display" style="background:#111; color:#fff;"><svg viewBox="0 0 24 24" fill="none">
-              <path d="M12 3.5L5 9l2.5 8h9L19 9z" stroke="white" stroke-width="1.25" stroke-linejoin="round"
-                stroke-dasharray="3.5 2" opacity="0.55" />
-              <line x1="12" y1="11" x2="12" y2="3.5" stroke="white" stroke-width="0.75" opacity="0.25" />
-              <line x1="12" y1="11" x2="5" y2="9" stroke="white" stroke-width="0.75" opacity="0.25" />
-              <line x1="12" y1="11" x2="19" y2="9" stroke="white" stroke-width="0.75" opacity="0.25" />
-              <circle cx="12" cy="3.5" r="1.75" fill="white" />
-              <circle cx="5" cy="9" r="1.4" fill="white" opacity="0.6" />
-              <circle cx="19" cy="9" r="1.4" fill="white" opacity="0.6" />
-              <circle cx="7.5" cy="17" r="1.1" fill="white" opacity="0.3" />
-              <circle cx="16.5" cy="17" r="1.1" fill="white" opacity="0.3" />
-              <circle cx="12" cy="3.5" r="3.5" stroke="white" stroke-width="0.75" fill="none" opacity="0.4" />
-            </svg></div>
+          <div class="svg-display morph-stage" id="eye-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-eye-void">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">void</div>
+              </div>
+              <div class="anim-item" id="morph-eye-scan">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">scan</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- beacon -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">beacon</div>
+          <div class="svg-desc">share / broadcast</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="beacon-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-beacon-bloom">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">bloom</div>
+              </div>
+              <div class="anim-item" id="morph-beacon-dots">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">dots</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- hex -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">hex</div>
+          <div class="svg-desc">settings / config</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="hex-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-hex-edit">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">edit</div>
+              </div>
+              <div class="anim-item" id="morph-hex-fracture">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">fracture</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- orbit -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">orbit</div>
+          <div class="svg-desc">navigate / explore</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="orbit-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-orbit-dots">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">dots</div>
+              </div>
+              <div class="anim-item" id="morph-orbit-loading">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">loading</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- sigil -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">sigil</div>
+          <div class="svg-desc">bookmark / save</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="sigil-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-sigil-edit">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">edit</div>
+              </div>
+              <div class="anim-item" id="morph-sigil-hex">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">hex</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- fracture -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">fracture</div>
+          <div class="svg-desc">delete / destroy</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="fracture-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-fracture-hex">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">hex</div>
+              </div>
+              <div class="anim-item" id="morph-fracture-void">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">void</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- scan -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">scan</div>
+          <div class="svg-desc">search / analyze</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="scan-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-scan-eye">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">eye</div>
+              </div>
+              <div class="anim-item" id="morph-scan-cross">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">cross</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- pulse -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">pulse</div>
+          <div class="svg-desc">heartbeat / health</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="pulse-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-pulse-dots">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">dots</div>
+              </div>
+              <div class="anim-item" id="morph-pulse-void">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">void</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- bloom -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">bloom</div>
+          <div class="svg-desc">create / new</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="bloom-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-bloom-beacon">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">beacon</div>
+              </div>
+              <div class="anim-item" id="morph-bloom-dots">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">dots</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- void -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">void</div>
+          <div class="svg-desc">minimize / hide</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="void-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-void-bloom">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">bloom</div>
+              </div>
+              <div class="anim-item" id="morph-void-eye">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">eye</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <h3>Standard</h3>
+    <div class="svg-grid" style="--col-min: 5rem;">
+
+      <!-- loading -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">loading</div>
+          <div class="svg-desc">8 radial spokes, spinning</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="loading-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-loading-error">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">error</div>
+              </div>
+              <div class="anim-item" id="morph-loading-retry">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">retry</div>
+              </div>
+            </div>
+            <div class="anim-cat">Loops</div>
+            <div class="anim-row">
+              <div class="anim-item"><div class="anim-label">click icon to toggle</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- error -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">error</div>
+          <div class="svg-desc">warning triangle + exclamation</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="error-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-error-loading">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">loading</div>
+              </div>
+              <div class="anim-item" id="morph-error-retry">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">retry</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- retry -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">retry</div>
+          <div class="svg-desc">two curved arrows</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="retry-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Transitions</div>
+            <div class="anim-row">
+              <div class="anim-item" id="morph-retry-loading">
+                <div class="svg-display morph-stage"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+                <div class="anim-label">loading</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <h3>Misc</h3>
+    <div class="svg-grid" style="--col-min: 5rem;">
+
+      <!-- die-2d -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">die-2d</div>
+          <div class="svg-desc">collapse/expand roll</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="die-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Misc</div>
+            <div class="anim-row">
+              <div class="anim-item"><div class="anim-label">click icon to roll</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="die-controls">
+          <label>Duration <input type="range" id="die-dur" min="100" max="2000" value="300" step="50"> <span class="val" id="die-dur-val">300ms</span></label>
+          <label>Tumbles <input type="range" id="die-tumbles" min="0" max="6" value="2"> <span class="val" id="die-tumbles-val">2</span></label>
+          <label>Loop <input type="checkbox" id="die-loop"></label>
+        </div>
+      </div>
+
+      <!-- die-3d -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">die-3d</div>
+          <div class="svg-desc">3D rotation roll</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="die3d-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Misc</div>
+            <div class="anim-row">
+              <div class="anim-item"><div class="anim-label">click icon to roll</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="die-controls">
+          <label>Duration <input type="range" id="die3d-dur" min="100" max="2000" value="400" step="50"> <span class="val" id="die3d-dur-val">400ms</span></label>
+          <label>Tumbles <input type="range" id="die3d-tumbles" min="0" max="6" value="2"> <span class="val" id="die3d-tumbles-val">2</span></label>
+          <label>Loop <input type="checkbox" id="die3d-loop"></label>
+        </div>
+      </div>
+
+      <!-- die-3d-v2 -->
+      <div class="svg-card has-anims">
+        <div class="card-header">
+          <div class="svg-name">die-3d-v2</div>
+          <div class="svg-desc">carved pips, thick edges</div>
+        </div>
+        <div class="card-body">
+          <div class="svg-display morph-stage" id="die3dv2-icon"><svg viewBox="0 0 24 24" fill="none"></svg></div>
+          <div class="card-sep"></div>
+          <div class="svg-anims">
+            <div class="anim-cat">Misc</div>
+            <div class="anim-row">
+              <div class="anim-item"><div class="anim-label">click icon to roll</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="die-controls">
+          <label>Duration <input type="range" id="die3dv2-dur" min="100" max="2000" value="400" step="50"> <span class="val" id="die3dv2-dur-val">400ms</span></label>
+          <label>Tumbles <input type="range" id="die3dv2-tumbles" min="0" max="6" value="2"> <span class="val" id="die3dv2-tumbles-val">2</span></label>
+          <label>Loop <input type="checkbox" id="die3dv2-loop"></label>
         </div>
       </div>
 
@@ -627,98 +1057,395 @@
   </div>
 
   <script>
-    // ── Shared morph engine ──
+    // ══════════════════════════════════════════════════════════════════
+    // Universal Morph Engine — 16 primitives (8 paths + 7 circles + 1 ring)
+    // All custom SVGs composed from the same elements so any→any morph works
+    // ══════════════════════════════════════════════════════════════════
+
+    const NS = 'http://www.w3.org/2000/svg';
     const DURATION = 3000;
     const EASE = t => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
 
+    // ── Helpers ──
     function parseDa(s) { return s.split(' ').map(Number); }
     function lerpDa(a, b, t) { return a.map((v, i) => v + (b[i] - v) * t).join(' '); }
     function lerpColor(a, b, t) {
       return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(',')})`;
     }
+    // Straight path: control point at midpoint (visually straight line)
+    function S(x1, y1, x2, y2) {
+      return { x1, y1, qx: (x1 + x2) / 2, qy: (y1 + y2) / 2, x2, y2 };
+    }
+    // Hidden path (collapsed at center, invisible)
+    const HP = { ...S(12, 12, 12, 12), sw: 1, da: '100 0', o: 0 };
+    // Hidden circle (at center, zero radius)
+    const HC = { cx: 12, cy: 12, r: 0, o: 0 };
 
-    const plusBg = [26, 26, 26], editBg = [26, 21, 32];
-    const plusBd = [34, 34, 34], editBd = [42, 31, 53];
-
-    // Shared edit state (both morphs end here)
-    const editState = {
-      e1: { x1: 12, y1: 3.5, x2: 5, y2: 9, da: '3.5 2', o: 0.55 },
-      e2: { x1: 5, y1: 9, x2: 7.5, y2: 17, da: '3.5 2', o: 0.55 },
-      e3: { x1: 7.5, y1: 17, x2: 16.5, y2: 17, da: '3.5 2', o: 0.55 },
-      e4: { x1: 16.5, y1: 17, x2: 19, y2: 9, da: '3.5 2', o: 0.55 },
-      e5: { x1: 19, y1: 9, x2: 12, y2: 3.5, da: '3.5 2', o: 0.55 },
-      r1: { x1: 12, y1: 11, x2: 12, y2: 3.5, o: 0.25 },
-      r2: { x1: 12, y1: 11, x2: 5, y2: 9, o: 0.25 },
-      r3: { x1: 12, y1: 11, x2: 19, y2: 9, o: 0.25 },
-      n1: { cx: 12, cy: 3.5, r: 1.75, o: 1 },
-      n2: { cx: 5, cy: 9, r: 1.4, o: 0.6 },
-      n3: { cx: 19, cy: 9, r: 1.4, o: 0.6 },
-      n4: { cx: 7.5, cy: 17, r: 1.1, o: 0.3 },
-      n5: { cx: 16.5, cy: 17, r: 1.1, o: 0.3 },
-      pulse: { cx: 12, cy: 3.5, r: 3.5, o: 0.4 },
+    // ── Color themes per state ──
+    const COL = {
+      def:     { bg: [26, 26, 26], bd: [34, 34, 34] },
+      edit:    { bg: [26, 21, 32], bd: [42, 31, 53] },
+      error:   { bg: [32, 21, 21], bd: [53, 31, 31] },
+      loading: { bg: [21, 26, 32], bd: [31, 42, 53] },
+      retry:   { bg: [21, 32, 26], bd: [31, 53, 42] },
+      eye:     { bg: [26, 26, 30], bd: [34, 34, 48] },
+      beacon:  { bg: [26, 30, 26], bd: [34, 48, 34] },
+      hex:     { bg: [28, 26, 28], bd: [44, 34, 44] },
+      orbit:   { bg: [24, 24, 30], bd: [36, 36, 50] },
+      sigil:   { bg: [30, 26, 22], bd: [48, 38, 30] },
+      fracture:{ bg: [32, 24, 24], bd: [50, 32, 32] },
+      scan:    { bg: [22, 28, 28], bd: [30, 44, 44] },
+      pulse:   { bg: [28, 22, 28], bd: [44, 30, 44] },
+      bloom:   { bg: [28, 26, 22], bd: [44, 40, 30] },
+      void_:   { bg: [22, 22, 26], bd: [30, 30, 40] },
     };
 
-    // V2: Dots — edges collapsed at node positions (zero-length, invisible)
+    // ══════════════════════════════════════════════════
+    // State Definitions
+    // ══════════════════════════════════════════════════
+
     const dotsState = {
-      e1: { x1: 12, y1: 4, x2: 12, y2: 4, da: '100 0', o: 0 },
-      e2: { x1: 12, y1: 20, x2: 12, y2: 20, da: '100 0', o: 0 },
-      e3: { x1: 4, y1: 12, x2: 4, y2: 12, da: '100 0', o: 0 },
-      e4: { x1: 20, y1: 12, x2: 20, y2: 12, da: '100 0', o: 0 },
-      e5: { x1: 12, y1: 12, x2: 12, y2: 12, da: '100 0', o: 0 },
-      r1: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
-      r2: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
-      r3: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
-      n1: { cx: 12, cy: 4, r: 1.5, o: 1 },
-      n2: { cx: 12, cy: 20, r: 1.5, o: 1 },
-      n3: { cx: 4, cy: 12, r: 1.5, o: 1 },
-      n4: { cx: 20, cy: 12, r: 1.5, o: 1 },
-      n5: { cx: 12, cy: 12, r: 2, o: 1 },
-      pulse: { cx: 12, cy: 12, r: 4, o: 0.3 },
+      L1: HP, L2: HP, L3: HP, L4: HP, L5: HP, L6: HP, L7: HP, L8: HP,
+      C1: { cx: 12, cy: 4, r: 1.5, o: 1 },
+      C2: { cx: 12, cy: 20, r: 1.5, o: 1 },
+      C3: { cx: 4, cy: 12, r: 1.5, o: 1 },
+      C4: { cx: 20, cy: 12, r: 1.5, o: 1 },
+      C5: { cx: 12, cy: 12, r: 2, o: 1 },
+      C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 4, o: 0.3, sw: 0.75 },
     };
 
-    // V1: Cross — visible cross arms (full-length lines)
     const crossState = {
-      e1: { x1: 12, y1: 4, x2: 12, y2: 12, da: '100 0', o: 0.7 },
-      e2: { x1: 12, y1: 12, x2: 12, y2: 20, da: '100 0', o: 0.7 },
-      e3: { x1: 4, y1: 12, x2: 12, y2: 12, da: '100 0', o: 0.7 },
-      e4: { x1: 12, y1: 12, x2: 20, y2: 12, da: '100 0', o: 0.7 },
-      e5: { x1: 12, y1: 12, x2: 12, y2: 12, da: '100 0', o: 0 },
-      r1: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
-      r2: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
-      r3: { x1: 12, y1: 12, x2: 12, y2: 12, o: 0 },
-      n1: { cx: 12, cy: 4, r: 1.5, o: 1 },
-      n2: { cx: 12, cy: 20, r: 1.5, o: 1 },
-      n3: { cx: 4, cy: 12, r: 1.5, o: 1 },
-      n4: { cx: 20, cy: 12, r: 1.5, o: 1 },
-      n5: { cx: 12, cy: 12, r: 2, o: 1 },
-      pulse: { cx: 12, cy: 12, r: 4, o: 0.3 },
+      L1: { ...S(12, 4, 12, 12), sw: 1.5, da: '100 0', o: 0.7 },
+      L2: { ...S(12, 12, 12, 20), sw: 1.5, da: '100 0', o: 0.7 },
+      L3: { ...S(4, 12, 12, 12), sw: 1.5, da: '100 0', o: 0.7 },
+      L4: { ...S(12, 12, 20, 12), sw: 1.5, da: '100 0', o: 0.7 },
+      L5: HP, L6: HP, L7: HP, L8: HP,
+      C1: { cx: 12, cy: 4, r: 1.5, o: 1 },
+      C2: { cx: 12, cy: 20, r: 1.5, o: 1 },
+      C3: { cx: 4, cy: 12, r: 1.5, o: 1 },
+      C4: { cx: 20, cy: 12, r: 1.5, o: 1 },
+      C5: { cx: 12, cy: 12, r: 2, o: 1 },
+      C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 4, o: 0.3, sw: 0.75 },
     };
 
-    // ── Build SVG elements into a stage ──
-    const NS = 'http://www.w3.org/2000/svg';
+    const editState = {
+      L1: { ...S(12, 6.5, 6.8, 11), sw: 1.25, da: '3.5 2', o: 0.55 },
+      L2: { ...S(6.8, 11, 8.6, 16.5), sw: 1.25, da: '3.5 2', o: 0.55 },
+      L3: { ...S(8.6, 16.5, 15.4, 16.5), sw: 1.25, da: '3.5 2', o: 0.55 },
+      L4: { ...S(15.4, 16.5, 17.2, 11), sw: 1.25, da: '3.5 2', o: 0.55 },
+      L5: { ...S(17.2, 11, 12, 6.5), sw: 1.25, da: '3.5 2', o: 0.55 },
+      L6: { ...S(12, 12, 12, 6.5), sw: 0.75, da: '100 0', o: 0.25 },
+      L7: { ...S(12, 12, 6.8, 11), sw: 0.75, da: '100 0', o: 0.25 },
+      L8: { ...S(12, 12, 17.2, 11), sw: 0.75, da: '100 0', o: 0.25 },
+      C1: { cx: 12, cy: 6.5, r: 1.5, o: 1 },
+      C2: { cx: 6.8, cy: 11, r: 1.2, o: 0.6 },
+      C3: { cx: 17.2, cy: 11, r: 1.2, o: 0.6 },
+      C4: { cx: 8.6, cy: 16.5, r: 0.9, o: 0.3 },
+      C5: { cx: 15.4, cy: 16.5, r: 0.9, o: 0.3 },
+      C6: HC, C7: HC,
+      P1: { cx: 12, cy: 6.5, r: 2.5, o: 0.4, sw: 0.75 },
+    };
+
+    // Error — warning triangle + exclamation mark
+    const errorState = {
+      L1: { ...S(12, 3, 3, 20), sw: 1.5, da: '100 0', o: 0.8 },
+      L2: { ...S(3, 20, 21, 20), sw: 1.5, da: '100 0', o: 0.8 },
+      L3: { ...S(21, 20, 12, 3), sw: 1.5, da: '100 0', o: 0.8 },
+      L4: { ...S(12, 9, 12, 14.5), sw: 2, da: '100 0', o: 0.9 },
+      L5: HP, L6: HP, L7: HP, L8: HP,
+      C1: { cx: 12, cy: 17, r: 1.1, o: 0.9 },
+      C2: HC, C3: HC, C4: HC, C5: HC, C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+    };
+
+    // Retry — two curved arrows forming a cycle
+    const retryState = {
+      // Upper arc (left → right, curving up)
+      L1: { x1: 5.5, y1: 14, qx: 2.5, qy: 8, x2: 8, y2: 5, sw: 1.5, da: '100 0', o: 0.7 },
+      L2: { x1: 8, y1: 5, qx: 14, qy: 2.5, x2: 18, y2: 7, sw: 1.5, da: '100 0', o: 0.7 },
+      // Arrowhead 1
+      L3: { ...S(18, 7, 15.5, 5), sw: 1.5, da: '100 0', o: 0.7 },
+      L7: { ...S(18, 7, 19, 4.5), sw: 1.5, da: '100 0', o: 0.7 },
+      // Lower arc (right → left, curving down)
+      L4: { x1: 18.5, y1: 10, qx: 21.5, qy: 16, x2: 16, y2: 19, sw: 1.5, da: '100 0', o: 0.7 },
+      L5: { x1: 16, y1: 19, qx: 10, qy: 21.5, x2: 6, y2: 17, sw: 1.5, da: '100 0', o: 0.7 },
+      // Arrowhead 2
+      L6: { ...S(6, 17, 8.5, 19), sw: 1.5, da: '100 0', o: 0.7 },
+      L8: { ...S(6, 17, 5, 19.5), sw: 1.5, da: '100 0', o: 0.7 },
+      C1: HC, C2: HC, C3: HC, C4: HC, C5: HC, C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+    };
+
+    // Loading — 8 radial spokes at 45deg intervals
+    // Inner radius 4, outer radius 8, centered at (12,12)
+    const loadingState = {
+      L1: { ...S(16, 12, 20, 12), sw: 1.5, da: '100 0', o: 0.3 },
+      L2: { ...S(14.83, 14.83, 17.66, 17.66), sw: 1.5, da: '100 0', o: 0.3 },
+      L3: { ...S(12, 16, 12, 20), sw: 1.5, da: '100 0', o: 0.3 },
+      L4: { ...S(9.17, 14.83, 6.34, 17.66), sw: 1.5, da: '100 0', o: 0.3 },
+      L5: { ...S(8, 12, 4, 12), sw: 1.5, da: '100 0', o: 0.3 },
+      L6: { ...S(9.17, 9.17, 6.34, 6.34), sw: 1.5, da: '100 0', o: 0.3 },
+      L7: { ...S(12, 8, 12, 4), sw: 1.5, da: '100 0', o: 0.3 },
+      L8: { ...S(14.83, 9.17, 17.66, 6.34), sw: 1.5, da: '100 0', o: 0.3 },
+      C1: HC, C2: HC, C3: HC, C4: HC, C5: HC, C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 9, o: 0.1, sw: 0.75 },
+    };
+
+    // ── Alien States ──────────────────────────────────
+
+    // Eye — almond-shaped lids, iris ring, pupil
+    const eyeState = {
+      L1: { x1: 4, y1: 12, qx: 7, qy: 5.5, x2: 12, y2: 6.5, sw: 1.25, da: '100 0', o: 0.7 },
+      L2: { x1: 12, y1: 6.5, qx: 17, qy: 5.5, x2: 20, y2: 12, sw: 1.25, da: '100 0', o: 0.7 },
+      L3: { x1: 4, y1: 12, qx: 7, qy: 18.5, x2: 12, y2: 17.5, sw: 1.25, da: '100 0', o: 0.7 },
+      L4: { x1: 12, y1: 17.5, qx: 17, qy: 18.5, x2: 20, y2: 12, sw: 1.25, da: '100 0', o: 0.7 },
+      L5: { ...S(3, 12, 5, 12), sw: 0.75, da: '2 2', o: 0.4 },
+      L6: { ...S(19, 12, 21, 12), sw: 0.75, da: '2 2', o: 0.4 },
+      L7: HP, L8: HP,
+      C1: { cx: 12, cy: 12, r: 2, o: 1 },
+      C2: { cx: 4, cy: 12, r: 0.6, o: 0.5 },
+      C3: { cx: 20, cy: 12, r: 0.6, o: 0.5 },
+      C4: HC, C5: HC, C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 4, o: 0.5, sw: 0.75 },
+    };
+
+    // Beacon — three radiating arms at 120° with tip nodes
+    const beaconState = {
+      L1: { ...S(12, 10, 12, 4), sw: 1.25, da: '4 3', o: 0.6 },
+      L2: { ...S(13.73, 13, 18.93, 16), sw: 1.25, da: '4 3', o: 0.6 },
+      L3: { ...S(10.27, 13, 5.07, 16), sw: 1.25, da: '4 3', o: 0.6 },
+      L4: { ...S(10, 5, 14, 5), sw: 0.75, da: '100 0', o: 0.3 },
+      L5: { ...S(17.5, 14.5, 20, 17.5), sw: 0.75, da: '100 0', o: 0.3 },
+      L6: { ...S(6.5, 14.5, 4, 17.5), sw: 0.75, da: '100 0', o: 0.3 },
+      L7: HP, L8: HP,
+      C1: { cx: 12, cy: 12, r: 2, o: 1 },
+      C2: { cx: 12, cy: 4, r: 1.2, o: 0.7 },
+      C3: { cx: 18.93, cy: 16, r: 1.2, o: 0.7 },
+      C4: { cx: 5.07, cy: 16, r: 1.2, o: 0.7 },
+      C5: HC, C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 8, o: 0.25, sw: 0.75 },
+    };
+
+    // Hex — hexagonal frame with corner nodes
+    // Vertices (r=8): (12,4), (18.93,8), (18.93,16), (12,20), (5.07,16), (5.07,8)
+    const hexState = {
+      L1: { ...S(12, 4, 18.93, 8), sw: 1, da: '3 2', o: 0.55 },
+      L2: { ...S(18.93, 8, 18.93, 16), sw: 1, da: '3 2', o: 0.55 },
+      L3: { ...S(18.93, 16, 12, 20), sw: 1, da: '3 2', o: 0.55 },
+      L4: { ...S(12, 20, 5.07, 16), sw: 1, da: '3 2', o: 0.55 },
+      L5: { ...S(5.07, 16, 5.07, 8), sw: 1, da: '3 2', o: 0.55 },
+      L6: { ...S(5.07, 8, 12, 4), sw: 1, da: '3 2', o: 0.55 },
+      L7: { ...S(5.07, 8, 18.93, 16), sw: 0.5, da: '100 0', o: 0.15 },
+      L8: { ...S(18.93, 8, 5.07, 16), sw: 0.5, da: '100 0', o: 0.15 },
+      C1: { cx: 12, cy: 12, r: 1.5, o: 1 },
+      C2: { cx: 12, cy: 4, r: 0.9, o: 0.5 },
+      C3: { cx: 18.93, cy: 8, r: 0.9, o: 0.5 },
+      C4: { cx: 18.93, cy: 16, r: 0.9, o: 0.5 },
+      C5: { cx: 12, cy: 20, r: 0.9, o: 0.5 },
+      C6: { cx: 5.07, cy: 16, r: 0.9, o: 0.5 },
+      C7: { cx: 5.07, cy: 8, r: 0.9, o: 0.5 },
+      P1: { cx: 12, cy: 12, r: 3, o: 0.3, sw: 0.75 },
+    };
+
+    // Orbit — curved orbital paths with satellite dots
+    const orbitState = {
+      L1: { x1: 4, y1: 11, qx: 6, qy: 5, x2: 12, y2: 6, sw: 1, da: '100 0', o: 0.4 },
+      L2: { x1: 12, y1: 6, qx: 18, qy: 5, x2: 20, y2: 11, sw: 1, da: '100 0', o: 0.4 },
+      L3: { x1: 6, y1: 18, qx: 5, qy: 12, x2: 8, y2: 7, sw: 1, da: '100 0', o: 0.35 },
+      L4: { x1: 16, y1: 7, qx: 19, qy: 12, x2: 18, y2: 18, sw: 1, da: '100 0', o: 0.35 },
+      L5: { x1: 5, y1: 15, qx: 8, qy: 20, x2: 12, y2: 19, sw: 1, da: '100 0', o: 0.3 },
+      L6: { x1: 12, y1: 19, qx: 16, qy: 20, x2: 19, y2: 15, sw: 1, da: '100 0', o: 0.3 },
+      L7: HP, L8: HP,
+      C1: { cx: 12, cy: 12, r: 2.5, o: 1 },
+      C2: { cx: 4, cy: 11, r: 1, o: 0.7 },
+      C3: { cx: 18, cy: 18, r: 1, o: 0.6 },
+      C4: { cx: 8, cy: 7, r: 0.8, o: 0.5 },
+      C5: HC, C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 9, o: 0.1, sw: 0.75 },
+    };
+
+    // Sigil — pentagram star, luminous tip nodes
+    // Outer vertices (r=8): (12,4), (19.6,9.5), (16.7,18.5), (7.3,18.5), (4.4,9.5)
+    const sigilState = {
+      L1: { ...S(12, 4, 16.7, 18.5), sw: 1, da: '100 0', o: 0.5 },
+      L2: { ...S(16.7, 18.5, 4.4, 9.5), sw: 1, da: '100 0', o: 0.5 },
+      L3: { ...S(4.4, 9.5, 19.6, 9.5), sw: 1, da: '100 0', o: 0.5 },
+      L4: { ...S(19.6, 9.5, 7.3, 18.5), sw: 1, da: '100 0', o: 0.5 },
+      L5: { ...S(7.3, 18.5, 12, 4), sw: 1, da: '100 0', o: 0.5 },
+      L6: { ...S(12, 12, 12, 4), sw: 0.5, da: '100 0', o: 0.15 },
+      L7: { ...S(12, 12, 4.4, 9.5), sw: 0.5, da: '100 0', o: 0.15 },
+      L8: { ...S(12, 12, 19.6, 9.5), sw: 0.5, da: '100 0', o: 0.15 },
+      C1: { cx: 12, cy: 4, r: 1.1, o: 1 },
+      C2: { cx: 19.6, cy: 9.5, r: 1.1, o: 0.7 },
+      C3: { cx: 16.7, cy: 18.5, r: 1.1, o: 0.5 },
+      C4: { cx: 7.3, cy: 18.5, r: 1.1, o: 0.5 },
+      C5: { cx: 4.4, cy: 9.5, r: 1.1, o: 0.7 },
+      C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 8, o: 0.2, sw: 0.75 },
+    };
+
+    // Fracture — shattered hexagon with debris
+    const fractureState = {
+      L1: { ...S(12, 4, 18.93, 8), sw: 1.5, da: '4 3', o: 0.7 },
+      L2: { ...S(18.93, 8, 18.93, 16), sw: 1.5, da: '4 3', o: 0.7 },
+      L3: { ...S(18.93, 16, 12, 20), sw: 1.5, da: '4 3', o: 0.7 },
+      L4: { ...S(12, 4, 8, 6), sw: 0.75, da: '100 0', o: 0.5 },
+      L5: { ...S(12, 20, 8, 18), sw: 0.75, da: '100 0', o: 0.5 },
+      L6: { ...S(5.07, 8, 3, 5), sw: 0.75, da: '100 0', o: 0.4 },
+      L7: { ...S(5.07, 16, 2.5, 18.5), sw: 0.75, da: '100 0', o: 0.4 },
+      L8: { ...S(5.07, 8, 5.07, 16), sw: 0.75, da: '3 4', o: 0.15 },
+      C1: { cx: 3, cy: 5, r: 0.8, o: 0.6 },
+      C2: { cx: 2.5, cy: 18.5, r: 0.8, o: 0.5 },
+      C3: { cx: 8, cy: 12, r: 0.6, o: 0.4 },
+      C4: { cx: 10, cy: 10, r: 0.6, o: 0.3 },
+      C5: { cx: 6, cy: 14, r: 0.5, o: 0.25 },
+      C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 7, o: 0.15, sw: 0.5 },
+    };
+
+    // Scan — horizontal sweep lines, crosshair, data nodes
+    const scanState = {
+      L1: { ...S(3, 7, 21, 7), sw: 0.75, da: '2 3', o: 0.4 },
+      L2: { ...S(3, 10, 21, 10), sw: 0.75, da: '2 3', o: 0.5 },
+      L3: { ...S(3, 14, 21, 14), sw: 0.75, da: '2 3', o: 0.5 },
+      L4: { ...S(3, 17, 21, 17), sw: 0.75, da: '2 3', o: 0.4 },
+      L5: { ...S(12, 3, 12, 12), sw: 0.5, da: '100 0', o: 0.3 },
+      L6: { ...S(12, 12, 12, 21), sw: 0.5, da: '100 0', o: 0.3 },
+      L7: { ...S(8, 8, 12, 12), sw: 0.5, da: '100 0', o: 0.2 },
+      L8: { ...S(12, 12, 16, 16), sw: 0.5, da: '100 0', o: 0.2 },
+      C1: { cx: 12, cy: 12, r: 1.5, o: 0.8 },
+      C2: { cx: 7, cy: 7, r: 0.8, o: 0.5 },
+      C3: { cx: 17, cy: 10, r: 0.8, o: 0.5 },
+      C4: { cx: 9, cy: 14, r: 0.8, o: 0.5 },
+      C5: { cx: 15, cy: 17, r: 0.8, o: 0.5 },
+      C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 8, o: 0.3, sw: 0.75 },
+    };
+
+    // Pulse — ECG waveform with peak markers
+    const pulseState = {
+      L1: { ...S(3, 12, 7, 12), sw: 1.25, da: '100 0', o: 0.5 },
+      L2: { ...S(7, 12, 9.5, 5), sw: 1.25, da: '100 0', o: 0.7 },
+      L3: { ...S(9.5, 5, 11.5, 19), sw: 1.25, da: '100 0', o: 0.7 },
+      L4: { ...S(11.5, 19, 14, 10), sw: 1.25, da: '100 0', o: 0.7 },
+      L5: { ...S(14, 10, 21, 12), sw: 1.25, da: '100 0', o: 0.5 },
+      L6: HP, L7: HP, L8: HP,
+      C1: { cx: 9.5, cy: 5, r: 1.2, o: 0.9 },
+      C2: { cx: 11.5, cy: 19, r: 0.8, o: 0.6 },
+      C3: { cx: 3, cy: 12, r: 0.6, o: 0.4 },
+      C4: { cx: 21, cy: 12, r: 0.6, o: 0.4 },
+      C5: HC, C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+    };
+
+    // Bloom — flower/starburst, radiating petal curves
+    const bloomState = {
+      L1: { x1: 10, y1: 10, qx: 12, qy: 3, x2: 14, y2: 10, sw: 1.25, da: '100 0', o: 0.6 },
+      L2: { x1: 14, y1: 10, qx: 21, qy: 12, x2: 14, y2: 14, sw: 1.25, da: '100 0', o: 0.6 },
+      L3: { x1: 14, y1: 14, qx: 12, qy: 21, x2: 10, y2: 14, sw: 1.25, da: '100 0', o: 0.6 },
+      L4: { x1: 10, y1: 14, qx: 3, qy: 12, x2: 10, y2: 10, sw: 1.25, da: '100 0', o: 0.6 },
+      L5: { ...S(12, 12, 15, 9), sw: 0.75, da: '100 0', o: 0.3 },
+      L6: { ...S(12, 12, 15, 15), sw: 0.75, da: '100 0', o: 0.3 },
+      L7: { ...S(12, 12, 9, 15), sw: 0.75, da: '100 0', o: 0.3 },
+      L8: { ...S(12, 12, 9, 9), sw: 0.75, da: '100 0', o: 0.3 },
+      C1: { cx: 12, cy: 12, r: 2, o: 1 },
+      C2: { cx: 12, cy: 3, r: 1, o: 0.7 },
+      C3: { cx: 21, cy: 12, r: 1, o: 0.7 },
+      C4: { cx: 12, cy: 21, r: 1, o: 0.7 },
+      C5: { cx: 3, cy: 12, r: 1, o: 0.7 },
+      C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 7, o: 0.3, sw: 0.75 },
+    };
+
+    // Void — inward-spiraling arms converging to singularity
+    const voidState = {
+      L1: { x1: 4, y1: 8, qx: 5, qy: 13, x2: 10, y2: 10.5, sw: 1, da: '100 0', o: 0.5 },
+      L2: { x1: 16, y1: 4, qx: 12, qy: 5, x2: 13.5, y2: 10, sw: 1, da: '100 0', o: 0.5 },
+      L3: { x1: 20, y1: 16, qx: 19, qy: 11, x2: 14, y2: 13.5, sw: 1, da: '100 0', o: 0.5 },
+      L4: { x1: 8, y1: 20, qx: 12, qy: 19, x2: 10.5, y2: 14, sw: 1, da: '100 0', o: 0.5 },
+      L5: { x1: 10, y1: 10.5, qx: 10.5, qy: 12, x2: 11.5, y2: 11.5, sw: 0.75, da: '100 0', o: 0.4 },
+      L6: { x1: 13.5, y1: 10, qx: 12, qy: 10.5, x2: 12.5, y2: 11.5, sw: 0.75, da: '100 0', o: 0.4 },
+      L7: { x1: 14, y1: 13.5, qx: 13.5, qy: 12, x2: 12.5, y2: 12.5, sw: 0.75, da: '100 0', o: 0.4 },
+      L8: { x1: 10.5, y1: 14, qx: 12, qy: 13.5, x2: 11.5, y2: 12.5, sw: 0.75, da: '100 0', o: 0.4 },
+      C1: { cx: 12, cy: 12, r: 1, o: 0.8 },
+      C2: { cx: 4, cy: 8, r: 0.7, o: 0.3 },
+      C3: { cx: 16, cy: 4, r: 0.6, o: 0.25 },
+      C4: { cx: 20, cy: 16, r: 0.5, o: 0.2 },
+      C5: { cx: 8, cy: 20, r: 0.5, o: 0.15 },
+      C6: HC, C7: HC,
+      P1: { cx: 12, cy: 12, r: 5, o: 0.4, sw: 0.75 },
+    };
+
+    // Die — square frame (L1-L4) + pip circles
+    // Frame corners: (5,5) (19,5) (19,19) (5,19)
+    const dieFrame = {
+      L1: { ...S(5, 5, 19, 5), sw: 1.5, da: '100 0', o: 0.8 },
+      L2: { ...S(19, 5, 19, 19), sw: 1.5, da: '100 0', o: 0.8 },
+      L3: { ...S(19, 19, 5, 19), sw: 1.5, da: '100 0', o: 0.8 },
+      L4: { ...S(5, 19, 5, 5), sw: 1.5, da: '100 0', o: 0.8 },
+      L5: HP, L6: HP, L7: HP, L8: HP,
+    };
+    const dieP1 = { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 };
+    // Pip positions: center, TL, BR, TR, BL, ML, MR
+    const pipPos = [
+      [12, 12], [8, 8], [16, 16], [16, 8], [8, 16], [8, 12], [16, 12]
+    ];
+    const PR = 1.25; // pip radius
+
+    function makeDie(visible) {
+      // visible: array of 7 booleans [C1..C7]
+      const st = { ...dieFrame, P1: dieP1 };
+      for (let i = 0; i < 7; i++) {
+        const k = 'C' + (i + 1);
+        st[k] = visible[i]
+          ? { cx: pipPos[i][0], cy: pipPos[i][1], r: PR, o: 1 }
+          : { cx: pipPos[i][0], cy: pipPos[i][1], r: 0, o: 0 };
+      }
+      return st;
+    }
+
+    //                   C1    C2    C3    C4    C5    C6    C7
+    const die1 = makeDie([1,    0,    0,    0,    0,    0,    0]);
+    const die2 = makeDie([0,    1,    1,    0,    0,    0,    0]);
+    const die3 = makeDie([1,    1,    1,    0,    0,    0,    0]);
+    const die4 = makeDie([0,    1,    1,    1,    1,    0,    0]);
+    const die5 = makeDie([1,    1,    1,    1,    1,    0,    0]);
+    const die6 = makeDie([0,    1,    1,    1,    1,    1,    1]);
+    const dieStates = [die1, die2, die3, die4, die5, die6];
+
+    // Collapsed die (for roll animation midpoint)
+    const dieCollapsed = { ...dieFrame, P1: dieP1 };
+    for (let i = 1; i <= 4; i++) dieCollapsed['L' + i] = { ...dieFrame['L' + i], o: 0.3 };
+    for (let i = 0; i < 7; i++) {
+      dieCollapsed['C' + (i + 1)] = { cx: pipPos[i][0], cy: pipPos[i][1], r: 0.4, o: 0.2 };
+    }
+
+    // ══════════════════════════════════════════════════
+    // Build & Apply
+    // ══════════════════════════════════════════════════
+
     function buildMorphSVG(svgEl) {
       const elMap = {};
-      const line = (id, sw, cap) => {
-        const el = document.createElementNS(NS, 'line');
+      const pathEl = (id) => {
+        const el = document.createElementNS(NS, 'path');
         el.setAttribute('stroke', 'currentColor');
-        el.setAttribute('stroke-width', sw);
-        if (cap) el.setAttribute('stroke-linecap', cap);
+        el.setAttribute('fill', 'none');
+        el.setAttribute('stroke-linecap', 'butt');
         svgEl.appendChild(el);
         elMap[id] = el;
       };
       const circle = (id, fill) => {
         const el = document.createElementNS(NS, 'circle');
         el.setAttribute('fill', fill ? 'currentColor' : 'none');
-        if (!fill) { el.setAttribute('stroke', 'currentColor'); el.setAttribute('stroke-width', '0.75'); }
+        if (!fill) el.setAttribute('stroke', 'currentColor');
         svgEl.appendChild(el);
         elMap[id] = el;
       };
-      line('e1', '1.25', 'butt'); line('e2', '1.25', 'butt'); line('e3', '1.25', 'butt');
-      line('e4', '1.25', 'butt'); line('e5', '1.25', 'butt');
-      line('r1', '0.75'); line('r2', '0.75'); line('r3', '0.75');
-      circle('n1', true); circle('n2', true); circle('n3', true);
-      circle('n4', true); circle('n5', true);
-      circle('pulse', false);
+      for (let i = 1; i <= 8; i++) pathEl('L' + i);
+      for (let i = 1; i <= 7; i++) circle('C' + i, true);
+      circle('P1', false);
       return elMap;
     }
 
@@ -726,68 +1453,751 @@
       for (const key of Object.keys(from)) {
         const el = elMap[key], a = from[key], b = to[key];
         if ('x1' in a) {
-          el.setAttribute('x1', a.x1 + (b.x1 - a.x1) * t);
-          el.setAttribute('y1', a.y1 + (b.y1 - a.y1) * t);
-          el.setAttribute('x2', a.x2 + (b.x2 - a.x2) * t);
-          el.setAttribute('y2', a.y2 + (b.y2 - a.y2) * t);
+          const x1 = a.x1 + (b.x1 - a.x1) * t, y1 = a.y1 + (b.y1 - a.y1) * t;
+          const qx = a.qx + (b.qx - a.qx) * t, qy = a.qy + (b.qy - a.qy) * t;
+          const x2 = a.x2 + (b.x2 - a.x2) * t, y2 = a.y2 + (b.y2 - a.y2) * t;
+          el.setAttribute('d', `M${x1} ${y1}Q${qx} ${qy} ${x2} ${y2}`);
         }
         if ('cx' in a) {
           el.setAttribute('cx', a.cx + (b.cx - a.cx) * t);
           el.setAttribute('cy', a.cy + (b.cy - a.cy) * t);
-          el.setAttribute('r', a.r + (b.r - a.r) * t);
+          el.setAttribute('r', Math.max(0, a.r + (b.r - a.r) * t));
         }
         if ('da' in a) el.setAttribute('stroke-dasharray', lerpDa(parseDa(a.da), parseDa(b.da), t));
+        if ('sw' in a) el.setAttribute('stroke-width', a.sw + (b.sw - a.sw) * t);
         el.setAttribute('opacity', a.o + (b.o - a.o) * t);
       }
     }
 
-    // ── Create morph instance ──
-    // initAt: 0 = show startState, 1 = show endState
-    function createMorph(itemId, startState, endState, initAt) {
+    // Apply a state instantly (no interpolation)
+    function setState(elMap, state) { applyState(elMap, state, state, 0); }
+
+    // Promise-based morph animation
+    function morphAnim(elMap, from, to, dur, stage, colFrom, colTo) {
+      return new Promise(resolve => {
+        const t0 = performance.now();
+        (function tick(now) {
+          const raw = Math.min((now - t0) / dur, 1);
+          const t = EASE(raw);
+          applyState(elMap, from, to, t);
+          if (stage && colFrom && colTo) {
+            stage.style.background = lerpColor(colFrom.bg, colTo.bg, t);
+            stage.style.borderColor = lerpColor(colFrom.bd, colTo.bd, t);
+          }
+          if (raw < 1) requestAnimationFrame(tick);
+          else resolve();
+        })(performance.now());
+      });
+    }
+
+    // ══════════════════════════════════════════════════
+    // Morph Instances — click to toggle between two states
+    // ══════════════════════════════════════════════════
+
+    function createMorph(itemId, stateA, stateB, colA, colB, initAt) {
       const item = document.getElementById(itemId);
       const stage = item.querySelector('.morph-stage');
       const svg = stage.querySelector('svg');
       const elMap = buildMorphSVG(svg);
-      let isEdit = initAt === 1, animId = null;
+      let atB = initAt === 1, animId = null;
 
-      if (isEdit) {
-        applyState(elMap, endState, endState, 0);
-        stage.style.background = lerpColor(plusBg, editBg, 1);
-        stage.style.borderColor = lerpColor(plusBd, editBd, 1);
-      } else {
-        applyState(elMap, startState, startState, 0);
-      }
-
-      function animate(toEdit) {
-        if (animId) cancelAnimationFrame(animId);
-        const from = toEdit ? startState : endState;
-        const to = toEdit ? endState : startState;
-        const bgF = toEdit ? plusBg : editBg, bgT = toEdit ? editBg : plusBg;
-        const bdF = toEdit ? plusBd : editBd, bdT = toEdit ? editBd : plusBd;
-        const start = performance.now();
-        (function tick(now) {
-          const raw = Math.min((now - start) / DURATION, 1);
-          const t = EASE(raw);
-          applyState(elMap, from, to, t);
-          stage.style.background = lerpColor(bgF, bgT, t);
-          stage.style.borderColor = lerpColor(bdF, bdT, t);
-          if (raw < 1) animId = requestAnimationFrame(tick);
-          else animId = null;
-        })(performance.now());
+      setState(elMap, atB ? stateB : stateA);
+      if (colA && colB) {
+        const c = atB ? colB : colA;
+        stage.style.background = lerpColor(c.bg, c.bg, 0);
+        stage.style.borderColor = lerpColor(c.bd, c.bd, 0);
       }
 
       item.addEventListener('click', () => {
-        isEdit = !isEdit;
-        animate(isEdit);
+        if (animId) cancelAnimationFrame(animId);
+        const from = atB ? stateB : stateA;
+        const to = atB ? stateA : stateB;
+        const cF = atB ? colB : colA;
+        const cT = atB ? colA : colB;
+        atB = !atB;
+        const t0 = performance.now();
+        (function tick(now) {
+          const raw = Math.min((now - t0) / DURATION, 1);
+          const t = EASE(raw);
+          applyState(elMap, from, to, t);
+          if (cF && cT) {
+            stage.style.background = lerpColor(cF.bg, cT.bg, t);
+            stage.style.borderColor = lerpColor(cF.bd, cT.bd, t);
+          }
+          if (raw < 1) animId = requestAnimationFrame(tick);
+          else animId = null;
+        })(performance.now());
       });
     }
 
-    // Under dots/cross cards: show target (edit) state initially
-    createMorph('morph-dots-edit', dotsState, editState, 1);
-    createMorph('morph-cross-edit', crossState, editState, 1);
-    // Under active-edit card: show target (dots/cross) state initially
-    createMorph('morph-edit-dots', dotsState, editState, 0);
-    createMorph('morph-edit-cross', crossState, editState, 0);
+    // Existing morphs
+    createMorph('morph-dots-edit', dotsState, editState, COL.def, COL.edit, 1);
+    createMorph('morph-cross-edit', crossState, editState, COL.def, COL.edit, 1);
+    createMorph('morph-edit-dots', dotsState, editState, COL.def, COL.edit, 0);
+    createMorph('morph-edit-cross', crossState, editState, COL.def, COL.edit, 0);
+
+    // New morphs: loading ↔ error ↔ retry
+    createMorph('morph-loading-error', loadingState, errorState, COL.loading, COL.error, 1);
+    createMorph('morph-loading-retry', loadingState, retryState, COL.loading, COL.retry, 1);
+    createMorph('morph-error-loading', loadingState, errorState, COL.loading, COL.error, 1);
+    createMorph('morph-error-retry', errorState, retryState, COL.error, COL.retry, 1);
+    createMorph('morph-retry-loading', loadingState, retryState, COL.loading, COL.retry, 0);
+
+    // Alien morphs
+    createMorph('morph-eye-void', eyeState, voidState, COL.eye, COL.void_, 0);
+    createMorph('morph-eye-scan', eyeState, scanState, COL.eye, COL.scan, 0);
+    createMorph('morph-beacon-bloom', beaconState, bloomState, COL.beacon, COL.bloom, 0);
+    createMorph('morph-beacon-dots', beaconState, dotsState, COL.beacon, COL.def, 0);
+    createMorph('morph-hex-edit', hexState, editState, COL.hex, COL.edit, 0);
+    createMorph('morph-hex-fracture', hexState, fractureState, COL.hex, COL.fracture, 0);
+    createMorph('morph-orbit-dots', orbitState, dotsState, COL.orbit, COL.def, 0);
+    createMorph('morph-orbit-loading', orbitState, loadingState, COL.orbit, COL.loading, 0);
+    createMorph('morph-sigil-edit', sigilState, editState, COL.sigil, COL.edit, 0);
+    createMorph('morph-sigil-hex', sigilState, hexState, COL.sigil, COL.hex, 0);
+    createMorph('morph-fracture-hex', fractureState, hexState, COL.fracture, COL.hex, 0);
+    createMorph('morph-fracture-void', fractureState, voidState, COL.fracture, COL.void_, 0);
+    createMorph('morph-scan-eye', scanState, eyeState, COL.scan, COL.eye, 0);
+    createMorph('morph-scan-cross', scanState, crossState, COL.scan, COL.def, 0);
+    createMorph('morph-pulse-dots', pulseState, dotsState, COL.pulse, COL.def, 0);
+    createMorph('morph-pulse-void', pulseState, voidState, COL.pulse, COL.void_, 0);
+    createMorph('morph-bloom-beacon', bloomState, beaconState, COL.bloom, COL.beacon, 0);
+    createMorph('morph-bloom-dots', bloomState, dotsState, COL.bloom, COL.def, 0);
+    createMorph('morph-void-bloom', voidState, bloomState, COL.void_, COL.bloom, 0);
+    createMorph('morph-void-eye', voidState, eyeState, COL.void_, COL.eye, 0);
+
+    // ══════════════════════════════════════════════════
+    // Static icon displays (loading, error, retry + alien icons)
+    // ══════════════════════════════════════════════════
+
+    // Error static icon
+    {
+      const stage = document.getElementById('error-icon');
+      const svg = stage.querySelector('svg');
+      const elMap = buildMorphSVG(svg);
+      setState(elMap, errorState);
+      stage.style.background = lerpColor(COL.error.bg, COL.error.bg, 0);
+      stage.style.borderColor = lerpColor(COL.error.bd, COL.error.bd, 0);
+    }
+
+    // Retry static icon
+    {
+      const stage = document.getElementById('retry-icon');
+      const svg = stage.querySelector('svg');
+      const elMap = buildMorphSVG(svg);
+      setState(elMap, retryState);
+      stage.style.background = lerpColor(COL.retry.bg, COL.retry.bg, 0);
+      stage.style.borderColor = lerpColor(COL.retry.bd, COL.retry.bd, 0);
+    }
+
+    // Alien static icons
+    for (const [id, state, col] of [
+      ['eye-icon', eyeState, COL.eye],
+      ['beacon-icon', beaconState, COL.beacon],
+      ['hex-icon', hexState, COL.hex],
+      ['orbit-icon', orbitState, COL.orbit],
+      ['sigil-icon', sigilState, COL.sigil],
+      ['fracture-icon', fractureState, COL.fracture],
+      ['scan-icon', scanState, COL.scan],
+      ['pulse-icon', pulseState, COL.pulse],
+      ['bloom-icon', bloomState, COL.bloom],
+      ['void-icon', voidState, COL.void_],
+    ]) {
+      const stage = document.getElementById(id);
+      const svg = stage.querySelector('svg');
+      const elMap = buildMorphSVG(svg);
+      setState(elMap, state);
+      stage.style.background = lerpColor(col.bg, col.bg, 0);
+      stage.style.borderColor = lerpColor(col.bd, col.bd, 0);
+    }
+
+    // ══════════════════════════════════════════════════
+    // Loading Loop — rotating bright spot via spoke opacity modulation
+    // ══════════════════════════════════════════════════
+
+    {
+      const stage = document.getElementById('loading-icon');
+      const svg = stage.querySelector('svg');
+      const elMap = buildMorphSVG(svg);
+      setState(elMap, loadingState);
+      stage.style.background = lerpColor(COL.loading.bg, COL.loading.bg, 0);
+      stage.style.borderColor = lerpColor(COL.loading.bd, COL.loading.bd, 0);
+
+      // Set round linecap on spokes for nice rounded ends
+      for (let i = 1; i <= 8; i++) elMap['L' + i].setAttribute('stroke-linecap', 'round');
+
+      let loopId = null;
+      let running = true;
+      const t0 = performance.now();
+
+      function tick(now) {
+        const phase = ((now - t0) / 800) * Math.PI * 2; // ~1.25 rotations/sec
+        for (let i = 1; i <= 8; i++) {
+          const angle = (i - 1) * Math.PI / 4;
+          const o = 0.15 + 0.85 * Math.max(0, Math.cos(phase - angle));
+          elMap['L' + i].setAttribute('opacity', o);
+        }
+        loopId = requestAnimationFrame(tick);
+      }
+
+      loopId = requestAnimationFrame(tick);
+
+      stage.addEventListener('click', () => {
+        if (running) {
+          cancelAnimationFrame(loopId);
+          loopId = null;
+          running = false;
+        } else {
+          running = true;
+          loopId = requestAnimationFrame(tick);
+        }
+      });
+    }
+
+    // ══════════════════════════════════════════════════
+    // Die-2D Roll — collapse → tumble → expand animation
+    // ══════════════════════════════════════════════════
+
+    {
+      const stage = document.getElementById('die-icon');
+      const svg = stage.querySelector('svg');
+      const elMap = buildMorphSVG(svg);
+      let currentFace = 0;
+      setState(elMap, dieStates[currentFace]);
+
+      let rolling = false;
+      let loopTimer = null;
+
+      // Controls
+      const durSlider = document.getElementById('die-dur');
+      const durVal = document.getElementById('die-dur-val');
+      const tumblesSlider = document.getElementById('die-tumbles');
+      const tumblesVal = document.getElementById('die-tumbles-val');
+      const loopCheck = document.getElementById('die-loop');
+
+      durSlider.addEventListener('input', () => { durVal.textContent = durSlider.value + 'ms'; });
+      tumblesSlider.addEventListener('input', () => { tumblesVal.textContent = tumblesSlider.value; });
+
+      async function roll() {
+        if (rolling) return;
+        rolling = true;
+
+        const duration = parseInt(durSlider.value);
+        const tumbles = parseInt(tumblesSlider.value);
+
+        // Pick a different face
+        let target;
+        do { target = Math.floor(Math.random() * 6); } while (target === currentFace);
+
+        const phases = 1 + tumbles + 1;
+        const phaseTime = duration / phases;
+
+        // 1. Collapse current
+        await morphAnim(elMap, dieStates[currentFace], dieCollapsed, Math.max(phaseTime, 30));
+
+        // 2. Flash intermediate faces
+        for (let i = 0; i < tumbles; i++) {
+          let rnd;
+          do { rnd = Math.floor(Math.random() * 6); } while (rnd === target || rnd === currentFace);
+          await morphAnim(elMap, dieCollapsed, dieStates[rnd], Math.max(phaseTime * 0.5, 20));
+          await morphAnim(elMap, dieStates[rnd], dieCollapsed, Math.max(phaseTime * 0.5, 20));
+        }
+
+        // 3. Expand to target
+        await morphAnim(elMap, dieCollapsed, dieStates[target], Math.max(phaseTime, 30));
+
+        currentFace = target;
+        rolling = false;
+
+        // If loop enabled, schedule next roll
+        if (loopCheck.checked) {
+          loopTimer = setTimeout(roll, 200);
+        }
+      }
+
+      stage.addEventListener('click', roll);
+
+      loopCheck.addEventListener('change', () => {
+        if (loopCheck.checked) {
+          roll();
+        } else if (loopTimer) {
+          clearTimeout(loopTimer);
+          loopTimer = null;
+        }
+      });
+    }
+
+    // ══════════════════════════════════════════════════
+    // Die-3D — projected wireframe cube with face fills and pips
+    // ══════════════════════════════════════════════════
+
+    {
+      const stage = document.getElementById('die3d-icon');
+      const svg = stage.querySelector('svg');
+      svg.innerHTML = '';
+
+      // ── SVG elements: 3 face polygons + 18 pip circles ──
+      const faceEls = [];
+      for (let i = 0; i < 3; i++) {
+        const el = document.createElementNS(NS, 'path');
+        el.setAttribute('stroke', 'currentColor');
+        el.setAttribute('stroke-width', '0.4');
+        el.setAttribute('stroke-linejoin', 'round');
+        el.setAttribute('opacity', '0');
+        svg.appendChild(el);
+        faceEls.push(el);
+      }
+      const pipEls = [];
+      for (let i = 0; i < 18; i++) {
+        const el = document.createElementNS(NS, 'circle');
+        el.setAttribute('fill', 'currentColor');
+        el.setAttribute('r', '0');
+        svg.appendChild(el);
+        pipEls.push(el);
+      }
+
+      // ── Cube geometry ──
+      const CV = [
+        [-1,-1, 1],[ 1,-1, 1],[ 1, 1, 1],[-1, 1, 1],  // front
+        [-1,-1,-1],[ 1,-1,-1],[ 1, 1,-1],[-1, 1,-1],  // back
+      ];
+      // Faces: vertex indices (CCW from outside), outward normal, die face number
+      // Opposite faces sum to 7: 1↔6, 2↔5, 3↔4
+      const CF = [
+        { vi:[0,1,2,3], n:[ 0, 0, 1], die:1 },
+        { vi:[5,4,7,6], n:[ 0, 0,-1], die:6 },
+        { vi:[1,5,6,2], n:[ 1, 0, 0], die:3 },
+        { vi:[4,0,3,7], n:[-1, 0, 0], die:4 },
+        { vi:[4,5,1,0], n:[ 0,-1, 0], die:2 },
+        { vi:[3,2,6,7], n:[ 0, 1, 0], die:5 },
+      ];
+      // Pip UV positions per die face
+      const PUV = {
+        1: [[.5,.5]],
+        2: [[.28,.28],[.72,.72]],
+        3: [[.28,.28],[.5,.5],[.72,.72]],
+        4: [[.28,.28],[.72,.28],[.28,.72],[.72,.72]],
+        5: [[.28,.28],[.72,.28],[.5,.5],[.28,.72],[.72,.72]],
+        6: [[.28,.28],[.72,.28],[.28,.5],[.72,.5],[.28,.72],[.72,.72]],
+      };
+
+      // ── 3×3 matrix math ──
+      const mmul = (A, B) => {
+        const R = [[0,0,0],[0,0,0],[0,0,0]];
+        for (let i = 0; i < 3; i++)
+          for (let j = 0; j < 3; j++)
+            for (let k = 0; k < 3; k++)
+              R[i][j] += A[i][k] * B[k][j];
+        return R;
+      };
+      const mv = (M, v) => [
+        M[0][0]*v[0] + M[0][1]*v[1] + M[0][2]*v[2],
+        M[1][0]*v[0] + M[1][1]*v[1] + M[1][2]*v[2],
+        M[2][0]*v[0] + M[2][1]*v[1] + M[2][2]*v[2],
+      ];
+      const mRx = a => { const c = Math.cos(a), s = Math.sin(a); return [[1,0,0],[0,c,-s],[0,s,c]]; };
+      const mRy = a => { const c = Math.cos(a), s = Math.sin(a); return [[c,0,s],[0,1,0],[-s,0,c]]; };
+      const I3 = [[1,0,0],[0,1,0],[0,0,1]];
+
+      // ── Perspective projection ──
+      const CDIST = 4.8, SC = 5.2;
+      const proj = v => {
+        const s = CDIST / (CDIST - v[2]);
+        return [12 + v[0] * s * SC, 12 + v[1] * s * SC];
+      };
+      // Bilinear interpolation in 3D
+      const bilerp = (a, b, c, d, u, v) => [
+        a[0]*(1-u)*(1-v) + b[0]*u*(1-v) + c[0]*u*v + d[0]*(1-u)*v,
+        a[1]*(1-u)*(1-v) + b[1]*u*(1-v) + c[1]*u*v + d[1]*(1-u)*v,
+        a[2]*(1-u)*(1-v) + b[2]*u*(1-v) + c[2]*u*v + d[2]*(1-u)*v,
+      ];
+
+      // View tilt so cube looks 3D at rest
+      const VIEW = mmul(mRx(-0.35), mRy(0.45));
+
+      // Die orientation (cumulative rotation matrix)
+      let orient = I3.map(r => [...r]);
+
+      function renderCube(mat) {
+        const rv = CV.map(v => mv(mat, v));
+
+        // Visible faces: normal.z > 0, sorted back→front
+        const vis = [];
+        for (const f of CF) {
+          const rn = mv(mat, f.n);
+          if (rn[2] > 0.01) {
+            const avgZ = f.vi.reduce((s, i) => s + rv[i][2], 0) / 4;
+            vis.push({ ...f, rn, avgZ });
+          }
+        }
+        vis.sort((a, b) => a.avgZ - b.avgZ);
+
+        // Reset
+        for (const el of faceEls) el.setAttribute('opacity', '0');
+        for (const el of pipEls) { el.setAttribute('r', '0'); el.setAttribute('opacity', '0'); }
+
+        let pi = 0;
+        for (let fi = 0; fi < vis.length && fi < 3; fi++) {
+          const f = vis[fi];
+          const pts = f.vi.map(i => proj(rv[i]));
+
+          // Face polygon
+          faceEls[fi].setAttribute('d',
+            `M${pts[0][0]} ${pts[0][1]}L${pts[1][0]} ${pts[1][1]}L${pts[2][0]} ${pts[2][1]}L${pts[3][0]} ${pts[3][1]}Z`);
+          const bright = Math.round(Math.max(16, f.rn[2] * 36) );
+          faceEls[fi].setAttribute('fill', `rgb(${bright},${bright},${bright})`);
+          faceEls[fi].setAttribute('stroke-opacity', '0.4');
+          faceEls[fi].setAttribute('opacity', '1');
+
+          // Pips on this face
+          const fv = f.vi.map(i => rv[i]);
+          const pipR = (CDIST / (CDIST - f.avgZ)) * 0.55;
+          for (const [u, v] of PUV[f.die]) {
+            if (pi >= pipEls.length) break;
+            const p3 = bilerp(fv[0], fv[1], fv[2], fv[3], u, v);
+            const [px, py] = proj(p3);
+            pipEls[pi].setAttribute('cx', px);
+            pipEls[pi].setAttribute('cy', py);
+            pipEls[pi].setAttribute('r', pipR);
+            pipEls[pi].setAttribute('opacity', '0.9');
+            pi++;
+          }
+        }
+
+        // Z-order: faces back→front, pips on top
+        for (const el of faceEls) svg.appendChild(el);
+        for (const el of pipEls) svg.appendChild(el);
+      }
+
+      // Which die face is closest to the viewer?
+      function frontFace(mat) {
+        let best = -Infinity, f = 1;
+        for (const cf of CF) {
+          const z = mv(mat, cf.n)[2];
+          if (z > best) { best = z; f = cf.die; }
+        }
+        return f;
+      }
+
+      // Find which 90° (or 180°) rotation brings target face to front
+      function findRotTo(target) {
+        const tries = [
+          ['X', Math.PI / 2], ['X', -Math.PI / 2], ['X', Math.PI],
+          ['Y', Math.PI / 2], ['Y', -Math.PI / 2], ['Y', Math.PI],
+        ];
+        for (const [axis, angle] of tries) {
+          const rot = axis === 'X' ? mRx(angle) : mRy(angle);
+          if (frontFace(mmul(VIEW, mmul(rot, orient))) === target) {
+            return { axis, angle };
+          }
+        }
+        return null;
+      }
+
+      // Animate a rotation step
+      function animRot(axis, angle, dur) {
+        return new Promise(resolve => {
+          const base = orient.map(r => [...r]);
+          const t0 = performance.now();
+          (function tick(now) {
+            const raw = Math.min((now - t0) / dur, 1);
+            const t = EASE(raw);
+            const rot = axis === 'X' ? mRx(angle * t) : mRy(angle * t);
+            renderCube(mmul(VIEW, mmul(rot, base)));
+            if (raw < 1) requestAnimationFrame(tick);
+            else {
+              orient = mmul(axis === 'X' ? mRx(angle) : mRy(angle), base);
+              resolve();
+            }
+          })(performance.now());
+        });
+      }
+
+      // Initial render
+      renderCube(mmul(VIEW, orient));
+
+      // ── Controls ──
+      let rolling = false, loopTimer = null;
+      const durSlider = document.getElementById('die3d-dur');
+      const durVal = document.getElementById('die3d-dur-val');
+      const tumblesSlider = document.getElementById('die3d-tumbles');
+      const tumblesVal = document.getElementById('die3d-tumbles-val');
+      const loopCheck = document.getElementById('die3d-loop');
+
+      durSlider.addEventListener('input', () => { durVal.textContent = durSlider.value + 'ms'; });
+      tumblesSlider.addEventListener('input', () => { tumblesVal.textContent = tumblesSlider.value; });
+
+      async function roll() {
+        if (rolling) return;
+        rolling = true;
+
+        const duration = parseInt(durSlider.value);
+        const tumbles = parseInt(tumblesSlider.value);
+        const curFace = frontFace(mmul(VIEW, orient));
+
+        // Pick a different target face
+        let target;
+        do { target = Math.floor(Math.random() * 6) + 1; } while (target === curFace);
+
+        const phases = tumbles + 1;
+        const phaseTime = duration / phases;
+
+        // Tumbles: random 90° rotations
+        for (let i = 0; i < tumbles; i++) {
+          const axis = Math.random() < 0.5 ? 'X' : 'Y';
+          const dir = Math.random() < 0.5 ? 1 : -1;
+          await animRot(axis, dir * Math.PI / 2, Math.max(phaseTime, 50));
+        }
+
+        // Final rotation to land on target face
+        const r = findRotTo(target);
+        if (r) {
+          if (Math.abs(r.angle) > Math.PI / 2 + 0.1) {
+            // 180°: split into two 90° for visual smoothness
+            await animRot(r.axis, r.angle / 2, Math.max(phaseTime / 2, 40));
+            await animRot(r.axis, r.angle / 2, Math.max(phaseTime / 2, 40));
+          } else {
+            await animRot(r.axis, r.angle, Math.max(phaseTime, 50));
+          }
+        }
+
+        rolling = false;
+        if (loopCheck.checked) loopTimer = setTimeout(roll, 200);
+      }
+
+      stage.addEventListener('click', roll);
+
+      loopCheck.addEventListener('change', () => {
+        if (loopCheck.checked) roll();
+        else if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+      });
+    }
+
+    // ══════════════════════════════════════════════════
+    // Die-3D-V2 — thicker edges, carved (recessed) pips
+    // ══════════════════════════════════════════════════
+
+    {
+      const stage = document.getElementById('die3dv2-icon');
+      const svg = stage.querySelector('svg');
+      const NS = 'http://www.w3.org/2000/svg';
+
+      // Face polygons (3 visible max)
+      const faceEls = [];
+      for (let i = 0; i < 3; i++) {
+        const el = document.createElementNS(NS, 'path');
+        el.setAttribute('stroke', 'currentColor');
+        el.setAttribute('stroke-width', '0.8');
+        el.setAttribute('stroke-linejoin', 'round');
+        el.setAttribute('opacity', '0');
+        svg.appendChild(el);
+        faceEls.push(el);
+      }
+      // Pip circles — carved style (dark fill + bright bevel stroke)
+      const pipEls = [];
+      for (let i = 0; i < 18; i++) {
+        const el = document.createElementNS(NS, 'circle');
+        el.setAttribute('r', '0');
+        svg.appendChild(el);
+        pipEls.push(el);
+      }
+
+      const CV = [
+        [-1,-1, 1],[ 1,-1, 1],[ 1, 1, 1],[-1, 1, 1],
+        [-1,-1,-1],[ 1,-1,-1],[ 1, 1,-1],[-1, 1,-1],
+      ];
+      const CF = [
+        { vi:[0,1,2,3], n:[ 0, 0, 1], die:1 },
+        { vi:[5,4,7,6], n:[ 0, 0,-1], die:6 },
+        { vi:[1,5,6,2], n:[ 1, 0, 0], die:3 },
+        { vi:[4,0,3,7], n:[-1, 0, 0], die:4 },
+        { vi:[4,5,1,0], n:[ 0,-1, 0], die:2 },
+        { vi:[3,2,6,7], n:[ 0, 1, 0], die:5 },
+      ];
+      const PUV = {
+        1: [[.5,.5]],
+        2: [[.28,.28],[.72,.72]],
+        3: [[.28,.28],[.5,.5],[.72,.72]],
+        4: [[.28,.28],[.72,.28],[.28,.72],[.72,.72]],
+        5: [[.28,.28],[.72,.28],[.5,.5],[.28,.72],[.72,.72]],
+        6: [[.28,.28],[.72,.28],[.28,.5],[.72,.5],[.28,.72],[.72,.72]],
+      };
+
+      const mmul = (A, B) => {
+        const R = [[0,0,0],[0,0,0],[0,0,0]];
+        for (let i = 0; i < 3; i++)
+          for (let j = 0; j < 3; j++)
+            for (let k = 0; k < 3; k++)
+              R[i][j] += A[i][k] * B[k][j];
+        return R;
+      };
+      const mv = (M, v) => [
+        M[0][0]*v[0] + M[0][1]*v[1] + M[0][2]*v[2],
+        M[1][0]*v[0] + M[1][1]*v[1] + M[1][2]*v[2],
+        M[2][0]*v[0] + M[2][1]*v[1] + M[2][2]*v[2],
+      ];
+      const mRx = a => { const c = Math.cos(a), s = Math.sin(a); return [[1,0,0],[0,c,-s],[0,s,c]]; };
+      const mRy = a => { const c = Math.cos(a), s = Math.sin(a); return [[c,0,s],[0,1,0],[-s,0,c]]; };
+      const I3 = [[1,0,0],[0,1,0],[0,0,1]];
+
+      const CDIST = 4.8, SC = 5.2;
+      const proj = v => {
+        const s = CDIST / (CDIST - v[2]);
+        return [12 + v[0] * s * SC, 12 + v[1] * s * SC];
+      };
+      const bilerp = (a, b, c, d, u, v) => [
+        a[0]*(1-u)*(1-v) + b[0]*u*(1-v) + c[0]*u*v + d[0]*(1-u)*v,
+        a[1]*(1-u)*(1-v) + b[1]*u*(1-v) + c[1]*u*v + d[1]*(1-u)*v,
+        a[2]*(1-u)*(1-v) + b[2]*u*(1-v) + c[2]*u*v + d[2]*(1-u)*v,
+      ];
+
+      const VIEW = mmul(mRx(-0.35), mRy(0.45));
+      let orient = I3.map(r => [...r]);
+
+      function renderCube(mat) {
+        const rv = CV.map(v => mv(mat, v));
+        const vis = [];
+        for (const f of CF) {
+          const rn = mv(mat, f.n);
+          if (rn[2] > 0.01) {
+            const avgZ = f.vi.reduce((s, i) => s + rv[i][2], 0) / 4;
+            vis.push({ ...f, rn, avgZ });
+          }
+        }
+        vis.sort((a, b) => a.avgZ - b.avgZ);
+
+        for (const el of faceEls) el.setAttribute('opacity', '0');
+        for (const el of pipEls) { el.setAttribute('r', '0'); el.setAttribute('opacity', '0'); }
+
+        let pi = 0;
+        for (let fi = 0; fi < vis.length && fi < 3; fi++) {
+          const f = vis[fi];
+          const pts = f.vi.map(i => proj(rv[i]));
+
+          faceEls[fi].setAttribute('d',
+            `M${pts[0][0]} ${pts[0][1]}L${pts[1][0]} ${pts[1][1]}L${pts[2][0]} ${pts[2][1]}L${pts[3][0]} ${pts[3][1]}Z`);
+          const bright = Math.round(Math.max(16, f.rn[2] * 36));
+          faceEls[fi].setAttribute('fill', `rgb(${bright},${bright},${bright})`);
+          faceEls[fi].setAttribute('stroke-opacity', '0.5');
+          faceEls[fi].setAttribute('opacity', '1');
+
+          // Carved pips: dark fill (recessed) + bright bevel stroke
+          const fv = f.vi.map(i => rv[i]);
+          const pipR = (CDIST / (CDIST - f.avgZ)) * 0.65;
+          const pipFill = Math.round(bright * 0.3);
+          const pipStroke = Math.min(255, Math.round(bright * 1.3));
+          for (const [u, v] of PUV[f.die]) {
+            if (pi >= pipEls.length) break;
+            const p3 = bilerp(fv[0], fv[1], fv[2], fv[3], u, v);
+            const [px, py] = proj(p3);
+            pipEls[pi].setAttribute('cx', px);
+            pipEls[pi].setAttribute('cy', py);
+            pipEls[pi].setAttribute('r', pipR);
+            pipEls[pi].setAttribute('fill', `rgb(${pipFill},${pipFill},${pipFill})`);
+            pipEls[pi].setAttribute('stroke', `rgb(${pipStroke},${pipStroke},${pipStroke})`);
+            pipEls[pi].setAttribute('stroke-width', '0.3');
+            pipEls[pi].setAttribute('opacity', '0.9');
+            pi++;
+          }
+        }
+
+        for (const el of faceEls) svg.appendChild(el);
+        for (const el of pipEls) svg.appendChild(el);
+      }
+
+      function frontFace(mat) {
+        let best = -Infinity, f = 1;
+        for (const cf of CF) {
+          const z = mv(mat, cf.n)[2];
+          if (z > best) { best = z; f = cf.die; }
+        }
+        return f;
+      }
+
+      function findRotTo(target) {
+        const tries = [
+          ['X', Math.PI / 2], ['X', -Math.PI / 2], ['X', Math.PI],
+          ['Y', Math.PI / 2], ['Y', -Math.PI / 2], ['Y', Math.PI],
+        ];
+        for (const [axis, angle] of tries) {
+          const rot = axis === 'X' ? mRx(angle) : mRy(angle);
+          if (frontFace(mmul(VIEW, mmul(rot, orient))) === target) {
+            return { axis, angle };
+          }
+        }
+        return null;
+      }
+
+      function animRot(axis, angle, dur) {
+        return new Promise(resolve => {
+          const base = orient.map(r => [...r]);
+          const t0 = performance.now();
+          (function tick(now) {
+            const raw = Math.min((now - t0) / dur, 1);
+            const t = EASE(raw);
+            const rot = axis === 'X' ? mRx(angle * t) : mRy(angle * t);
+            renderCube(mmul(VIEW, mmul(rot, base)));
+            if (raw < 1) requestAnimationFrame(tick);
+            else {
+              orient = mmul(axis === 'X' ? mRx(angle) : mRy(angle), base);
+              resolve();
+            }
+          })(performance.now());
+        });
+      }
+
+      renderCube(mmul(VIEW, orient));
+
+      let rolling = false, loopTimer = null;
+      const durSlider = document.getElementById('die3dv2-dur');
+      const durVal = document.getElementById('die3dv2-dur-val');
+      const tumblesSlider = document.getElementById('die3dv2-tumbles');
+      const tumblesVal = document.getElementById('die3dv2-tumbles-val');
+      const loopCheck = document.getElementById('die3dv2-loop');
+
+      durSlider.addEventListener('input', () => { durVal.textContent = durSlider.value + 'ms'; });
+      tumblesSlider.addEventListener('input', () => { tumblesVal.textContent = tumblesSlider.value; });
+
+      async function roll() {
+        if (rolling) return;
+        rolling = true;
+
+        const duration = parseInt(durSlider.value);
+        const tumbles = parseInt(tumblesSlider.value);
+        const curFace = frontFace(mmul(VIEW, orient));
+
+        let target;
+        do { target = Math.floor(Math.random() * 6) + 1; } while (target === curFace);
+
+        const phases = tumbles + 1;
+        const phaseTime = duration / phases;
+
+        for (let i = 0; i < tumbles; i++) {
+          const axis = Math.random() < 0.5 ? 'X' : 'Y';
+          const dir = Math.random() < 0.5 ? 1 : -1;
+          await animRot(axis, dir * Math.PI / 2, Math.max(phaseTime, 50));
+        }
+
+        const r = findRotTo(target);
+        if (r) {
+          if (Math.abs(r.angle) > Math.PI / 2 + 0.1) {
+            await animRot(r.axis, r.angle / 2, Math.max(phaseTime / 2, 40));
+            await animRot(r.axis, r.angle / 2, Math.max(phaseTime / 2, 40));
+          } else {
+            await animRot(r.axis, r.angle, Math.max(phaseTime, 50));
+          }
+        }
+
+        rolling = false;
+        if (loopCheck.checked) loopTimer = setTimeout(roll, 200);
+      }
+
+      stage.addEventListener('click', roll);
+
+      loopCheck.addEventListener('change', () => {
+        if (loopCheck.checked) roll();
+        else if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+      });
+    }
   </script>
 
 </body>

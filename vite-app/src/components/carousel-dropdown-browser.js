@@ -753,9 +753,10 @@ class CarouselDropdownBrowser extends HTMLElement {
             const secLabel = sectionLabelRects.get(item.sectionIndex);
             const headerRect = h.getBoundingClientRect();
             const headerPT = parseFloat(getComputedStyle(h).paddingTop) || 0;
+            const headerTextLeft = this.#computeTextLeft(h, headerRect);
             if (secLabel) {
                 const dy = secLabel.rect.top - (headerRect.top + headerPT);
-                const dx = secLabel.rect.left - headerRect.left;
+                const dx = secLabel.rect.left - headerTextLeft;
                 // Hide native border — animate a temporary bar instead
                 h.style.borderBottomColor = 'transparent';
                 const bar = document.createElement('div');
@@ -763,10 +764,10 @@ class CarouselDropdownBrowser extends HTMLElement {
                 h.style.position = 'relative';
                 h.appendChild(bar);
                 expandBars.push({ header: h, bar });
-                bar.animate([
+                this.#flipAnimations.push(bar.animate([
                     { width: secLabel.underlineWidth + 'px' },
                     { width: headerRect.width + 'px' }
-                ], { duration: dur, easing, fill: 'both' });
+                ], { duration: dur, easing, fill: 'both' }));
 
                 h.style.transform = `translate(${dx}px, ${dy}px)`;
                 h.style.opacity = '1';
@@ -789,7 +790,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 if (edge) {
                     const edgeX = trackCX + edge.cx;
                     const edgeY = trackCY + edge.cy;
-                    const dx = edgeX - headerRect.left;
+                    const dx = edgeX - headerTextLeft;
                     const dy = edgeY - headerRect.top;
                     h.style.transform = `translate(${dx}px, ${dy}px)`;
                     h.style.opacity = '0';
@@ -798,9 +799,9 @@ class CarouselDropdownBrowser extends HTMLElement {
                     h.style.transform = '';
                     h.style.opacity = '1';
                 } else {
-                    h.animate([{ opacity: 0 }, { opacity: 1 }], {
+                    this.#flipAnimations.push(h.animate([{ opacity: 0 }, { opacity: 1 }], {
                         duration: dur * 0.3, delay: dur * 0.75, fill: 'both'
-                    });
+                    }));
                 }
             }
             headerSecIdx = item.sectionIndex + 1;
@@ -1577,9 +1578,9 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#syncArcYExtra();
     }
 
-    /** Read global speed multiplier (--lm-speed) for transition scaling. */
+    /** Read global speed multiplier (--t-speed) for transition scaling. */
     #readSpeed() {
-        return parseFloat(getComputedStyle(this).getPropertyValue('--lm-speed')) || 1;
+        return parseFloat(getComputedStyle(this).getPropertyValue('--t-speed')) || 1;
     }
 
     #updateEasing() {
@@ -2401,6 +2402,19 @@ class CarouselDropdownBrowser extends HTMLElement {
         return rects;
     }
 
+    /** Compute the visual left position of text within a text-aligned element. */
+    #computeTextLeft(el, elRect) {
+        const textAlign = getComputedStyle(el).textAlign;
+        if (textAlign === 'center' || textAlign === 'right' || textAlign === 'end') {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            const textWidth = range.getBoundingClientRect().width;
+            if (textAlign === 'center') return elRect.left + (elRect.width - textWidth) / 2;
+            return elRect.right - textWidth; // right/end
+        }
+        return elRect.left;
+    }
+
     /** Capture grid section header positions. */
     #captureGridHeaderRects() {
         const rects = new Map();
@@ -2411,7 +2425,9 @@ class CarouselDropdownBrowser extends HTMLElement {
             if (item) {
                 const rect = h.getBoundingClientRect();
                 const pt = parseFloat(getComputedStyle(h).paddingTop) || 0;
-                rects.set(item.sectionIndex, { rect, underlineWidth: rect.width, text: h.textContent, paddingTop: pt });
+                const adjustedLeft = this.#computeTextLeft(h, rect);
+                const adjustedRect = { top: rect.top, left: adjustedLeft, width: rect.width, height: rect.height, right: rect.right, bottom: rect.bottom };
+                rects.set(item.sectionIndex, { rect: adjustedRect, underlineWidth: rect.width, text: h.textContent, paddingTop: pt });
                 secIdx = item.sectionIndex + 1;
             }
         }
@@ -2652,7 +2668,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     #animateGridNamesIn(dur) {
         const names = this.#grid.querySelectorAll('.cdb-grid-card-name');
         names.forEach((n, i) => {
-            n.animate([
+            this.#flipAnimations.push(n.animate([
                 { opacity: 0 },
                 { opacity: 1 }
             ], {
@@ -2660,31 +2676,35 @@ class CarouselDropdownBrowser extends HTMLElement {
                 delay: dur * 0.45 + i * 15,
                 easing: 'ease-out',
                 fill: 'backwards',
-            });
+            }));
         });
     }
 
     #animateGridNamesOut(dur) {
         const names = this.#grid.querySelectorAll('.cdb-grid-card-name');
         for (const n of names) {
-            n.animate([
+            this.#flipAnimations.push(n.animate([
                 { opacity: 1 },
                 { opacity: 0 }
             ], {
                 duration: dur * 0.25,
                 easing: 'ease-in',
                 fill: 'both',
-            });
+            }));
         }
     }
 
     #cleanupGridAnimationStyles() {
         for (const h of this.#grid.querySelectorAll('.cdb-grid-section-header')) {
+            h.getAnimations().forEach(a => a.cancel());
             h.style.opacity = '';
             h.style.transform = '';
             h.style.transition = '';
         }
-        for (const n of this.#grid.querySelectorAll('.cdb-grid-card-name')) n.style.opacity = '';
+        for (const n of this.#grid.querySelectorAll('.cdb-grid-card-name')) {
+            n.getAnimations().forEach(a => a.cancel());
+            n.style.opacity = '';
+        }
     }
 
     #appendStripChildren() {

@@ -23,7 +23,7 @@ image-viewer {
     height: 100%;
     object-fit: cover;
     display: block;
-    transition: opacity var(--lm-fade, 0.25s) ease;
+    transition: opacity var(--lm-fade) ease; /* content tier — image crossfade */
     cursor: pointer;
 }
 .iv-img-prev {
@@ -164,7 +164,7 @@ image-viewer[mode="canvas"] .iv-controls {
 
 /* Trigger fades when menu expands over it */
 .iv-controls .custom-dropdown-trigger {
-    transition: opacity calc(150ms * var(--lm-speed, 1)) ease;
+    transition: opacity calc(var(--t-accent) * var(--t-speed)) ease;
     position: relative;
     z-index: 1;
 }
@@ -198,10 +198,10 @@ image-viewer[mode="canvas"] .iv-controls {
     visibility: visible;
     pointer-events: none;
     z-index: 2;
-    transition: max-height calc(300ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1),
-                padding calc(300ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1),
-                border-color calc(300ms * var(--lm-speed, 1)) ease,
-                box-shadow calc(300ms * var(--lm-speed, 1)) ease;
+    transition: max-height calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
+                padding calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
+                border-color calc(var(--t-menu) * var(--t-speed)) ease,
+                box-shadow calc(var(--t-menu) * var(--t-speed)) ease;
 }
 .iv-controls .custom-dropdown-menu.hidden {
     opacity: 1;
@@ -227,12 +227,12 @@ image-viewer[mode="canvas"] .iv-controls {
     flex-direction: column;
     gap: 0.125rem;
     flex-shrink: 0;
-    transition: transform calc(300ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
 }
 /* Active bg cross-fade on selection change */
 .iv-controls .custom-dropdown.dd-animate .custom-dropdown-item {
-    transition: background-color calc(200ms * var(--lm-speed, 1)) ease,
-                color calc(200ms * var(--lm-speed, 1)) ease;
+    transition: background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
+                color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 /* Block item clicks when collapsed */
 .iv-controls .custom-dropdown.dd-animate:not(.open) .custom-dropdown-item {
@@ -449,7 +449,7 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     z-index: 1100;
     background: rgba(0, 0, 0, 0);
     cursor: pointer;
-    transition: background calc(400ms * var(--lm-speed, 1)) ease;
+    transition: background calc(var(--t-menu) * 1.33 * var(--t-speed)) ease;
 }
 .fullscreen-overlay.fs-visible {
     background: rgba(0, 0, 0, 1);
@@ -462,14 +462,14 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     will-change: transform;
 }
 .fullscreen-overlay .fs-animating {
-    transition: transform calc(400ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform calc(var(--t-menu) * 1.33 * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
 }
 .fullscreen-overlay .fs-closing {
-    transition: transform calc(300ms * var(--lm-speed, 1)) ease-in;
+    transition: transform calc(var(--t-menu) * var(--t-speed)) ease-in;
 }
 .fullscreen-overlay .fs-fading {
     opacity: 0;
-    transition: opacity calc(200ms * var(--lm-speed, 1)) ease;
+    transition: opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 
 /* ── Fullscreen close button ── */
@@ -520,7 +520,7 @@ image-viewer[controls-pos^="top"] .iv-controls .dd-inner {
     line-height: 1.5;
     pointer-events: none;
     opacity: 0;
-    transition: opacity calc(250ms * var(--lm-speed, 1)) ease, transform calc(300ms * var(--lm-speed, 1)) cubic-bezier(0.16, 1, 0.3, 1);
+    transition: opacity calc(var(--t-content) * var(--t-speed)) ease, transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
     cursor: default;
 }
