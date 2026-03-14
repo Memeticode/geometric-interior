@@ -9,7 +9,7 @@
     overflow: auto;
 }
 .gallery-page .main-content {
-    padding: 1rem;
+    padding: 0.5rem 1rem;
 }
 .gallery-page .gallery-content {
     transition: opacity var(--lm-fade) ease, transform var(--lm-fade) ease;
@@ -136,7 +136,7 @@
 }
 [data-layout="edit"] .gallery-toolbar {
     max-height: 3rem;
-    padding: 0.25rem 0;
+    padding: 0 0 0.25rem;
 }
 [data-morph-to="edit"] .gallery-toolbar,
 [data-morph-to="browse"] .gallery-toolbar {
@@ -264,10 +264,12 @@
     color: var(--text);
     font-family: var(--font-primary);
     word-break: break-word;
-    border: 1px solid transparent;
+    border: 0 solid transparent;
+    border-radius: 0;
     background: transparent;
     padding: 0;
     resize: none;
+    overflow: visible;
     width: 100%;
     field-sizing: content;
     min-height: 1.2em;
@@ -275,7 +277,8 @@
     pointer-events: none;
 }
 [data-layout="edit"] .morph-textarea {
-    border-color: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
     padding: 0.25rem 2.5rem 0.25rem 1.375rem;
     cursor: text;
     pointer-events: auto;
@@ -508,8 +511,8 @@ image-viewer#galleryViewer {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    transition: opacity var(--lm-fade) ease, height calc(var(--t-menu) * var(--t-speed)) ease,
-                max-height calc(var(--t-menu) * var(--t-speed)) ease, padding calc(var(--t-menu) * var(--t-speed)) ease, border-color calc(var(--t-menu) * var(--t-speed)) ease;
+    transition: opacity var(--lm-fade) ease, height var(--lm-collapse) ease,
+                max-height var(--lm-collapse) ease, padding var(--lm-collapse) ease, border-color var(--lm-collapse) ease;
     overflow: hidden;
 }
 .gallery-selection-card-footer.fading {
@@ -891,7 +894,7 @@ image-viewer#galleryViewer {
 
 .gallery-section-header .collapsible-chevron {
     color: var(--text-muted);
-    transition: transform calc(var(--t-content) * var(--t-speed)) ease;
+    transition: transform var(--lm-collapse) ease;
 }
 
 .gallery-section-header[aria-expanded="false"] .collapsible-chevron {
@@ -906,7 +909,7 @@ image-viewer#galleryViewer {
 #galleryContent {
     overflow: hidden;
     max-height: 100000px;
-    transition: max-height calc(var(--t-menu) * 1.17 * var(--t-speed)) ease, opacity var(--lm-fade) ease;
+    transition: max-height var(--lm-collapse) ease, opacity var(--lm-fade) ease;
     opacity: 1;
 }
 
@@ -918,7 +921,7 @@ image-viewer#galleryViewer {
 .profile-gallery {
     overflow: hidden;
     max-height: 100000px;
-    transition: max-height calc(var(--t-menu) * 1.17 * var(--t-speed)) ease, opacity var(--lm-fade) ease;
+    transition: max-height var(--lm-collapse) ease, opacity var(--lm-fade) ease;
     opacity: 1;
 }
 
@@ -1081,7 +1084,7 @@ image-viewer#galleryViewer {
     color: var(--text-muted);
     opacity: 0.6;
     margin-left: 0.25rem;
-    transition: transform calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
+    transition: transform var(--lm-collapse) ease;
 }
 .rq-section-header[aria-expanded="false"] .rq-section-chevron {
     transform: rotate(-90deg);
@@ -1089,7 +1092,7 @@ image-viewer#galleryViewer {
 .rq-section-body {
     overflow: hidden;
     max-height: 20rem;
-    transition: max-height calc(var(--t-content) * var(--t-speed)) ease, opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
+    transition: max-height var(--lm-collapse) ease, opacity var(--lm-collapse) ease;
     opacity: 1;
     display: flex;
     flex-direction: column;
@@ -1229,7 +1232,7 @@ image-viewer#galleryViewer {
     font-size: 0.625rem;
     color: var(--text-muted);
     margin-left: auto;
-    transition: transform calc(var(--t-content) * var(--t-speed)) ease;
+    transition: transform var(--lm-collapse) ease;
     transform: rotate(180deg);
 }
 .rq-menu-expanded .rq-menu-chevron {
@@ -1244,9 +1247,9 @@ image-viewer#galleryViewer {
     max-height: 0;
     opacity: 0;
     padding: 0 0.5rem;
-    transition: max-height calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.4, 0, 0.2, 1),
-                opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
-                padding calc(var(--t-menu) * var(--t-speed)) ease;
+    transition: max-height var(--lm-collapse) cubic-bezier(0.4, 0, 0.2, 1),
+                opacity var(--lm-collapse) ease,
+                padding var(--lm-collapse) ease;
 }
 .rq-menu-expanded .rq-menu-body {
     /* fill all remaining space in the menu */

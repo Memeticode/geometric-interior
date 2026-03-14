@@ -71,6 +71,10 @@
     --lm-d2:     calc(var(--lm-d2-base)   * var(--t-speed)); /* phase 2 delay */
     --lm-d3:     calc(var(--lm-d3-base)   * var(--t-speed)); /* phase 3 delay */
 
+    /* ── Collapse/expand sections (gen-config, modals, param rows, etc.) ── */
+    --lm-collapse-base: 0.2s;
+    --lm-collapse: calc(var(--lm-collapse-base) * var(--t-speed));
+
     /* ── Content-tier fade — image crossfade, morph row fading, etc. ── */
     --lm-fade:   calc(var(--t-content) * var(--t-speed));
 }

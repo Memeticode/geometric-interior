@@ -63,9 +63,9 @@
     opacity: 0;
     overflow: hidden;
     pointer-events: none;
-    transition: max-height calc(var(--t-menu) * var(--t-speed)) ease, opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
-                padding calc(var(--t-menu) * var(--t-speed)) ease, margin-top calc(var(--t-menu) * var(--t-speed)) ease,
-                border-color calc(var(--t-menu) * var(--t-speed)) ease;
+    transition: max-height var(--lm-collapse) ease, opacity var(--lm-collapse) ease,
+                padding var(--lm-collapse) ease, margin-top var(--lm-collapse) ease,
+                border-color var(--lm-collapse) ease;
 }
 
 .profile-card.expanded .profile-card-details {

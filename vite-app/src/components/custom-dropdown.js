@@ -144,31 +144,52 @@ function initMorph(el, { initialValue, onSelect }) {
     const activeItem = inner.querySelector('.custom-dropdown-item.active');
     const anyItem = inner.querySelector('.custom-dropdown-item');
     const itemH = activeItem?.offsetHeight || anyItem?.offsetHeight || 24;
-    el.style.setProperty('--ddm-item-h', itemH + 'px');
 
     const offset = activeItem ? morphOffset(inner, activeItem, isTop()) : 0;
     inner.style.transform = `translateY(${offset}px)`;
 
     el.classList.remove('open');
+    el.style.maxHeight = itemH + 'px'; // explicit px — drives transition
     el.offsetHeight;
-    el.style.transition = '';
-    inner.style.transition = '';
+    el.style.removeProperty('transition');
+    inner.style.removeProperty('transition');
 
-    // ── Open / close ──
+    // ── Open / close with fade ──
+    const FADE_MS = 120;
+    let fadeTimer = 0;
+
     function doOpen() {
         if (el.classList.contains('open')) return;
-        el.classList.add('open');
-        inner.style.transform = 'translateY(0)';
-        el.setAttribute('aria-expanded', 'true');
+        clearTimeout(fadeTimer);
+        // Phase 1: fade out current visible text
+        inner.style.opacity = '0';
+        fadeTimer = setTimeout(() => {
+            // Phase 2: expand + reset translateY
+            el.classList.add('open');
+            inner.style.transform = 'translateY(0)';
+            el.setAttribute('aria-expanded', 'true');
+            el.style.maxHeight = (inner.scrollHeight + 8) + 'px'; // explicit px
+            // Phase 3: fade items in (next frame so opacity:0 registers)
+            requestAnimationFrame(() => { inner.style.opacity = ''; });
+        }, FADE_MS);
     }
 
     function doClose() {
         if (!el.classList.contains('open')) return;
-        const active = inner.querySelector('.custom-dropdown-item.active');
-        const off = active ? morphOffset(inner, active, isTop()) : 0;
-        el.classList.remove('open');
-        inner.style.transform = `translateY(${off}px)`;
-        el.setAttribute('aria-expanded', 'false');
+        clearTimeout(fadeTimer);
+        // Phase 1: fade out items
+        inner.style.opacity = '0';
+        fadeTimer = setTimeout(() => {
+            // Phase 2: collapse + offset to active item
+            const active = inner.querySelector('.custom-dropdown-item.active');
+            const off = active ? morphOffset(inner, active, isTop()) : 0;
+            el.classList.remove('open');
+            inner.style.transform = `translateY(${off}px)`;
+            el.setAttribute('aria-expanded', 'false');
+            el.style.maxHeight = itemH + 'px'; // back to single item
+            // Phase 3: fade active item back in
+            requestAnimationFrame(() => { inner.style.opacity = ''; });
+        }, FADE_MS);
     }
 
     // Click on element itself toggles when collapsed (acts as button)

@@ -40,7 +40,7 @@
 .param-section-header .collapsible-chevron {
     font-size: 0.6875rem;
     color: var(--text-muted);
-    transition: transform calc(var(--t-content) * var(--t-speed)) ease;
+    transition: transform var(--lm-collapse) ease;
 }
 
 .param-section-header[aria-expanded="false"] .collapsible-chevron {
@@ -51,7 +51,7 @@
 .param-section-rows {
     overflow: hidden;
     max-height: 100000px;
-    transition: max-height calc(var(--t-menu) * 1.17 * var(--t-speed)) ease, opacity calc(var(--t-content) * var(--t-speed)) ease;
+    transition: max-height var(--lm-collapse) ease, opacity var(--lm-collapse) ease;
     opacity: 1;
 }
 

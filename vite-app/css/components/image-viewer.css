@@ -164,18 +164,17 @@ image-viewer[mode="canvas"] .iv-controls {
 
 /* The element itself — looks like a pill button when collapsed */
 .iv-controls dd-morph {
+    display: block;
     position: relative;
     overflow: hidden;
-    max-height: var(--ddm-item-h, 24px);
-    border-radius: 10px;
+    border-radius: 3px;
     cursor: pointer;
-    transition: max-height calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
-                padding calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
-                border-color calc(var(--t-menu) * var(--t-speed)) ease,
-                box-shadow calc(var(--t-menu) * var(--t-speed)) ease;
+    transition: max-height var(--lm-collapse) cubic-bezier(0.16, 1, 0.3, 1),
+                padding var(--lm-collapse) cubic-bezier(0.16, 1, 0.3, 1),
+                border-color var(--lm-collapse) ease,
+                box-shadow var(--lm-collapse) ease;
 }
 .iv-controls dd-morph.open {
-    max-height: 12rem;
     padding: 0.25rem;
     border-color: rgba(255, 255, 255, 0.15);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
@@ -188,13 +187,15 @@ image-viewer[mode="canvas"] .iv-controls {
     flex-direction: column;
     gap: 0.125rem;
     flex-shrink: 0;
-    transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
+                opacity calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
 /* Items */
 .iv-controls dd-morph .custom-dropdown-item {
     color: rgba(255, 255, 255, 0.7);
     text-align: center;
+    border-radius: 2px;
     transition: background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
                 color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }

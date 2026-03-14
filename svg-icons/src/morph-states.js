@@ -24,6 +24,13 @@ export const COL = {
   array:   { bg: [22, 28, 24], bd: [30, 44, 34] },
   heartbeat: { bg: [26, 22, 26], bd: [40, 30, 40] },
   void_:     { bg: [22, 22, 26], bd: [30, 30, 40] },
+  dimension: { bg: [24, 22, 32], bd: [36, 30, 52] },
+  thorn:     { bg: [32, 24, 22], bd: [52, 34, 30] },
+  knot:      { bg: [22, 30, 28], bd: [30, 48, 44] },
+  gate:      { bg: [30, 28, 22], bd: [50, 44, 30] },
+  wave:      { bg: [22, 26, 32], bd: [30, 38, 52] },
+  coil:      { bg: [30, 22, 28], bd: [48, 30, 44] },
+  portal:    { bg: [26, 22, 30], bd: [40, 30, 50] },
   converge:  { bg: [17, 17, 17], bd: [22, 22, 22] },
   dissipate: { bg: [17, 17, 17], bd: [22, 22, 22] },
 };
@@ -282,27 +289,27 @@ export const bloomState = {
   P1: { cx: 12, cy: 12, r: 7, o: 0.3, sw: 0.75 },
 };
 
-// Void — nebular vortex: compact gaseous wisps
+// Void — nebular vortex: gaseous wisps (scaled 1.2× from center)
 export const voidState = {
-  // Short wispy arms — closer to center, matching animation scale
-  L1: { x1: 9, y1: 8, qx: 7, qy: 10.5, x2: 9, y2: 13, sw: 0.8, da: '2 2', o: 0.4 },
-  L2: { x1: 9, y1: 13, qx: 11, qy: 15, x2: 12.5, y2: 12.5, sw: 0.8, da: '2 2', o: 0.35 },
+  // Spiral arms — scaled 1.35× from center (12,12)
+  L1: { x1: 7.95, y1: 6.6, qx: 5.25, qy: 10, x2: 7.95, y2: 13.35, sw: 0.8, da: '2 2', o: 0.4 },
+  L2: { x1: 7.95, y1: 13.35, qx: 10.65, qy: 16.05, x2: 12.7, y2: 12.7, sw: 0.8, da: '2 2', o: 0.35 },
   // Second arm — opposite side
-  L3: { x1: 15, y1: 16, qx: 17, qy: 13.5, x2: 15, y2: 11, sw: 0.8, da: '2 2', o: 0.4 },
-  L4: { x1: 15, y1: 11, qx: 13, qy: 9, x2: 11.5, y2: 11.5, sw: 0.8, da: '2 2', o: 0.35 },
-  // Gas wisps — small puffy curves
-  L5: { x1: 10, y1: 10, qx: 11.5, qy: 8, x2: 13, y2: 10, sw: 0.5, da: '2 2', o: 0.25 },
-  L6: { x1: 11, y1: 14, qx: 12.5, qy: 16, x2: 14, y2: 14, sw: 0.5, da: '2 2', o: 0.22 },
-  L7: { x1: 9, y1: 11.5, qx: 10, qy: 13, x2: 10.5, y2: 11.5, sw: 0.4, da: '2 3', o: 0.18 },
-  L8: { x1: 13.5, y1: 12.5, qx: 14, qy: 11, x2: 15, y2: 12.5, sw: 0.4, da: '2 3', o: 0.18 },
-  C1: { cx: 12, cy: 12, r: 1.2, o: 0.85 },     // vortex eye
-  C2: { cx: 9.5, cy: 9.5, r: 1, o: 0.28 },     // gas knot
-  C3: { cx: 14.5, cy: 14.5, r: 0.8, o: 0.25 }, // gas knot
-  C4: { cx: 10, cy: 14, r: 0.6, o: 0.18 },     // wisp node
-  C5: { cx: 14, cy: 10, r: 0.6, o: 0.18 },     // wisp node
-  C6: { cx: 13, cy: 11, r: 0.4, o: 0.15 },     // inner mist
+  L3: { x1: 16.05, y1: 17.4, qx: 18.75, qy: 14, x2: 16.05, y2: 10.65, sw: 0.8, da: '2 2', o: 0.4 },
+  L4: { x1: 16.05, y1: 10.65, qx: 13.35, qy: 7.95, x2: 11.3, y2: 11.3, sw: 0.8, da: '2 2', o: 0.35 },
+  // Gas wisps — puffier
+  L5: { x1: 9.3, y1: 9.3, qx: 11.3, qy: 6.6, x2: 13.35, y2: 9.3, sw: 0.5, da: '2 2', o: 0.25 },
+  L6: { x1: 10.65, y1: 14.7, qx: 12.7, qy: 17.4, x2: 14.7, y2: 14.7, sw: 0.5, da: '2 2', o: 0.22 },
+  L7: { x1: 7.95, y1: 11.3, qx: 9.3, qy: 13.35, x2: 10, y2: 11.3, sw: 0.4, da: '2 3', o: 0.18 },
+  L8: { x1: 14, y1: 12.7, qx: 14.7, qy: 10.65, x2: 16.05, y2: 12.7, sw: 0.4, da: '2 3', o: 0.18 },
+  C1: { cx: 12, cy: 12, r: 1.4, o: 0.85 },      // vortex eye
+  C2: { cx: 8.6, cy: 8.6, r: 1.2, o: 0.28 },    // gas knot
+  C3: { cx: 15.4, cy: 15.4, r: 1, o: 0.25 },    // gas knot
+  C4: { cx: 9.3, cy: 14.7, r: 0.7, o: 0.18 },   // wisp node
+  C5: { cx: 14.7, cy: 9.3, r: 0.7, o: 0.18 },   // wisp node
+  C6: { cx: 13.35, cy: 10.65, r: 0.5, o: 0.15 }, // inner mist
   C7: HC,
-  P1: { cx: 12, cy: 12, r: 5, o: 0.18, sw: 0.4 },    // tight containment
+  P1: { cx: 12, cy: 12, r: 6.8, o: 0.18, sw: 0.4 },
 };
 
 // Seer — double-layered alien eye with inner iris aperture
@@ -371,6 +378,172 @@ export const arrayState = {
   P1: { cx: 12, cy: 12, r: 9, o: 0.15, sw: 0.5 },
 };
 
+// Dimension — dimensional overlay: concentric tilted rings suggesting depth
+export const dimensionState = {
+  // Outer ring (two arcs, slight tilt)
+  L1: { x1: 4, y1: 13, qx: 12, qy: 3, x2: 20, y2: 11, sw: 1, da: '100 0', o: 0.5 },
+  L2: { x1: 20, y1: 11, qx: 12, qy: 21, x2: 4, y2: 13, sw: 1, da: '100 0', o: 0.5 },
+  // Middle ring (more tilted, offset)
+  L3: { x1: 6, y1: 14, qx: 12, qy: 5, x2: 18, y2: 10, sw: 0.9, da: '100 0', o: 0.45 },
+  L4: { x1: 18, y1: 10, qx: 12, qy: 19, x2: 6, y2: 14, sw: 0.9, da: '100 0', o: 0.45 },
+  // Inner ring (counter-tilted, dashed)
+  L5: { x1: 9, y1: 10, qx: 12, qy: 7, x2: 15, y2: 14, sw: 0.75, da: '3 2', o: 0.4 },
+  L6: { x1: 15, y1: 14, qx: 12, qy: 17, x2: 9, y2: 10, sw: 0.75, da: '3 2', o: 0.4 },
+  // Energy wisps leaking from rift
+  L7: { x1: 12, y1: 11, qx: 4, qy: 7, x2: 3, y2: 4, sw: 0.5, da: '2 3', o: 0.25 },
+  L8: { x1: 12, y1: 13, qx: 20, qy: 17, x2: 21, y2: 20, sw: 0.5, da: '2 3', o: 0.25 },
+  C1: { cx: 12, cy: 12, r: 1.5, o: 0.85 },   // rift center
+  C2: { cx: 4, cy: 13, r: 0.5, o: 0.35 },    // outer ring anchor
+  C3: { cx: 20, cy: 11, r: 0.5, o: 0.35 },   // outer ring anchor
+  C4: { cx: 3, cy: 4, r: 0.4, o: 0.25 },     // wisp tip
+  C5: { cx: 21, cy: 20, r: 0.4, o: 0.25 },   // wisp tip
+  C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 9, o: 0.15, sw: 0.5 },
+};
+
+// Thorn — radiating ward: aggressive spikes from central mass
+export const thornState = {
+  // Central stem — slight curve, asymmetric
+  L1: { x1: 11, y1: 20, qx: 11.5, qy: 14, x2: 12, y2: 6, sw: 1.4, da: '100 0', o: 0.65 },
+  // Main right branch
+  L2: { x1: 12, y1: 10, qx: 16, qy: 8, x2: 20, y2: 5, sw: 1.1, da: '100 0', o: 0.55 },
+  // Main left branch
+  L3: { x1: 11.5, y1: 14, qx: 7, qy: 13, x2: 3, y2: 10, sw: 1.1, da: '100 0', o: 0.5 },
+  // Secondary right-lower branch
+  L4: { x1: 11.8, y1: 16, qx: 15, qy: 17, x2: 18, y2: 19, sw: 0.8, da: '100 0', o: 0.4 },
+  // Barb hook on right branch tip
+  L5: { x1: 20, y1: 5, qx: 19, qy: 3, x2: 17, y2: 4, sw: 0.7, da: '100 0', o: 0.45 },
+  // Barb hook on left branch tip
+  L6: { x1: 3, y1: 10, qx: 2.5, qy: 12, x2: 4, y2: 13, sw: 0.6, da: '100 0', o: 0.35 },
+  // Small spur from stem
+  L7: { x1: 11.8, y1: 8, qx: 14, qy: 6, x2: 15.5, y2: 4, sw: 0.5, da: '3 2', o: 0.3 },
+  // Root tendril at base
+  L8: { x1: 11, y1: 20, qx: 8, qy: 21, x2: 6, y2: 20, sw: 0.6, da: '2 2', o: 0.25 },
+  C1: { cx: 12, cy: 12, r: 1.2, o: 0.7 },       // central growth node
+  C2: { cx: 20, cy: 5, r: 0.6, o: 0.5 },        // right branch tip
+  C3: { cx: 3, cy: 10, r: 0.5, o: 0.4 },        // left branch tip
+  C4: { cx: 18, cy: 19, r: 0.4, o: 0.3 },       // lower-right tip
+  C5: { cx: 15.5, cy: 4, r: 0.35, o: 0.25 },    // spur tip
+  C6: { cx: 6, cy: 20, r: 0.3, o: 0.2 },        // root tip
+  C7: HC,
+  P1: { cx: 11.5, cy: 12, r: 7, o: 0.1, sw: 0.3 },
+};
+
+// Knot — figure-8 infinity knot: continuous strand with over/under crossings
+export const knotState = {
+  // Main strand — 4 segments forming figure-8 loop
+  L1: { x1: 12, y1: 10, qx: 6, qy: 4, x2: 5, y2: 10, sw: 1.3, da: '100 0', o: 0.7 },     // left lobe top (OVER)
+  L2: { x1: 5, y1: 10, qx: 4, qy: 16, x2: 12, y2: 14, sw: 1.3, da: '100 0', o: 0.35 },    // left lobe bottom (UNDER)
+  L3: { x1: 12, y1: 14, qx: 18, qy: 20, x2: 19, y2: 14, sw: 1.3, da: '100 0', o: 0.7 },   // right lobe bottom (OVER)
+  L4: { x1: 19, y1: 14, qx: 20, qy: 8, x2: 12, y2: 10, sw: 1.3, da: '100 0', o: 0.35 },   // right lobe top (UNDER)
+  // Inner parallel traces for thickness illusion
+  L5: { x1: 12, y1: 10.5, qx: 7, qy: 5, x2: 6, y2: 10, sw: 0.6, da: '3 2', o: 0.25 },
+  L6: { x1: 6, y1: 10, qx: 5, qy: 15, x2: 12, y2: 13.5, sw: 0.6, da: '3 2', o: 0.2 },
+  L7: { x1: 12, y1: 13.5, qx: 17, qy: 19, x2: 18, y2: 14, sw: 0.6, da: '3 2', o: 0.25 },
+  L8: { x1: 18, y1: 14, qx: 19, qy: 9, x2: 12, y2: 10.5, sw: 0.6, da: '3 2', o: 0.2 },
+  C1: { cx: 12, cy: 12, r: 1, o: 0.65 },       // center crossing nexus
+  C2: { cx: 5, cy: 10, r: 0.6, o: 0.45 },      // left apex
+  C3: { cx: 19, cy: 14, r: 0.6, o: 0.45 },     // right apex
+  C4: { cx: 8, cy: 6, r: 0.35, o: 0.25 },      // upper-left strand marker
+  C5: { cx: 16, cy: 18, r: 0.35, o: 0.25 },    // lower-right strand marker
+  C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 8, o: 0.12, sw: 0.4 },
+};
+
+// Gate — dimensional threshold: gothic arch doorway, closed static, opens in animation
+export const gateState = {
+  // Pillars
+  L1: { ...S(7, 20, 7, 7), sw: 1.5, da: '100 0', o: 0.65 },
+  L2: { ...S(17, 20, 17, 7), sw: 1.5, da: '100 0', o: 0.65 },
+  // Pointed arch connecting pillars
+  L3: { x1: 7, y1: 7, qx: 12, qy: 2, x2: 17, y2: 7, sw: 1.5, da: '100 0', o: 0.6 },
+  // Left door — curves from left pillar base to center (closed)
+  L4: { x1: 7, y1: 20, qx: 9.5, qy: 16.5, x2: 12, y2: 13, sw: 1, da: '100 0', o: 0.5 },
+  // Right door — curves from right pillar base to center (closed)
+  L5: { x1: 17, y1: 20, qx: 14.5, qy: 16.5, x2: 12, y2: 13, sw: 1, da: '100 0', o: 0.5 },
+  // Inner energy line — hidden when closed
+  L6: { ...S(9, 16, 15, 16), sw: 0.5, da: '2 3', o: 0.05 },
+  // Pillar rune marks
+  L7: { ...S(5, 14, 7, 14), sw: 0.4, da: '100 0', o: 0.15 },
+  L8: { ...S(17, 14, 19, 14), sw: 0.4, da: '100 0', o: 0.15 },
+  C1: { cx: 12, cy: 4, r: 0.7, o: 0.5 },     // keystone (dim when closed)
+  C2: { cx: 7, cy: 20, r: 0.5, o: 0.5 },     // left base
+  C3: { cx: 17, cy: 20, r: 0.5, o: 0.5 },    // right base
+  C4: { cx: 12, cy: 12, r: 0.8, o: 0.05 },   // inner void (hidden when closed)
+  C5: { cx: 12, cy: 17, r: 0.4, o: 0.05 },   // floating node (hidden when closed)
+  C6: HC, C7: HC,
+  P1: { cx: 12, cy: 13, r: 4, o: 0.08, sw: 0.3 },
+};
+
+// Wave — flowing current: parallel sinusoidal energy lines
+export const waveState = {
+  // Top wave (two halves) — meets at x=11.5
+  L1: { x1: 3, y1: 7, qx: 7, qy: 3, x2: 11.5, y2: 7, sw: 1.2, da: '100 0', o: 0.6 },
+  L2: { x1: 11.5, y1: 7, qx: 16, qy: 11, x2: 21, y2: 7, sw: 1.2, da: '100 0', o: 0.6 },
+  // Middle wave — meets at x=12
+  L3: { x1: 3, y1: 12, qx: 7.5, qy: 8, x2: 12, y2: 12, sw: 1, da: '100 0', o: 0.5 },
+  L4: { x1: 12, y1: 12, qx: 16.5, qy: 16, x2: 21, y2: 12, sw: 1, da: '100 0', o: 0.5 },
+  // Bottom wave — meets at x=12.5
+  L5: { x1: 3, y1: 17, qx: 8, qy: 13, x2: 12.5, y2: 17, sw: 0.8, da: '100 0', o: 0.4 },
+  L6: { x1: 12.5, y1: 17, qx: 17, qy: 21, x2: 21, y2: 17, sw: 0.8, da: '100 0', o: 0.4 },
+  // Vertical connecting wisps
+  L7: { x1: 7, y1: 9, qx: 8, qy: 10, x2: 7, y2: 14, sw: 0.4, da: '2 3', o: 0.18 },
+  L8: { x1: 17, y1: 9, qx: 16, qy: 10, x2: 17, y2: 14, sw: 0.4, da: '2 3', o: 0.18 },
+  C1: { cx: 12, cy: 12, r: 0.3, o: 0.12 },   // very dim center
+  C2: { cx: 3, cy: 7, r: 0.4, o: 0.35 },     // wave origins
+  C3: { cx: 3, cy: 12, r: 0.35, o: 0.3 },
+  C4: { cx: 3, cy: 17, r: 0.3, o: 0.25 },
+  C5: { cx: 21, cy: 7, r: 0.4, o: 0.35 },    // wave endpoints
+  C6: { cx: 21, cy: 12, r: 0.35, o: 0.3 },
+  C7: HC,
+  P1: { cx: 12, cy: 12, r: 9, o: 0.12, sw: 0.4 },
+};
+
+// Coil — helix rune: intertwined double-strand with cross-rungs
+export const coilState = {
+  // Strand A — S-curve (top-left to bottom-right)
+  L1: { x1: 8, y1: 3, qx: 4, qy: 8, x2: 12, y2: 12, sw: 1.1, da: '100 0', o: 0.55 },
+  L2: { x1: 12, y1: 12, qx: 20, qy: 16, x2: 16, y2: 21, sw: 1.1, da: '100 0', o: 0.55 },
+  // Strand B — reverse S-curve (top-right to bottom-left)
+  L3: { x1: 16, y1: 3, qx: 20, qy: 8, x2: 12, y2: 12, sw: 1.1, da: '100 0', o: 0.55 },
+  L4: { x1: 12, y1: 12, qx: 4, qy: 16, x2: 8, y2: 21, sw: 1.1, da: '100 0', o: 0.55 },
+  // Cross-rungs connecting strands
+  L5: { ...S(9, 6, 15, 6), sw: 0.6, da: '3 2', o: 0.3 },
+  L6: { ...S(7, 10, 17, 10), sw: 0.5, da: '3 2', o: 0.25 },
+  L7: { ...S(7, 14, 17, 14), sw: 0.5, da: '3 2', o: 0.25 },
+  L8: { ...S(9, 18, 15, 18), sw: 0.6, da: '3 2', o: 0.3 },
+  C1: { cx: 12, cy: 12, r: 1, o: 0.7 },      // center crossing
+  C2: { cx: 8, cy: 3, r: 0.5, o: 0.45 },     // strand A top
+  C3: { cx: 16, cy: 3, r: 0.5, o: 0.45 },    // strand B top
+  C4: { cx: 16, cy: 21, r: 0.5, o: 0.45 },   // strand A bottom
+  C5: { cx: 8, cy: 21, r: 0.5, o: 0.45 },    // strand B bottom
+  C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 8, o: 0.15, sw: 0.5 },
+};
+
+// Portal — dimensional rift: jagged vertical tear, sealed/open cycle
+export const portalState = {
+  // Left rift edge (top to bottom)
+  L1: { x1: 10, y1: 3, qx: 8, qy: 6, x2: 11, y2: 8, sw: 1.1, da: '100 0', o: 0.55 },
+  L2: { x1: 11, y1: 8, qx: 9, qy: 12, x2: 10.5, y2: 14, sw: 1.1, da: '100 0', o: 0.5 },
+  L3: { x1: 10.5, y1: 14, qx: 8.5, qy: 18, x2: 11, y2: 21, sw: 1.1, da: '100 0', o: 0.55 },
+  // Right rift edge (mirrors left)
+  L4: { x1: 14, y1: 3, qx: 16, qy: 6, x2: 13, y2: 8, sw: 1.1, da: '100 0', o: 0.55 },
+  L5: { x1: 13, y1: 8, qx: 15, qy: 12, x2: 13.5, y2: 14, sw: 1.1, da: '100 0', o: 0.5 },
+  L6: { x1: 13.5, y1: 14, qx: 15.5, qy: 18, x2: 13, y2: 21, sw: 1.1, da: '100 0', o: 0.55 },
+  // Seal marks crossing the gap
+  L7: { ...S(10.5, 9, 13.5, 9), sw: 0.7, da: '2 1.5', o: 0.4 },
+  L8: { ...S(10, 15, 14, 15), sw: 0.7, da: '2 1.5', o: 0.35 },
+  C1: { cx: 12, cy: 12, r: 0.5, o: 0.15 },    // center void (dim when sealed)
+  C2: { cx: 10, cy: 3, r: 0.4, o: 0.4 },      // top-left rift tip
+  C3: { cx: 14, cy: 3, r: 0.4, o: 0.4 },      // top-right rift tip
+  C4: { cx: 11, cy: 21, r: 0.4, o: 0.35 },    // bottom-left tip
+  C5: { cx: 13, cy: 21, r: 0.4, o: 0.35 },    // bottom-right tip
+  C6: { cx: 12, cy: 9, r: 0.3, o: 0.3 },      // upper seal node
+  C7: { cx: 12, cy: 15, r: 0.3, o: 0.3 },     // lower seal node
+  P1: { cx: 12, cy: 12, r: 9, o: 0.08, sw: 0.3 },
+};
+
 // Converge — all primitives collapse to center point (materialize/dematerialize)
 export const convergeState = {
   L1: HP, L2: HP, L3: HP, L4: HP, L5: HP, L6: HP, L7: HP, L8: HP,
@@ -408,14 +581,16 @@ export const STATES = {
   beacon: beaconState, hex: hexState, orbit: orbitState,
   sigil: sigilState, fracture: fractureState, bloom: bloomState,
   void: voidState, seer: seerState, pulse: pulseState,
-  array: arrayState,
+  array: arrayState, dimension: dimensionState, thorn: thornState,
+  knot: knotState, gate: gateState, wave: waveState, coil: coilState,
+  portal: portalState,
 };
 
 // ── Subgroups for organized display ──
 export const STATE_GROUPS = [
   { name: 'transitions', keys: ['converge', 'dissipate'] },
   { name: 'utility', keys: ['error', 'eye', 'heartbeat', 'loading', 'retry', 'scan'] },
-  { name: 'alien', keys: ['array', 'beacon', 'bloom', 'cross', 'dots', 'fracture', 'glyph', 'hex', 'orbit', 'pulse', 'seer', 'sigil', 'void'] },
+  { name: 'alien', keys: ['array', 'beacon', 'bloom', 'coil', 'cross', 'dots', 'fracture', 'gate', 'glyph', 'hex', 'knot', 'orbit', 'portal', 'pulse', 'seer', 'sigil', 'thorn', 'void', 'dimension', 'wave'] },
 ];
 
 // Resolve COL key for a state key

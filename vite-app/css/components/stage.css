@@ -49,7 +49,7 @@
     border-radius: 0 0 6px 6px;
     overflow: hidden;
     max-height: 0;
-    transition: max-height calc(var(--t-menu) * 1.17 * var(--t-speed)) ease;
+    transition: max-height var(--lm-collapse) ease;
 }
 
 .render-card .generated-title {

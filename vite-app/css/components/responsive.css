@@ -35,11 +35,6 @@
         --gen-gap: 0.875rem;
     }
 
-    /* Gallery — restore padding */
-    .gallery-page .main-content {
-        padding: 0 1rem;
-    }
-
     /* Header — restore single-row layout */
     .app-header {
         flex-wrap: nowrap;
@@ -159,10 +154,10 @@
         width: min(25rem, 90vw);
     }
 
-    /* Gallery */
     .gallery-page .main-content {
-        padding: 1rem 2rem 0;
+        padding: 1rem;
     }
+
     .gallery-controls {
         --icon-btn-size: 24px;
         --icon-btn-icon: 14px;

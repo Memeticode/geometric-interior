@@ -172,23 +172,37 @@ const ICON_INFO = {
   cross: {
     desc: 'negation mark',
     anim: (elMap, state, now) => {
-      // Dingy neon flicker: 3 incommensurate sine waves
-      const f1 = Math.sin(now / 137 * Math.PI * 2);
-      const f2 = Math.sin(now / 293 * Math.PI * 2) * 0.7;
-      const f3 = Math.sin(now / 571 * Math.PI * 2) * 0.4;
-      const flicker = (f1 + f2 + f3) / 2.1;
-      const brightness = Math.max(0.08, 0.5 + 0.5 * flicker);
+      // Stability envelope: mostly stable, brief flicker bursts
+      const envCycle = 8000;
+      const envPhase = (now % envCycle) / envCycle;
+      let brightness;
+      if (envPhase < 0.70) {
+        // Stable — near-full brightness with tiny tremor
+        brightness = 0.92 + 0.08 * Math.sin(now / 3000 * Math.PI * 2);
+      } else if (envPhase < 0.85) {
+        // Flicker burst
+        const burstT = (envPhase - 0.70) / 0.15;
+        const flickerAmp = Math.sin(burstT * Math.PI);
+        const f1 = Math.sin(now / 137 * Math.PI * 2);
+        const f2 = Math.sin(now / 293 * Math.PI * 2) * 0.7;
+        const f3 = Math.sin(now / 571 * Math.PI * 2) * 0.4;
+        const flicker = (f1 + f2 + f3) / 2.1;
+        brightness = Math.max(0.04, 0.5 + 0.5 * flicker * flickerAmp);
+      } else {
+        // Brief dim/recovery — ramp back up
+        const recovT = (envPhase - 0.85) / 0.15;
+        brightness = 0.3 + 0.62 * recovT;
+      }
       modAllOpacity(elMap, state, brightness);
-      // SW buzzes with brightness
       const swM = 0.6 + 0.6 * brightness;
       for (let i = 1; i <= 4; i++) modLineSW(elMap, state, 'L' + i, swM);
-      // Intermittent earthquake shake: mostly steady, brief bursts
-      // Two slow waves combine — shake only when both go positive
-      const quake1 = Math.sin(now / 2300 * Math.PI * 2);
-      const quake2 = Math.sin(now / 3700 * Math.PI * 2);
-      const quakeIntensity = Math.max(0, (quake1 + quake2 - 0.8)) / 1.2; // 0 most of the time
-      const jx = (Math.sin(now / 83) * 0.25 + Math.sin(now / 197) * 0.2) * quakeIntensity;
-      const jy = (Math.sin(now / 109) * 0.25 + Math.cos(now / 167) * 0.2) * quakeIntensity;
+      // Rare earthquake: 3 very slow waves must align
+      const quake1 = Math.sin(now / 4100 * Math.PI * 2);
+      const quake2 = Math.sin(now / 6700 * Math.PI * 2);
+      const quake3 = Math.sin(now / 9300 * Math.PI * 2);
+      const quakeIntensity = Math.max(0, (quake1 + quake2 + quake3 - 1.8)) / 1.2;
+      const jx = (Math.sin(now / 83) * 0.5 + Math.sin(now / 197) * 0.3) * quakeIntensity;
+      const jy = (Math.sin(now / 109) * 0.5 + Math.cos(now / 167) * 0.3) * quakeIntensity;
       // Rebuild arm paths with intermittent jitter
       elMap.L1.setAttribute('d', `M${12+jx} ${4+jy}Q${12+jx} ${8+jy} ${12+jx} ${12+jy}`);
       elMap.L2.setAttribute('d', `M${12+jx} ${12+jy}Q${12+jx} ${16+jy} ${12+jx} ${20+jy}`);
@@ -380,6 +394,11 @@ const ICON_INFO = {
       L7: { x1: 5, y1: 11, x2: 3, y2: 9 },
       L8: { x1: 14, y1: 19, x2: 15, y2: 21 },
     },
+    // Branch base coords for sway
+    _branches: {
+      L2: { bx: 12, by: 7, tipX: 18, tipY: 4 },
+      L3: { bx: 12, by: 7, tipX: 6, tipY: 4 },
+    },
     anim: (elMap, state, now) => {
       const info = ICON_INFO.pulse;
       // Intact rune strokes L1-L3: phase-offset breathing (spine + branches)
@@ -397,6 +416,27 @@ const ICON_INFO = {
         modEl(elMap, state, 'L' + i, iM);
         modLineSW(elMap, state, 'L' + i, 0.6 + 0.8 * iM);
       }
+      // Branches L2-L3: sway like tree limbs
+      const b2 = info._branches.L2;
+      const b2tx = b2.tipX + Math.sin(now / 6000) * 1.5;
+      const b2ty = b2.tipY + Math.sin(now / 7500) * 0.8;
+      const b2mx = (b2.bx + b2tx) / 2, b2my = (b2.by + b2ty) / 2;
+      const b2dx = b2tx - b2.bx, b2dy = b2ty - b2.by;
+      const b2len = Math.sqrt(b2dx * b2dx + b2dy * b2dy) || 1;
+      const b2px = -b2dy / b2len, b2py = b2dx / b2len;
+      const b2bow = Math.sin(now / 5000) * 0.6;
+      const b2qx = b2mx + b2px * b2bow, b2qy = b2my + b2py * b2bow;
+      elMap.L2.setAttribute('d', `M${b2.bx} ${b2.by}Q${b2qx} ${b2qy} ${b2tx} ${b2ty}`);
+      const b3 = info._branches.L3;
+      const b3tx = b3.tipX + Math.sin(now / 7000) * 1.5;
+      const b3ty = b3.tipY + Math.sin(now / 6500) * 0.8;
+      const b3mx = (b3.bx + b3tx) / 2, b3my = (b3.by + b3ty) / 2;
+      const b3dx = b3tx - b3.bx, b3dy = b3ty - b3.by;
+      const b3len = Math.sqrt(b3dx * b3dx + b3dy * b3dy) || 1;
+      const b3px = -b3dy / b3len, b3py = b3dx / b3len;
+      const b3bow = Math.sin(now / 5500) * 0.6;
+      const b3qx = b3mx + b3px * b3bow, b3qy = b3my + b3py * b3bow;
+      elMap.L3.setAttribute('d', `M${b3.bx} ${b3.by}Q${b3qx} ${b3qy} ${b3tx} ${b3ty}`);
       // Fractured branches L4-L5: slow independent drift
       for (let i = 4; i <= 5; i++) {
         const period = 4500 + i * 700;
@@ -587,11 +627,7 @@ const ICON_INFO = {
       elMap.C6.setAttribute('cy', dotY);
       elMap.C6.setAttribute('r', 0.8);
       elMap.C6.setAttribute('opacity', 1);
-      // P1: localized arc illumination at nearest vertex impact
-      const nearestEdgeVert = Math.round(headPos) % 5; // which edge-vertex (0-4)
-      const nearestNodeIdx = nearestEdgeVert === 0 ? 0 : nodeOrder[nearestEdgeVert - 1] - 1;
-      // For edge 0 completion → vertex 0 (C1), edge 1 → nodeOrder[0]=C1...
-      // Actually: headPos=0→vert[0], headPos=1→vert[1], etc.
+      // P1: multi-segment arc gradient at nearest vertex impact
       const hitVertIdx = ((Math.round(headPos) % 5) + 5) % 5;
       const vertDist = Math.abs(headPos - Math.round(headPos));
       const vertFlash = vertDist < 0.2 ? 1 - vertDist / 0.2 : 0;
@@ -600,18 +636,25 @@ const ICON_INFO = {
       if (baseO > 0) {
         // Arc position of the hit vertex
         const arcPos = vertArcPos[hitVertIdx];
-        // Visible arc length scales with flash intensity
-        const arcLen = 2 + 8 * vertFlash;
-        const gapLen = circumf - arcLen;
-        elMap.P1.setAttribute('stroke-dasharray', `${arcLen.toFixed(1)} ${gapLen.toFixed(1)}`);
-        // Offset so arc centers on vertex: dashoffset shifts the pattern start
-        elMap.P1.setAttribute('stroke-dashoffset', -(arcPos - arcLen / 2).toFixed(1));
-        elMap.P1.setAttribute('opacity', baseO + (1 - baseO) * vertFlash);
+        // 3-segment gradient: primary bright arc + 2 dimmer flanking arcs
+        const mainArc = 2 + 8 * vertFlash;
+        const sideArc = 1 + 3 * vertFlash;
+        const gap1 = 0.5;
+        const gap2 = 0.5;
+        const totalUsed = mainArc + sideArc * 2 + gap1 * 2 + gap2 * 2;
+        const gap3 = Math.max(0.5, circumf - totalUsed);
+        elMap.P1.setAttribute('stroke-dasharray',
+          `${sideArc.toFixed(1)} ${gap2.toFixed(1)} ${mainArc.toFixed(1)} ${gap1.toFixed(1)} ${sideArc.toFixed(1)} ${gap3.toFixed(1)}`);
+        // Offset so pattern centers on vertex (main arc in middle)
+        const patternOffset = sideArc + gap2 + mainArc / 2;
+        elMap.P1.setAttribute('stroke-dashoffset', -(arcPos - patternOffset).toFixed(1));
+        elMap.P1.setAttribute('opacity', baseO + (1 - baseO) * vertFlash * 0.8);
         elMap.P1.setAttribute('stroke-width', baseSW * (1 + 1.5 * vertFlash));
       }
-      // Guide lines L6-L8 dim glow
-      const guideM = 0.3 + 0.15 * Math.sin(now / 2000 * Math.PI * 2);
+      // Guide lines L6-L8 — shinier, faster shimmer, independent phases
       for (let i = 6; i <= 8; i++) {
+        const linePhase = (i - 6) * 2.1;
+        const guideM = 0.5 + 0.25 * Math.sin(now / 1200 * Math.PI * 2 + linePhase);
         modEl(elMap, state, 'L' + i, guideM);
         modLineSW(elMap, state, 'L' + i, 0.6 + 0.5 * guideM);
       }
@@ -619,22 +662,22 @@ const ICON_INFO = {
   },
   void: {
     desc: 'nebular vortex',
-    // Spiral arm base coordinates
+    // Spiral arm base coordinates — scaled 1.35× from center (12,12)
     _spirals: {
-      L1: { x1: 9, y1: 8, qx: 7, qy: 10.5, x2: 9, y2: 13 },
-      L2: { x1: 9, y1: 13, qx: 11, qy: 15, x2: 12.5, y2: 12.5 },
-      L3: { x1: 15, y1: 16, qx: 17, qy: 13.5, x2: 15, y2: 11 },
-      L4: { x1: 15, y1: 11, qx: 13, qy: 9, x2: 11.5, y2: 11.5 },
+      L1: { x1: 7.95, y1: 6.6, qx: 5.25, qy: 10, x2: 7.95, y2: 13.35 },
+      L2: { x1: 7.95, y1: 13.35, qx: 10.65, qy: 16.05, x2: 12.7, y2: 12.7 },
+      L3: { x1: 16.05, y1: 17.4, qx: 18.75, qy: 14, x2: 16.05, y2: 10.65 },
+      L4: { x1: 16.05, y1: 10.65, qx: 13.35, qy: 7.95, x2: 11.3, y2: 11.3 },
     },
-    // Gas wisp base coordinates
+    // Gas wisp base coordinates — scaled 1.35×
     _wisps: {
-      L5: { x1: 10, y1: 10, qx: 11.5, qy: 8, x2: 13, y2: 10 },
-      L6: { x1: 11, y1: 14, qx: 12.5, qy: 16, x2: 14, y2: 14 },
-      L7: { x1: 9, y1: 11.5, qx: 10, qy: 13, x2: 10.5, y2: 11.5 },
-      L8: { x1: 13.5, y1: 12.5, qx: 14, qy: 11, x2: 15, y2: 12.5 },
+      L5: { x1: 9.3, y1: 9.3, qx: 11.3, qy: 6.6, x2: 13.35, y2: 9.3 },
+      L6: { x1: 10.65, y1: 14.7, qx: 12.7, qy: 17.4, x2: 14.7, y2: 14.7 },
+      L7: { x1: 7.95, y1: 11.3, qx: 9.3, qy: 13.35, x2: 10, y2: 11.3 },
+      L8: { x1: 14, y1: 12.7, qx: 14.7, qy: 10.65, x2: 16.05, y2: 12.7 },
     },
     _nodes: {
-      C2: [9.5, 9.5], C3: [14.5, 14.5], C4: [10, 14], C5: [14, 10],
+      C2: [8.6, 8.6], C3: [15.4, 15.4], C4: [9.3, 14.7], C5: [14.7, 9.3],
     },
     anim: (elMap, state, now) => {
       const info = ICON_INFO.void;
@@ -857,6 +900,536 @@ const ICON_INFO = {
       modCircleR(elMap, state, 'C1', 0.8 + 0.4 * cb);
     },
   },
+
+  // ── New alien icons ──
+
+  dimension: {
+    desc: 'dimensional overlay',
+    _rings: [
+      // Outer ring endpoints
+      { ax: 4, ay: 13, bx: 20, by: 11 },
+      // Middle ring endpoints
+      { ax: 6, ay: 14, bx: 18, by: 10 },
+      // Inner ring endpoints
+      { ax: 9, ay: 10, bx: 15, by: 14 },
+    ],
+    _wisps: {
+      L7: { x1: 12, y1: 11, qx: 4, qy: 7, x2: 3, y2: 4 },
+      L8: { x1: 12, y1: 13, qx: 20, qy: 17, x2: 21, y2: 20 },
+    },
+    anim: (elMap, state, now) => {
+      const info = ICON_INFO.dimension;
+      // Each ring wobbles at a different rate, creating dimensional distortion
+      const rates = [7000, 5300, 3700];
+      const amps = [1.5, 2.0, 2.5];
+      for (let r = 0; r < 3; r++) {
+        const ring = info._rings[r];
+        const phase = Math.sin(now / rates[r] * Math.PI * 2);
+        const drift = phase * amps[r];
+        // Wobble the control point Y (arc height) to make rings breathe
+        const baseQyTop = r === 0 ? 3 : r === 1 ? 5 : 7;
+        const baseQyBot = r === 0 ? 21 : r === 1 ? 19 : 17;
+        const qyTop = baseQyTop + drift;
+        const qyBot = baseQyBot - drift;
+        // Also shift endpoints slightly
+        const lateralShift = Math.sin(now / (rates[r] * 0.7)) * (1 + r * 0.3);
+        const ax = ring.ax + lateralShift * 0.5;
+        const ay = ring.ay + drift * 0.3;
+        const bx = ring.bx - lateralShift * 0.5;
+        const by = ring.by - drift * 0.3;
+        const i1 = r * 2 + 1;
+        const i2 = r * 2 + 2;
+        elMap['L' + i1].setAttribute('d', `M${ax} ${ay}Q12 ${qyTop} ${bx} ${by}`);
+        elMap['L' + i2].setAttribute('d', `M${bx} ${by}Q12 ${qyBot} ${ax} ${ay}`);
+        // Per-ring opacity shimmer
+        const shimmer = 0.7 + 0.3 * Math.sin(now / (rates[r] * 0.4));
+        modEl(elMap, state, 'L' + i1, shimmer);
+        modEl(elMap, state, 'L' + i2, shimmer);
+      }
+      // Energy wisps drift and flicker
+      for (const [key, p] of Object.entries(info._wisps)) {
+        const t = now / 4000;
+        const drift = Math.sin(t * Math.PI * 2) * 1.5;
+        elMap[key].setAttribute('d',
+          `M${p.x1} ${p.y1}Q${p.qx + drift * 0.5} ${p.qy + drift} ${p.x2 + drift} ${p.y2 + drift * 0.8}`);
+        const flick = Math.sin(now / 1700 + (key === 'L7' ? 0 : 2)) * 0.5 + 0.5;
+        modEl(elMap, state, key, 0.3 + 0.7 * flick);
+      }
+      // Center pulses with dimensional energy
+      const pulse = Math.sin(now / 2000 * Math.PI * 2) * 0.3 + 0.7;
+      modCircleR(elMap, state, 'C1', 0.7 + 0.5 * pulse);
+      modEl(elMap, state, 'C1', pulse);
+      // Anchor nodes dim pulse
+      for (let i = 2; i <= 5; i++) {
+        const s = Math.sin(now / (3000 + i * 500)) * 0.5 + 0.5;
+        modEl(elMap, state, 'C' + i, 0.3 + 0.7 * s);
+      }
+      // Ring breathes
+      const ringBreath = Math.sin(now / 6000 * Math.PI * 2) * 0.5 + 0.5;
+      elMap.P1.setAttribute('r', 9 + ringBreath * 1);
+      modEl(elMap, state, 'P1', 0.1 + 0.1 * ringBreath);
+    },
+  },
+
+  thorn: {
+    desc: 'organic thorny growth',
+    // Branch definitions: origin, base tip, control point, phase delay, line index
+    _branches: [
+      { ox: 12, oy: 10, tx: 20, ty: 5, qx: 16, qy: 8, phase: 0, li: 2 },       // right branch
+      { ox: 11.5, oy: 14, tx: 3, ty: 10, qx: 7, qy: 13, phase: 0.15, li: 3 },   // left branch
+      { ox: 11.8, oy: 16, tx: 18, ty: 19, qx: 15, qy: 17, phase: 0.25, li: 4 },  // secondary right
+    ],
+    _barbs: [
+      { parent: 0, bx: 20, by: 5, tx: 17, ty: 4, qx: 19, qy: 3, li: 5 },
+      { parent: 1, bx: 3, by: 10, tx: 4, ty: 13, qx: 2.5, qy: 12, li: 6 },
+    ],
+    anim: (elMap, state, now) => {
+      const info = ICON_INFO.thorn;
+      const cycle = 6000;
+      const t = (now % cycle) / cycle;
+      // Asymmetric growth: 40% rise, 60% slow retract
+      const masterGrowth = t < 0.4
+        ? 0.5 * (1 - Math.cos(Math.PI * t / 0.4))
+        : 0.5 * (1 + Math.cos(Math.PI * (t - 0.4) / 0.6));
+
+      // Stem L1 — organic sway
+      const stemSway = Math.sin(now / 4000) * 0.8;
+      elMap.L1.setAttribute('d', `M11 20Q${11.5 + stemSway * 0.3} 14 12 ${6 - masterGrowth * 1.5}`);
+      modEl(elMap, state, 'L1', 0.55 + 0.2 * masterGrowth);
+
+      // Per-branch staggered growth + perpendicular sway
+      for (const b of info._branches) {
+        const localT = ((now / cycle) - b.phase + 100) % 1;
+        const lg = localT < 0.4
+          ? 0.5 * (1 - Math.cos(Math.PI * localT / 0.4))
+          : 0.5 * (1 + Math.cos(Math.PI * (localT - 0.4) / 0.6));
+        const ext = 0.7 + 0.3 * lg;
+        const sway = Math.sin(now / (3000 + b.phase * 4000)) * 0.6;
+        const dx = b.ty - b.oy, dy = -(b.tx - b.ox);
+        const len = Math.sqrt(dx * dx + dy * dy) || 1;
+        const tipX = b.ox + (b.tx - b.ox) * ext + (dx / len) * sway;
+        const tipY = b.oy + (b.ty - b.oy) * ext + (dy / len) * sway;
+        const qx = b.ox + (b.qx - b.ox) * ext + (dx / len) * sway * 0.5;
+        const qy = b.oy + (b.qy - b.oy) * ext + (dy / len) * sway * 0.5;
+        elMap['L' + b.li].setAttribute('d', `M${b.ox} ${b.oy}Q${qx} ${qy} ${tipX} ${tipY}`);
+        modEl(elMap, state, 'L' + b.li, 0.35 + 0.4 * lg);
+        elMap['C' + b.li].setAttribute('cx', tipX);
+        elMap['C' + b.li].setAttribute('cy', tipY);
+        modCircleR(elMap, state, 'C' + b.li, 0.3 + 0.5 * lg);
+        modEl(elMap, state, 'C' + b.li, 0.2 + 0.5 * lg);
+      }
+
+      // Barb hooks — lag behind parent branch
+      for (const barb of info._barbs) {
+        const pb = info._branches[barb.parent];
+        const pT = ((now / cycle) - pb.phase + 100) % 1;
+        const pg = pT < 0.4 ? 0.5 * (1 - Math.cos(Math.PI * pT / 0.4))
+          : 0.5 * (1 + Math.cos(Math.PI * (pT - 0.4) / 0.6));
+        const barbExt = pg > 0.3 ? (pg - 0.3) / 0.7 : 0;
+        const bx = barb.bx + (barb.tx - barb.bx) * barbExt;
+        const by = barb.by + (barb.ty - barb.by) * barbExt;
+        const bqx = barb.bx + (barb.qx - barb.bx) * barbExt;
+        const bqy = barb.by + (barb.qy - barb.by) * barbExt;
+        elMap['L' + barb.li].setAttribute('d', `M${barb.bx} ${barb.by}Q${bqx} ${bqy} ${bx} ${by}`);
+        modEl(elMap, state, 'L' + barb.li, 0.15 + 0.4 * barbExt);
+      }
+
+      // Spur L7
+      const spurExt = 0.6 + 0.4 * masterGrowth;
+      const spurTX = 11.8 + (15.5 - 11.8) * spurExt;
+      const spurTY = 8 + (4 - 8) * spurExt;
+      elMap.L7.setAttribute('d', `M11.8 8Q14 6 ${spurTX} ${spurTY}`);
+      modEl(elMap, state, 'L7', 0.15 + 0.25 * masterGrowth);
+      elMap.C5.setAttribute('cx', spurTX);
+      elMap.C5.setAttribute('cy', spurTY);
+      modEl(elMap, state, 'C5', 0.1 + 0.25 * masterGrowth);
+
+      // Root tendril L8
+      const rootSway = Math.sin(now / 5000) * 1.2;
+      elMap.L8.setAttribute('d', `M11 20Q${8 + rootSway} 21 ${6 + rootSway * 0.5} 20`);
+      modEl(elMap, state, 'L8', 0.15 + 0.15 * (Math.sin(now / 3500) * 0.5 + 0.5));
+      elMap.C6.setAttribute('cx', 6 + rootSway * 0.5);
+      modEl(elMap, state, 'C6', 0.1 + 0.15 * masterGrowth);
+
+      // Central node C1 breathes with growth
+      modCircleR(elMap, state, 'C1', 0.8 + 0.4 * masterGrowth + 0.2 * Math.sin(now / 2000));
+      modEl(elMap, state, 'C1', 0.5 + 0.3 * masterGrowth);
+      // P1 ring
+      modEl(elMap, state, 'P1', 0.08 + 0.1 * masterGrowth);
+    },
+  },
+
+  knot: {
+    desc: 'figure-8 infinity knot',
+    // 4-segment figure-8 loop: L1(over) → L2(under) → L3(over) → L4(under)
+    _segs: [
+      { x1: 12, y1: 10, qx: 6, qy: 4, x2: 5, y2: 10, baseO: 0.7 },     // left top OVER
+      { x1: 5, y1: 10, qx: 4, qy: 16, x2: 12, y2: 14, baseO: 0.35 },    // left bottom UNDER
+      { x1: 12, y1: 14, qx: 18, qy: 20, x2: 19, y2: 14, baseO: 0.7 },   // right bottom OVER
+      { x1: 19, y1: 14, qx: 20, qy: 8, x2: 12, y2: 10, baseO: 0.35 },   // right top UNDER
+    ],
+    anim: (elMap, state, now) => {
+      const info = ICON_INFO.knot;
+      const segs = info._segs;
+      // Energy pulse travels 4-segment loop (3000ms)
+      const cycle = 3000;
+      const t = (now % cycle) / cycle;
+      const headPos = t * 4;
+
+      // Gentle tighten/loosen — control points breathe toward/away from center
+      const breathe = Math.sin(now / 5000 * Math.PI * 2) * 0.12;
+
+      for (let i = 0; i < 4; i++) {
+        const s = segs[i];
+        // Pulse brightness for this segment
+        let dist = headPos - i;
+        if (dist < 0) dist += 4;
+        const pulse = dist < 1.5 ? Math.max(0, 1 - dist / 1.5) : 0;
+        // Over segments stay bright, under stay dim; pulse adds on top
+        const opacity = s.baseO + 0.3 * pulse;
+        modEl(elMap, state, 'L' + (i + 1), opacity);
+        modLineSW(elMap, state, 'L' + (i + 1), 0.9 + 0.4 * pulse);
+
+        // Breathe control points toward/away from center (12,12)
+        const qx = s.qx + (12 - s.qx) * breathe;
+        const qy = s.qy + (12 - s.qy) * breathe;
+        elMap['L' + (i + 1)].setAttribute('d',
+          `M${s.x1} ${s.y1}Q${qx} ${qy} ${s.x2} ${s.y2}`);
+      }
+
+      // Inner traces L5-L8 follow pulse with slight delay
+      for (let i = 0; i < 4; i++) {
+        let dist = headPos - i - 0.3; // slight delay
+        if (dist < 0) dist += 4;
+        const pulse = dist < 1.2 ? Math.max(0, 1 - dist / 1.2) : 0;
+        modEl(elMap, state, 'L' + (i + 5), 0.12 + 0.25 * pulse);
+      }
+
+      // Crossing nodes flash as pulse passes
+      // C1 center — flashes twice per cycle (at crossings)
+      const c1dist1 = headPos < 1 ? headPos : (headPos > 2 && headPos < 3 ? headPos - 2 : 2);
+      const c1flash = Math.max(
+        headPos < 0.8 ? 1 - headPos / 0.8 : 0,
+        (headPos > 2 && headPos < 2.8) ? 1 - (headPos - 2) / 0.8 : 0
+      );
+      modCircleR(elMap, state, 'C1', 0.7 + 0.6 * c1flash);
+      modEl(elMap, state, 'C1', 0.5 + 0.4 * c1flash);
+
+      // C2 left apex — flashes when pulse at segment 0-1 junction
+      let d2 = Math.abs(headPos - 1);
+      if (d2 > 2) d2 = 4 - d2;
+      const c2flash = d2 < 0.6 ? 1 - d2 / 0.6 : 0;
+      modCircleR(elMap, state, 'C2', 0.4 + 0.4 * c2flash);
+      modEl(elMap, state, 'C2', 0.3 + 0.4 * c2flash);
+
+      // C3 right apex — flashes when pulse at segment 2-3 junction
+      let d3 = Math.abs(headPos - 3);
+      if (d3 > 2) d3 = 4 - d3;
+      const c3flash = d3 < 0.6 ? 1 - d3 / 0.6 : 0;
+      modCircleR(elMap, state, 'C3', 0.4 + 0.4 * c3flash);
+      modEl(elMap, state, 'C3', 0.3 + 0.4 * c3flash);
+
+      // Strand markers C4-C5 — subtle shimmer
+      modEl(elMap, state, 'C4', 0.15 + 0.15 * Math.sin(now / 2000));
+      modEl(elMap, state, 'C5', 0.15 + 0.15 * Math.sin(now / 2300 + 1));
+
+      // P1 ring subtle glow
+      modEl(elMap, state, 'P1', 0.08 + 0.06 * Math.sin(now / 3000));
+    },
+  },
+
+  gate: {
+    desc: 'dimensional threshold',
+    anim: (elMap, state, now) => {
+      // Master open/close cycle — ~12s
+      const openness = Math.sin(now / 12000 * Math.PI * 2) * 0.5 + 0.5;
+      // Pillar shimmer — intensifies when open
+      const shimAmp = 0.1 + 0.15 * openness;
+      const pillarShimmer = Math.sin(now / 3500 * Math.PI * 2) * shimAmp;
+      modEl(elMap, state, 'L1', 0.65 + pillarShimmer);
+      modEl(elMap, state, 'L2', 0.65 - pillarShimmer);
+      // Arch breathes — stronger when open
+      const archBreath = Math.sin(now / 4000 * Math.PI * 2) * 0.5 + 0.5;
+      modEl(elMap, state, 'L3', 0.4 + 0.2 * archBreath + 0.2 * openness);
+      modLineSW(elMap, state, 'L3', 0.8 + 0.4 * archBreath);
+      // Door swing — L4 left door, L5 right door
+      // Left door: hinge at (7,20), tip swings from (12,13) → (4,13)
+      const leftTipX = 12 - openness * 8;
+      const leftQx = 7 + (leftTipX - 7) * 0.5;
+      const leftQy = 20 + (13 - 20) * 0.5;
+      elMap.L4.setAttribute('d', `M7 20Q${leftQx} ${leftQy} ${leftTipX} 13`);
+      elMap.L4.setAttribute('opacity', 0.5 - 0.3 * openness);
+      // Right door: hinge at (17,20), tip swings from (12,13) → (20,13)
+      const rightTipX = 12 + openness * 8;
+      const rightQx = 17 + (rightTipX - 17) * 0.5;
+      const rightQy = 20 + (13 - 20) * 0.5;
+      elMap.L5.setAttribute('d', `M17 20Q${rightQx} ${rightQy} ${rightTipX} 13`);
+      elMap.L5.setAttribute('opacity', 0.5 - 0.3 * openness);
+      // Inner energy line L6 — appears when open, drifts upward
+      const enT = (now % 5000) / 5000;
+      const enY = 16 - enT * 8 * openness;
+      const enFade = enT < 0.7 ? 1 : 1 - (enT - 0.7) / 0.3;
+      elMap.L6.setAttribute('d', `M9 ${enY}Q12 ${enY} 15 ${enY}`);
+      elMap.L6.setAttribute('opacity', openness * 0.3 * enFade);
+      // Rune marks — brighter when open
+      const r7 = Math.sin(now / 2700 + 0.5) * 0.5 + 0.5;
+      const r8 = Math.sin(now / 3100 + 1.5) * 0.5 + 0.5;
+      modEl(elMap, state, 'L7', 0.15 + 0.25 * r7 * (0.5 + 0.5 * openness));
+      modEl(elMap, state, 'L8', 0.15 + 0.25 * r8 * (0.5 + 0.5 * openness));
+      // Keystone — dim when closed, bright beacon when open
+      const keyPulse = Math.sin(now / 2500 * Math.PI * 2) * 0.5 + 0.5;
+      const keyBright = 0.3 + 0.7 * openness;
+      modCircleR(elMap, state, 'C1', 0.5 + 0.7 * keyPulse * keyBright);
+      modEl(elMap, state, 'C1', keyBright * (0.5 + 0.5 * keyPulse));
+      // Base nodes steady
+      modEl(elMap, state, 'C2', 0.4 + 0.15 * Math.sin(now / 4000));
+      modEl(elMap, state, 'C3', 0.4 + 0.15 * Math.sin(now / 4300));
+      // Inner void C4 — appears when open
+      const voidPulse = Math.sin(now / 6000 * Math.PI * 2) * 0.5 + 0.5;
+      modCircleR(elMap, state, 'C4', openness * (0.5 + 0.6 * voidPulse));
+      modEl(elMap, state, 'C4', openness * (0.2 + 0.35 * voidPulse));
+      // Floating node C5 — drifts upward only when open
+      if (openness > 0.3) {
+        const floatT = (now % 7000) / 7000;
+        const floatY = 17 - floatT * 10;
+        const floatFade = floatT < 0.8 ? Math.min(1, floatT * 4) : 1 - (floatT - 0.8) / 0.2;
+        elMap.C5.setAttribute('cy', floatY);
+        elMap.C5.setAttribute('opacity', openness * 0.2 * floatFade);
+        elMap.C5.setAttribute('r', 0.3 + 0.2 * floatFade);
+      } else {
+        elMap.C5.setAttribute('opacity', 0);
+      }
+      // P1 inner glow — grows with openness
+      elMap.P1.setAttribute('opacity', 0.08 + 0.2 * openness);
+      elMap.P1.setAttribute('stroke-width', 0.3 + 0.3 * openness);
+    },
+  },
+
+  portal: {
+    desc: 'dimensional rift',
+    // Base rift edge coordinates for left (L1-L3) and right (L4-L6) sides
+    _leftEdge: [
+      { x1: 10, y1: 3, qx: 8, qy: 6, x2: 11, y2: 8 },
+      { x1: 11, y1: 8, qx: 9, qy: 12, x2: 10.5, y2: 14 },
+      { x1: 10.5, y1: 14, qx: 8.5, qy: 18, x2: 11, y2: 21 },
+    ],
+    _rightEdge: [
+      { x1: 14, y1: 3, qx: 16, qy: 6, x2: 13, y2: 8 },
+      { x1: 13, y1: 8, qx: 15, qy: 12, x2: 13.5, y2: 14 },
+      { x1: 13.5, y1: 14, qx: 15.5, qy: 18, x2: 13, y2: 21 },
+    ],
+    anim: (elMap, state, now) => {
+      const info = ICON_INFO.portal;
+      // Master open/close cycle — ~14s
+      const openness = Math.sin(now / 14000 * Math.PI * 2) * 0.5 + 0.5;
+      const sep = openness * 3; // edge separation distance
+
+      // Left rift edge L1-L3 — shift left, add jitter
+      for (let i = 0; i < 3; i++) {
+        const e = info._leftEdge[i];
+        const jit = openness * Math.sin(now / (200 + i * 70)) * 0.4;
+        const off = -sep + jit;
+        elMap['L' + (i + 1)].setAttribute('d',
+          `M${e.x1 + off} ${e.y1}Q${e.qx + off} ${e.qy} ${e.x2 + off} ${e.y2}`);
+        modEl(elMap, state, 'L' + (i + 1), 0.45 + 0.25 * openness);
+      }
+
+      // Right rift edge L4-L6 — shift right, add jitter
+      for (let i = 0; i < 3; i++) {
+        const e = info._rightEdge[i];
+        const jit = openness * Math.sin(now / (220 + i * 80)) * 0.4;
+        const off = sep + jit;
+        elMap['L' + (i + 4)].setAttribute('d',
+          `M${e.x1 + off} ${e.y1}Q${e.qx + off} ${e.qy} ${e.x2 + off} ${e.y2}`);
+        modEl(elMap, state, 'L' + (i + 4), 0.45 + 0.25 * openness);
+      }
+
+      // Seal marks L7-L8 — fade out with opening; become energy wisps when open
+      if (openness < 0.4) {
+        // Sealed: show seal marks
+        const sealO = (1 - openness / 0.4);
+        const flick = Math.sin(now / 1500) * 0.08;
+        elMap.L7.setAttribute('opacity', 0.4 * sealO + flick);
+        elMap.L8.setAttribute('opacity', 0.35 * sealO - flick);
+        // Reset seal positions
+        elMap.L7.setAttribute('d', `M${10.5 - sep} 9Q12 9 ${13.5 + sep} 9`);
+        elMap.L8.setAttribute('d', `M${10 - sep} 15Q12 15 ${14 + sep} 15`);
+      } else {
+        // Open: energy wisps escaping upward/downward
+        const wispT = (openness - 0.4) / 0.6;
+        const drift1 = Math.sin(now / 2500) * 2 * wispT;
+        const drift2 = Math.sin(now / 3200 + 1) * 2 * wispT;
+        elMap.L7.setAttribute('d',
+          `M12 ${9 - drift1 * 2}Q${9 + drift1} ${6 - drift1} ${7 + drift1} ${3 - drift1}`);
+        elMap.L7.setAttribute('opacity', 0.35 * wispT);
+        elMap.L7.setAttribute('stroke-dasharray', '2 3');
+        elMap.L8.setAttribute('d',
+          `M12 ${15 + drift2 * 2}Q${15 - drift2} ${18 + drift2} ${17 - drift2} ${21 + drift2}`);
+        elMap.L8.setAttribute('opacity', 0.3 * wispT);
+        elMap.L8.setAttribute('stroke-dasharray', '2 3');
+      }
+
+      // Center void C1 — grows bright as rift opens
+      const voidR = 0.5 + 2 * openness;
+      const voidO = 0.15 + 0.7 * openness;
+      const voidPulse = Math.sin(now / 2000 * Math.PI * 2) * 0.15 * openness;
+      elMap.C1.setAttribute('r', voidR + voidPulse);
+      elMap.C1.setAttribute('opacity', voidO + voidPulse);
+
+      // Rift tip nodes C2-C5 shift with their edges
+      elMap.C2.setAttribute('cx', 10 - sep);
+      elMap.C3.setAttribute('cx', 14 + sep);
+      elMap.C4.setAttribute('cx', 11 - sep);
+      elMap.C5.setAttribute('cx', 13 + sep);
+      for (let i = 2; i <= 5; i++) {
+        const s = Math.sin(now / (2200 + i * 300) + i) * 0.5 + 0.5;
+        modEl(elMap, state, 'C' + i, 0.3 + 0.25 * openness * s);
+      }
+
+      // Seal nodes C6-C7 — dissolve with seals
+      const sealNodeO = Math.max(0, 1 - openness * 2.5);
+      modEl(elMap, state, 'C6', 0.3 * sealNodeO);
+      modEl(elMap, state, 'C7', 0.3 * sealNodeO);
+
+      // P1 containment ring
+      elMap.P1.setAttribute('opacity', 0.06 + 0.15 * openness);
+      elMap.P1.setAttribute('stroke-width', 0.3 + 0.3 * openness);
+    },
+  },
+
+  wave: {
+    desc: 'flowing current',
+    // Base control point Y offsets for each wave pair — staggered junction x
+    _waves: [
+      { y: 7, qyUp: 3, qyDown: 11, sw: 1.2, jx: 11.5 },   // top wave
+      { y: 12, qyUp: 8, qyDown: 16, sw: 1.0, jx: 12 },     // middle wave
+      { y: 17, qyUp: 13, qyDown: 21, sw: 0.8, jx: 12.5 },   // bottom wave
+    ],
+    anim: (elMap, state, now) => {
+      const info = ICON_INFO.wave;
+      // Waves travel horizontally — phase shifts create motion
+      for (let w = 0; w < 3; w++) {
+        const wv = info._waves[w];
+        const speed = 3000 + w * 400;
+        const phase = now / speed * Math.PI * 2;
+        const shift = Math.sin(phase) * 2;
+        const ampMod = 0.8 + 0.2 * Math.sin(now / (5000 + w * 700));
+        const qyUp = wv.y - (wv.y - wv.qyUp) * ampMod + shift * 0.3;
+        const qyDown = wv.y + (wv.qyDown - wv.y) * ampMod - shift * 0.3;
+        const hShift = Math.sin(phase * 0.7) * 1;
+        const i1 = w * 2 + 1;
+        const i2 = w * 2 + 2;
+        const jx = wv.jx; // staggered junction x
+        elMap['L' + i1].setAttribute('d',
+          `M3 ${wv.y + shift * 0.5}Q${7.5 + hShift} ${qyUp} ${jx} ${wv.y}`);
+        elMap['L' + i2].setAttribute('d',
+          `M${jx} ${wv.y}Q${16.5 - hShift} ${qyDown} 21 ${wv.y - shift * 0.5}`);
+        // Traveling brightness
+        const brightPhase = Math.sin(phase + w * 0.6) * 0.5 + 0.5;
+        modEl(elMap, state, 'L' + i1, 0.3 + 0.5 * brightPhase);
+        modEl(elMap, state, 'L' + i2, 0.3 + 0.5 * (1 - brightPhase));
+        modLineSW(elMap, state, 'L' + i1, 0.8 + 0.3 * brightPhase);
+        modLineSW(elMap, state, 'L' + i2, 0.8 + 0.3 * (1 - brightPhase));
+      }
+      // Connecting wisps drift gently
+      const wispDrift = Math.sin(now / 3500) * 1;
+      elMap.L7.setAttribute('d',
+        `M7 ${9 + wispDrift}Q${8 + wispDrift * 0.3} 10 7 ${14 - wispDrift}`);
+      elMap.L8.setAttribute('d',
+        `M17 ${9 - wispDrift}Q${16 - wispDrift * 0.3} 10 17 ${14 + wispDrift}`);
+      modEl(elMap, state, 'L7', 0.1 + 0.15 * Math.sin(now / 2200));
+      modEl(elMap, state, 'L8', 0.1 + 0.15 * Math.sin(now / 2600));
+      // Center node throbs
+      const throb = Math.sin(now / 3000 * Math.PI * 2) * 0.5 + 0.5;
+      modCircleR(elMap, state, 'C1', 0.6 + 0.5 * throb);
+      modEl(elMap, state, 'C1', 0.4 + 0.4 * throb);
+      // Origin/endpoint nodes — subtle independent pulse
+      for (let i = 2; i <= 6; i++) {
+        const s = Math.sin(now / (2500 + i * 300) + i) * 0.5 + 0.5;
+        modEl(elMap, state, 'C' + i, 0.2 + 0.3 * s);
+      }
+      // Ring subtle breathing
+      modEl(elMap, state, 'P1', 0.08 + 0.06 * throb);
+    },
+  },
+
+  coil: {
+    desc: 'helix rune',
+    // Base strand endpoints for full rotation
+    _baseA: { topX: 8, botX: 16 },  // strand A: top-left → bottom-right
+    _baseB: { topX: 16, botX: 8 },  // strand B: top-right → bottom-left
+    _rungYs: [6, 10, 14, 18],
+    anim: (elMap, state, now) => {
+      const PI2 = Math.PI * 2;
+      // Full rotation angle — endpoints swap positions sinusoidally
+      const twist = now / 4000 * PI2;
+      const sin = Math.sin(twist);
+      const cos = Math.cos(twist);
+      // Strand A top x rotates: 8→12→16→12→8 (sinusoidal around center 12)
+      const aTopX = 12 + sin * -4;    // starts at 8 (sin=0→ -4+12=8... wait, need offset)
+      const aBotX = 12 + sin * 4;     // mirrors: starts at 16
+      // Strand B mirrors: top at 16→12→8→12→16
+      const bTopX = 12 + sin * 4;
+      const bBotX = 12 + sin * -4;
+      // Control points curve opposite to endpoint motion
+      const aTopQx = 12 - cos * 6;    // when endpoint right, ctrl curves left
+      const aBotQx = 12 + cos * 6;
+      const bTopQx = 12 + cos * 6;
+      const bBotQx = 12 - cos * 6;
+      // Build strand paths — each strand is two halves meeting at center
+      elMap.L1.setAttribute('d', `M${aTopX} 3Q${aTopQx} 8 12 12`);
+      elMap.L2.setAttribute('d', `M12 12Q${aBotQx} 16 ${aBotX} 21`);
+      elMap.L3.setAttribute('d', `M${bTopX} 3Q${bTopQx} 8 12 12`);
+      elMap.L4.setAttribute('d', `M12 12Q${bBotQx} 16 ${bBotX} 21`);
+      // Opacity crossfade — one strand appears "in front" while other dims
+      const crossFade = sin * 0.5 + 0.5;
+      modEl(elMap, state, 'L1', 0.25 + 0.55 * crossFade);
+      modEl(elMap, state, 'L2', 0.25 + 0.55 * crossFade);
+      modEl(elMap, state, 'L3', 0.25 + 0.55 * (1 - crossFade));
+      modEl(elMap, state, 'L4', 0.25 + 0.55 * (1 - crossFade));
+      // Cross-rungs track strand positions at each y-level
+      // Evaluate quadratic bezier x at parameter t for given y
+      const rungYs = ICON_INFO.coil._rungYs;
+      for (let i = 0; i < 4; i++) {
+        const y = rungYs[i];
+        // Parameter along strand for this y (top=3, mid=12, bot=21)
+        const tParam = (y - 3) / 18;
+        // Strand A x at this y: lerp top→12→bot based on which half
+        let axAtY, bxAtY;
+        if (tParam <= 0.5) {
+          const lt = tParam * 2;
+          axAtY = aTopX * (1-lt)*(1-lt) + aTopQx * 2*lt*(1-lt) + 12 * lt*lt;
+          bxAtY = bTopX * (1-lt)*(1-lt) + bTopQx * 2*lt*(1-lt) + 12 * lt*lt;
+        } else {
+          const lt = (tParam - 0.5) * 2;
+          axAtY = 12 * (1-lt)*(1-lt) + aBotQx * 2*lt*(1-lt) + aBotX * lt*lt;
+          bxAtY = 12 * (1-lt)*(1-lt) + bBotQx * 2*lt*(1-lt) + bBotX * lt*lt;
+        }
+        const mx = (axAtY + bxAtY) / 2;
+        elMap['L' + (i + 5)].setAttribute('d',
+          `M${axAtY} ${y}Q${mx} ${y} ${bxAtY} ${y}`);
+        // Rungs pulse sequentially
+        const rungPhase = Math.sin(now / 2500 * PI2 + i * PI2 / 4) * 0.5 + 0.5;
+        modEl(elMap, state, 'L' + (i + 5), 0.15 + 0.5 * rungPhase);
+        modLineSW(elMap, state, 'L' + (i + 5), 0.5 + 0.6 * rungPhase);
+      }
+      // End nodes follow strand endpoints
+      elMap.C2.setAttribute('cx', aTopX);
+      elMap.C3.setAttribute('cx', bTopX);
+      elMap.C4.setAttribute('cx', aBotX);
+      elMap.C5.setAttribute('cx', bBotX);
+      for (let i = 2; i <= 5; i++) {
+        const s = Math.sin(now / (2000 + i * 400) + i) * 0.5 + 0.5;
+        modEl(elMap, state, 'C' + i, 0.3 + 0.4 * s);
+      }
+      // Center crossing throbs
+      const throb = Math.sin(now / 2000 * PI2) * 0.5 + 0.5;
+      modCircleR(elMap, state, 'C1', 0.7 + 0.5 * throb);
+      modEl(elMap, state, 'C1', 0.5 + 0.5 * throb);
+      // P1 ring
+      modEl(elMap, state, 'P1', 0.1 + 0.08 * throb);
+    },
+  },
 };
 
 // ── Stage factory ──
@@ -934,14 +1507,15 @@ class IconCtrl {
     });
   }
 
-  arrive() {
+  arrive(method) {
     if (this.status !== 'gone') return;
     if (this.timer) { clearTimeout(this.timer); this.timer = null; }
     this.status = 'arriving';
     this._notify();
 
-    const from = this.departMethod === 'converge' ? convergeState : dissipateState;
-    const colFrom = this.departMethod === 'converge' ? COL.converge : COL.dissipate;
+    const arriveMethod = method || this.departMethod;
+    const from = arriveMethod === 'converge' ? convergeState : dissipateState;
+    const colFrom = arriveMethod === 'converge' ? COL.converge : COL.dissipate;
 
     this._morph(from, this.state, colFrom, this.col, () => {
       this.status = 'idle';
@@ -1016,12 +1590,18 @@ for (const group of STATE_GROUPS) {
     const info = ICON_INFO[key];
     if (!info) continue;
 
-    const row = document.createElement('div');
-    row.className = 'browser-row';
+    const card = document.createElement('div');
+    card.className = 'browser-card';
+
+    // Stage on top
+    const { div: stage, svg } = makeStage();
+    const elMap = buildMorphSVG(svg);
+    const ctrl = new IconCtrl(key, stage, elMap);
+    card.appendChild(stage);
 
     // Info
     const infoDiv = document.createElement('div');
-    infoDiv.className = 'browser-info';
+    infoDiv.className = 'browser-card-info';
     const nameEl = document.createElement('span');
     nameEl.className = 'browser-name';
     nameEl.textContent = key;
@@ -1030,13 +1610,7 @@ for (const group of STATE_GROUPS) {
     descEl.textContent = info.desc;
     infoDiv.appendChild(nameEl);
     infoDiv.appendChild(descEl);
-    row.appendChild(infoDiv);
-
-    // Stage
-    const { div: stage, svg } = makeStage();
-    const elMap = buildMorphSVG(svg);
-    const ctrl = new IconCtrl(key, stage, elMap);
-    row.appendChild(stage);
+    card.appendChild(infoDiv);
 
     // Controls
     const controls = document.createElement('div');
@@ -1045,14 +1619,18 @@ for (const group of STATE_GROUPS) {
     const playBtn = btn('\u25b6', () => ctrl.togglePlay());
     const convBtn = btn('\u21d3', () => ctrl.depart('converge'));
     const dissBtn = btn('\u21d1', () => ctrl.depart('dissipate'));
-    const retBtn = btn('\u21bb', () => ctrl.arrive());
-    retBtn.style.display = 'none';
+    // Two return buttons — one for each return method
+    const retConvBtn = btn('\u21d3\u21bb', () => ctrl.arrive('converge'));
+    const retDissBtn = btn('\u21d1\u21bb', () => ctrl.arrive('dissipate'));
+    retConvBtn.style.display = 'none';
+    retDissBtn.style.display = 'none';
 
     controls.appendChild(playBtn);
     controls.appendChild(convBtn);
     controls.appendChild(dissBtn);
-    controls.appendChild(retBtn);
-    row.appendChild(controls);
+    controls.appendChild(retConvBtn);
+    controls.appendChild(retDissBtn);
+    card.appendChild(controls);
 
     // State machine → update controls
     ctrl.onUpdate = (status) => {
@@ -1064,15 +1642,17 @@ for (const group of STATE_GROUPS) {
       playBtn.style.display = visible ? '' : 'none';
       convBtn.style.display = visible ? '' : 'none';
       dissBtn.style.display = visible ? '' : 'none';
-      retBtn.style.display = gone ? '' : 'none';
+      retConvBtn.style.display = gone ? '' : 'none';
+      retDissBtn.style.display = gone ? '' : 'none';
 
       playBtn.disabled = busy;
       convBtn.disabled = busy;
       dissBtn.disabled = busy;
-      retBtn.disabled = busy;
+      retConvBtn.disabled = busy;
+      retDissBtn.disabled = busy;
     };
 
-    list.appendChild(row);
+    list.appendChild(card);
   }
 
   details.appendChild(list);

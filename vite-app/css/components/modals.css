@@ -33,7 +33,7 @@
 
 .collapsible-chevron {
     font-size: 1rem;
-    transition: transform calc(var(--t-menu) * var(--t-speed)) ease;
+    transition: transform var(--lm-collapse) ease;
 }
 
 .collapsible-toggle[aria-expanded="false"] .collapsible-chevron {
@@ -43,7 +43,7 @@
 .collapsible-content {
     overflow: hidden;
     max-height: 2000px;
-    transition: max-height calc(var(--t-menu) * 1.17 * var(--t-speed)) ease, opacity calc(var(--t-content) * var(--t-speed)) ease;
+    transition: max-height var(--lm-collapse) ease, opacity var(--lm-collapse) ease;
     opacity: 1;
 }
 
@@ -93,7 +93,7 @@
 .sub-collapsible-chevron {
     order: 1;
     font-size: 0.8125rem;
-    transition: transform calc(var(--t-menu) * var(--t-speed)) ease;
+    transition: transform var(--lm-collapse) ease;
 }
 
 .sub-collapsible-toggle[aria-expanded="false"] .sub-collapsible-chevron {
@@ -103,7 +103,7 @@
 .sub-collapsible-content {
     overflow: hidden;
     max-height: 2000px;
-    transition: max-height calc(var(--t-menu) * var(--t-speed)) ease, opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
+    transition: max-height var(--lm-collapse) ease, opacity var(--lm-collapse) ease;
     opacity: 1;
 }
 
@@ -252,6 +252,8 @@
     position: relative;
     text-align: center;
     background: var(--modal-bg);
+    z-index: 1;
+    box-shadow: 0 1.25rem 0 0 var(--modal-bg);
 }
 
 .modal-title {
