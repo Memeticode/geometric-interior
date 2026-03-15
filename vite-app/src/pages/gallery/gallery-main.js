@@ -36,7 +36,7 @@ import { toast } from '../../components/toast.js';
 import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
 import {
-    TRASH_SVG, RESTORE_SVG, EDIT_SVG, FULLSCREEN_SVG, CLOSE_SVG, ERROR_SVG, RETRY_SVG,
+    TRASH_SVG, RESTORE_SVG, EDIT_SVG, ADD_SVG, FULLSCREEN_SVG, CLOSE_SVG, ERROR_SVG, RETRY_SVG,
     UNDO_SVG, REDO_SVG, SAVE_SVG, RANDOMIZE_SVG, RENDER_SVG,
     FIELD_DIAMOND_SVG, DOWNLOAD_SVG, IMAGE_SVG, BUNDLE_SVG, SETTINGS_SVG, SHARE_SVG, LINK_SVG, ARROW_RIGHT_SVG,
     BLUESKY_SVG, FACEBOOK_SVG, GOOGLE_SVG, LINKEDIN_SVG, REDDIT_SVG, TWITTER_SVG, EMAIL_SVG,
@@ -87,7 +87,7 @@ function announce(msg) {
 const { loadContent: loadStatementContent, closeStatementModal } = statement;
 
 /* ── Gallery section toggles ── */
-document.querySelectorAll('.gallery-section-header').forEach(header => {
+document.querySelectorAll('.browser-section-header').forEach(header => {
     header.addEventListener('click', () => {
         const expanded = header.getAttribute('aria-expanded') === 'true';
         header.setAttribute('aria-expanded', String(!expanded));
@@ -111,15 +111,14 @@ function thumbCacheKey(seed, controls) {
 
 /* ── DOM refs ── */
 /** @type {import('../../components/image-viewer.js').ImageViewer} */
-const galleryViewer = document.getElementById('galleryViewer');
-const gallerySelectionVisual = galleryViewer.getImg();
-const galleryPrevVisual = galleryViewer.getPrevImg();
-const gallerySelectionCardVisualWrap = galleryViewer.getWrap();
-const gallerySelectionContainer = document.getElementById('gallerySelectionContainer');
-const galleryContentEl = document.getElementById('galleryContent');
+const imageViewer = document.getElementById('imageViewer');
+const viewerImg = imageViewer.getImg();
+const viewerWrap = imageViewer.getWrap();
+const visualContainer = document.getElementById('mainVisualContainer');
+const browserContainer = document.getElementById('mainContentBrowserContainer');
 const selectedGenTitle = document.getElementById('selectedGenTitle');
-const selectedVideo = galleryViewer.getVideo();
-const gallerySelectionCardFooter = document.querySelector('.gallery-selection-card-footer');
+const selectedVideo = imageViewer.getVideo();
+const cardFooter = document.querySelector('.main-visual-card-footer');
 const morphNameRow = document.querySelector('.morph-name');
 const morphSeedRow = document.querySelector('.morph-seed');
 
@@ -128,8 +127,8 @@ const carouselBrowser = document.getElementById('carouselBrowser');
 carouselBrowser.arrowNavStep = 1;
 carouselBrowser.arrowAutoSelect = true;
 carouselBrowser.sectionNavStep = 'page';
-const galleryMainEl = document.querySelector('.main-content');
-const layoutMorph = createLayoutMorph(galleryMainEl);
+const mainEl = document.querySelector('.main-content');
+const layoutMorph = createLayoutMorph(mainEl);
 
 /* ── Generate / Animation editor DOM refs ── */
 const generatePanelEl = document.getElementById('genPanel');
@@ -176,11 +175,11 @@ function clampImageSize() {
     const padding = 16; // 1rem top padding on .main-content
     const availableH = window.innerHeight - headerH - carouselH - footerH - commentaryH - padding;
     const maxW = Math.max(200, availableH * (14 / 9));
-    const card = galleryViewer.closest('.gallery-selection-card');
+    const card = imageViewer.closest('.main-visual-card');
     if (card) card.style.maxWidth = maxW + 'px';
     // Sync header container width with card
-    const galleryContainer = document.getElementById('galleryContainer');
-    if (galleryContainer) galleryContainer.style.setProperty('--card-max-w', maxW + 'px');
+    const area = document.getElementById('mainContentArea');
+    if (area) area.style.setProperty('--card-max-w', maxW + 'px');
 }
 
 let resizeRaf;
@@ -209,17 +208,17 @@ let editInitialized = false;
 let editWorkerFailed = false;  // true if worker init or WebGL context failed
 
 /* ── Edit-mode DOM refs ── */
-const galleryContainerEl = document.getElementById('galleryContainer');
-const galleryBtnLeft = document.getElementById('galleryBtnLeft');
-const galleryBtnRight = document.getElementById('galleryBtnRight');
-// const galleryBtnEdit = document.getElementById('galleryBtnEdit'); // cancel button removed
-const galleryBtnAdd = document.getElementById('galleryBtnAdd');
-const gallerySaveBtn = document.getElementById('gallerySaveBtn');
-// const galleryRenderBtn = document.getElementById('galleryRenderBtn'); // render button removed
-let galleryEditCanvas = galleryViewer.getCanvas();
-const galleryEditLoading = galleryViewer.getLoadingOverlay();
-const galleryEditError = galleryViewer.getErrorOverlay();
-const galleryEditConfigEl = document.getElementById('galleryEditConfig');
+const contentArea = document.getElementById('mainContentArea');
+const btnLeft = document.getElementById('mainBtnLeft');
+const btnRight = document.getElementById('mainBtnRight');
+// const btnEdit = document.getElementById('mainBtnEdit'); // cancel button removed
+const btnAdd = document.getElementById('mainBtnAdd');
+const saveBtn = document.getElementById('mainSaveBtn');
+// const renderBtn = document.getElementById('mainRenderBtn'); // render button removed
+let editCanvas = imageViewer.getCanvas();
+const editLoading = imageViewer.getLoadingOverlay();
+const editError = imageViewer.getErrorOverlay();
+const editConfigEl = document.getElementById('editConfig');
 const editGenConfigSliders = document.getElementById('editGenConfigSliders');
 const editNameField = document.getElementById('editNameField');
 const editNameCounter = document.getElementById('editNameCounter');
@@ -232,10 +231,10 @@ const editTagStr = document.getElementById('editTagStr');
 const editTagDet = document.getElementById('editTagDet');
 
 /* ── Inject centralized SVG icons ── */
-galleryBtnLeft.innerHTML = UNDO_SVG;
-galleryBtnRight.innerHTML = REDO_SVG;
-gallerySaveBtn.innerHTML = SAVE_SVG;
-galleryBtnAdd.innerHTML = RANDOMIZE_SVG;
+btnLeft.innerHTML = UNDO_SVG;
+btnRight.innerHTML = REDO_SVG;
+saveBtn.innerHTML = SAVE_SVG;
+btnAdd.innerHTML = RANDOMIZE_SVG;
 document.getElementById('morphFieldIcon').innerHTML = FIELD_DIAMOND_SVG;
 genSaveBtn.innerHTML = SAVE_SVG;
 genRenderBtn.innerHTML = RENDER_SVG;
@@ -255,16 +254,16 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
     textBtn.textContent = t('gallery.altTextBtn');
     textBtn.setAttribute('aria-label', t('gallery.altTextBtn'));
     textBtn.addEventListener('click', () => {
-        if (galleryViewer.altVisible) galleryViewer.dismissAltText();
-        else galleryViewer.showAltText();
+        if (imageViewer.altVisible) imageViewer.dismissAltText();
+        else imageViewer.showAltText();
     });
-    galleryViewer.addEventListener('alt-text-toggle', (e) => {
+    imageViewer.addEventListener('alt-text-toggle', (e) => {
         textBtn.classList.toggle('iv-text-active', e.detail.visible);
     });
 
     // Resolution dropdown (morph mode — single unified element)
     const resDropdown = document.createElement('dd-morph');
-    resDropdown.className = 'select-base';
+    resDropdown.className = 'select-base morph-overlay';
     resDropdown.id = 'imageResolutionDropdown';
     resDropdown.setAttribute('role', 'listbox');
     resDropdown.setAttribute('aria-haspopup', 'listbox');
@@ -286,21 +285,21 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
     fsBtn.innerHTML = FULLSCREEN_SVG;
     fsBtn.setAttribute('aria-label', 'Fullscreen');
     fsBtn.addEventListener('click', () => {
-        if (galleryViewer.isFullscreen) galleryViewer.closeFullscreen();
+        if (imageViewer.isFullscreen) imageViewer.closeFullscreen();
         else openFullscreen();
     });
 
-    galleryViewer.setControls(textBtn, resDropdown, fsBtn);
+    imageViewer.setControls(textBtn, resDropdown, fsBtn);
     initResolutionSelector(resDropdown, { animate: true });
 
     // Error overlay content
-    galleryViewer.setErrorContent(
+    imageViewer.setErrorContent(
         `<span class="iv-error-icon">${ERROR_SVG}</span>` +
         `<span data-i18n="error.webglUnavailable">WebGL unavailable — close other tabs or enable hardware acceleration</span>` +
         `<button class="iv-error-retry" data-i18n-tooltip="error.retry" data-tooltip="Retry" aria-label="Retry">${RETRY_SVG}</button>`
     );
 }
-const galleryEditRetry = galleryViewer.getErrorOverlay().querySelector('.iv-error-retry');
+const editRetry = imageViewer.getErrorOverlay().querySelector('.iv-error-retry');
 
 /* Populate seed tag selects immediately (needed for browse-mode morph display) */
 {
@@ -393,7 +392,7 @@ function buildAltContent({ wrapExtras = false } = {}) {
     }
 
     const commentary = editCommentaryField.value || '';
-    const altTextStr = galleryViewer.altText || '';
+    const altTextStr = imageViewer.altText || '';
 
     const frag = document.createDocumentFragment();
 
@@ -461,7 +460,7 @@ function buildAltContent({ wrapExtras = false } = {}) {
 }
 
 // Provide alt content builder and context menu to viewer
-galleryViewer.setBuildAltContent(buildAltContent);
+imageViewer.setBuildAltContent(buildAltContent);
 
 {
     const fsIsTouch = matchMedia('(pointer: coarse)').matches;
@@ -470,12 +469,13 @@ galleryViewer.setBuildAltContent(buildAltContent);
     const fsPresets = getPresets();
     const fsCurRes = getResolution();
     const fsResItems = fsPresets.map(p =>
-        `<button class="gallery-ctx-item gallery-ctx-res-item${p.key === fsCurRes.key ? ' ctx-active' : ''}" role="menuitemradio" aria-checked="${p.key === fsCurRes.key}" data-res="${p.key}" data-action="resolution">${p.label}</button>`
+        `<button class="ctx-item ctx-res-item${p.key === fsCurRes.key ? ' ctx-active' : ''}" role="menuitemradio" aria-checked="${p.key === fsCurRes.key}" data-res="${p.key}" data-action="resolution">${p.label}</button>`
     ).join('');
 
-    galleryViewer.setContextMenu([
-        { html: `<span class="gallery-ctx-icon">${EDIT_SVG}</span>${t('gallery.ctxEdit')}`, action: 'edit' },
-        { html: `<span class="gallery-ctx-icon">${FULLSCREEN_SVG}</span>${t('gallery.ctxExitFullscreen')}`, action: 'exit-fullscreen' },
+    imageViewer.setContextMenu([
+        { html: `<span class="ctx-icon">${EDIT_SVG}</span>${t('gallery.ctxEdit')}`, action: 'edit' },
+        { html: `<span class="ctx-icon">${ADD_SVG}</span>${t('gallery.ctxAdd')}`, action: 'add' },
+        { html: `<span class="ctx-icon">${FULLSCREEN_SVG}</span>${t('gallery.ctxExitFullscreen')}`, action: 'exit-fullscreen' },
         'sep',
         { label: t('gallery.ctxResolution') },
         { group: 'resolution', html: fsResItems },
@@ -484,10 +484,13 @@ galleryViewer.setBuildAltContent(buildAltContent);
     ], (action, data) => {
         if (action === 'edit') {
             const entry = navigableList[currentIndex];
-            galleryViewer.closeFullscreen();
+            imageViewer.closeFullscreen();
             if (entry) enterEditMode('edit', entry);
+        } else if (action === 'add') {
+            imageViewer.closeFullscreen();
+            enterEditMode('add', null);
         } else if (action === 'exit-fullscreen') {
-            galleryViewer.closeFullscreen();
+            imageViewer.closeFullscreen();
         } else if (action === 'resolution') {
             if (data.res) setResolution(data.res);
         }
@@ -495,11 +498,11 @@ galleryViewer.setBuildAltContent(buildAltContent);
 }
 
 async function openFullscreen() {
-    await galleryViewer.openFullscreen();
+    await imageViewer.openFullscreen();
 }
 
 function closeFullscreen() {
-    galleryViewer.closeFullscreen();
+    imageViewer.closeFullscreen();
 }
 
 function syncFullscreenMedia() {
@@ -544,6 +547,7 @@ function updateBrowserItems() {
     // Editor section — permanent placeholder at the end
     const editorSection = document.createElement('carousel-dropdown-browser-section');
     editorSection.label = t('gallery.editor');
+    editorSection.gridItemsAlign = 'center';
     const editorCard = document.createElement('carousel-dropdown-browser-card');
     editorCard.key = '__add_image__';
     editorCard.label = t('gallery.addImage');
@@ -585,12 +589,14 @@ carouselBrowser.addEventListener('center-change', () => {
 
 // Block all input during carousel expand/collapse transitions; skip on interaction
 carouselBrowser.addEventListener('expand-start', () => {
-    showBlockOverlay(() => {
-        console.log('[gallery] SKIP carousel expand/collapse');
-        carouselBrowser.skipExpandCollapse();
-    });
+    // Don't replace the layout morph's overlay — it has its own skip logic
+    if (!layoutMorph.morphing) {
+        showBlockOverlay(() => { carouselBrowser.skip(); });
+    }
 });
-carouselBrowser.addEventListener('expand-change', () => hideBlockOverlay());
+carouselBrowser.addEventListener('expand-change', () => {
+    if (!layoutMorph.morphing) hideBlockOverlay();
+});
 
 carouselBrowser.addEventListener('item-delete', (e) => {
     const entry = e.detail.item.data;
@@ -837,8 +843,8 @@ document.addEventListener('resolutionchange', (e) => {
 
     // Portrait: swap to resolution-specific static image
     if (entry.isPortrait) {
-        gallerySelectionVisual.src = getDisplaySrc(entry.name, profile, true);
-        installPortraitFallback(gallerySelectionVisual, slugify(entry.name), e.detail.key);
+        viewerImg.src = getDisplaySrc(entry.name, profile, true);
+        installPortraitFallback(viewerImg, slugify(entry.name), e.detail.key);
         syncFullscreenMedia();
         return;
     }
@@ -913,58 +919,72 @@ function getDisplaySrc(name, profile, isPortrait) {
  * Pure DOM update — sets image, name, seed, generated text, highlights card.
  * No animation, no history push.
  */
-let selectionFadeTimer = 0;
-let crossfadeTimer = 0;
-let crossfadeLoadHandler = null;
-let crossfadeErrorHandler = null;
-
-/** Complete crossfade: reveal main image, remove prevImg. */
-function crossfadeComplete() {
-    clearTimeout(crossfadeTimer);
-    crossfadeTimer = 0;
-    gallerySelectionVisual.style.opacity = '1';
-    galleryPrevVisual.removeAttribute('src');
-    if (galleryViewer.altVisible) galleryViewer.getAltOverlay().classList.remove('fading');
-    // Clean up handlers
-    if (crossfadeLoadHandler) {
-        gallerySelectionVisual.removeEventListener('load', crossfadeLoadHandler);
-        crossfadeLoadHandler = null;
-    }
-    if (crossfadeErrorHandler) {
-        gallerySelectionVisual.removeEventListener('error', crossfadeErrorHandler);
-        crossfadeErrorHandler = null;
-    }
-    hideBlockOverlay();
-}
 
 function applySelection(name, profile, isPortrait, assetId) {
     selected = { name, isPortrait, assetId };
     const instant = document.documentElement.classList.contains('no-transitions');
-    const speed = parseFloat(getComputedStyle(galleryMainEl).getPropertyValue('--t-speed')) || 1;
+    const speed = parseFloat(getComputedStyle(mainEl).getPropertyValue('--t-speed')) || 1;
     const fadeDuration = 250 * speed;
 
-    // Cancel any pending crossfade from a previous rapid selection
-    clearTimeout(selectionFadeTimer);
-    crossfadeComplete();
+    // Cancel any in-flight crossfade
+    imageViewer.skipMedia();
 
     if (!instant) {
         // Lock footer height before fade so resize can animate
-        gallerySelectionCardFooter.style.height = gallerySelectionCardFooter.offsetHeight + 'px';
+        cardFooter.style.height = cardFooter.offsetHeight + 'px';
 
-        // Fade out text + alt-text overlay; crossfade image
+        // Fade out text rows
         morphNameRow.classList.add('fading');
         morphSeedRow.classList.add('fading');
-        gallerySelectionCardFooter.classList.add('fading');
-        if (galleryViewer.altVisible) galleryViewer.getAltOverlay().classList.add('fading');
-
-        // Crossfade: show old image behind, new image fades in on top
-        galleryPrevVisual.src = gallerySelectionVisual.src;
-        gallerySelectionVisual.style.opacity = '0';
+        cardFooter.classList.add('fading');
     }
 
-    const updateContent = () => {
-        // Update unified morph elements
-        const displayName = profile.displayName || name;
+    // Revoke old blob URLs
+    if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
+    if (snapshotUrl) { URL.revokeObjectURL(snapshotUrl); snapshotUrl = null; }
+
+    // Determine new image src
+    let newSrc = '';
+    if (assetId) {
+        const asset = generatedAssets.find(a => a.id === assetId);
+        if (asset && asset.thumbDataUrl) newSrc = asset.thumbDataUrl;
+    } else {
+        newSrc = getDisplaySrc(name, profile, isPortrait);
+    }
+
+    // Compute alt + altText
+    const displayName = profile.displayName || name;
+    let newAlt = '';
+    let newAltText = '';
+    let newGenTitle = '';
+    let newCommentary = '';
+
+    if (isPortrait) {
+        const { title, altText } = generateProfileText(profile);
+        newAlt = `${displayName} \u2014 ${title}`;
+        newAltText = altText || title;
+        newCommentary = profile.commentary || '';
+    } else if (assetId) {
+        const asset = generatedAssets.find(a => a.id === assetId);
+        if (asset && asset.meta) {
+            newAlt = `${name} — ${asset.meta.title || ''}`;
+            newAltText = asset.meta.altText || asset.meta.title || name;
+            newCommentary = asset.meta.commentary || '';
+        }
+    } else if (profile.commentary) {
+        const { title, altText } = generateProfileText(profile);
+        newAlt = `${name} — ${title}`;
+        newAltText = altText || title;
+        newCommentary = profile.commentary;
+    } else {
+        const { title, altText } = generateProfileText(profile);
+        newGenTitle = title;
+        newAlt = title;
+        newAltText = altText || title;
+    }
+
+    // Swap text content at the fade midpoint, crossfade image via setMedia
+    const updateTextContent = () => {
         editNameField.value = displayName;
         if (Array.isArray(profile.seed)) {
             editTagArr.value = String(profile.seed[0]);
@@ -978,71 +998,11 @@ function applySelection(name, profile, isPortrait, assetId) {
         fitAllSelects();
         addSelectCommas();
 
-        // Portrait commentary vs generated/custom text
-        if (isPortrait) {
-            const { title, altText } = generateProfileText(profile);
-            selectedGenTitle.textContent = '';
-            editCommentaryField.value = profile.commentary || '';
-            gallerySelectionVisual.alt = `${displayName} \u2014 ${title}`;
-            gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
-            gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
-        } else if (assetId) {
-            const asset = generatedAssets.find(a => a.id === assetId);
-            if (asset && asset.meta) {
-                selectedGenTitle.textContent = '';
-                editCommentaryField.value = asset.meta.commentary || '';
-                gallerySelectionVisual.alt = `${name} — ${asset.meta.title || ''}`;
-                gallerySelectionVisual.setAttribute('data-tooltip', asset.meta.altText || asset.meta.title || name);
-                gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
-            }
-        } else if (profile.commentary) {
-            const { title, altText } = generateProfileText(profile);
-            selectedGenTitle.textContent = '';
-            editCommentaryField.value = profile.commentary;
-            gallerySelectionVisual.alt = `${name} — ${title}`;
-            gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
-            gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
-        } else {
-            const { title, altText } = generateProfileText(profile);
-            selectedGenTitle.textContent = title;
-            editCommentaryField.value = '';
-            gallerySelectionVisual.alt = title;
-            gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
-            gallerySelectionVisual.setAttribute('data-tooltip-pos', 'overlay');
-        }
-
-        // Sync alt text to viewer
-        galleryViewer.altText = gallerySelectionVisual.getAttribute('data-tooltip') || '';
-        if (galleryViewer.altVisible) galleryViewer.getAltOverlay().scrollTop = 0;
-
-        // Set new image src — old image visible via prevImg behind
-        if (currentStaticUrl) { URL.revokeObjectURL(currentStaticUrl); currentStaticUrl = null; }
-        if (snapshotUrl) { URL.revokeObjectURL(snapshotUrl); snapshotUrl = null; }
-
-        // Determine new src
-        let newSrc = '';
-        if (assetId) {
-            const asset = generatedAssets.find(a => a.id === assetId);
-            if (asset && asset.thumbDataUrl) newSrc = asset.thumbDataUrl;
-        } else {
-            newSrc = getDisplaySrc(name, profile, isPortrait);
-        }
-
-        if (!instant) {
-            // Same URL — skip crossfade (load won't fire for same src)
-            if (newSrc && gallerySelectionVisual.src === newSrc) {
-                crossfadeComplete();
-            } else {
-                // Set up load/error handlers + safety timeout
-                crossfadeLoadHandler = () => crossfadeComplete();
-                crossfadeErrorHandler = () => crossfadeComplete();
-                gallerySelectionVisual.addEventListener('load', crossfadeLoadHandler, { once: true });
-                gallerySelectionVisual.addEventListener('error', crossfadeErrorHandler, { once: true });
-                crossfadeTimer = setTimeout(crossfadeComplete, 2000);
-            }
-        }
-
-        if (newSrc) gallerySelectionVisual.src = newSrc;
+        selectedGenTitle.textContent = newGenTitle;
+        editCommentaryField.value = newCommentary;
+        viewerImg.setAttribute('data-tooltip', newAltText);
+        viewerImg.setAttribute('data-tooltip-pos', 'overlay');
+        if (imageViewer.altVisible) imageViewer.getAltOverlay().scrollTop = 0;
 
         // For generated assets, upgrade to full-res after thumb loads
         if (assetId) {
@@ -1050,62 +1010,70 @@ function applySelection(name, profile, isPortrait, assetId) {
             getAsset(assetId).then(full => {
                 if (full && full.staticBlob && selected.assetId === capturedAssetId) {
                     currentStaticUrl = URL.createObjectURL(full.staticBlob);
-                    gallerySelectionVisual.src = currentStaticUrl;
+                    viewerImg.src = currentStaticUrl;
                 }
             });
         }
 
         if (isPortrait) {
-            installPortraitFallback(gallerySelectionVisual, slugify(name), getResolution().key);
+            installPortraitFallback(viewerImg, slugify(name), getResolution().key);
         }
 
         // Hide commentary box if empty (slide in/out via CSS transition)
         morphCommentary.classList.toggle('collapsed', !editCommentaryField.value);
         // Hide entire footer when no content at all
-        gallerySelectionCardFooter.classList.toggle('footer-hidden',
+        cardFooter.classList.toggle('footer-hidden',
             !editCommentaryField.value && !selectedGenTitle.textContent);
 
         if (!instant) {
             // Animate footer height to fit new content
-            const oldHeight = gallerySelectionCardFooter.offsetHeight;
-            gallerySelectionCardFooter.style.height = 'auto';
-            const newHeight = gallerySelectionCardFooter.offsetHeight;
+            const oldHeight = cardFooter.offsetHeight;
+            cardFooter.style.height = 'auto';
+            const newHeight = cardFooter.offsetHeight;
             if (oldHeight !== newHeight) {
-                gallerySelectionCardFooter.style.height = oldHeight + 'px';
-                void gallerySelectionCardFooter.offsetHeight; // force layout
-                gallerySelectionCardFooter.style.height = newHeight + 'px';
+                cardFooter.style.height = oldHeight + 'px';
+                void cardFooter.offsetHeight; // force layout
+                cardFooter.style.height = newHeight + 'px';
                 const onEnd = (e) => {
                     if (e.propertyName === 'height') {
-                        gallerySelectionCardFooter.style.height = '';
-                        gallerySelectionCardFooter.removeEventListener('transitionend', onEnd);
+                        cardFooter.style.height = '';
+                        cardFooter.removeEventListener('transitionend', onEnd);
                     }
                 };
-                gallerySelectionCardFooter.addEventListener('transitionend', onEnd);
+                cardFooter.addEventListener('transitionend', onEnd);
             } else {
-                gallerySelectionCardFooter.style.height = '';
+                cardFooter.style.height = '';
             }
 
             // Fade text back in
             morphNameRow.classList.remove('fading');
             morphSeedRow.classList.remove('fading');
-            gallerySelectionCardFooter.classList.remove('fading');
+            cardFooter.classList.remove('fading');
         } else {
-            gallerySelectionCardFooter.style.height = '';
+            cardFooter.style.height = '';
         }
     };
 
-    if (instant) {
-        updateContent();
-    } else {
+    // Delegate crossfade to image-viewer
+    imageViewer.setMedia({
+        src: newSrc,
+        alt: newAlt,
+        altText: newAltText,
+        fadeDuration: instant ? 0 : fadeDuration,
+        onSwap: updateTextContent,
+    }).then(() => {
+        // Image loaded — hide overlay if nothing else is animating
+        if (!carouselBrowser.animating && !layoutMorph.morphing) hideBlockOverlay();
+    });
+
+    if (!instant && !layoutMorph.morphing) {
         showBlockOverlay(() => {
             console.log('[gallery] SKIP image selection crossfade');
-            clearTimeout(selectionFadeTimer);
-            updateContent();
-            crossfadeComplete();
+            imageViewer.skipMedia();
             // Snap carousel to final position (no-transitions handled by fireSkip)
             carouselBrowser.syncToKey(assetId || name);
+            carouselBrowser.skip();
         });
-        selectionFadeTimer = setTimeout(updateContent, fadeDuration);
     }
 
     currentIndex = navigableList.findIndex(p =>
@@ -1142,11 +1110,11 @@ function instantSelect(name, profile, isPortrait, assetId) {
 function updateArrowStates() {
     const len = navigableList.length;
     const disabled = len <= 1;
-    galleryBtnLeft.disabled = disabled;
-    galleryBtnRight.disabled = disabled;
+    btnLeft.disabled = disabled;
+    btnRight.disabled = disabled;
 
-    galleryBtnLeft.setAttribute('data-tooltip', disabled ? '' : 'Previous');
-    galleryBtnRight.setAttribute('data-tooltip', disabled ? '' : 'Next');
+    btnLeft.setAttribute('data-tooltip', disabled ? '' : 'Previous');
+    btnRight.setAttribute('data-tooltip', disabled ? '' : 'Next');
 }
 
 function navigateArrow(direction) {
@@ -1159,10 +1127,10 @@ function navigateArrow(direction) {
 }
 
 // Edit-only buttons: undo/redo
-galleryBtnLeft.addEventListener('click', () => {
+btnLeft.addEventListener('click', () => {
     if (editMode && editPanel) editPanel.undo();
 });
-galleryBtnRight.addEventListener('click', () => {
+btnRight.addEventListener('click', () => {
     if (editMode && editPanel) editPanel.redo();
 });
 
@@ -1175,7 +1143,7 @@ const genAltTextOverlay = document.getElementById('genAltTextOverlay');
 let genAltTextVisible = false;
 
 function dismissAltText(resetScroll) {
-    galleryViewer.dismissAltText(resetScroll);
+    imageViewer.dismissAltText(resetScroll);
 }
 
 // Helper for gen preview alt text
@@ -1279,8 +1247,8 @@ function showImageGallery() {
         }
     }
 
-    galleryContentEl.style.display = '';
-    gallerySelectionContainer.style.display = '';
+    browserContainer.style.display = '';
+    visualContainer.style.display = '';
 }
 
 /**
@@ -1323,8 +1291,8 @@ function showAnimationGallery() {
         applyAnimSelection(first.assetId);
     }
 
-    galleryContentEl.style.display = '';
-    gallerySelectionContainer.style.display = animAssets.length > 0 ? '' : 'none';
+    browserContainer.style.display = '';
+    visualContainer.style.display = animAssets.length > 0 ? '' : 'none';
 }
 
 /**
@@ -1424,16 +1392,16 @@ function applyAnimSelection(assetId) {
         currentVideoUrl = URL.createObjectURL(asset.videoBlob);
         selectedVideo.src = currentVideoUrl;
         selectedVideo.classList.remove('hidden');
-        gallerySelectionVisual.style.display = 'none';
+        viewerImg.style.display = 'none';
     } else if (asset.thumbDataUrl) {
         // No video — show thumbnail
         selectedVideo.classList.add('hidden');
-        gallerySelectionVisual.style.display = '';
-        gallerySelectionVisual.src = asset.thumbDataUrl;
+        viewerImg.style.display = '';
+        viewerImg.src = asset.thumbDataUrl;
     }
 
     // Highlight card
-    document.querySelectorAll('.gallery-page .profile-card').forEach(card => {
+    document.querySelectorAll('.main-content-page .profile-card').forEach(card => {
         card.classList.toggle('selected', card.dataset.assetId === assetId);
     });
 
@@ -1453,7 +1421,7 @@ function clearVideoPlayback() {
     }
     selectedVideo.src = '';
     selectedVideo.classList.add('hidden');
-    gallerySelectionVisual.style.display = '';
+    viewerImg.style.display = '';
 }
 
 /* ── Generate mode ── */
@@ -1903,7 +1871,7 @@ function initGenerate() {
             pendingSnapshotContext = null;
             if (snapshotUrl) URL.revokeObjectURL(snapshotUrl);
             snapshotUrl = URL.createObjectURL(msg.blob);
-            gallerySelectionVisual.src = snapshotUrl;
+            viewerImg.src = snapshotUrl;
         });
         workerBridge.on('snapshot-failed', (msg) => {
             // Check pending download snapshots first
@@ -2131,7 +2099,8 @@ function showGenerateMode() {
 
     layoutMorph.morph(isAnimCreate ? 'animate' : 'generate', {
         onBefore() { targetEl.classList.remove('hidden'); },
-        onAfter()  { galleryContainerEl.classList.add('hidden'); },
+        onAfter()  { contentArea.classList.add('hidden'); },
+        onSkip() { carouselBrowser.skip(); },
     });
 }
 
@@ -2151,8 +2120,9 @@ function hideGenerateMode() {
     if (!visibleEl) return;
 
     layoutMorph.morph('browse', {
-        onBefore() { galleryContainerEl.classList.remove('hidden'); },
+        onBefore() { contentArea.classList.remove('hidden'); },
         onAfter()  { visibleEl.classList.add('hidden'); },
+        onSkip() { carouselBrowser.skip(); },
     });
 }
 
@@ -2161,22 +2131,22 @@ function hideGenerateMode() {
 /** Disable/enable the configure image menu, its collapse toggles, and all inputs */
 function setEditConfigDisabled(disabled) {
     // Prevent expanding/collapsing
-    galleryEditConfigEl.querySelectorAll('.gen-collapse-toggle').forEach(toggle => {
+    editConfigEl.querySelectorAll('.gen-collapse-toggle').forEach(toggle => {
         toggle.style.pointerEvents = disabled ? 'none' : '';
         toggle.style.opacity = disabled ? '0.4' : '';
     });
     // Collapse any open sections
     if (disabled) {
-        galleryEditConfigEl.querySelectorAll('.gen-collapse-body').forEach(body => {
+        editConfigEl.querySelectorAll('.gen-collapse-body').forEach(body => {
             body.classList.add('collapsed');
             body.style.maxHeight = '0';
         });
-        galleryEditConfigEl.querySelectorAll('.gen-collapse-toggle').forEach(toggle => {
+        editConfigEl.querySelectorAll('.gen-collapse-toggle').forEach(toggle => {
             toggle.setAttribute('aria-expanded', 'false');
         });
     }
     // Disable all inputs, selects, buttons inside config
-    galleryEditConfigEl.querySelectorAll('input, select, button, textarea').forEach(el => {
+    editConfigEl.querySelectorAll('input, select, button, textarea').forEach(el => {
         el.disabled = disabled;
     });
     // Disable inputs outside the config panel (name, seed, commentary, save)
@@ -2185,7 +2155,7 @@ function setEditConfigDisabled(disabled) {
     editTagStr.disabled = disabled;
     editTagDet.disabled = disabled;
     editCommentaryField.disabled = disabled;
-    gallerySaveBtn.disabled = disabled;
+    saveBtn.disabled = disabled;
 }
 
 function initEditMode() {
@@ -2193,24 +2163,24 @@ function initEditMode() {
     editInitialized = true;
 
     // Create worker bridge for the edit preview canvas
-    editWorkerBridge = initGalleryWorker(galleryEditCanvas);
+    editWorkerBridge = initGalleryWorker(editCanvas);
     if (!editWorkerBridge) {
         editWorkerFailed = true;
-        galleryEditLoading.classList.add('hidden');
-        galleryEditError.classList.remove('hidden');
-        galleryEditCanvas.classList.add('hidden');
+        editLoading.classList.add('hidden');
+        editError.classList.remove('hidden');
+        editCanvas.classList.add('hidden');
         setEditConfigDisabled(true);
         return;
     }
 
     editWorkerBridge.on('rendered', () => {
-        galleryEditLoading.classList.add('hidden');
+        editLoading.classList.add('hidden');
     });
     editWorkerBridge.on('error', () => {
         editWorkerFailed = true;
-        galleryEditLoading.classList.add('hidden');
-        galleryEditError.classList.remove('hidden');
-        galleryEditCanvas.classList.add('hidden');
+        editLoading.classList.add('hidden');
+        editError.classList.remove('hidden');
+        editCanvas.classList.add('hidden');
         setEditConfigDisabled(true);
     });
 
@@ -2220,21 +2190,21 @@ function initEditMode() {
         tagStrEl: editTagStr,
         tagDetEl: editTagDet,
         nameField: editNameField,
-        saveBtn: gallerySaveBtn,
-        randomizeBtn: null,   // randomize handled by galleryBtnAdd morph
+        saveBtn: saveBtn,
+        randomizeBtn: null,   // randomize handled by btnAdd morph
         renderBtn: null, // render button removed from toolbar
-        undoBtn: null,        // undo handled by galleryBtnLeft morph
-        redoBtn: null,        // redo handled by galleryBtnRight morph
+        undoBtn: null,        // undo handled by btnLeft morph
+        redoBtn: null,        // redo handled by btnRight morph
         fullscreenBtn: null,
         nameCounter: editNameCounter,
         nameError: editNameError,
         commentaryField: editCommentaryField,
-        previewCanvas: galleryEditCanvas,
+        previewCanvas: editCanvas,
         commentaryCounter: editCommentaryCounter,
         statusMessageEl: null,
         onControlChange(seed, controls, camera) {
             if (editWorkerBridge && editWorkerBridge.ready) {
-                galleryEditLoading.classList.remove('hidden');
+                editLoading.classList.remove('hidden');
                 editWorkerBridge.sendRender(seed, controls, getLocale());
                 editWorkerBridge.sendCameraState(camera.zoom, camera.rotation, camera.elevation);
             }
@@ -2251,13 +2221,13 @@ function initEditMode() {
             return result;
         },
         onFullscreen() {
-            if (galleryViewer.isFullscreen) closeFullscreen();
+            if (imageViewer.isFullscreen) closeFullscreen();
             else openFullscreen();
         },
     });
 
     // Wire up collapsible toggles in the edit config
-    galleryEditConfigEl.querySelectorAll('.gen-collapse-toggle[data-target]').forEach(toggle => {
+    editConfigEl.querySelectorAll('.gen-collapse-toggle[data-target]').forEach(toggle => {
         toggle.addEventListener('click', () => {
             const expanded = toggle.getAttribute('aria-expanded') === 'true';
             toggle.setAttribute('aria-expanded', String(!expanded));
@@ -2293,7 +2263,7 @@ function initEditMode() {
 
         // Send initial render if we're already in edit mode
         if (editMode && editPanel) {
-            galleryEditLoading.classList.remove('hidden');
+            editLoading.classList.remove('hidden');
             const seed = editPanel.readSeed();
             const controls = editPanel.readControls();
             const camera = editPanel.readCamera();
@@ -2303,17 +2273,17 @@ function initEditMode() {
     });
 }
 
-galleryEditRetry.addEventListener('click', () => {
-    galleryEditError.classList.add('hidden');
+editRetry.addEventListener('click', () => {
+    editError.classList.add('hidden');
     editWorkerFailed = false;
     editInitialized = false;
     editWorkerBridge = null;
 
     // Replace the canvas element so transferControlToOffscreen() can be called again
-    galleryEditCanvas = galleryViewer.replaceCanvas();
+    editCanvas = imageViewer.replaceCanvas();
 
     // Keep config disabled until first successful render confirms WebGL works
-    galleryEditLoading.classList.remove('hidden');
+    editLoading.classList.remove('hidden');
 
     initEditMode();
     // Trigger render if worker becomes ready; re-enable config on first success
@@ -2327,7 +2297,7 @@ galleryEditRetry.addEventListener('click', () => {
         });
         let retryConfirmed = false;
         editWorkerBridge.on('rendered', () => {
-            galleryEditLoading.classList.add('hidden');
+            editLoading.classList.add('hidden');
             if (!retryConfirmed) {
                 retryConfirmed = true;
                 setEditConfigDisabled(false);
@@ -2350,11 +2320,11 @@ async function enterEditMode(mode, entry, fromPopstate) {
 
     // Re-show error overlay if worker previously failed; otherwise ensure canvas is visible
     if (editWorkerFailed) {
-        galleryEditError.classList.remove('hidden');
-        galleryEditCanvas.classList.add('hidden');
+        editError.classList.remove('hidden');
+        editCanvas.classList.add('hidden');
         setEditConfigDisabled(true);
     } else {
-        galleryEditCanvas.classList.remove('hidden');
+        editCanvas.classList.remove('hidden');
     }
 
     // Populate inputs
@@ -2393,11 +2363,15 @@ async function enterEditMode(mode, entry, fromPopstate) {
     await new Promise(r => queueMicrotask(r));
 
     // Toggle editing layout (triggers all CSS cross-fade transitions)
-    galleryContainerEl.style.setProperty('--editing-label', `"${t('gallery.editing')}"`);
+    contentArea.style.setProperty('--editing-label', `"${t('gallery.editing')}"`);
     layoutMorph.morph('edit', {
         onSwap() {
             if (isRandomize) editPanel.randomize();
             removeSelectCommas();
+        },
+        onSkip() {
+            carouselBrowser.skip();
+            imageViewer.skipMedia();
         },
     });
 
@@ -2405,13 +2379,13 @@ async function enterEditMode(mode, entry, fromPopstate) {
     dismissAltText(true);
 
     // Update button tooltips for edit mode
-    galleryBtnLeft.setAttribute('data-tooltip', 'Undo');
-    galleryBtnRight.setAttribute('data-tooltip', 'Redo');
-    galleryBtnAdd.setAttribute('data-tooltip', 'Randomize');
+    btnLeft.setAttribute('data-tooltip', 'Undo');
+    btnRight.setAttribute('data-tooltip', 'Redo');
+    btnAdd.setAttribute('data-tooltip', 'Randomize');
 
     // Send render if worker is ready
     if (editWorkerBridge && editWorkerBridge.ready) {
-        galleryEditLoading.classList.remove('hidden');
+        editLoading.classList.remove('hidden');
         const seed = editPanel.readSeed();
         const controls = editPanel.readControls();
         const camera = editPanel.readCamera();
@@ -2435,8 +2409,8 @@ async function exitEditMode(saved, fromPopstate) {
 
     // Hide alt text + error + loading overlays when leaving edit mode
     dismissAltText(true);
-    galleryEditError.classList.add('hidden');
-    galleryEditLoading.classList.add('hidden');
+    editError.classList.add('hidden');
+    editLoading.classList.add('hidden');
     setEditConfigDisabled(false);
 
     editCommentaryField.placeholder = 'No commentary';
@@ -2452,9 +2426,9 @@ async function exitEditMode(saved, fromPopstate) {
     }
 
     // Restore button tooltips for browse mode
-    galleryBtnLeft.setAttribute('data-tooltip', 'Previous');
-    galleryBtnRight.setAttribute('data-tooltip', 'Next');
-    galleryBtnAdd.setAttribute('data-tooltip', 'Add new');
+    btnLeft.setAttribute('data-tooltip', 'Previous');
+    btnRight.setAttribute('data-tooltip', 'Next');
+    btnAdd.setAttribute('data-tooltip', 'Add new');
 
     // Capture thumbnail before clearing editMode (so capturePreviewThumb uses editWorkerBridge)
     const addCardEl = carouselBrowser.querySelector(
@@ -2482,7 +2456,7 @@ async function exitEditMode(saved, fromPopstate) {
 
     // Collapse commentary if empty so it slides out during browse morph
     morphCommentary.classList.toggle('collapsed', !editCommentaryField.value.trim());
-    gallerySelectionCardFooter.classList.toggle('footer-hidden',
+    cardFooter.classList.toggle('footer-hidden',
         !editCommentaryField.value.trim() && !selectedGenTitle.textContent);
 
     // Morph back to browse after card attributes are updated so CSS transitions animate smoothly
@@ -2490,6 +2464,10 @@ async function exitEditMode(saved, fromPopstate) {
         onSwap() {
             addSelectCommas();
             fitAllSelects();
+        },
+        onSkip() {
+            carouselBrowser.skip();
+            imageViewer.skipMedia();
         },
     });
 
@@ -2508,15 +2486,15 @@ async function exitEditMode(saved, fromPopstate) {
 
 // ── Edit/Add/Save/Render button handlers ──
 
-// galleryBtnEdit removed — cancel via Escape key or navigating away
+// btnEdit removed — cancel via Escape key or navigating away
 
 // ── Right-click / long-press context menu on main visual ──
 {
     const ctxMenu = document.createElement('div');
-    ctxMenu.className = 'gallery-ctx-menu';
+    ctxMenu.className = 'ctx-menu';
     ctxMenu.setAttribute('role', 'menu');
-    const isTouch = matchMedia('(pointer: coarse)').matches;
-    const ctxBrowserKey = isTouch ? 'gallery.ctxBrowserTouch' : 'gallery.ctxBrowserDesktop';
+    // const isTouch = matchMedia('(pointer: coarse)').matches;
+    // const ctxBrowserKey = isTouch ? 'gallery.ctxBrowserTouch' : 'gallery.ctxBrowserDesktop';
 
     /* ── Soft-delete buffer for generated images ── */
     /** @type {{ entry: object, asset: object, orderIndex: number, deletedAt: number }[]} */
@@ -2543,60 +2521,61 @@ async function exitEditMode(saved, fromPopstate) {
 
         let html =
             // Share (expandable)
-            `<button class="gallery-ctx-item gallery-ctx-expandable" role="menuitem" data-expand="share">` +
-                `<span class="gallery-ctx-icon">${SHARE_SVG}</span>${t('gallery.ctxShare')}` +
-                `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
+            `<button class="ctx-item ctx-expandable" role="menuitem" data-expand="share">` +
+                `<span class="ctx-icon">${SHARE_SVG}</span>${t('gallery.ctxShare')}` +
+                `<span class="ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
             `</button>` +
-            `<div class="gallery-ctx-submenu" data-submenu="share"><div class="gallery-ctx-submenu-inner">` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-copy"><span class="gallery-ctx-icon">${LINK_SVG}</span>${t('share.copyLink')}</button>` +
-                `<div class="gallery-ctx-sep"></div>` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-bluesky"><span class="gallery-ctx-icon">${BLUESKY_SVG}</span>${t('share.bluesky')}</button>` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-facebook"><span class="gallery-ctx-icon">${FACEBOOK_SVG}</span>${t('share.facebook')}</button>` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-google"><span class="gallery-ctx-icon">${GOOGLE_SVG}</span>Google</button>` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-linkedin"><span class="gallery-ctx-icon">${LINKEDIN_SVG}</span>${t('share.linkedin')}</button>` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-reddit"><span class="gallery-ctx-icon">${REDDIT_SVG}</span>${t('share.reddit')}</button>` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-x"><span class="gallery-ctx-icon">${TWITTER_SVG}</span>X</button>` +
-                `<div class="gallery-ctx-sep"></div>` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="share-email"><span class="gallery-ctx-icon">${EMAIL_SVG}</span>${t('share.email')}</button>` +
+            `<div class="ctx-submenu" data-submenu="share"><div class="ctx-submenu-inner">` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="share-copy"><span class="ctx-icon">${LINK_SVG}</span>${t('share.copyLink')}</button>` +
+                `<div class="ctx-sep"></div>` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="share-bluesky"><span class="ctx-icon">${BLUESKY_SVG}</span>${t('share.bluesky')}</button>` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="share-facebook"><span class="ctx-icon">${FACEBOOK_SVG}</span>${t('share.facebook')}</button>` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="share-google"><span class="ctx-icon">${GOOGLE_SVG}</span>Google</button>` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="share-linkedin"><span class="ctx-icon">${LINKEDIN_SVG}</span>${t('share.linkedin')}</button>` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="share-reddit"><span class="ctx-icon">${REDDIT_SVG}</span>${t('share.reddit')}</button>` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="share-x"><span class="ctx-icon">${TWITTER_SVG}</span>X</button>` +
+                `<div class="ctx-sep"></div>` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="share-email"><span class="ctx-icon">${EMAIL_SVG}</span>${t('share.email')}</button>` +
             `</div></div>` +
             // Download (expandable)
-            `<button class="gallery-ctx-item gallery-ctx-expandable" role="menuitem" data-expand="download">` +
-                `<span class="gallery-ctx-icon">${DOWNLOAD_SVG}</span>${t('gallery.ctxDownload')}` +
-                `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
+            `<button class="ctx-item ctx-expandable" role="menuitem" data-expand="download">` +
+                `<span class="ctx-icon">${DOWNLOAD_SVG}</span>${t('gallery.ctxDownload')}` +
+                `<span class="ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
             `</button>` +
-            `<div class="gallery-ctx-submenu" data-submenu="download"><div class="gallery-ctx-submenu-inner">` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-image"><span class="gallery-ctx-icon">${IMAGE_SVG}</span>${t('gallery.ctxDownloadImage')}</button>` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-config"><span class="gallery-ctx-icon">${SETTINGS_SVG}</span>${t('gallery.ctxDownloadConfig')}</button>` +
-                `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="download-bundle"><span class="gallery-ctx-icon">${BUNDLE_SVG}</span>${t('gallery.ctxDownloadBundle')}</button>` +
+            `<div class="ctx-submenu" data-submenu="download"><div class="ctx-submenu-inner">` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="download-image"><span class="ctx-icon">${IMAGE_SVG}</span>${t('gallery.ctxDownloadImage')}</button>` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="download-config"><span class="ctx-icon">${SETTINGS_SVG}</span>${t('gallery.ctxDownloadConfig')}</button>` +
+                `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="download-bundle"><span class="ctx-icon">${BUNDLE_SVG}</span>${t('gallery.ctxDownloadBundle')}</button>` +
             `</div></div>` +
             // Edit
-            `<button class="gallery-ctx-item" role="menuitem" data-action="edit"><span class="gallery-ctx-icon">${EDIT_SVG}</span>${t('gallery.ctxEdit')}</button>`;
+            `<button class="ctx-item" role="menuitem" data-action="edit"><span class="ctx-icon">${EDIT_SVG}</span>${t('gallery.ctxEdit')}</button>` +
+            `<button class="ctx-item" role="menuitem" data-action="add"><span class="ctx-icon">${ADD_SVG}</span>${t('gallery.ctxAdd')}</button>`;
 
         // Delete (only for generated portraits)
         if (isGenerated) {
-            html += `<button class="gallery-ctx-item" role="menuitem" data-action="delete"><span class="gallery-ctx-icon">${TRASH_SVG}</span>${t('gallery.ctxDelete')}</button>`;
+            html += `<button class="ctx-item" role="menuitem" data-action="delete"><span class="ctx-icon">${TRASH_SVG}</span>${t('gallery.ctxDelete')}</button>`;
         }
 
         // Restore deleted (only when buffer non-empty)
         if (recentlyDeleted.length > 0) {
             html +=
-                `<button class="gallery-ctx-item gallery-ctx-expandable" role="menuitem" data-expand="restore">` +
-                    `<span class="gallery-ctx-icon">${RESTORE_SVG}</span>${t('gallery.ctxRestore')}` +
-                    `<span class="gallery-ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
+                `<button class="ctx-item ctx-expandable" role="menuitem" data-expand="restore">` +
+                    `<span class="ctx-icon">${RESTORE_SVG}</span>${t('gallery.ctxRestore')}` +
+                    `<span class="ctx-chevron">${ARROW_RIGHT_SVG}</span>` +
                 `</button>` +
-                `<div class="gallery-ctx-submenu" data-submenu="restore"><div class="gallery-ctx-submenu-inner">`;
+                `<div class="ctx-submenu" data-submenu="restore"><div class="ctx-submenu-inner">`;
             for (let i = 0; i < recentlyDeleted.length; i++) {
                 const d = recentlyDeleted[i];
                 const name = d.entry.name || 'Untitled';
                 const ago = relativeTime(d.deletedAt);
-                html += `<button class="gallery-ctx-item gallery-ctx-sub-item" role="menuitem" data-action="restore" data-restore-index="${i}"><span class="gallery-ctx-icon">${RESTORE_SVG}</span>${name} <span class="gallery-ctx-dim">(${ago})</span></button>`;
+                html += `<button class="ctx-item ctx-sub-item" role="menuitem" data-action="restore" data-restore-index="${i}"><span class="ctx-icon">${RESTORE_SVG}</span>${name} <span class="ctx-dim">(${ago})</span></button>`;
             }
             html += `</div></div>`;
         }
 
-        // Separator + browser hint
-        html += `<div class="gallery-ctx-sep"></div>` +
-            `<div class="gallery-ctx-browser">${t(ctxBrowserKey)}</div>`;
+        // // Separator + browser hint
+        // html += `<div class="ctx-sep"></div>` +
+        //     `<div class="ctx-browser">${t(ctxBrowserKey)}</div>`;
 
         return html;
     }
@@ -2607,7 +2586,7 @@ async function exitEditMode(saved, fromPopstate) {
 
     /** Rebuild the focusable list after submenu expand/collapse. */
     function rebuildFocusable() {
-        allFocusable = /** @type {HTMLElement[]} */ ([...ctxMenu.querySelectorAll('.gallery-ctx-item:not(.gallery-ctx-submenu:not(.expanded) .gallery-ctx-item)')]);
+        allFocusable = /** @type {HTMLElement[]} */ ([...ctxMenu.querySelectorAll('.ctx-item:not(.ctx-submenu:not(.expanded) .ctx-item)')]);
     }
 
     /** Toggle an expandable submenu (independent — multiple can be open). */
@@ -2625,7 +2604,7 @@ async function exitEditMode(saved, fromPopstate) {
         rebuildFocusable();
 
         // Re-attach browser hint handlers
-        const hint = ctxMenu.querySelector('.gallery-ctx-browser');
+        const hint = ctxMenu.querySelector('.ctx-browser');
         if (hint) {
             hint.addEventListener('contextmenu', () => { hideCtxMenu(); });
             hint.addEventListener('click', () => { hideCtxMenu(); allowNativeCtx = true; });
@@ -2656,7 +2635,7 @@ async function exitEditMode(saved, fromPopstate) {
 
     // ── Action dispatch ──
     ctxMenu.addEventListener('click', (e) => {
-        const expandBtn = e.target.closest('.gallery-ctx-expandable');
+        const expandBtn = e.target.closest('.ctx-expandable');
         if (expandBtn) {
             toggleSubmenu(expandBtn);
             return;
@@ -2715,6 +2694,13 @@ async function exitEditMode(saved, fromPopstate) {
             hideCtxMenu();
             const entry = navigableList[currentIndex];
             if (entry) enterEditMode('edit', entry);
+            return;
+        }
+
+        // Add
+        if (action === 'add') {
+            hideCtxMenu();
+            enterEditMode('add', null);
             return;
         }
 
@@ -2786,7 +2772,7 @@ async function exitEditMode(saved, fromPopstate) {
 
         const res = getResolution();
         const title = profile.displayName || entry.name || 'Untitled';
-        const altText = galleryViewer.altText || '';
+        const altText = imageViewer.altText || '';
 
         try {
             const blob = await requestSnapshot(profile, res.w, res.h);
@@ -2830,7 +2816,7 @@ async function exitEditMode(saved, fromPopstate) {
         toast(t('toast.preparingBundle') || 'Preparing bundle…');
 
         const title = profile.displayName || entry.name || 'Untitled';
-        const altText = galleryViewer.altText || '';
+        const altText = imageViewer.altText || '';
         const presets = getPresets().filter(p => p.key !== 'pre'); // skip tiny preview
         const ts = toIsoLocalish();
         const base = `bundle_${safeName(profile.seed)}_${ts}`;
@@ -2884,7 +2870,7 @@ async function exitEditMode(saved, fromPopstate) {
     let allowNativeCtx = false;
 
     // Desktop: right-click
-    gallerySelectionCardVisualWrap.addEventListener('contextmenu', (e) => {
+    viewerWrap.addEventListener('contextmenu', (e) => {
         if (editMode) return;
         if (allowNativeCtx) { allowNativeCtx = false; return; }
         e.preventDefault();
@@ -2895,7 +2881,7 @@ async function exitEditMode(saved, fromPopstate) {
     // Mobile/tablet: long-press (500ms)
     let lpTimer = 0;
     let lpFired = false;
-    gallerySelectionCardVisualWrap.addEventListener('touchstart', (e) => {
+    viewerWrap.addEventListener('touchstart', (e) => {
         if (editMode) return;
         if (e.touches.length !== 1) return;
         lpFired = false;
@@ -2905,19 +2891,19 @@ async function exitEditMode(saved, fromPopstate) {
             showCtxMenu(touch.clientX, touch.clientY);
         }, 500);
     }, { passive: true });
-    gallerySelectionCardVisualWrap.addEventListener('touchmove', () => { clearTimeout(lpTimer); }, { passive: true });
-    gallerySelectionCardVisualWrap.addEventListener('touchend', (e) => {
+    viewerWrap.addEventListener('touchmove', () => { clearTimeout(lpTimer); }, { passive: true });
+    viewerWrap.addEventListener('touchend', (e) => {
         clearTimeout(lpTimer);
         if (lpFired) e.preventDefault();
     });
-    gallerySelectionCardVisualWrap.addEventListener('touchcancel', () => { clearTimeout(lpTimer); });
+    viewerWrap.addEventListener('touchcancel', () => { clearTimeout(lpTimer); });
 
     // Keyboard navigation
     ctxMenu.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') { hideCtxMenu(); return; }
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            const expandBtn = e.target.closest('.gallery-ctx-expandable');
+            const expandBtn = e.target.closest('.ctx-expandable');
             if (expandBtn) { toggleSubmenu(expandBtn); return; }
             const btn = e.target.closest('[data-action]');
             if (btn) btn.click();
@@ -2940,7 +2926,7 @@ async function exitEditMode(saved, fromPopstate) {
     window.addEventListener('resize', hideCtxMenu);
 }
 
-galleryBtnAdd.addEventListener('click', () => {
+btnAdd.addEventListener('click', () => {
     if (editMode) {
         // Randomize
         if (editPanel) editPanel.randomize();
@@ -2950,7 +2936,7 @@ galleryBtnAdd.addEventListener('click', () => {
     }
 });
 
-gallerySaveBtn.addEventListener('click', () => {
+saveBtn.addEventListener('click', () => {
     if (editMode && editPanel) {
         const name = editPanel.readName();
         const seed = editPanel.readSeed();
@@ -2963,7 +2949,7 @@ gallerySaveBtn.addEventListener('click', () => {
     }
 });
 
-// galleryRenderBtn removed from toolbar
+// renderBtn removed from toolbar
 
 /* ── Keyboard navigation ── */
 document.addEventListener('keydown', (e) => {
@@ -2972,7 +2958,7 @@ document.addEventListener('keydown', (e) => {
             exitEditMode(false);
             return;
         }
-        if (galleryViewer.isFullscreen) {
+        if (imageViewer.isFullscreen) {
             closeFullscreen();
             return;
         }
@@ -3018,7 +3004,7 @@ if (activeMode === 'create') {
     else { initAnimationEditor(); }
     const targetEl = isAnim ? animationEditorEl : generatePanelEl;
     targetEl.classList.remove('hidden');
-    galleryContainerEl.classList.add('hidden');
+    contentArea.classList.add('hidden');
     layoutMorph.set(isAnim ? 'animate' : 'generate');
 } else if (activeMode === 'edit') {
     showImageGallery();
@@ -3084,12 +3070,12 @@ document.addEventListener('localechange', () => {
             const { title, altText } = generateProfileText(profile);
             if (selected.isPortrait) {
                 selectedGenTitle.textContent = '';
-                gallerySelectionVisual.alt = `${displayName} \u2014 ${title}`;
-                gallerySelectionVisual.setAttribute('data-tooltip', altText || title);
-                galleryViewer.altText = altText || title;
+                viewerImg.alt = `${displayName} \u2014 ${title}`;
+                viewerImg.setAttribute('data-tooltip', altText || title);
+                imageViewer.altText = altText || title;
             } else {
                 selectedGenTitle.textContent = title;
-                gallerySelectionVisual.alt = title;
+                viewerImg.alt = title;
             }
         }
     }

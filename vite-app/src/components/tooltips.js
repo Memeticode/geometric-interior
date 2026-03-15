@@ -5,6 +5,12 @@
 
 let paramTooltip = null;
 let tooltipSource = null;
+let suppressed = false;
+
+export function setSuppressTooltips(val) {
+    suppressed = val;
+    if (val) hideTooltip();
+}
 
 export function showTooltip(el, mouseX, mouseY) {
     tooltipSource = el;
@@ -122,7 +128,7 @@ export function initTooltips() {
 
     /* --- Desktop: hover shows/hides tooltips --- */
     document.addEventListener('mouseover', (e) => {
-        if (recentTouch) return;
+        if (recentTouch || suppressed) return;
         const el = findTooltip(e.target);
         if (el && !el.hasAttribute('data-tooltip-click')) showTooltip(el, e.clientX, e.clientY);
     });

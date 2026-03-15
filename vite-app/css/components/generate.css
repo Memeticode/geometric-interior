@@ -334,21 +334,12 @@
     overflow: hidden;
     max-height: 5000px;
     opacity: 1;
-    /* Expand: max-height/opacity animate; padding/gap snap back immediately */
     transition: max-height var(--lm-collapse) ease, opacity var(--lm-collapse) ease;
 }
 .gen-collapse-body.collapsed {
     max-height: 0;
     opacity: 0;
     pointer-events: none;
-    padding-top: 0;
-    padding-bottom: 0;
-    row-gap: 0;
-    column-gap: 0;
-    /* Collapse: max-height/opacity animate; padding/gap snap after animation ends */
-    transition: max-height var(--lm-collapse) ease, opacity var(--lm-collapse) ease,
-                padding-top 0s var(--lm-collapse), padding-bottom 0s var(--lm-collapse),
-                row-gap 0s var(--lm-collapse), column-gap 0s var(--lm-collapse);
 }
 
 /* ── Config header ── */

@@ -54,23 +54,26 @@ function createStatementModal() {
         })
     );
 
-    // Mobile tab select
+    // Mobile tab select (uses shared custom-dropdown component)
     const selectItems = tabs.map((tab, i) =>
         el('button', {
-            class: i === 0 ? 'modal-tab-select-item active' : 'modal-tab-select-item',
-            'data-tab': tab,
+            class: i === 0 ? 'custom-dropdown-item active' : 'custom-dropdown-item',
+            'data-value': tab,
+            'data-label': defaultLabels[tab],
             'data-i18n': i18nKeys[tab],
+            role: 'option',
             text: defaultLabels[tab],
         })
     );
 
-    const tabSelect = el('div', { id: 'statementTabSelect', class: 'modal-tab-select', 'aria-label': 'Select section' }, [
-        el('button', { class: 'modal-tab-select-trigger', type: 'button' }, [
-            el('span', { class: 'modal-tab-select-label', 'data-i18n': 'statement.artist', text: 'Artist Statement' }),
-            el('span', { class: 'modal-tab-select-chevron', html: '&#9662;' }),
-        ]),
-        el('div', { class: 'modal-tab-select-menu' }, selectItems),
-    ]);
+    const tabSelect = el('dd-morph', {
+        id: 'statementTabSelect',
+        class: 'select-base modal-tab-select morph-overlay',
+        'aria-haspopup': 'listbox',
+        'aria-expanded': 'false',
+        role: 'listbox',
+        'aria-label': 'Select section',
+    }, selectItems);
 
     const closeBtn = el('button', { id: 'statementModalClose', class: 'modal-close', 'aria-label': 'Close', 'data-i18n-aria': 'aria.close' }, [
         panelToggleIcon(),
@@ -82,6 +85,10 @@ function createStatementModal() {
     const artistBody = el('div', { id: 'artistBody', class: 'modal-tab-content hidden' }, [
         el('pre', { class: 'manifesto' }),
         el('div', { class: 'manifesto-note' }),
+        el('figure', { class: 'manifesto-figure' }, [
+            el('img', { class: 'manifesto-image', src: '/static/coherence-under-revision.webp', alt: '', loading: 'lazy' }),
+            el('figcaption', { class: 'manifesto-figcaption' }),
+        ]),
     ]);
     const governanceBody = el('div', { id: 'governanceBody', class: 'modal-tab-content hidden' }, [
         el('div', { class: 'manifesto' }),

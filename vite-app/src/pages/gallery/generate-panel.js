@@ -372,7 +372,7 @@ export function initGeneratePanel(opts) {
         const row = document.createElement('div');
         row.className = 'gen-slider-row';
 
-        const labelWrap = document.createElement('label');
+        const labelWrap = document.createElement('div');
         labelWrap.className = 'gen-slider-label';
 
         const labelText = document.createElement('span');

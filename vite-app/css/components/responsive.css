@@ -57,7 +57,7 @@
     }
     .header-links {
         flex: initial;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 0.5rem;
     }
     .header-link {
@@ -72,8 +72,10 @@
         flex: 1;
         min-width: 0;
         white-space: normal;
-        word-spacing: 100vw;
         font-size: 0.6875rem;
+    }
+    .i18n-seg {
+        white-space: nowrap;
     }
     .header-sep {
         display: revert;
@@ -107,6 +109,12 @@
 /* ── sm — hi-dpi ── */
 @media (min-width: 480px) and (min-resolution: 192dpi) {
     /* Retina large-phone refinements */
+    .header-statement {
+        white-space: nowrap;
+        word-spacing: normal;
+        justify-content: center;
+        flex: initial;
+    }
 }
 
 /* ── md (768px+) — Tablet ── */
@@ -123,12 +131,8 @@
         font-size: 0.875rem;
     }
     .header-statement {
-        white-space: nowrap;
-        word-spacing: normal;
         padding: 0.25rem 0.125rem;
         flex-wrap: nowrap;
-        justify-content: center;
-        flex: initial;
     }
     .sidebar-toggle-btn {
         padding: 0.3125rem;
@@ -154,17 +158,17 @@
         width: min(25rem, 90vw);
     }
 
-    .gallery-page .main-content {
+    .main-content-page .main-content {
         padding: 1rem;
     }
 
-    .gallery-controls {
+    .main-content-controls {
         --icon-btn-size: 24px;
         --icon-btn-icon: 14px;
     }
 
     /* Inline edit mode — config is now inside selection container, no side column needed */
-    [data-layout="edit"] .gallery-toolbar {
+    [data-layout="edit"] .main-content-toolbar {
         grid-area: toolbar;
     }
 
@@ -252,7 +256,7 @@
         padding-right: 0;
     }
 
-    .gallery-selection-card-footer {
+    .main-visual-card-footer {
         padding-top: 0.5rem;
         padding-bottom: 0.5rem;
     }

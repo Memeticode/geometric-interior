@@ -1,6 +1,6 @@
 /**
  * Shared full-page blocking overlay for transitions.
- * Blocks all pointer/keyboard/scroll input. Calls onSkip on any user interaction.
+ * Blocks all pointer/keyboard input. Calls onSkip on click/tap/keypress.
  *
  * Skip callbacks are wrapped in `no-transitions` so all CSS transitions snap
  * instantly — callers don't need to manage transition suppression themselves.
@@ -24,14 +24,9 @@ function handleKey(e) {
     console.log('[overlay] keydown skip:', e.key);
     fireSkip();
 }
-function handleWheel() {
-    console.log('[overlay] wheel skip');
-    fireSkip();
-}
-
 /**
  * Show a full-page overlay that blocks all interactions.
- * @param {() => void} [onSkip] — called when user clicks/taps/keys/scrolls during overlay
+ * @param {() => void} [onSkip] — called when user clicks/taps/keys during overlay
  */
 export function showBlockOverlay(onSkip) {
     if (overlay) {
@@ -47,7 +42,6 @@ export function showBlockOverlay(onSkip) {
             fireSkip();
         });
         document.addEventListener('keydown', handleKey, { capture: true, once: true });
-        document.addEventListener('wheel', handleWheel, { capture: true, once: true });
     }
     document.body.appendChild(overlay);
     console.log('[overlay] SHOWN, hasSkip:', !!skipCb, 'z-index:', getComputedStyle(overlay).zIndex);
@@ -61,5 +55,4 @@ export function hideBlockOverlay() {
     overlay = null;
     skipCb = null;
     document.removeEventListener('keydown', handleKey, true);
-    document.removeEventListener('wheel', handleWheel, true);
 }

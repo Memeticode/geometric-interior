@@ -22,40 +22,40 @@
 </head>
 
 <body>
-    <a href="#galleryContainer" class="skip-link">Skip to main content</a>
-    <div class="app-container gallery-page">
+    <a href="#mainContentArea" class="skip-link">Skip to main content</a>
+    <div class="app-container main-content-page">
         <header class="app-header" role="banner" aria-label="Site header"></header>
 
         <main class="main-content" role="main" aria-label="Gallery" data-layout="browse">
-            <div class="gallery-container" id="galleryContainer">
+            <div class="main-content-area" id="mainContentArea">
                 <!-- Centered toolbar — always at top -->
-                <div class="gallery-toolbar" id="galleryToolbar">
-                    <div class="gallery-controls icon-btn-group" id="galleryControls">
+                <div class="main-content-toolbar" id="mainContentToolbar">
+                    <div class="main-content-controls icon-btn-group" id="mainContentControls">
                             <!-- Edit-only group (slides in during edit mode) -->
                             <span class="toolbar-edit-group">
                                 <!-- Undo -->
-                                <button class="icon-btn" id="galleryBtnLeft"
+                                <button class="icon-btn" id="mainBtnLeft"
                                     aria-label="Undo" data-tooltip="Undo" data-tooltip-pos="above"></button>
                                 <!-- Redo -->
-                                <button class="icon-btn" id="galleryBtnRight"
+                                <button class="icon-btn" id="mainBtnRight"
                                     aria-label="Redo" data-tooltip="Redo" data-tooltip-pos="above"></button>
                                 <span class="icon-btn-sep">|</span>
                                 <!-- Save -->
-                                <button class="icon-btn" id="gallerySaveBtn"
+                                <button class="icon-btn" id="mainSaveBtn"
                                     data-tooltip="Save" data-tooltip-pos="above" aria-label="Save"></button>
                                 <span class="icon-btn-sep">|</span>
                             </span>
                             <!-- Edit-only: Randomize -->
                             <span class="toolbar-edit-group">
                                 <!-- Randomize -->
-                                <button class="icon-btn" id="galleryBtnAdd"
+                                <button class="icon-btn" id="mainBtnAdd"
                                     data-tooltip="Randomize" data-tooltip-pos="above" aria-label="Randomize"></button>
                             </span>
                     </div>
                 </div>
-                <div class="gallery-selection-container" id="gallerySelectionContainer">
+                <div class="main-visual-container" id="mainVisualContainer">
                     <!-- Profile info — unified morph elements (plain text in browse, form inputs in edit) -->
-                    <div class="gallery-selection-header-container">
+                    <div class="main-visual-header-container">
                         <div class="morph-row morph-name">
                             <label class="morph-label"><span class="label-info"
                                     data-tooltip="A name for this arrangement of light and form."
@@ -86,7 +86,7 @@
                         </div>
                     </div>
                     <!-- Edit-mode config (slides up from behind image) -->
-                    <div class="gallery-edit-config" id="galleryEditConfig">
+                    <div class="edit-config" id="editConfig">
                         <div class="gen-config" id="editGenConfig">
                             <div class="gen-config-header gen-collapse-toggle" data-target="editGenConfigSliders"
                                 aria-expanded="false">
@@ -99,9 +99,9 @@
                         </div>
                     </div>
                     <!-- Image + text card -->
-                    <div class="gallery-selection-card">
-                        <image-viewer id="galleryViewer" controls-pos="top-center"></image-viewer>
-                        <div class="gallery-selection-card-footer">
+                    <div class="main-visual-card">
+                        <image-viewer id="imageViewer" controls-pos="top-center"></image-viewer>
+                        <div class="main-visual-card-footer">
                             <span class="selected-gen-title" id="selectedGenTitle"></span>
                             <div class="morph-commentary">
                                 <div class="morph-field">
@@ -114,13 +114,13 @@
                         </div>
                     </div>
                 </div>
-                <div class="gallery-content" id="galleryContent">
+                <div class="main-content-browser-container" id="mainContentBrowserContainer">
                     <carousel-dropdown-browser id="carouselBrowser" controls-position="above" infinite="false"
-                        bounce="0.35"></carousel-dropdown-browser>
+                        bounce="0.35" grid-items-align="left"></carousel-dropdown-browser>
                     <!-- Animations -->
-                    <div class="gallery-section" id="animSection" style="display:none">
-                        <div class="gallery-section-header" data-target="animGallery" aria-expanded="true">
-                            <span class="gallery-section-label">Animations</span>
+                    <div class="browser-section" id="animSection" style="display:none">
+                        <div class="browser-section-header" data-target="animGallery" aria-expanded="true">
+                            <span class="browser-section-label">Animations</span>
                             <span class="collapsible-chevron">&#9662;</span>
                         </div>
                         <div id="animGallery" class="gallery-grid"></div>

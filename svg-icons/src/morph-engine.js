@@ -72,6 +72,39 @@ export function applyState(elMap, from, to, t) {
 // Apply a state instantly (no interpolation)
 export function setState(elMap, state) { applyState(elMap, state, state, 0); }
 
+// Read current DOM attribute values back into a state object
+// Uses refState as template to know which keys/properties each element has
+const D_RE = /M([\d.\-e]+)\s+([\d.\-e]+)Q([\d.\-e]+)\s+([\d.\-e]+)\s+([\d.\-e]+)\s+([\d.\-e]+)/;
+export function readState(elMap, refState) {
+  const snap = {};
+  for (const key of Object.keys(refState)) {
+    const el = elMap[key], ref = refState[key];
+    const entry = { o: parseFloat(el.getAttribute('opacity')) || 0 };
+    if ('x1' in ref) {
+      const m = (el.getAttribute('d') || '').match(D_RE);
+      if (m) {
+        entry.x1 = +m[1]; entry.y1 = +m[2];
+        entry.qx = +m[3]; entry.qy = +m[4];
+        entry.x2 = +m[5]; entry.y2 = +m[6];
+      } else {
+        entry.x1 = ref.x1; entry.y1 = ref.y1;
+        entry.qx = ref.qx; entry.qy = ref.qy;
+        entry.x2 = ref.x2; entry.y2 = ref.y2;
+      }
+      if ('da' in ref) entry.da = el.getAttribute('stroke-dasharray') || ref.da;
+      if ('sw' in ref) entry.sw = parseFloat(el.getAttribute('stroke-width')) || ref.sw;
+    }
+    if ('cx' in ref) {
+      entry.cx = parseFloat(el.getAttribute('cx')) || ref.cx;
+      entry.cy = parseFloat(el.getAttribute('cy')) || ref.cy;
+      entry.r = Math.max(0, parseFloat(el.getAttribute('r')) || 0);
+      if ('sw' in ref) entry.sw = parseFloat(el.getAttribute('stroke-width')) || ref.sw;
+    }
+    snap[key] = entry;
+  }
+  return snap;
+}
+
 // Promise-based morph animation
 export function morphAnim(elMap, from, to, dur, stage, colFrom, colTo) {
   return new Promise(resolve => {

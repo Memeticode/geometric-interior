@@ -14,6 +14,7 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         matrix: resolve(__dirname, 'pages/matrix.html'),
         browser: resolve(__dirname, 'pages/browser.html'),
+        'custom-buttons': resolve(__dirname, 'pages/custom-buttons.html'),
       },
     },
   },

@@ -1,4 +1,4 @@
-/* ── Icon button group (shared sizing for gallery-controls, gen-header-actions, etc.) ── */
+/* ── Icon button group (shared sizing for main-content-controls, gen-header-actions, etc.) ── */
 .icon-btn-group {
     --icon-btn-size: 22px;
     --icon-btn-icon: 12px;

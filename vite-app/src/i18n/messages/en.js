@@ -13,9 +13,9 @@ export default {
 
     /* ── Header ── */
     'header.title': 'Geometric Interior: Self-Portraits of a Predictive Model',
-    'header.artistStatement': 'Artist Statement',
-    'header.developerStatement': 'Developer Statement',
-    'header.governanceFramework': 'Governance Framework',
+    'header.artistStatement': 'Artist\nStatement',
+    'header.developerStatement': 'Developer\nStatement',
+    'header.governanceFramework': 'Governance\nFramework',
     'header.parameters': 'Parameters',
 
     /* ── Gallery sections ── */
@@ -237,6 +237,8 @@ export default {
     'statement.developer': 'Developer Statement',
     'statement.governance': 'Governance Framework',
     'statement.parameters': 'Parameters',
+    'statement.referenceTitle': 'Coherence, Under Revision',
+    'statement.referenceAlt': 'A landscape frame which presents, against a black background for high contrast and visual pop, an intricately-structured arrangement of polygonal geometric planes, rendered in varying shades of purple and translucencies. The planes appear to finely fold over and around each other in three dimensions, tessellating, reflecting, refracting, expanding, and contracting, as if they are continually reorienting and reorganizing themselves and the collective structure. Floating orbs of white light appear scattered amongst this geometry, like stars in a galaxy, with the brighter and larger stars clustered closer towards the center of the image, as though they are drawn together by each other\'s gravitational pull. The light of the orbs appears to radiate outward through the illuminated planes, creating a dance of light and form across the structure. The image evokes a brain, represented as crystallized radiance. Not everyone will recognize this as a portrait.',
 
     /* ── Theme switcher ── */
     'theme.system': 'System',
@@ -276,6 +278,7 @@ export default {
     'gallery.deleteProfile': 'Delete',
     'gallery.altTextBtn': 'Text',
     'gallery.ctxEdit': 'Edit',
+    'gallery.ctxAdd': 'Add',
     'gallery.ctxShare': 'Share',
     'gallery.ctxDownload': 'Download',
     'gallery.ctxDownloadImage': 'Image',

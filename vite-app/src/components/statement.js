@@ -6,6 +6,7 @@
  */
 
 import { t, getLocale } from '../i18n/locale.js';
+import { initCustomDropdown, syncMorph } from './custom-dropdown.js';
 
 const STATEMENT_TITLES = { developer: '', artist: '', governance: '' };
 
@@ -45,6 +46,7 @@ export function initStatementModal(dom) {
     let statementContentReady = null;
     let statementFlipping = false;
     let statementClosing = false;
+    let dropdownInited = false;
 
     async function loadStatementContent() {
         const locale = getLocale();
@@ -77,6 +79,10 @@ export function initStatementModal(dom) {
             dom.developerBody.querySelector('.manifesto').textContent = devContent.trim();
             dom.artistBody.querySelector('.manifesto').textContent = artContent.trim();
             dom.governanceBody.querySelector('.manifesto').innerHTML = simpleMarkdownToHtml(govContent.trim());
+            const figcaption = dom.artistBody.querySelector('.manifesto-figcaption');
+            if (figcaption) figcaption.textContent = t('statement.referenceTitle');
+            const refImg = dom.artistBody.querySelector('.manifesto-image');
+            if (refImg) refImg.alt = t('statement.referenceAlt');
             const noteEl = dom.artistBody.querySelector('.manifesto-note');
             if (noteEl) noteEl.textContent = devFooter.trim();
         } catch (err) {
@@ -92,14 +98,7 @@ export function initStatementModal(dom) {
             btn.classList.toggle('active', btn.dataset.tab === tab);
         });
         /* Sync custom dropdown */
-        const selectLabel = dom.statementTabSelect.querySelector('.modal-tab-select-label');
-        if (selectLabel) {
-            const labelKeys = { artist: 'statement.artist', developer: 'statement.developer', governance: 'statement.governance' };
-            selectLabel.textContent = t(labelKeys[tab]) || tab;
-        }
-        dom.statementTabSelect.querySelectorAll('.modal-tab-select-item').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === tab);
-        });
+        syncMorph(dom.statementTabSelect, tab);
 
         if (!animate || currentTab === tab || statementFlipping) {
             dom.statementTitle.textContent = STATEMENT_TITLES[tab] || '';
@@ -161,6 +160,15 @@ export function initStatementModal(dom) {
         dom.statementModal.classList.remove('hidden');
         dom.statementModal.classList.remove('modal-leaving');
         dom.statementModal.classList.add('modal-entering');
+        /* Defer dropdown init to first open — modal must be visible for measurements */
+        if (!dropdownInited) {
+            dropdownInited = true;
+            initCustomDropdown(dom.statementTabSelect, {
+                initialValue: tab,
+                animate: true,
+                onSelect(value) { switchStatementTab(value); },
+            });
+        }
         const box = dom.statementModal.querySelector('.modal-box');
         box.addEventListener('animationend', () => {
             dom.statementModal.classList.remove('modal-entering');
@@ -187,32 +195,6 @@ export function initStatementModal(dom) {
     dom.artistStatement.addEventListener('click', () => openStatementModal('artist'));
     dom.governanceStatement.addEventListener('click', () => openStatementModal('governance'));
     dom.statementModalClose.addEventListener('click', closeStatementModal);
-
-    /* Custom dropdown for mobile tab select */
-    const tabSelectTrigger = dom.statementTabSelect.querySelector('.modal-tab-select-trigger');
-    const tabSelectMenu = dom.statementTabSelect.querySelector('.modal-tab-select-menu');
-    if (tabSelectTrigger && tabSelectMenu) {
-        tabSelectTrigger.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isOpen = tabSelectMenu.classList.contains('open');
-            tabSelectMenu.classList.toggle('open', !isOpen);
-            dom.statementTabSelect.classList.toggle('open', !isOpen);
-        });
-        tabSelectMenu.addEventListener('click', (e) => {
-            const item = e.target.closest('.modal-tab-select-item');
-            if (!item) return;
-            switchStatementTab(item.dataset.tab);
-            tabSelectMenu.classList.remove('open');
-            dom.statementTabSelect.classList.remove('open');
-        });
-        /* Close dropdown when clicking anywhere else in the modal */
-        dom.statementModal.addEventListener('click', (e) => {
-            if (!dom.statementTabSelect.contains(e.target)) {
-                tabSelectMenu.classList.remove('open');
-                dom.statementTabSelect.classList.remove('open');
-            }
-        });
-    }
 
     dom.statementModal.addEventListener('click', (e) => {
         if (e.target === dom.statementModal) closeStatementModal();

@@ -69,15 +69,15 @@ image-viewer {
 .iv-controls:empty { display: none; }
 
 /* Controls position — vertical */
-image-viewer[controls-pos^="top"] .iv-controls    { top: 0.5rem; }
+image-viewer[controls-pos^="top"] .iv-controls    { top: 0.25rem; }
 image-viewer:not([controls-pos]) .iv-controls,
-image-viewer[controls-pos^="bottom"] .iv-controls { bottom: 0.5rem; }
+image-viewer[controls-pos^="bottom"] .iv-controls { bottom: 0.25rem; }
 
 /* Controls position — horizontal */
-image-viewer[controls-pos$="-left"] .iv-controls   { left: 0.5rem; }
+image-viewer[controls-pos$="-left"] .iv-controls   { left: 0.25rem; }
 image-viewer[controls-pos$="-center"] .iv-controls { left: 50%; transform: translateX(-50%); }
 image-viewer:not([controls-pos]) .iv-controls,
-image-viewer[controls-pos$="-right"] .iv-controls  { right: 0.5rem; }
+image-viewer[controls-pos$="-right"] .iv-controls  { right: 0.25rem; }
 
 image-viewer.iv-controls-active .iv-controls {
     opacity: 1;
@@ -162,33 +162,44 @@ image-viewer[mode="canvas"] .iv-controls {
 
 /* ── dd-morph: unified expanding dropdown ── */
 
-/* The element itself — looks like a pill button when collapsed */
-.iv-controls dd-morph {
+/* The element itself — fixed layout footprint, inner overflows for overlay expansion */
+.iv-controls dd-morph.select-base {
     display: block;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    height: auto;
+    padding: 0;
     border-radius: 3px;
     cursor: pointer;
-    transition: max-height var(--lm-collapse) cubic-bezier(0.16, 1, 0.3, 1),
-                padding var(--lm-collapse) cubic-bezier(0.16, 1, 0.3, 1),
-                border-color var(--lm-collapse) ease,
-                box-shadow var(--lm-collapse) ease;
-}
-.iv-controls dd-morph.open {
-    padding: 0.25rem;
-    border-color: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+    background: none;
+    background-image: none;
 }
 
-/* Inner wrapper — translateY slides active item into view when collapsed */
+/* Inner wrapper — carries visual styling, overflows dd-morph's fixed height */
 .iv-controls .ddm-inner {
     position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
     flex-shrink: 0;
-    transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
-                opacity calc(var(--t-accent) * var(--t-speed)) ease;
+    overflow: hidden;
+    border-radius: 3px;
+    transition: max-height var(--lm-collapse) cubic-bezier(0.16, 1, 0.3, 1),
+                opacity calc(var(--t-accent) * var(--t-speed)) ease,
+                border-color var(--lm-collapse) ease,
+                box-shadow var(--lm-collapse) ease;
+}
+.iv-controls dd-morph.select-base.open .ddm-inner {
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
+}
+
+/* Content wrapper inside inner — receives translateY so pill stays fixed */
+.iv-controls .ddm-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Items */
@@ -214,7 +225,7 @@ image-viewer[mode="canvas"] .iv-controls {
 }
 
 /* Light theme */
-[data-theme="light"] .iv-controls dd-morph.open {
+[data-theme="light"] .iv-controls dd-morph.select-base.open .ddm-inner {
     border-color: rgba(0, 0, 0, 0.12);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
 }
@@ -230,7 +241,8 @@ image-viewer[mode="canvas"] .iv-controls {
 }
 
 /* Downward expansion when controls are on top */
-image-viewer[controls-pos^="top"] .iv-controls .ddm-inner {
+image-viewer[controls-pos^="top"] .iv-controls .ddm-inner,
+image-viewer[controls-pos^="top"] .iv-controls .ddm-content {
     flex-direction: column-reverse;
 }
 
@@ -525,10 +537,10 @@ image-viewer[controls-pos^="top"] .iv-controls .ddm-inner {
 }
 
 /* ── Context menu (used in fullscreen) ── */
-.gallery-ctx-menu {
+.ctx-menu {
     position: fixed;
     z-index: 9999;
-    min-width: 140px;
+    width: max-content;
     padding: 4px 0;
     background: var(--modal-bg);
     backdrop-filter: blur(8px);
@@ -541,12 +553,12 @@ image-viewer[controls-pos^="top"] .iv-controls .ddm-inner {
     transform: scale(0.96);
     transition: opacity calc(var(--t-accent) * 0.8 * var(--t-speed)) ease, transform calc(var(--t-accent) * 0.8 * var(--t-speed)) ease;
 }
-.gallery-ctx-menu.visible {
+.ctx-menu.visible {
     opacity: 1;
     pointer-events: auto;
     transform: scale(1);
 }
-.gallery-ctx-item {
+.ctx-item {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -561,31 +573,31 @@ image-viewer[controls-pos^="top"] .iv-controls .ddm-inner {
     cursor: pointer;
     white-space: nowrap;
 }
-.gallery-ctx-icon {
+.ctx-icon {
     display: flex;
     width: 14px;
     height: 14px;
     flex-shrink: 0;
 }
-.gallery-ctx-icon svg {
+.ctx-icon svg {
     width: 100%;
     height: 100%;
 }
-.gallery-ctx-item:hover,
-.gallery-ctx-item:focus-visible {
+.ctx-item:hover,
+.ctx-item:focus-visible {
     background: var(--surface-hover);
     outline: none;
 }
-.gallery-ctx-sep {
+.ctx-sep {
     height: 1px;
     margin: 4px 10px;
     background: var(--border);
 }
 /* Expandable menu items (Share, Download) */
-.gallery-ctx-expandable {
+.ctx-expandable {
     justify-content: space-between;
 }
-.gallery-ctx-chevron {
+.ctx-chevron {
     display: flex;
     width: 10px;
     height: 10px;
@@ -593,42 +605,42 @@ image-viewer[controls-pos^="top"] .iv-controls .ddm-inner {
     opacity: 0.5;
     transition: transform calc(var(--t-accent) * var(--t-speed)) ease;
 }
-.gallery-ctx-chevron svg {
+.ctx-chevron svg {
     width: 100%;
     height: 100%;
 }
-.gallery-ctx-expandable.expanded .gallery-ctx-chevron {
+.ctx-expandable.expanded .ctx-chevron {
     transform: rotate(90deg);
 }
 /* Inline submenu (collapsed by default, animated via grid row) */
-.gallery-ctx-submenu {
+.ctx-submenu {
     display: grid;
     grid-template-rows: 0fr;
     transition: grid-template-rows calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
-.gallery-ctx-submenu > .gallery-ctx-submenu-inner {
+.ctx-submenu > .ctx-submenu-inner {
     overflow: hidden;
 }
-.gallery-ctx-submenu.expanded {
+.ctx-submenu.expanded {
     grid-template-rows: 1fr;
 }
-.gallery-ctx-sub-item {
+.ctx-sub-item {
     font-size: 0.75rem;
     padding: 5px 14px 5px 22px;
 }
-.gallery-ctx-dim {
+.ctx-dim {
     opacity: 0.45;
     font-size: 0.6875rem;
 }
 /* Browser menu hint — no hover effect */
-.gallery-ctx-browser {
+.ctx-browser {
     color: var(--text-dim);
     font-size: 0.6875rem;
     white-space: normal;
     padding: 6px 14px;
     cursor: default;
 }
-.gallery-ctx-browser:hover,
-.gallery-ctx-browser:focus-visible {
+.ctx-browser:hover,
+.ctx-browser:focus-visible {
     background: none;
 }

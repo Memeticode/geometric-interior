@@ -33,6 +33,9 @@ export const COL = {
   portal:    { bg: [26, 22, 30], bd: [40, 30, 50] },
   converge:  { bg: [17, 17, 17], bd: [22, 22, 22] },
   dissipate: { bg: [17, 17, 17], bd: [22, 22, 22] },
+  'alt-text': { bg: [24, 26, 28], bd: [34, 38, 44] },
+  create:    { bg: [26, 28, 24], bd: [42, 44, 34] },
+  construct: { bg: [28, 24, 30], bd: [44, 36, 50] },
 };
 
 // ── State Definitions ──
@@ -571,6 +574,49 @@ export const dissipateState = {
   P1: { cx: 12, cy: 12, r: 20, o: 0, sw: 0.75 },
 };
 
+// ── Geometric Interior ──
+
+export const altTextState = {
+  L1: { ...S(6.75, 4.5, 20.25, 4.5), sw: 1.5, da: '100 0', o: 1 },
+  L2: { ...S(3.75, 9, 17.25, 9), sw: 1.5, da: '100 0', o: 1 },
+  L3: { ...S(3.75, 13.5, 20.25, 13.5), sw: 1.5, da: '100 0', o: 1 },
+  L4: { ...S(3.75, 18, 12, 18), sw: 1.5, da: '100 0', o: 1 },
+  L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: HC, C2: HC, C3: HC, C4: HC, C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+export const createState = {
+  L1: { ...S(12, 4.5, 12, 12), sw: 1.5, da: '100 0', o: 1 },
+  L2: { ...S(12, 12, 12, 19.5), sw: 1.5, da: '100 0', o: 1 },
+  L3: { ...S(4.5, 12, 12, 12), sw: 1.5, da: '100 0', o: 1 },
+  L4: { ...S(12, 12, 19.5, 12), sw: 1.5, da: '100 0', o: 1 },
+  L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: { cx: 12, cy: 12, r: 2, o: 1 },
+  C2: { cx: 12, cy: 4.5, r: 1.2, o: 1 },
+  C3: { cx: 12, cy: 19.5, r: 1.2, o: 1 },
+  C4: { cx: 4.5, cy: 12, r: 1.2, o: 1 },
+  C5: { cx: 19.5, cy: 12, r: 1.2, o: 1 },
+  C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+export const constructState = {
+  L1: { ...S(5.5, 10.75, 7.75, 17.6), sw: 1.25, da: '100 0', o: 1 },
+  L2: { ...S(7.75, 17.6, 16.25, 17.6), sw: 1.25, da: '100 0', o: 1 },
+  L3: { ...S(16.25, 17.6, 18.5, 10.75), sw: 1.25, da: '100 0', o: 1 },
+  L4: { ...S(5.5, 10.75, 12, 5), sw: 1.25, da: '3.5 2', o: 0.55 },
+  L5: { ...S(18.5, 10.75, 12, 5), sw: 1.25, da: '3.5 2', o: 0.55 },
+  L6: HP, L7: HP, L8: HP,
+  C1: { cx: 12, cy: 5, r: 0.9, o: 0.5 },
+  C2: { cx: 5.5, cy: 10.75, r: 1.4, o: 1 },
+  C3: { cx: 16.25, cy: 17.6, r: 0.8, o: 0.6 },
+  C4: { cx: 7.75, cy: 17.6, r: 0.8, o: 0.6 },
+  C5: { cx: 18.5, cy: 10.75, r: 1.4, o: 1 },
+  C6: HC, C7: HC,
+  P1: { cx: 12, cy: 5, r: 2.5, o: 0.3, sw: 0.75 },
+};
+
 // ── Registry for programmatic iteration ──
 
 export const STATES = {
@@ -584,6 +630,9 @@ export const STATES = {
   array: arrayState, dimension: dimensionState, thorn: thornState,
   knot: knotState, gate: gateState, wave: waveState, coil: coilState,
   portal: portalState,
+  'alt-text': altTextState,
+  create: createState,
+  construct: constructState,
 };
 
 // ── Subgroups for organized display ──
@@ -591,6 +640,7 @@ export const STATE_GROUPS = [
   { name: 'transitions', keys: ['converge', 'dissipate'] },
   { name: 'utility', keys: ['error', 'eye', 'heartbeat', 'loading', 'retry', 'scan'] },
   { name: 'alien', keys: ['array', 'beacon', 'bloom', 'coil', 'cross', 'dots', 'fracture', 'gate', 'glyph', 'hex', 'knot', 'orbit', 'portal', 'pulse', 'seer', 'sigil', 'thorn', 'void', 'dimension', 'wave'] },
+  { name: 'geometric interior', keys: ['alt-text', 'create', 'construct'] },
 ];
 
 // Resolve COL key for a state key

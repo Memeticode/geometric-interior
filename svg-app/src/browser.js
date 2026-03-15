@@ -1,12 +1,13 @@
 import {
   DURATION, EASE,
-  buildMorphSVG, applyState, setState, lerpColor,
+  buildMorphSVG, applyState, setState, readState, lerpColor,
   COL, STATES, STATE_GROUPS,
   convergeState, dissipateState,
 } from '@svg-icons';
 
 const browser = document.getElementById('browser');
 const STAGE_SIZE = 48;
+const BLEND_IN_DUR = 500;
 
 function colFor(key) {
   if (key === 'dots' || key === 'cross') return COL.def;
@@ -384,6 +385,10 @@ const ICON_INFO = {
       const cb = Math.sin(now / 3000 * Math.PI * 2) * 0.5 + 0.5;
       modEl(elMap, state, 'C1', 0.6 + 0.4 * cb);
       modCircleR(elMap, state, 'C1', 0.85 + 0.3 * cb);
+      // P1 ring — rotating dash pattern (circumference ≈ 56.5)
+      elMap.P1.setAttribute('stroke-dasharray', '14 8 6 8 14 6.5');
+      elMap.P1.setAttribute('stroke-dashoffset', (now / 30) % 56.5);
+      modEl(elMap, state, 'P1', 0.08 + 0.08 * cb);
     },
   },
   pulse: {
@@ -1430,6 +1435,100 @@ const ICON_INFO = {
       modEl(elMap, state, 'P1', 0.1 + 0.08 * throb);
     },
   },
+  'alt-text': {
+    desc: 'image alt-text',
+    anim: (elMap, state, now) => {
+      // Reading focus: discrete beats L1→L2→L3→L4→rest, equal duration each
+      const cycle = 4000;
+      const t = (now % cycle) / cycle;
+      const beat = Math.floor(t * 5);   // 0–4: which beat
+      const beatT = (t * 5) % 1;        // 0–1: progress within beat
+      const pulse = Math.sin(beatT * Math.PI); // smooth 0→1→0
+      for (let i = 1; i <= 4; i++) {
+        const active = beat === (i - 1);
+        modEl(elMap, state, 'L' + i, active ? 0.45 + 0.55 * pulse : 0.45);
+        modLineSW(elMap, state, 'L' + i, active ? 0.85 + 0.25 * pulse : 0.85);
+      }
+    },
+  },
+  create: {
+    desc: 'add new visual',
+    anim: (elMap, state, now) => {
+      // Radial pulse: center breathes, wave propagates outward to arms then tips
+      const cycle = 3000;
+      const phase = (now % cycle) / cycle * Math.PI * 2;
+      // Center node breathes
+      const cp = Math.sin(phase) * 0.5 + 0.5;
+      modCircleR(elMap, state, 'C1', 0.85 + 0.3 * cp);
+      modEl(elMap, state, 'C1', 0.7 + 0.3 * cp);
+      // Arms brighten with phase delay
+      const ap = Math.sin(phase - 0.6) * 0.5 + 0.5;
+      for (let i = 1; i <= 4; i++) {
+        modEl(elMap, state, 'L' + i, 0.5 + 0.5 * ap);
+        modLineSW(elMap, state, 'L' + i, 0.8 + 0.3 * ap);
+      }
+      // Tip nodes brighten with more delay
+      const tp = Math.sin(phase - 1.2) * 0.5 + 0.5;
+      for (let i = 2; i <= 5; i++) {
+        modEl(elMap, state, 'C' + i, 0.4 + 0.6 * tp);
+        modCircleR(elMap, state, 'C' + i, 0.7 + 0.5 * tp);
+      }
+    },
+  },
+  construct: {
+    desc: 'active editing',
+    anim: (elMap, state, now) => {
+      // Glyph-inspired trace/reveal for open pentagon
+      const cycle = 4000;
+      const t = (now % cycle) / cycle;
+      const edgePhase = 0.4;
+      const holdEnd = 0.8;
+      // Solid edges L1-L3 reveal sequentially
+      for (let i = 1; i <= 3; i++) {
+        const start = ((i - 1) / 3) * edgePhase;
+        const end = start + edgePhase / 3;
+        let m;
+        if (t < start) m = 0.08;
+        else if (t < end) m = 0.08 + 0.92 * ((t - start) / (end - start));
+        else if (t < holdEnd) m = 1;
+        else m = Math.max(0.08, 1 - (t - holdEnd) / (1 - holdEnd));
+        modEl(elMap, state, 'L' + i, m);
+        modLineSW(elMap, state, 'L' + i, 0.5 + 0.7 * m);
+      }
+      // Dashed guides L4-L5: shimmer during hold, dashoffset streams upward
+      const guideActive = t > edgePhase && t < holdEnd;
+      const guideM = guideActive ? 0.55 + 0.25 * Math.sin(now / 600 * Math.PI * 2) : 0.15;
+      modEl(elMap, state, 'L4', guideM);
+      modEl(elMap, state, 'L5', guideM);
+      elMap.L4.setAttribute('stroke-dashoffset', -(now / 20) % 11);
+      elMap.L5.setAttribute('stroke-dashoffset', -(now / 20) % 11);
+      // Apex ghost C1: breathes as focal beacon
+      const apexM = t > edgePhase * 0.5 && t < holdEnd
+        ? 0.4 + 0.6 * (Math.sin(now / 1200 * Math.PI * 2) * 0.5 + 0.5)
+        : 0.15;
+      modEl(elMap, state, 'C1', apexM);
+      modCircleR(elMap, state, 'C1', 0.6 + 0.6 * apexM);
+      // Open-end vertices C2, C5: swell with edges
+      for (const k of ['C2', 'C5']) {
+        const nm = t > edgePhase * 0.3 && t < holdEnd
+          ? 0.6 + 0.4 * (Math.sin(now / 1800 * Math.PI * 2) * 0.5 + 0.5)
+          : 0.2;
+        modEl(elMap, state, k, nm);
+        modCircleR(elMap, state, k, 0.5 + 0.6 * nm);
+      }
+      // Lower vertices C3, C4: dim pulse
+      for (const k of ['C3', 'C4']) {
+        const lm = t > edgePhase * 0.5 && t < holdEnd ? 0.35 : 0.12;
+        modEl(elMap, state, k, lm);
+      }
+      // P1 ring around apex pulses during hold
+      if (state.P1?.o > 0) {
+        const baseSW = state.P1?.sw ?? 0.75;
+        const holdActive = t > edgePhase && t < holdEnd;
+        elMap.P1.setAttribute('stroke-width', baseSW * (holdActive ? 1.3 : 0.8));
+      }
+    },
+  },
 };
 
 // ── Stage factory ──
@@ -1471,22 +1570,27 @@ class IconCtrl {
 
   togglePlay() {
     if (this.status === 'playing') this.pause();
-    else if (this.status === 'idle') this.play();
+    else if (this.status === 'idle' || this.status === 'settling') this.play();
   }
 
   play() {
-    if (this.status !== 'idle') return;
+    if (this.status !== 'idle' && this.status !== 'settling') return;
+    this._stopAnim();
+    const fromSnap = this.status === 'settling'
+      ? readState(this.elMap, this.state)
+      : this.state;
     this.status = 'playing';
     this._notify();
-    this._startAnim();
+    this._startAnimFrom(fromSnap);
   }
 
   pause() {
     if (this.status !== 'playing') return;
     this._stopAnim();
-    this.status = 'idle';
-    setState(this.elMap, this.state);
+    const snap = readState(this.elMap, this.state);
+    this.status = 'settling';
     this._notify();
+    this._settle(snap);
   }
 
   depart(method) {
@@ -1525,17 +1629,47 @@ class IconCtrl {
   }
 
   _startAnim() {
+    this._startAnimFrom(this.state);
+  }
+
+  _startAnimFrom(fromSnap) {
     const self = this;
+    const t0 = performance.now();
     (function tick(now) {
       if (self.status !== 'playing') return;
       resetAnim(self.elMap, self.state);
-      self.animFn(self.elMap, self.state, now);
+      const elapsed = now - t0;
+      self.animFn(self.elMap, self.state, elapsed);
+      if (elapsed < BLEND_IN_DUR) {
+        const animSnap = readState(self.elMap, self.state);
+        const blendT = EASE(elapsed / BLEND_IN_DUR);
+        applyState(self.elMap, fromSnap, animSnap, blendT);
+      }
       self.animId = requestAnimationFrame(tick);
     })(performance.now());
   }
 
   _stopAnim() {
     if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
+  }
+
+  _settle(fromSnap, duration = 600) {
+    const t0 = performance.now();
+    const self = this;
+    const toState = this.state;
+    (function tick(now) {
+      if (self.status !== 'settling') return;
+      const raw = Math.min((now - t0) / duration, 1);
+      const t = EASE(raw);
+      applyState(self.elMap, fromSnap, toState, t);
+      if (raw < 1) {
+        self.animId = requestAnimationFrame(tick);
+      } else {
+        self.animId = null;
+        self.status = 'idle';
+        self._notify();
+      }
+    })(performance.now());
   }
 
   _morph(fromState, toState, colFrom, colTo, onDone) {
@@ -1617,11 +1751,11 @@ for (const group of STATE_GROUPS) {
     controls.className = 'browser-controls';
 
     const playBtn = btn('\u25b6', () => ctrl.togglePlay());
-    const convBtn = btn('\u21d3', () => ctrl.depart('converge'));
-    const dissBtn = btn('\u21d1', () => ctrl.depart('dissipate'));
+    const convBtn = btn('\u21d3 Converge', () => ctrl.depart('converge'));
+    const dissBtn = btn('\u21d1 Dissipate', () => ctrl.depart('dissipate'));
     // Two return buttons — one for each return method
-    const retConvBtn = btn('\u21d3\u21bb', () => ctrl.arrive('converge'));
-    const retDissBtn = btn('\u21d1\u21bb', () => ctrl.arrive('dissipate'));
+    const retConvBtn = btn('\u21d3 Return', () => ctrl.arrive('converge'));
+    const retDissBtn = btn('\u21d1 Return', () => ctrl.arrive('dissipate'));
     retConvBtn.style.display = 'none';
     retDissBtn.style.display = 'none';
 
@@ -1634,7 +1768,7 @@ for (const group of STATE_GROUPS) {
 
     // State machine → update controls
     ctrl.onUpdate = (status) => {
-      const visible = status === 'idle' || status === 'playing';
+      const visible = status === 'idle' || status === 'playing' || status === 'settling';
       const gone = status === 'gone';
       const busy = status === 'departing' || status === 'arriving';
 
@@ -1658,3 +1792,4 @@ for (const group of STATE_GROUPS) {
   details.appendChild(list);
   browser.appendChild(details);
 }
+

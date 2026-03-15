@@ -41,6 +41,7 @@
  */
 
 import { TRASH_SVG, ARROW_LEFT_SVG, ARROW_RIGHT_SVG, DBL_ARROW_LEFT_SVG, DBL_ARROW_RIGHT_SVG } from './icons.js';
+import { setSuppressTooltips } from './tooltips.js';
 import './flip-layout.js';
 
 // ── Child element: <carousel-dropdown-browser-card> ──
@@ -72,9 +73,11 @@ class CarouselDropdownBrowserCard extends HTMLElement {
 // ── Child element: <carousel-dropdown-browser-section> ──
 
 class CarouselDropdownBrowserSection extends HTMLElement {
-    static observedAttributes = ['label'];
+    static observedAttributes = ['label', 'grid-items-align'];
     get label() { return this.getAttribute('label') || ''; }
     set label(v) { this.setAttribute('label', v); }
+    get gridItemsAlign() { return this.getAttribute('grid-items-align') || ''; }
+    set gridItemsAlign(v) { v ? this.setAttribute('grid-items-align', v) : this.removeAttribute('grid-items-align'); }
     attributeChangedCallback() {
         this.closest('carousel-dropdown-browser')?.requestUpdate();
     }
@@ -208,7 +211,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     //   h-align: left | center | right (default: center)
     #cardTitle = 'none';
     #gridAlign = 'center';     // 'left' | 'center' | 'right'
-    #gridItemsAlign = 'center'; // 'stretch' | 'left' | 'center' | 'right'
+    #gridItemsAlign = 'stretch'; // 'stretch' | 'left' | 'center' | 'right'
     #sectionAlign = 'left';    // 'left' | 'center' | 'right'
 
     // ── Data ──
@@ -259,6 +262,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     #resizeObs = null;
     #scrollParent = null;
     #scrollRaf = null;
+    #scrollTarget = null;      // target scrollTop for in-flight scroll animation
     #scrollCancelled = false;  // true when user scrolls during animation or noScroll active
     #scrollListener = null;    // bound scroll listener for user-scroll detection
     #flipAnimations = [];  // Web Animations created by #animateCardsWA
@@ -480,9 +484,12 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#scrollCancelled = noScroll;
         this.dispatchEvent(new CustomEvent('expand-start'));
 
-        // Disable controls during animation
+        // Disable controls and tooltips during animation
+        setSuppressTooltips(true);
         this.#navLeft.disabled = true;
         this.#navRight.disabled = true;
+        this.#secNavLeft.disabled = true;
+        this.#secNavRight.disabled = true;
         this.#toggle.disabled = true;
         this.#toggle.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
 
@@ -819,6 +826,9 @@ class CarouselDropdownBrowser extends HTMLElement {
 
         // ── Cleanup closure — shared by normal completion and skip ──
         const expandCleanup = () => {
+            // Cancel scroll animation and snap to target
+            this.#cancelScrollAnimation();
+
             // Unlock dropdown scroll
             this.#dropdown.removeEventListener('wheel', blockWheel);
             this.#dropdown.style.overflowY = '';
@@ -874,8 +884,11 @@ class CarouselDropdownBrowser extends HTMLElement {
             // Clear controls FLIP styles and re-enable
             this.#controls.style.transition = '';
             this.#controls.style.transform = '';
+            setSuppressTooltips(false);
             this.#navLeft.disabled = false;
             this.#navRight.disabled = false;
+            this.#secNavLeft.disabled = false;
+            this.#secNavRight.disabled = false;
             this.#toggle.disabled = false;
             this.#toggle.setAttribute('data-tooltip', 'Collapse');
             if (this.#toggle.matches(':hover')) {
@@ -885,9 +898,11 @@ class CarouselDropdownBrowser extends HTMLElement {
                 }));
             }
 
+            // Snap scroll to final position
+            this.#snapScroll();
+
             this.#expandTimers = [];
             this.#expandSkipFn = null;
-            this.#teardownScrollListener();
             this.#scrollCancelled = false;
             this.#animatingExpand = false;
             this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: true } }));
@@ -903,9 +918,12 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#scrollCancelled = noScroll;
         this.dispatchEvent(new CustomEvent('expand-start'));
 
-        // Disable controls during animation
+        // Disable controls and tooltips during animation
+        setSuppressTooltips(true);
         this.#navLeft.disabled = true;
         this.#navRight.disabled = true;
+        this.#secNavLeft.disabled = true;
+        this.#secNavRight.disabled = true;
         this.#toggle.disabled = true;
         this.#toggle.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
 
@@ -936,6 +954,9 @@ class CarouselDropdownBrowser extends HTMLElement {
         await new Promise(resolve => {
             // ── Collapse skip closure — snaps to final collapsed state ──
             const collapseCleanup = () => {
+                // Cancel scroll animation
+                this.#cancelScrollAnimation();
+
                 // Cancel all Web Animations
                 this.#cancelFlipAnimations();
 
@@ -994,15 +1015,32 @@ class CarouselDropdownBrowser extends HTMLElement {
                 this.#isTransitioning = false;
                 this.#track.classList.remove('cdb-transitioning');
 
-                // Re-enable controls
+                // Re-enable controls and tooltips
+                setSuppressTooltips(false);
                 this.#navLeft.disabled = false;
                 this.#navRight.disabled = false;
+                this.#secNavLeft.disabled = false;
+                this.#secNavRight.disabled = false;
                 this.#toggle.disabled = false;
                 this.#toggle.setAttribute('data-tooltip', 'Expand');
 
+                // Snap scroll to final position, compensate for layout shift
+                if (this.#scrollParent && this.#scrollTarget != null && !this.#scrollCancelled) {
+                    const rectBefore = this.getBoundingClientRect();
+                    const scrollBefore = this.#scrollParent.scrollTop;
+                    // Apply target scroll first
+                    this.#scrollParent.scrollTop = this.#scrollTarget;
+                    // Compensate if layout shifted (dropdown height disappeared)
+                    const rectAfter = this.getBoundingClientRect();
+                    const layoutShift = rectBefore.top - rectAfter.top;
+                    if (Math.abs(layoutShift) > 1) {
+                        this.#scrollParent.scrollTop -= layoutShift;
+                    }
+                }
+                this.#scrollTarget = null;
+
                 this.#expandTimers = [];
                 this.#expandSkipFn = null;
-                this.#teardownScrollListener();
                 this.#scrollCancelled = false;
                 this.#animatingExpand = false;
                 this.dispatchEvent(new CustomEvent('expand-change', { detail: { expanded: false } }));
@@ -1329,6 +1367,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                             }
                             console.groupEnd();
 
+                            setSuppressTooltips(false);
                             this.#toggle.disabled = false;
                             this.#toggle.setAttribute('data-tooltip', 'Expand');
                             if (this.#toggle.matches(':hover')) {
@@ -1362,6 +1401,10 @@ class CarouselDropdownBrowser extends HTMLElement {
      * Skip any in-flight expand/collapse animation — snap to end state.
      * Called by the transition overlay when user interacts during animation.
      */
+    get animating() { return this.#animatingExpand; }
+
+    skip() { this.skipExpandCollapse(); }
+
     skipExpandCollapse() {
         if (!this.#animatingExpand || !this.#expandSkipFn) return;
         console.log('[carousel] SKIP expand/collapse');
@@ -1406,7 +1449,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#applyGridAlignClass();
         }
         if (name === 'grid-items-align') {
-            this.#gridItemsAlign = val || 'center';
+            this.#gridItemsAlign = val || 'stretch';
             this.#applyGridItemsAlignClass();
         }
         if (name === 'section-align') {
@@ -1580,11 +1623,12 @@ class CarouselDropdownBrowser extends HTMLElement {
             if (child.matches?.('carousel-dropdown-browser-section')) {
                 sectionIndex++;
                 const sectionLabel = child.label || '';
+                const sectionAlign = child.gridItemsAlign || '';
                 for (const card of child.querySelectorAll('carousel-dropdown-browser-card')) {
-                    items.push({ ...readCard(card), section: sectionLabel, sectionIndex });
+                    items.push({ ...readCard(card), section: sectionLabel, sectionIndex, sectionGridItemsAlign: sectionAlign });
                 }
             } else if (child.matches?.('carousel-dropdown-browser-card')) {
-                items.push({ ...readCard(child), section: null, sectionIndex: -1 });
+                items.push({ ...readCard(child), section: null, sectionIndex: -1, sectionGridItemsAlign: '' });
             }
         }
         return items;
@@ -1680,7 +1724,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#controls.className = 'cdb-controls';
 
         this.#navLeft = document.createElement('button');
-        this.#navLeft.className = 'gallery-arrow cdb-arrow cdb-arrow-left';
+        this.#navLeft.className = 'cdb-arrow cdb-arrow-left';
         this.#navLeft.setAttribute('aria-label', 'Previous');
         this.#navLeft.setAttribute('data-tooltip', 'Scroll left');
         this.#navLeft.innerHTML = ARROW_LEFT_SVG;
@@ -1693,19 +1737,19 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#toggle.innerHTML = '<svg class="cdb-chevron-svg" viewBox="0 0 18 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l7 6 7-6"/></svg>';
 
         this.#navRight = document.createElement('button');
-        this.#navRight.className = 'gallery-arrow cdb-arrow cdb-arrow-right';
+        this.#navRight.className = 'cdb-arrow cdb-arrow-right';
         this.#navRight.setAttribute('aria-label', 'Next');
         this.#navRight.setAttribute('data-tooltip', 'Scroll right');
         this.#navRight.innerHTML = ARROW_RIGHT_SVG;
 
         this.#secNavLeft = document.createElement('button');
-        this.#secNavLeft.className = 'gallery-arrow cdb-arrow cdb-sec-arrow';
+        this.#secNavLeft.className = 'cdb-arrow cdb-sec-arrow';
         this.#secNavLeft.setAttribute('aria-label', 'Previous section');
         this.#secNavLeft.setAttribute('data-tooltip', 'Scroll (previous section)');
         this.#secNavLeft.innerHTML = DBL_ARROW_LEFT_SVG;
 
         this.#secNavRight = document.createElement('button');
-        this.#secNavRight.className = 'gallery-arrow cdb-arrow cdb-sec-arrow';
+        this.#secNavRight.className = 'cdb-arrow cdb-sec-arrow';
         this.#secNavRight.setAttribute('aria-label', 'Next section');
         this.#secNavRight.setAttribute('data-tooltip', 'Scroll (next section)');
         this.#secNavRight.innerHTML = DBL_ARROW_RIGHT_SVG;
@@ -2080,17 +2124,32 @@ class CarouselDropdownBrowser extends HTMLElement {
     #renderGridCards() {
         this.#grid.innerHTML = '';
         let lastSectionIndex = -2; // sentinel
+        let currentWrapper = null;
 
         for (let i = 0; i < this.#items.length; i++) {
             const item = this.#items[i];
 
-            // Insert section header at section boundaries
-            if (item.section != null && item.sectionIndex !== lastSectionIndex) {
-                const header = document.createElement('div');
-                header.className = 'cdb-grid-section-header';
-                header.textContent = item.section;
-                header.style.opacity = '0';
-                this.#grid.appendChild(header);
+            // Start a new section wrapper at section boundaries
+            if (item.sectionIndex !== lastSectionIndex) {
+                currentWrapper = document.createElement('div');
+                currentWrapper.className = 'cdb-grid-section';
+
+                // Determine alignment: section-level override or component default
+                const align = item.sectionGridItemsAlign || this.#gridItemsAlign;
+                if (align && align !== 'stretch') {
+                    currentWrapper.classList.add(`cdb-grid-items-${align}`);
+                }
+
+                // Insert section header
+                if (item.section != null) {
+                    const header = document.createElement('div');
+                    header.className = 'cdb-grid-section-header';
+                    header.textContent = item.section;
+                    header.style.opacity = '0';
+                    currentWrapper.appendChild(header);
+                }
+
+                this.#grid.appendChild(currentWrapper);
                 lastSectionIndex = item.sectionIndex;
             }
 
@@ -2156,7 +2215,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 }));
             });
 
-            this.#grid.appendChild(card);
+            currentWrapper.appendChild(card);
         }
     }
 
@@ -2429,6 +2488,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         if (!this.#scrollParent || this.#scrollCancelled) return;
         if (this.#scrollRaf) cancelAnimationFrame(this.#scrollRaf);
         this.#teardownScrollListener();
+        this.#scrollTarget = targetTop;
 
         const sp = this.#scrollParent;
         const from = sp.scrollTop;
@@ -2468,6 +2528,23 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#scrollParent.removeEventListener('scroll', this.#scrollListener);
         }
         this.#scrollListener = null;
+    }
+
+    /** Cancel in-flight scroll animation and snap to target position. */
+    #cancelScrollAnimation() {
+        if (this.#scrollRaf) {
+            cancelAnimationFrame(this.#scrollRaf);
+            this.#scrollRaf = null;
+        }
+        this.#teardownScrollListener();
+    }
+
+    /** Snap scroll to the stored target (if any) and clear it. */
+    #snapScroll() {
+        if (this.#scrollParent && this.#scrollTarget != null && !this.#scrollCancelled) {
+            this.#scrollParent.scrollTop = this.#scrollTarget;
+        }
+        this.#scrollTarget = null;
     }
 
     #findScrollParent() {

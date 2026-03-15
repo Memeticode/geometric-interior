@@ -37,6 +37,9 @@ class ImageViewer extends HTMLElement {
     /** @type {number|null} */
     #progress = null;
     #selectionFadeTimer = 0;
+    #mediaAnimating = false;
+    #mediaSafetyTimer = 0;
+    #mediaResolve = null;
     #controlsTimer = 0;
     #controlsActive = false;
     #controlsHovered = false;   // mouse is over wrap
@@ -217,42 +220,61 @@ class ImageViewer extends HTMLElement {
      * @returns {Promise<void>} resolves when fade-in completes
      */
     setMedia({ src, alt, altText, video, fadeDuration = 250, onSwap } = {}) {
-        return new Promise((resolve) => {
-            // Fade out
-            this.#img.style.opacity = '0';
-            if (this.#altVisible) this.#altOverlay.classList.add('fading');
+        // Cancel any in-flight crossfade
+        this.skipMedia();
 
-            clearTimeout(this.#selectionFadeTimer);
+        this.#mediaAnimating = true;
 
-            this.#selectionFadeTimer = setTimeout(() => {
-                // Swap content
-                if (alt !== undefined) this.#img.alt = alt;
-                if (altText !== undefined) this.#altText = altText;
-                if (this.#altVisible) this.#renderAltText();
+        // Copy current to prev for crossfade backdrop
+        if (this.#img.src) this.#prevImg.src = this.#img.src;
+        this.#img.style.opacity = '0';
+        if (this.#altVisible) this.#altOverlay.classList.add('fading');
 
-                if (video) {
-                    this.mode = 'video';
-                    this.#video.src = video;
-                } else {
-                    this.mode = 'image';
-                }
+        clearTimeout(this.#selectionFadeTimer);
 
-                if (onSwap) onSwap();
+        const promise = new Promise(resolve => { this.#mediaResolve = resolve; });
 
-                // Set src and wait for load
-                this.#img.addEventListener('load', () => {
-                    this.#img.style.opacity = '1';
-                    if (this.#altVisible) this.#altOverlay.classList.remove('fading');
-                    this.dispatchEvent(new CustomEvent('media-loaded'));
-                    resolve();
-                }, { once: true });
+        this.#selectionFadeTimer = setTimeout(() => {
+            // Midpoint: swap metadata
+            if (alt !== undefined) this.#img.alt = alt;
+            if (altText !== undefined) { this.#altText = altText; if (this.#altVisible) this.#renderAltText(); }
+            if (video) { this.mode = 'video'; this.#video.src = video; } else { this.mode = 'image'; }
+            onSwap?.();
 
-                if (src) this.#img.src = src;
+            // Same-URL: complete immediately (no load event)
+            if (src && src === this.#img.src) { this.#mediaComplete(); return; }
 
-                // Sync fullscreen if open
-                if (this.#fullscreen) this.#syncFullscreenMedia();
-            }, fadeDuration);
-        });
+            // Attach load/error → complete
+            const done = () => { this.#mediaComplete(); };
+            this.#img.addEventListener('load', done, { once: true });
+            this.#img.addEventListener('error', done, { once: true });
+            this.#mediaSafetyTimer = setTimeout(done, 2000);
+
+            if (src) this.#img.src = src;
+            if (this.#fullscreen) this.#syncFullscreenMedia();
+        }, fadeDuration);
+
+        return promise;
+    }
+
+    get animating() { return this.#mediaAnimating; }
+
+    skipMedia() {
+        if (!this.#mediaAnimating) return;
+        clearTimeout(this.#selectionFadeTimer);
+        clearTimeout(this.#mediaSafetyTimer);
+        this.#mediaComplete();
+    }
+
+    #mediaComplete() {
+        clearTimeout(this.#mediaSafetyTimer);
+        this.#img.style.opacity = '1';
+        this.#prevImg.removeAttribute('src');
+        if (this.#altVisible) this.#altOverlay.classList.remove('fading');
+        this.#mediaAnimating = false;
+        this.dispatchEvent(new CustomEvent('media-loaded'));
+        this.#mediaResolve?.();
+        this.#mediaResolve = null;
     }
 
     /** Show or set video source. Pass null to switch back to image. */
@@ -981,24 +1003,24 @@ class ImageViewer extends HTMLElement {
         if (!this.#ctxMenuItems.length) return null;
 
         const menu = document.createElement('div');
-        menu.className = 'gallery-ctx-menu';
+        menu.className = 'ctx-menu';
         menu.setAttribute('role', 'menu');
 
         let html = '';
         for (const item of this.#ctxMenuItems) {
             if (item === 'sep') {
-                html += '<div class="gallery-ctx-sep"></div>';
+                html += '<div class="ctx-sep"></div>';
             } else if (item.label && !item.action) {
-                html += `<div class="gallery-ctx-label">${item.label}</div>`;
+                html += `<div class="ctx-label">${item.label}</div>`;
             } else if (item.group) {
-                html += `<div class="gallery-ctx-res-group" role="group" data-group="${item.group}">${item.html}</div>`;
+                html += `<div class="ctx-res-group" role="group" data-group="${item.group}">${item.html}</div>`;
             } else {
-                html += `<button class="gallery-ctx-item" role="menuitem" data-action="${item.action}">${item.html}</button>`;
+                html += `<button class="ctx-item" role="menuitem" data-action="${item.action}">${item.html}</button>`;
             }
         }
         menu.innerHTML = html;
 
-        const allFocusable = [...menu.querySelectorAll('.gallery-ctx-item')];
+        const allFocusable = [...menu.querySelectorAll('.ctx-item')];
         let ctxVisible = false;
 
         const showMenu = (x, y) => {
@@ -1051,7 +1073,7 @@ class ImageViewer extends HTMLElement {
 
         // Context menu on media/overlay
         let allowNativeCtx = false;
-        const browserItem = menu.querySelector('.gallery-ctx-browser');
+        const browserItem = menu.querySelector('.ctx-browser');
         if (browserItem) {
             browserItem.addEventListener('contextmenu', () => hideMenu());
             browserItem.addEventListener('click', () => { hideMenu(); allowNativeCtx = true; });

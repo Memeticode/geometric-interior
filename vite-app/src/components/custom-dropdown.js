@@ -133,11 +133,25 @@ function initMorph(el, { initialValue, onSelect }) {
 
     if (initialValue) syncActive(el, initialValue);
 
-    const isTop = () => !!el.closest('image-viewer[controls-pos^="top"]');
+    const isTop = () => !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
+
+    // Overlay mode: inner overflows el's fixed height, expanding over content.
+    // Content wrapper inside inner receives translateY so the pill stays fixed.
+    const overlay = el.classList.contains('morph-overlay');
+    const sizeTarget = overlay ? inner : el;
+    let transformTarget = inner;
+    if (overlay) {
+        const content = document.createElement('div');
+        content.className = 'ddm-content';
+        while (inner.firstChild) content.appendChild(inner.firstChild);
+        inner.appendChild(content);
+        transformTarget = content;
+    }
 
     // ── Measure & set collapsed state ──
     el.style.transition = 'none';
     inner.style.transition = 'none';
+    if (overlay) transformTarget.style.transition = 'none';
     el.classList.add('open'); // expand to measure
     el.offsetHeight;
 
@@ -146,13 +160,15 @@ function initMorph(el, { initialValue, onSelect }) {
     const itemH = activeItem?.offsetHeight || anyItem?.offsetHeight || 24;
 
     const offset = activeItem ? morphOffset(inner, activeItem, isTop()) : 0;
-    inner.style.transform = `translateY(${offset}px)`;
+    transformTarget.style.transform = `translateY(${offset}px)`;
 
     el.classList.remove('open');
-    el.style.maxHeight = itemH + 'px'; // explicit px — drives transition
+    sizeTarget.style.maxHeight = itemH + 'px'; // explicit px — drives transition
+    if (overlay) el.style.height = itemH + 'px'; // hold layout space
     el.offsetHeight;
     el.style.removeProperty('transition');
     inner.style.removeProperty('transition');
+    if (overlay) transformTarget.style.removeProperty('transition');
 
     // ── Open / close with fade ──
     const FADE_MS = 120;
@@ -166,9 +182,9 @@ function initMorph(el, { initialValue, onSelect }) {
         fadeTimer = setTimeout(() => {
             // Phase 2: expand + reset translateY
             el.classList.add('open');
-            inner.style.transform = 'translateY(0)';
+            transformTarget.style.transform = 'translateY(0)';
             el.setAttribute('aria-expanded', 'true');
-            el.style.maxHeight = (inner.scrollHeight + 8) + 'px'; // explicit px
+            sizeTarget.style.maxHeight = (inner.scrollHeight + 8) + 'px'; // explicit px
             // Phase 3: fade items in (next frame so opacity:0 registers)
             requestAnimationFrame(() => { inner.style.opacity = ''; });
         }, FADE_MS);
@@ -184,9 +200,9 @@ function initMorph(el, { initialValue, onSelect }) {
             const active = inner.querySelector('.custom-dropdown-item.active');
             const off = active ? morphOffset(inner, active, isTop()) : 0;
             el.classList.remove('open');
-            inner.style.transform = `translateY(${off}px)`;
+            transformTarget.style.transform = `translateY(${off}px)`;
             el.setAttribute('aria-expanded', 'false');
-            el.style.maxHeight = itemH + 'px'; // back to single item
+            sizeTarget.style.maxHeight = itemH + 'px'; // back to single item
             // Phase 3: fade active item back in
             requestAnimationFrame(() => { inner.style.opacity = ''; });
         }, FADE_MS);
@@ -259,9 +275,10 @@ export function syncMorph(el, activeKey) {
     if (!inner) return;
     const active = inner.querySelector('.custom-dropdown-item.active');
     if (!active) return;
-    const isTop = !!el.closest('image-viewer[controls-pos^="top"]');
+    const isTop = !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
+    const target = inner.querySelector('.ddm-content') || inner;
     // Let the CSS transition handle the smooth slide
-    inner.style.transform = `translateY(${morphOffset(inner, active, isTop)}px)`;
+    target.style.transform = `translateY(${morphOffset(inner, active, isTop)}px)`;
 }
 
 // ═══════════════════════════════════════════════════════

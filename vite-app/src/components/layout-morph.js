@@ -55,6 +55,8 @@ export function createLayoutMorph(container, options = {}) {
         pending = null;
         clearTimeout(p.timer);
         hideBlockOverlay();
+        try { p.onSwap?.(); }
+        catch (e) { console.error('[layout-morph] onSwap error:', e); }
         try { p.onAfter?.(); }
         finally {
             p.cleanup?.();
@@ -74,14 +76,17 @@ export function createLayoutMorph(container, options = {}) {
             finishPending();
         },
 
-        morph(to, { onBefore, onAfter, onSwap } = {}) {
+        morph(to, { onBefore, onAfter, onSwap, onSkip } = {}) {
             if (to === state && !morphing) return Promise.resolve(state);
             // Cancel in-flight morph — snap forward
             if (pending) finishPending();
             if (to === state) { morphing = false; return Promise.resolve(state); }
             morphing = true;
             const from = state;
-            showBlockOverlay(() => api.skip());
+            const skipAll = onSkip
+                ? () => { onSkip(); api.skip(); }
+                : () => api.skip();
+            showBlockOverlay(skipAll);
 
             onBefore?.(from, to);
 
@@ -90,6 +95,7 @@ export function createLayoutMorph(container, options = {}) {
                 ? [...container.querySelectorAll('[data-lm-text-replace]')]
                 : [];
             let swapTimer = null;
+            let swapFired = false;
             if (trEls.length) {
                 for (const el of trEls) el.classList.add('lm-text-replacing');
                 const phase = trEls[0].dataset.lmTextReplace;
@@ -99,7 +105,7 @@ export function createLayoutMorph(container, options = {}) {
                     const speed = parseFloat(s.getPropertyValue('--t-speed')) || 1;
                     const delay = parseDur(s.getPropertyValue(vars.delay)) * speed;
                     const dur = parseDur(s.getPropertyValue(vars.dur)) * speed;
-                    swapTimer = setTimeout(() => onSwap(from, to), delay + dur * 0.5);
+                    swapTimer = setTimeout(() => { swapFired = true; onSwap(from, to); }, delay + dur * 0.5);
                 }
             }
 
@@ -113,13 +119,18 @@ export function createLayoutMorph(container, options = {}) {
                 for (const el of trEls) el.classList.remove('lm-text-replacing');
             };
 
+            // onSwap callback for finishPending — fires if swap timer hasn't already
+            const pendingSwap = onSwap
+                ? () => { if (!swapFired) { swapFired = true; onSwap(from, to); } }
+                : null;
+
             const duration = readDuration();
 
             return new Promise(resolve => {
                 const timer = setTimeout(() => {
                     finishPending();
                 }, duration);
-                pending = { timer, onAfter, cleanup, resolve };
+                pending = { timer, onAfter, onSwap: pendingSwap, cleanup, resolve };
             });
         },
 

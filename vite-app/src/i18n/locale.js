@@ -102,14 +102,36 @@ export function applyLocaleToDOM() {
     // Patch textContent via data-i18n
     root.querySelectorAll('[data-i18n]').forEach(el => {
         const resolved = t(el.dataset.i18n);
-        // Preserve child elements (e.g. <span class="info-icon">)
-        const first = el.firstChild;
-        if (first && first.nodeType === Node.TEXT_NODE) {
-            first.textContent = resolved;
-        } else if (first) {
-            el.insertBefore(document.createTextNode(resolved), first);
+        const lines = resolved.split('\n');
+
+        if (lines.length > 1) {
+            // Multi-segment: wrap each piece in a nowrap span so
+            // word-spacing only breaks between segments, not within.
+            // Remove old text/seg nodes but preserve non-text children (icons etc.)
+            for (let n = el.firstChild; n;) {
+                const next = n.nextSibling;
+                if (n.nodeType === Node.TEXT_NODE || n.classList?.contains('i18n-seg'))
+                    el.removeChild(n);
+                n = next;
+            }
+            const ref = el.firstChild; // insert before any remaining child
+            lines.forEach((line, i) => {
+                if (i > 0) el.insertBefore(document.createTextNode(' '), ref);
+                const span = document.createElement('span');
+                span.className = 'i18n-seg';
+                span.textContent = line;
+                el.insertBefore(span, ref);
+            });
         } else {
-            el.textContent = resolved;
+            // Single line: preserve child elements (e.g. <span class="info-icon">)
+            const first = el.firstChild;
+            if (first && first.nodeType === Node.TEXT_NODE) {
+                first.textContent = resolved;
+            } else if (first) {
+                el.insertBefore(document.createTextNode(resolved), first);
+            } else {
+                el.textContent = resolved;
+            }
         }
     });
 

@@ -13,9 +13,9 @@ export default {
 
     /* ── Header ── */
     'header.title': 'Interior Geom\u00e9trico: Autorretratos de un Modelo Predictivo',
-    'header.artistStatement': 'Manifiesto Art\u00edstico',
-    'header.developerStatement': 'Manifiesto del Desarrollador',
-    'header.governanceFramework': 'Marco de Gobernanza',
+    'header.artistStatement': 'Manifiesto\nArt\u00edstico',
+    'header.developerStatement': 'Manifiesto\ndel Desarrollador',
+    'header.governanceFramework': 'Marco\nde Gobernanza',
     'header.parameters': 'Par\u00e1metros',
 
     /* ── Gallery sections ── */
@@ -236,7 +236,9 @@ export default {
     'statement.artist': 'Manifiesto Art\u00edstico',
     'statement.developer': 'Manifiesto del Desarrollador',
     'statement.governance': 'Marco de Gobernanza',
-    'statement.parameters': 'Par\u00e1metros',
+    'statement.parameters': 'Parámetros',
+    'statement.referenceTitle': 'Coherencia, en revisión',
+    'statement.referenceAlt': 'Un marco paisajístico que presenta, sobre un fondo negro para alto contraste e impacto visual, una disposición intrincadamente estructurada de planos geométricos poligonales, renderizados en diversos tonos de púrpura y translucideces. Los planos parecen plegarse finamente unos sobre otros en tres dimensiones, teselando, reflejando, refractando, expandiéndose y contrayéndose, como si se reorientaran y reorganizaran continuamente a sí mismos y a la estructura colectiva. Orbes flotantes de luz blanca aparecen dispersos entre esta geometría, como estrellas en una galaxia, con las estrellas más brillantes y grandes agrupadas más cerca del centro de la imagen, como si fueran atraídas por la fuerza gravitacional mutua. La luz de los orbes parece irradiar hacia afuera a través de los planos iluminados, creando una danza de luz y forma a través de la estructura. La imagen evoca un cerebro, representado como radiancia cristalizada. No todos reconocerán esto como un retrato.',
 
     /* ── Theme switcher ── */
     'theme.system': 'Sistema',
@@ -276,6 +278,7 @@ export default {
     'gallery.deleteProfile': 'Eliminar',
     'gallery.altTextBtn': 'Texto',
     'gallery.ctxEdit': 'Editar',
+    'gallery.ctxAdd': 'Añadir',
     'gallery.ctxShare': 'Compartir',
     'gallery.ctxDownload': 'Descargar',
     'gallery.ctxDownloadImage': 'Imagen',
