@@ -227,6 +227,8 @@ class ImageViewer extends HTMLElement {
 
         // Copy current to prev for crossfade backdrop
         if (this.#img.src) this.#prevImg.src = this.#img.src;
+        // Suppress transition, snap to transparent, then re-enable for fade-in
+        this.#img.style.transition = 'none';
         this.#img.style.opacity = '0';
         if (this.#altVisible) this.#altOverlay.classList.add('fading');
 
@@ -234,25 +236,36 @@ class ImageViewer extends HTMLElement {
 
         const promise = new Promise(resolve => { this.#mediaResolve = resolve; });
 
-        this.#selectionFadeTimer = setTimeout(() => {
-            // Midpoint: swap metadata
-            if (alt !== undefined) this.#img.alt = alt;
-            if (altText !== undefined) { this.#altText = altText; if (this.#altVisible) this.#renderAltText(); }
-            if (video) { this.mode = 'video'; this.#video.src = video; } else { this.mode = 'image'; }
-            onSwap?.();
+        // Swap metadata immediately
+        if (alt !== undefined) this.#img.alt = alt;
+        if (altText !== undefined) { this.#altText = altText; if (this.#altVisible) this.#renderAltText(); }
+        if (video) { this.mode = 'video'; this.#video.src = video; } else { this.mode = 'image'; }
+        onSwap?.();
 
-            // Same-URL: complete immediately (no load event)
-            if (src && src === this.#img.src) { this.#mediaComplete(); return; }
+        // Same-URL: start crossfade immediately
+        if (!src || src === this.#img.src) {
+            requestAnimationFrame(() => {
+                this.#img.style.transition = '';
+                this.#img.style.opacity = '1';
+                this.#selectionFadeTimer = setTimeout(() => this.#mediaComplete(), fadeDuration);
+            });
+            return promise;
+        }
 
-            // Attach load/error → complete
-            const done = () => { this.#mediaComplete(); };
-            this.#img.addEventListener('load', done, { once: true });
-            this.#img.addEventListener('error', done, { once: true });
-            this.#mediaSafetyTimer = setTimeout(done, 2000);
+        // Load new image, then crossfade
+        const done = () => {
+            requestAnimationFrame(() => {
+                this.#img.style.transition = '';
+                this.#img.style.opacity = '1';
+                this.#selectionFadeTimer = setTimeout(() => this.#mediaComplete(), fadeDuration);
+            });
+        };
+        this.#img.addEventListener('load', done, { once: true });
+        this.#img.addEventListener('error', done, { once: true });
+        this.#mediaSafetyTimer = setTimeout(done, 2000);
 
-            if (src) this.#img.src = src;
-            if (this.#fullscreen) this.#syncFullscreenMedia();
-        }, fadeDuration);
+        this.#img.src = src;
+        if (this.#fullscreen) this.#syncFullscreenMedia();
 
         return promise;
     }
@@ -269,7 +282,6 @@ class ImageViewer extends HTMLElement {
     #mediaComplete() {
         clearTimeout(this.#mediaSafetyTimer);
         this.#img.style.opacity = '1';
-        this.#prevImg.removeAttribute('src');
         if (this.#altVisible) this.#altOverlay.classList.remove('fading');
         this.#mediaAnimating = false;
         this.dispatchEvent(new CustomEvent('media-loaded'));
