@@ -44,17 +44,7 @@ function createStatementModal() {
         governance: 'Governance Framework',
     };
 
-    // Desktop tabs
-    const tabBtns = tabs.map((tab, i) =>
-        el('button', {
-            class: i === 0 ? 'modal-tab active' : 'modal-tab',
-            'data-tab': tab,
-            'data-i18n': i18nKeys[tab],
-            text: defaultLabels[tab],
-        })
-    );
-
-    // Mobile tab select (uses shared custom-dropdown component)
+    // Tab select (uses shared custom-dropdown component)
     const selectItems = tabs.map((tab, i) =>
         el('button', {
             class: i === 0 ? 'custom-dropdown-item active' : 'custom-dropdown-item',
@@ -83,12 +73,12 @@ function createStatementModal() {
         el('pre', { class: 'manifesto' }),
     ]);
     const artistBody = el('div', { id: 'artistBody', class: 'modal-tab-content hidden' }, [
-        el('pre', { class: 'manifesto' }),
-        el('div', { class: 'manifesto-note' }),
         el('figure', { class: 'manifesto-figure' }, [
             el('img', { class: 'manifesto-image', src: '/static/coherence-under-revision.webp', alt: '', loading: 'lazy' }),
             el('figcaption', { class: 'manifesto-figcaption' }),
         ]),
+        el('pre', { class: 'manifesto' }),
+        el('div', { class: 'manifesto-note' }),
     ]);
     const governanceBody = el('div', { id: 'governanceBody', class: 'modal-tab-content hidden' }, [
         el('div', { class: 'manifesto' }),
@@ -97,7 +87,6 @@ function createStatementModal() {
     const modal = el('div', { id: 'statementModal', class: 'modal-overlay hidden', role: 'dialog', 'aria-modal': 'true' }, [
         el('div', { class: 'modal-box' }, [
             el('div', { class: 'modal-header' }, [
-                el('div', { class: 'modal-tabs' }, tabBtns),
                 tabSelect,
                 closeBtn,
             ]),

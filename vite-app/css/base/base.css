@@ -26,6 +26,7 @@
     --danger: rgba(240, 126, 60, 0.84);
     --danger-text: rgba(240, 126, 60, 0.84);
     --shadow-color: rgba(255, 255, 255, 0.15);
+    --shadow-themed-color: rgba(180, 130, 255, 0.474);
     --title-overlay: rgba(0, 0, 0, 0.5);
     --modal-backdrop: rgba(0, 0, 0, 0.80);
     --modal-bg: #0f1219;
@@ -57,6 +58,7 @@ html[data-theme="light"] {
     --danger: rgba(241, 112, 37, 0.84);
     --danger-text: rgba(241, 112, 37, 0.84);
     --shadow-color: rgba(0, 0, 0, 0.20);
+    --shadow-themed-color: rgba(120, 40, 200, 0.523);
     --title-overlay: rgba(255, 255, 255, 0.55);
     --modal-backdrop: rgba(0, 0, 0, 0.50);
     --modal-bg: #ffffff;

@@ -36,6 +36,14 @@ export const COL = {
   'alt-text': { bg: [24, 26, 28], bd: [34, 38, 44] },
   create:    { bg: [26, 28, 24], bd: [42, 44, 34] },
   construct: { bg: [28, 24, 30], bd: [44, 36, 50] },
+  'alt-text-waiting-open':           { bg: [24, 26, 28], bd: [34, 38, 44] },
+  'alt-text-waiting-open-emphasize': { bg: [24, 26, 28], bd: [34, 38, 44] },
+  'alt-text-waiting-close':           { bg: [24, 26, 28], bd: [34, 38, 44] },
+  'alt-text-waiting-close-emphasize': { bg: [24, 26, 28], bd: [34, 38, 44] },
+  'fullscreen-waiting-open':           { bg: [26, 26, 28], bd: [38, 38, 46] },
+  'fullscreen-waiting-open-emphasize': { bg: [26, 26, 28], bd: [38, 38, 46] },
+  'fullscreen-waiting-close':           { bg: [26, 26, 28], bd: [38, 38, 46] },
+  'fullscreen-waiting-close-emphasize': { bg: [26, 26, 28], bd: [38, 38, 46] },
 };
 
 // ── State Definitions ──
@@ -586,6 +594,134 @@ export const altTextState = {
   P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
 };
 
+// Alt-Text Toggle — waiting-open (text lines, ready to show overlay)
+export const altTextWaitingOpenState = {
+  L1: { ...S(6.75, 4.5, 20.25, 4.5), sw: 1.5, da: '100 0', o: 1 },
+  L2: { ...S(3.75, 9, 17.25, 9), sw: 1.5, da: '100 0', o: 1 },
+  L3: { ...S(3.75, 13.5, 20.25, 13.5), sw: 1.5, da: '100 0', o: 1 },
+  L4: { ...S(3.75, 18, 12, 18), sw: 1.5, da: '100 0', o: 1 },
+  L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: HC, C2: HC, C3: HC, C4: HC, C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Alt-Text Toggle — waiting-open-emphasize (lines extend, endpoint dots appear)
+export const altTextWaitingOpenEmphasizeState = {
+  L1: { ...S(5.75, 4.5, 21.25, 4.5), sw: 1.75, da: '100 0', o: 1 },
+  L2: { ...S(2.75, 9, 18.25, 9), sw: 1.75, da: '100 0', o: 1 },
+  L3: { ...S(2.75, 13.5, 21.25, 13.5), sw: 1.75, da: '100 0', o: 1 },
+  L4: { ...S(2.75, 18, 13, 18), sw: 1.75, da: '100 0', o: 1 },
+  L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: { cx: 5.75, cy: 4.5, r: 0.6, o: 0.5 },
+  C2: { cx: 2.75, cy: 9, r: 0.6, o: 0.5 },
+  C3: { cx: 2.75, cy: 13.5, r: 0.6, o: 0.5 },
+  C4: { cx: 2.75, cy: 18, r: 0.6, o: 0.5 },
+  C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Alt-Text Toggle — waiting-close (X shape, ready to dismiss overlay)
+export const altTextWaitingCloseState = {
+  L1: { ...S(6, 6, 18, 18), sw: 1.5, da: '100 0', o: 0.9 },
+  L2: { ...S(18, 6, 6, 18), sw: 1.5, da: '100 0', o: 0.9 },
+  L3: { ...S(10, 12, 14, 12), sw: 1, da: '100 0', o: 0.25 },
+  L4: HP,
+  L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: { cx: 6, cy: 6, r: 0.8, o: 0.6 },
+  C2: { cx: 18, cy: 18, r: 0.8, o: 0.6 },
+  C3: { cx: 18, cy: 6, r: 0.8, o: 0.6 },
+  C4: { cx: 6, cy: 18, r: 0.8, o: 0.6 },
+  C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Alt-Text Toggle — waiting-close-emphasize (expanded X)
+export const altTextWaitingCloseEmphasizeState = {
+  L1: { ...S(5, 5, 19, 19), sw: 1.75, da: '100 0', o: 1 },
+  L2: { ...S(19, 5, 5, 19), sw: 1.75, da: '100 0', o: 1 },
+  L3: { ...S(9.5, 12, 14.5, 12), sw: 1.25, da: '100 0', o: 0.35 },
+  L4: HP,
+  L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: { cx: 5, cy: 5, r: 1, o: 0.7 },
+  C2: { cx: 19, cy: 19, r: 1, o: 0.7 },
+  C3: { cx: 19, cy: 5, r: 1, o: 0.7 },
+  C4: { cx: 5, cy: 19, r: 1, o: 0.7 },
+  C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Fullscreen Toggle — waiting-open (outer corner brackets, enter fullscreen)
+export const fullscreenWaitingOpenState = {
+  L1: { ...S(2, 5, 9, 5), sw: 1.5, da: '100 0', o: 0.85 },
+  L2: { ...S(5, 2, 5, 9), sw: 1.5, da: '100 0', o: 0.85 },
+  L3: { ...S(15, 5, 22, 5), sw: 1.5, da: '100 0', o: 0.85 },
+  L4: { ...S(19, 2, 19, 9), sw: 1.5, da: '100 0', o: 0.85 },
+  L5: { ...S(15, 19, 22, 19), sw: 1.5, da: '100 0', o: 0.85 },
+  L6: { ...S(19, 15, 19, 22), sw: 1.5, da: '100 0', o: 0.85 },
+  L7: { ...S(2, 19, 9, 19), sw: 1.5, da: '100 0', o: 0.85 },
+  L8: { ...S(5, 15, 5, 22), sw: 1.5, da: '100 0', o: 0.85 },
+  C1: { cx: 5, cy: 5, r: 0.8, o: 0.5 },
+  C2: { cx: 19, cy: 5, r: 0.8, o: 0.5 },
+  C3: { cx: 19, cy: 19, r: 0.8, o: 0.5 },
+  C4: { cx: 5, cy: 19, r: 0.8, o: 0.5 },
+  C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Fullscreen Toggle — waiting-open-emphasize (brackets extend outward)
+export const fullscreenWaitingOpenEmphasizeState = {
+  L1: { ...S(1, 4, 10, 4), sw: 1.75, da: '100 0', o: 1 },
+  L2: { ...S(4, 1, 4, 10), sw: 1.75, da: '100 0', o: 1 },
+  L3: { ...S(14, 4, 23, 4), sw: 1.75, da: '100 0', o: 1 },
+  L4: { ...S(20, 1, 20, 10), sw: 1.75, da: '100 0', o: 1 },
+  L5: { ...S(14, 20, 23, 20), sw: 1.75, da: '100 0', o: 1 },
+  L6: { ...S(20, 14, 20, 23), sw: 1.75, da: '100 0', o: 1 },
+  L7: { ...S(1, 20, 10, 20), sw: 1.75, da: '100 0', o: 1 },
+  L8: { ...S(4, 14, 4, 23), sw: 1.75, da: '100 0', o: 1 },
+  C1: { cx: 4, cy: 4, r: 1.1, o: 0.7 },
+  C2: { cx: 20, cy: 4, r: 1.1, o: 0.7 },
+  C3: { cx: 20, cy: 20, r: 1.1, o: 0.7 },
+  C4: { cx: 4, cy: 20, r: 1.1, o: 0.7 },
+  C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Fullscreen Toggle — waiting-close (inner corner brackets, exit fullscreen)
+export const fullscreenWaitingCloseState = {
+  L1: { ...S(4, 8.5, 11, 8.5), sw: 1.5, da: '100 0', o: 0.85 },
+  L2: { ...S(8.5, 4, 8.5, 11), sw: 1.5, da: '100 0', o: 0.85 },
+  L3: { ...S(13, 8.5, 20, 8.5), sw: 1.5, da: '100 0', o: 0.85 },
+  L4: { ...S(15.5, 4, 15.5, 11), sw: 1.5, da: '100 0', o: 0.85 },
+  L5: { ...S(13, 15.5, 20, 15.5), sw: 1.5, da: '100 0', o: 0.85 },
+  L6: { ...S(15.5, 13, 15.5, 20), sw: 1.5, da: '100 0', o: 0.85 },
+  L7: { ...S(4, 15.5, 11, 15.5), sw: 1.5, da: '100 0', o: 0.85 },
+  L8: { ...S(8.5, 13, 8.5, 20), sw: 1.5, da: '100 0', o: 0.85 },
+  C1: { cx: 8.5, cy: 8.5, r: 0.8, o: 0.5 },
+  C2: { cx: 15.5, cy: 8.5, r: 0.8, o: 0.5 },
+  C3: { cx: 15.5, cy: 15.5, r: 0.8, o: 0.5 },
+  C4: { cx: 8.5, cy: 15.5, r: 0.8, o: 0.5 },
+  C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Fullscreen Toggle — waiting-close-emphasize (brackets extend slightly from close)
+export const fullscreenWaitingCloseEmphasizeState = {
+  L1: { ...S(3, 9, 12, 9), sw: 1.75, da: '100 0', o: 1 },
+  L2: { ...S(9, 3, 9, 12), sw: 1.75, da: '100 0', o: 1 },
+  L3: { ...S(12, 9, 21, 9), sw: 1.75, da: '100 0', o: 1 },
+  L4: { ...S(15, 3, 15, 12), sw: 1.75, da: '100 0', o: 1 },
+  L5: { ...S(12, 15, 21, 15), sw: 1.75, da: '100 0', o: 1 },
+  L6: { ...S(15, 12, 15, 21), sw: 1.75, da: '100 0', o: 1 },
+  L7: { ...S(3, 15, 12, 15), sw: 1.75, da: '100 0', o: 1 },
+  L8: { ...S(9, 12, 9, 21), sw: 1.75, da: '100 0', o: 1 },
+  C1: { cx: 9, cy: 9, r: 1.1, o: 0.7 },
+  C2: { cx: 15, cy: 9, r: 1.1, o: 0.7 },
+  C3: { cx: 15, cy: 15, r: 1.1, o: 0.7 },
+  C4: { cx: 9, cy: 15, r: 1.1, o: 0.7 },
+  C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
 export const createState = {
   L1: { ...S(12, 4.5, 12, 12), sw: 1.5, da: '100 0', o: 1 },
   L2: { ...S(12, 12, 12, 19.5), sw: 1.5, da: '100 0', o: 1 },
@@ -633,6 +769,14 @@ export const STATES = {
   'alt-text': altTextState,
   create: createState,
   construct: constructState,
+  'alt-text-waiting-open': altTextWaitingOpenState,
+  'alt-text-waiting-open-emphasize': altTextWaitingOpenEmphasizeState,
+  'alt-text-waiting-close': altTextWaitingCloseState,
+  'alt-text-waiting-close-emphasize': altTextWaitingCloseEmphasizeState,
+  'fullscreen-waiting-open': fullscreenWaitingOpenState,
+  'fullscreen-waiting-open-emphasize': fullscreenWaitingOpenEmphasizeState,
+  'fullscreen-waiting-close': fullscreenWaitingCloseState,
+  'fullscreen-waiting-close-emphasize': fullscreenWaitingCloseEmphasizeState,
 };
 
 // ── Subgroups for organized display ──
@@ -640,7 +784,7 @@ export const STATE_GROUPS = [
   { name: 'transitions', keys: ['converge', 'dissipate'] },
   { name: 'utility', keys: ['error', 'eye', 'heartbeat', 'loading', 'retry', 'scan'] },
   { name: 'alien', keys: ['array', 'beacon', 'bloom', 'coil', 'cross', 'dots', 'fracture', 'gate', 'glyph', 'hex', 'knot', 'orbit', 'portal', 'pulse', 'seer', 'sigil', 'thorn', 'void', 'dimension', 'wave'] },
-  { name: 'geometric interior', keys: ['alt-text', 'create', 'construct'] },
+  { name: 'geometric interior', keys: ['alt-text', 'create', 'construct', 'alt-text-waiting-open', 'alt-text-waiting-open-emphasize', 'alt-text-waiting-close', 'alt-text-waiting-close-emphasize', 'fullscreen-waiting-open', 'fullscreen-waiting-open-emphasize', 'fullscreen-waiting-close', 'fullscreen-waiting-close-emphasize'] },
 ];
 
 // Resolve COL key for a state key

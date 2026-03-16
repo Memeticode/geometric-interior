@@ -3,6 +3,7 @@
 // ══════════════════════════════════════════════════════════════
 
 import { createCardIcon } from './buttons/card-icon.js';
+import { createAltTextToggle, createFullscreenToggle } from './buttons/toggle-icon.js';
 import { createStateDiagram } from './buttons/state-diagram.js';
 
 const app = document.getElementById('app');
@@ -169,5 +170,255 @@ function buildCardIconDemo() {
   return section;
 }
 
+// ══════════════════════════════════════════════════════════════
+// Alt-Text Toggle Demo
+// ══════════════════════════════════════════════════════════════
+
+const ALT_TEXT_TRANSITIONS = {
+  'waiting-open': [
+    ['toggle', 'waiting-close'],
+    ['emphasize', 'waiting-open-emphasize'],
+  ],
+  'waiting-open-emphasize': [
+    ['normal', 'waiting-open'],
+    ['toggle', 'waiting-close'],
+  ],
+  'waiting-close': [
+    ['toggle', 'waiting-open'],
+    ['emphasize', 'waiting-close-emphasize'],
+  ],
+  'waiting-close-emphasize': [
+    ['normal', 'waiting-close'],
+    ['toggle', 'waiting-open'],
+  ],
+};
+
+const ALT_TEXT_STATE_DISPLAY = {
+  'waiting-open': 'open',
+  'waiting-open-emphasize': 'open-emph',
+  'waiting-close': 'close',
+  'waiting-close-emphasize': 'close-emph',
+};
+
+function buildAltTextToggleDemo() {
+  const section = el('div', 'demo-section');
+
+  const title = el('div', 'demo-title');
+  title.innerHTML = 'Alt-Text Toggle <span>text overlay indicator</span>';
+  section.appendChild(title);
+
+  const topRow = el('div', 'demo-top-row');
+
+  const iconFrame = el('div', 'demo-icon-frame');
+  const icon = createAltTextToggle(iconFrame, { size: 48 });
+
+  iconFrame.addEventListener('click', () => {
+    altTextMorphTo(icon.isOpen ? 'waiting-open' : 'waiting-close');
+  });
+
+  const diagramWrap = el('div', 'demo-diagram-wrap');
+  const diagram = createStateDiagram({
+    states: {
+      'waiting-open':            { label: 'open' },
+      'waiting-close':           { label: 'close' },
+      'waiting-open-emphasize':  { label: 'open-emph' },
+      'waiting-close-emphasize': { label: 'close-emph' },
+    },
+    grid: [
+      ['waiting-open', 'waiting-close'],
+      ['waiting-open-emphasize', 'waiting-close-emphasize'],
+    ],
+    transitions: ALT_TEXT_TRANSITIONS,
+    onTransition: (to) => altTextMorphTo(to),
+  });
+  diagramWrap.appendChild(diagram.el);
+
+  topRow.append(iconFrame, diagramWrap);
+  section.appendChild(topRow);
+
+  // Settings
+  const settings = el('div', 'demo-settings');
+
+  const durSetting = el('div', 'demo-setting');
+  const durLabel = el('label', null, 'Duration');
+  const durSlider = document.createElement('input');
+  durSlider.type = 'range'; durSlider.min = '50'; durSlider.max = '4000';
+  durSlider.value = '2000'; durSlider.step = '50';
+  const durVal = el('span', 'val', '2000ms');
+  durSetting.append(durLabel, durSlider, durVal);
+
+  let altDuration = 2000;
+  durSlider.addEventListener('input', () => {
+    altDuration = +durSlider.value;
+    durVal.textContent = altDuration + 'ms';
+  });
+
+  const skipBtn = el('button', 'demo-skip-btn hidden', 'skip');
+  settings.append(durSetting, skipBtn);
+  section.appendChild(settings);
+
+  // Log
+  const log = el('div', 'demo-log');
+  section.appendChild(log);
+
+  function altTextLogEntry(from, to, dur) {
+    const entry = el('div', 'entry');
+    entry.innerHTML = `${ALT_TEXT_STATE_DISPLAY[from]} <span class="arrow">\u2192</span> ${ALT_TEXT_STATE_DISPLAY[to]} <span class="mode">${dur}ms</span>`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function altTextUpdateUI() {
+    skipBtn.classList.toggle('hidden', !icon.morphing);
+    diagram.update(icon.state);
+  }
+
+  function altTextMorphTo(to) {
+    const from = icon.state;
+    if (from === to) return;
+    icon.morph(to, { duration: altDuration }).then(altTextUpdateUI);
+    altTextLogEntry(from, to, altDuration);
+    altTextUpdateUI();
+  }
+
+  skipBtn.addEventListener('click', () => {
+    icon.skip();
+    const entry = el('div', 'entry');
+    entry.innerHTML = '<span class="mode">skipped</span>';
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+    altTextUpdateUI();
+  });
+
+  altTextUpdateUI();
+  return section;
+}
+
+// ══════════════════════════════════════════════════════════════
+// Fullscreen Toggle Demo
+// ══════════════════════════════════════════════════════════════
+
+const FS_TRANSITIONS = {
+  'waiting-open': [
+    ['toggle', 'waiting-close'],
+    ['emphasize', 'waiting-open-emphasize'],
+  ],
+  'waiting-open-emphasize': [
+    ['normal', 'waiting-open'],
+    ['toggle', 'waiting-close'],
+  ],
+  'waiting-close': [
+    ['toggle', 'waiting-open'],
+    ['emphasize', 'waiting-close-emphasize'],
+  ],
+  'waiting-close-emphasize': [
+    ['normal', 'waiting-close'],
+    ['toggle', 'waiting-open'],
+  ],
+};
+
+const FS_STATE_DISPLAY = {
+  'waiting-open': 'open',
+  'waiting-open-emphasize': 'open-emph',
+  'waiting-close': 'close',
+  'waiting-close-emphasize': 'close-emph',
+};
+
+function buildFullscreenToggleDemo() {
+  const section = el('div', 'demo-section');
+
+  const title = el('div', 'demo-title');
+  title.innerHTML = 'Fullscreen Toggle <span>enter / exit fullscreen</span>';
+  section.appendChild(title);
+
+  const topRow = el('div', 'demo-top-row');
+
+  const iconFrame = el('div', 'demo-icon-frame');
+  const icon = createFullscreenToggle(iconFrame, { size: 48 });
+
+  iconFrame.addEventListener('click', () => {
+    fsMorphTo(icon.isOpen ? 'waiting-open' : 'waiting-close');
+  });
+
+  const diagramWrap = el('div', 'demo-diagram-wrap');
+  const diagram = createStateDiagram({
+    states: {
+      'waiting-open':            { label: 'open' },
+      'waiting-close':           { label: 'close' },
+      'waiting-open-emphasize':  { label: 'open-emph' },
+      'waiting-close-emphasize': { label: 'close-emph' },
+    },
+    grid: [
+      ['waiting-open', 'waiting-close'],
+      ['waiting-open-emphasize', 'waiting-close-emphasize'],
+    ],
+    transitions: FS_TRANSITIONS,
+    onTransition: (to) => fsMorphTo(to),
+  });
+  diagramWrap.appendChild(diagram.el);
+
+  topRow.append(iconFrame, diagramWrap);
+  section.appendChild(topRow);
+
+  // Settings
+  const settings = el('div', 'demo-settings');
+
+  const durSetting = el('div', 'demo-setting');
+  const durLabel = el('label', null, 'Duration');
+  const durSlider = document.createElement('input');
+  durSlider.type = 'range'; durSlider.min = '50'; durSlider.max = '4000';
+  durSlider.value = '2000'; durSlider.step = '50';
+  const durVal = el('span', 'val', '2000ms');
+  durSetting.append(durLabel, durSlider, durVal);
+
+  let fsDuration = 2000;
+  durSlider.addEventListener('input', () => {
+    fsDuration = +durSlider.value;
+    durVal.textContent = fsDuration + 'ms';
+  });
+
+  const skipBtn = el('button', 'demo-skip-btn hidden', 'skip');
+  settings.append(durSetting, skipBtn);
+  section.appendChild(settings);
+
+  // Log
+  const log = el('div', 'demo-log');
+  section.appendChild(log);
+
+  function fsLogEntry(from, to, dur) {
+    const entry = el('div', 'entry');
+    entry.innerHTML = `${FS_STATE_DISPLAY[from]} <span class="arrow">\u2192</span> ${FS_STATE_DISPLAY[to]} <span class="mode">${dur}ms</span>`;
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function fsUpdateUI() {
+    skipBtn.classList.toggle('hidden', !icon.morphing);
+    diagram.update(icon.state);
+  }
+
+  function fsMorphTo(to) {
+    const from = icon.state;
+    if (from === to) return;
+    icon.morph(to, { duration: fsDuration }).then(fsUpdateUI);
+    fsLogEntry(from, to, fsDuration);
+    fsUpdateUI();
+  }
+
+  skipBtn.addEventListener('click', () => {
+    icon.skip();
+    const entry = el('div', 'entry');
+    entry.innerHTML = '<span class="mode">skipped</span>';
+    log.appendChild(entry);
+    log.scrollTop = log.scrollHeight;
+    fsUpdateUI();
+  });
+
+  fsUpdateUI();
+  return section;
+}
+
 // ── Mount ──
 app.appendChild(buildCardIconDemo());
+app.appendChild(buildAltTextToggleDemo());
+app.appendChild(buildFullscreenToggleDemo());

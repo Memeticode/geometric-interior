@@ -19,8 +19,6 @@ image-viewer {
 
 /* ── Media elements ── */
 .iv-img {
-    position: relative;
-    z-index: 1;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -31,7 +29,7 @@ image-viewer {
 .iv-img-prev {
     position: absolute;
     inset: 0;
-    z-index: 0;
+    z-index: -1;
     pointer-events: none;
 }
 .iv-img-prev:not([src]),
@@ -95,13 +93,12 @@ image-viewer[mode="canvas"] .iv-controls {
 
 /* ── Controls button styling (frosted glass) ── */
 .iv-controls .icon-btn {
-    width: 24px;
     height: 24px;
-    border-radius: 50%;
+    border-radius: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 0 0.5rem;
 }
 .iv-controls .icon-btn,
 .iv-controls .select-base {
@@ -136,7 +133,7 @@ image-viewer[mode="canvas"] .iv-controls {
 .iv-controls .custom-dropdown > .select-base {
     height: 24px;
     padding: 0 0.5rem;
-    border-radius: 12px;
+    border-radius: 3px;
     font-size: 0.625rem;
     background-image: none !important;
 }
@@ -148,7 +145,8 @@ image-viewer[mode="canvas"] .iv-controls {
 /* Text button — pill-shaped label button */
 .iv-controls .iv-text-btn {
     width: auto;
-    border-radius: 12px;
+    height: 24px;
+    border-radius: 3px;
     padding: 0 0.5rem;
     font-size: 0.625rem;
     font-family: inherit;
@@ -174,7 +172,6 @@ image-viewer[mode="canvas"] .iv-controls {
     padding: 0;
     border-radius: 3px;
     cursor: pointer;
-    background: none;
     background-image: none;
 }
 
@@ -187,8 +184,12 @@ image-viewer[mode="canvas"] .iv-controls {
     flex-shrink: 0;
     overflow: hidden;
     border-radius: 3px;
+    background-color: rgba(10, 12, 18, 0.55);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
     transition: max-height var(--lm-collapse) cubic-bezier(0.16, 1, 0.3, 1),
-                opacity calc(var(--t-accent) * var(--t-speed)) ease,
                 border-color var(--lm-collapse) ease,
                 box-shadow var(--lm-collapse) ease;
 }
@@ -202,14 +203,20 @@ image-viewer[mode="canvas"] .iv-controls {
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
-    transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
+                opacity calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
-/* Items */
+/* Items — 24px so itemH matches outer dd-morph height (border-box with 1px border) */
 .iv-controls dd-morph .custom-dropdown-item {
     color: rgba(255, 255, 255, 0.7);
     text-align: center;
     border-radius: 2px;
+    height: 24px;
+    box-sizing: border-box;
+    padding: 0 0.5rem;
+    font-size: 0.625rem;
+    line-height: 24px;
     transition: background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
                 color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
@@ -228,6 +235,11 @@ image-viewer[mode="canvas"] .iv-controls {
 }
 
 /* Light theme */
+[data-theme="light"] .iv-controls .ddm-inner {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
+}
 [data-theme="light"] .iv-controls dd-morph.select-base.open .ddm-inner {
     border-color: rgba(0, 0, 0, 0.12);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), inset 0 0 0 0.5px rgba(255, 255, 255, 0.4);
@@ -243,8 +255,8 @@ image-viewer[mode="canvas"] .iv-controls {
     color: rgb(100, 30, 180);
 }
 
-/* Downward expansion when controls are on top */
-image-viewer[controls-pos^="top"] .iv-controls .ddm-inner,
+/* Downward expansion when controls are on top — only reverse item order,
+   NOT .ddm-inner (which must keep column so content stays at top of clip area) */
 image-viewer[controls-pos^="top"] .iv-controls .ddm-content {
     flex-direction: column-reverse;
 }
@@ -252,10 +264,12 @@ image-viewer[controls-pos^="top"] .iv-controls .ddm-content {
 /* ── Alt-text overlay ── */
 .iv-alt-text {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: min(50rem, 75vw);
+    bottom: 0.5rem;
+    left: 0.5rem;
+    right: 0.5rem;
+    width: auto;
+    max-width: 50rem;
+    margin: 0 auto;
     max-height: calc(100% - 2.5rem);
     overflow-y: auto;
     text-align: left;
@@ -271,7 +285,10 @@ image-viewer[controls-pos^="top"] .iv-controls .ddm-content {
     white-space: pre-line;
     pointer-events: none;
     opacity: 0;
-    transition: opacity calc(var(--t-content) * var(--t-speed)) ease;
+    transform: scale(0.97);
+    transform-origin: bottom center;
+    transition: opacity calc(var(--t-content) * var(--t-speed)) ease,
+                transform calc(var(--t-content) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), inset 0 0 0 0.5px rgba(255, 255, 255, 0.06);
     z-index: 10;
 }
@@ -282,6 +299,7 @@ image-viewer[controls-pos^="top"] .iv-controls .ddm-content {
 }
 .iv-alt-text.visible {
     opacity: 1;
+    transform: scale(1);
     pointer-events: auto;
 }
 .iv-alt-text.visible.fading {
@@ -423,22 +441,45 @@ image-viewer[controls-pos^="top"] .iv-controls .ddm-content {
 .fullscreen-overlay.fs-visible {
     background: rgba(0, 0, 0, 1);
 }
-.fullscreen-overlay img,
-.fullscreen-overlay video {
-    position: fixed;
-    transform-origin: 0 0;
-    cursor: default;
-    will-change: transform;
-}
-.fullscreen-overlay .fs-animating {
-    transition: transform calc(var(--t-menu) * 1.33 * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
-}
-.fullscreen-overlay .fs-closing {
-    transition: transform calc(var(--t-menu) * var(--t-speed)) ease-in;
-}
 .fullscreen-overlay .fs-fading {
     opacity: 0;
     transition: opacity calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
+}
+
+/* ── Fullscreen media wrapper (FLIP-animated container) ── */
+.fs-media-wrap {
+    position: fixed;
+    transform-origin: 0 0;
+    will-change: transform;
+}
+.fs-media-wrap.fs-animating {
+    transition: transform calc(var(--t-menu) * 1.33 * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1);
+}
+.fs-media-wrap.fs-closing {
+    transition: transform calc(var(--t-menu) * var(--t-speed)) ease-in;
+}
+.fs-media-wrap img,
+.fs-media-wrap video {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: default;
+}
+
+/* Controls positioned just above the image, right-aligned */
+.fs-media-wrap .iv-controls {
+    position: absolute;
+    bottom: 100%;
+    right: 0.5rem;
+    margin-bottom: 0.5rem;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Controls inside image when no space above */
+.fs-media-wrap.fs-controls-inset .iv-controls {
+    bottom: auto;
+    top: 0.5rem;
 }
 
 /* ── Fullscreen close button ── */

@@ -214,7 +214,11 @@ const btnRight = document.getElementById('mainBtnRight');
 // const btnEdit = document.getElementById('mainBtnEdit'); // cancel button removed
 const btnAdd = document.getElementById('mainBtnAdd');
 const saveBtn = document.getElementById('mainSaveBtn');
+const mainContentControls = document.getElementById('mainContentControls');
 // const renderBtn = document.getElementById('mainRenderBtn'); // render button removed
+
+// Prevent button clicks from bubbling to the collapse toggle parent
+mainContentControls.addEventListener('click', e => e.stopPropagation());
 let editCanvas = imageViewer.getCanvas();
 const editLoading = imageViewer.getLoadingOverlay();
 const editError = imageViewer.getErrorOverlay();
@@ -920,20 +924,20 @@ function getDisplaySrc(name, profile, isPortrait) {
  * No animation, no history push.
  */
 
+let footerSwapTimer = null;
+
 function applySelection(name, profile, isPortrait, assetId) {
     selected = { name, isPortrait, assetId };
     const instant = document.documentElement.classList.contains('no-transitions');
     const speed = parseFloat(getComputedStyle(mainEl).getPropertyValue('--t-speed')) || 1;
     const fadeDuration = 250 * speed;
 
-    // Cancel any in-flight crossfade
+    // Cancel any in-flight crossfade + footer swap
+    clearTimeout(footerSwapTimer);
     imageViewer.skipMedia();
 
     if (!instant) {
-        // Lock footer height before fade so resize can animate
-        cardFooter.style.height = cardFooter.offsetHeight + 'px';
-
-        // Fade out text rows
+        // Fade out text rows + footer commentary
         morphNameRow.classList.add('fading');
         morphSeedRow.classList.add('fading');
         cardFooter.classList.add('fading');
@@ -983,8 +987,8 @@ function applySelection(name, profile, isPortrait, assetId) {
         newAltText = altText || title;
     }
 
-    // Swap text content at the fade midpoint, crossfade image via setMedia
-    const updateTextContent = () => {
+    // Swap header text (name/seed) — masked by image crossfade
+    const updateHeaderContent = () => {
         editNameField.value = displayName;
         if (Array.isArray(profile.seed)) {
             editTagArr.value = String(profile.seed[0]);
@@ -998,8 +1002,6 @@ function applySelection(name, profile, isPortrait, assetId) {
         fitAllSelects();
         addSelectCommas();
 
-        selectedGenTitle.textContent = newGenTitle;
-        editCommentaryField.value = newCommentary;
         viewerImg.setAttribute('data-tooltip', newAltText);
         viewerImg.setAttribute('data-tooltip-pos', 'overlay');
         if (imageViewer.altVisible) imageViewer.getAltOverlay().scrollTop = 0;
@@ -1019,39 +1021,26 @@ function applySelection(name, profile, isPortrait, assetId) {
             installPortraitFallback(viewerImg, slugify(name), getResolution().key);
         }
 
-        // Hide commentary box if empty (slide in/out via CSS transition)
-        morphCommentary.classList.toggle('collapsed', !editCommentaryField.value);
-        // Hide entire footer when no content at all
-        cardFooter.classList.toggle('footer-hidden',
-            !editCommentaryField.value && !selectedGenTitle.textContent);
-
         if (!instant) {
-            // Animate footer height to fit new content
-            const oldHeight = cardFooter.offsetHeight;
-            cardFooter.style.height = 'auto';
-            const newHeight = cardFooter.offsetHeight;
-            if (oldHeight !== newHeight) {
-                cardFooter.style.height = oldHeight + 'px';
-                void cardFooter.offsetHeight; // force layout
-                cardFooter.style.height = newHeight + 'px';
-                const onEnd = (e) => {
-                    if (e.propertyName === 'height') {
-                        cardFooter.style.height = '';
-                        cardFooter.removeEventListener('transitionend', onEnd);
-                    }
-                };
-                cardFooter.addEventListener('transitionend', onEnd);
-            } else {
-                cardFooter.style.height = '';
-            }
-
-            // Fade text back in
             morphNameRow.classList.remove('fading');
             morphSeedRow.classList.remove('fading');
-            cardFooter.classList.remove('fading');
-        } else {
-            cardFooter.style.height = '';
         }
+    };
+
+    // Swap footer text (commentary/gen title) — deferred to fade midpoint
+    const updateFooterContent = () => {
+        selectedGenTitle.textContent = newGenTitle;
+        editCommentaryField.value = newCommentary;
+
+        // Hide commentary box if empty (slide in/out via CSS transition)
+        morphCommentary.classList.toggle('collapsed', !editCommentaryField.value);
+
+        const shouldHide = !editCommentaryField.value && !selectedGenTitle.textContent;
+
+        // Toggle footer-hidden — CSS transitions handle max-height, padding, border
+        cardFooter.classList.toggle('footer-hidden', shouldHide);
+
+        if (!shouldHide) cardFooter.classList.remove('fading');
     };
 
     // Delegate crossfade to image-viewer
@@ -1060,11 +1049,18 @@ function applySelection(name, profile, isPortrait, assetId) {
         alt: newAlt,
         altText: newAltText,
         fadeDuration: instant ? 0 : fadeDuration,
-        onSwap: updateTextContent,
+        onSwap: updateHeaderContent,
     }).then(() => {
         // Image loaded — hide overlay if nothing else is animating
         if (!carouselBrowser.animating && !layoutMorph.morphing) hideBlockOverlay();
     });
+
+    // Defer footer swap to midpoint of content-tier fade so text fades out first
+    if (instant) {
+        updateFooterContent();
+    } else {
+        footerSwapTimer = setTimeout(updateFooterContent, fadeDuration / 2);
+    }
 
     if (!instant && !layoutMorph.morphing) {
         showBlockOverlay(() => {

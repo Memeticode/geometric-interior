@@ -329,6 +329,13 @@
 .gen-collapse-toggle[aria-expanded="false"] .gen-chevron {
     transform: rotate(-90deg);
 }
+.gen-config-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    flex: 1;
+    min-width: 0;
+}
 
 .gen-collapse-body {
     overflow: hidden;
@@ -340,6 +347,9 @@
     max-height: 0;
     opacity: 0;
     pointer-events: none;
+}
+.gen-config-sliders.collapsed {
+    padding: 0;
 }
 
 /* ── Config header ── */

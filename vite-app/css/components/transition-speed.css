@@ -53,6 +53,10 @@
     --t-menu:    0.3s;
     --t-accent:  0.15s;
 
+    /* ── Modal open/close ── */
+    --t-modal-in:  0.345s;   /* box crystallize-in  (menu tier × 1.15) */
+    --t-modal-out: 0.25s;    /* box dissolve-out    (content tier) */
+
     /* ── Layout morph phase durations (before speed scaling) ── */
     --lm-out-base:   0.2s;    /* phase 1 (out) duration */
     --lm-move-base:  0.3s;    /* phase 2 (move) duration */

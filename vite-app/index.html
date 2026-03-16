@@ -29,59 +29,38 @@
         <main class="main-content" role="main" aria-label="Gallery" data-layout="browse">
             <div class="main-content-area" id="mainContentArea">
                 <!-- Centered toolbar — always at top -->
-                <div class="main-content-toolbar" id="mainContentToolbar">
-                    <div class="main-content-controls icon-btn-group" id="mainContentControls">
-                            <!-- Edit-only group (slides in during edit mode) -->
-                            <span class="toolbar-edit-group">
-                                <!-- Undo -->
-                                <button class="icon-btn" id="mainBtnLeft"
-                                    aria-label="Undo" data-tooltip="Undo" data-tooltip-pos="above"></button>
-                                <!-- Redo -->
-                                <button class="icon-btn" id="mainBtnRight"
-                                    aria-label="Redo" data-tooltip="Redo" data-tooltip-pos="above"></button>
-                                <span class="icon-btn-sep">|</span>
-                                <!-- Save -->
-                                <button class="icon-btn" id="mainSaveBtn"
-                                    data-tooltip="Save" data-tooltip-pos="above" aria-label="Save"></button>
-                                <span class="icon-btn-sep">|</span>
-                            </span>
-                            <!-- Edit-only: Randomize -->
-                            <span class="toolbar-edit-group">
-                                <!-- Randomize -->
-                                <button class="icon-btn" id="mainBtnAdd"
-                                    data-tooltip="Randomize" data-tooltip-pos="above" aria-label="Randomize"></button>
-                            </span>
-                    </div>
-                </div>
+                <div class="main-content-toolbar" id="mainContentToolbar"></div>
                 <div class="main-visual-container" id="mainVisualContainer">
                     <!-- Profile info — unified morph elements (plain text in browse, form inputs in edit) -->
                     <div class="main-visual-header-container">
-                        <div class="morph-row morph-name">
-                            <label class="morph-label"><span class="label-info"
-                                    data-tooltip="A name for this arrangement of light and form."
-                                    data-i18n="control.name"
-                                    data-i18n-tooltip="control.name.tooltip">Name<span
-                                        class="info-icon">i</span></span></label>
-                            <div class="morph-field morph-name-field">
-                                <span class="morph-field-icon" id="morphFieldIcon"></span>
-                                <textarea id="editNameField" class="morph-textarea" rows="1"
-                                    maxlength="40" placeholder="Auto-generated title"
-                                    data-i18n-placeholder="control.name.placeholder"
-                                    data-lm-text-replace="move"></textarea>
-                                <span id="editNameCounter" class="morph-counter">0/40</span>
+                        <div class="main-visual-header-fields">
+                            <div class="morph-row morph-name">
+                                <label class="morph-label"><span class="label-info"
+                                        data-tooltip="A name for this arrangement of light and form."
+                                        data-i18n="control.name"
+                                        data-i18n-tooltip="control.name.tooltip">Name<span
+                                            class="info-icon">i</span></span></label>
+                                <div class="morph-field morph-name-field">
+                                    <span class="morph-field-icon" id="morphFieldIcon"></span>
+                                    <textarea id="editNameField" class="morph-textarea" rows="1"
+                                        maxlength="40" placeholder="Auto-generated title"
+                                        data-i18n-placeholder="control.name.placeholder"
+                                        data-lm-text-replace="move"></textarea>
+                                    <span id="editNameCounter" class="morph-counter">0/40</span>
+                                </div>
+                                <div id="editNameError" class="gen-field-error hidden"></div>
                             </div>
-                            <div id="editNameError" class="gen-field-error hidden"></div>
-                        </div>
-                        <div class="morph-row morph-seed">
-                            <label class="morph-label"><span class="label-info"
-                                    data-tooltip="A three-word compositional seed."
-                                    data-i18n="control.seed"
-                                    data-i18n-tooltip="control.seed.tooltip">Seed<span
-                                        class="info-icon">i</span></span></label>
-                            <div class="morph-field morph-seed-field">
-                                <span class="morph-select-wrap"><select id="editTagArr" class="morph-select" data-lm-text-replace="move"></select></span>
-                                <span class="morph-select-wrap"><select id="editTagStr" class="morph-select" data-lm-text-replace="move"></select></span>
-                                <span class="morph-select-wrap morph-select-last"><select id="editTagDet" class="morph-select" data-lm-text-replace="move"></select></span>
+                            <div class="morph-row morph-seed">
+                                <label class="morph-label"><span class="label-info"
+                                        data-tooltip="A three-word compositional seed."
+                                        data-i18n="control.seed"
+                                        data-i18n-tooltip="control.seed.tooltip">Seed<span
+                                            class="info-icon">i</span></span></label>
+                                <div class="morph-field morph-seed-field">
+                                    <span class="morph-select-wrap"><select id="editTagArr" class="morph-select" data-lm-text-replace="move"></select></span>
+                                    <span class="morph-select-wrap"><select id="editTagStr" class="morph-select" data-lm-text-replace="move"></select></span>
+                                    <span class="morph-select-wrap morph-select-last"><select id="editTagDet" class="morph-select" data-lm-text-replace="move"></select></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -90,8 +69,28 @@
                         <div class="gen-config" id="editGenConfig">
                             <div class="gen-config-header gen-collapse-toggle" data-target="editGenConfigSliders"
                                 aria-expanded="false">
-                                <span class="gen-chevron">&#9662;</span>
-                                <span>Configure Image</span>
+                                <span class="gen-config-label">
+                                    <span class="gen-chevron">&#9662;</span>
+                                    <span data-i18n="edit.configuration">Configuration</span>
+                                </span>
+                                <div class="main-content-controls icon-btn-group" id="mainContentControls">
+                                    <span class="toolbar-edit-group">
+                                        <!-- Save -->
+                                        <button class="icon-btn" id="mainSaveBtn"
+                                            data-tooltip="Save" data-tooltip-pos="above" aria-label="Save"></button>
+                                        <span class="icon-btn-sep">|</span>
+                                        <!-- Randomize -->
+                                        <button class="icon-btn" id="mainBtnAdd"
+                                            data-tooltip="Randomize" data-tooltip-pos="above" aria-label="Randomize"></button>
+                                        <span class="icon-btn-sep">|</span>
+                                        <!-- Undo -->
+                                        <button class="icon-btn" id="mainBtnLeft"
+                                            aria-label="Undo" data-tooltip="Undo" data-tooltip-pos="above"></button>
+                                        <!-- Redo -->
+                                        <button class="icon-btn" id="mainBtnRight"
+                                            aria-label="Redo" data-tooltip="Redo" data-tooltip-pos="above"></button>
+                                    </span>
+                                </div>
                             </div>
                             <div class="gen-config-sliders gen-collapse-body collapsed" id="editGenConfigSliders">
                                 <!-- Sliders built dynamically by JS -->
@@ -100,7 +99,7 @@
                     </div>
                     <!-- Image + text card -->
                     <div class="main-visual-card">
-                        <image-viewer id="imageViewer" controls-pos="top-center"></image-viewer>
+                        <image-viewer id="imageViewer" controls-pos="top-right"></image-viewer>
                         <div class="main-visual-card-footer">
                             <span class="selected-gen-title" id="selectedGenTitle"></span>
                             <div class="morph-commentary">
@@ -224,7 +223,7 @@
                         <div class="gen-config-header gen-collapse-toggle" data-target="genConfigSliders"
                             aria-expanded="true">
                             <span class="gen-chevron">&#9662;</span>
-                            <span data-i18n="generate.configureImage">Image Configuration</span>
+                            <span data-i18n="generate.configuration">Configuration</span>
                         </div>
                         <div class="gen-config-sliders gen-collapse-body" id="genConfigSliders"></div>
                     </div>

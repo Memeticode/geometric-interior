@@ -133,7 +133,8 @@ function initMorph(el, { initialValue, onSelect }) {
 
     if (initialValue) syncActive(el, initialValue);
 
-    const isTop = () => !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
+    // Overlay mode always clips from the top of .ddm-inner, so always use top offset
+    const isTop = () => overlay || !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
 
     // Overlay mode: inner overflows el's fixed height, expanding over content.
     // Content wrapper inside inner receives translateY so the pill stays fixed.
@@ -173,12 +174,14 @@ function initMorph(el, { initialValue, onSelect }) {
     // ── Open / close with fade ──
     const FADE_MS = 120;
     let fadeTimer = 0;
+    // In overlay mode, fade .ddm-content so .ddm-inner background stays opaque
+    const fadeTarget = overlay ? transformTarget : inner;
 
     function doOpen() {
         if (el.classList.contains('open')) return;
         clearTimeout(fadeTimer);
         // Phase 1: fade out current visible text
-        inner.style.opacity = '0';
+        fadeTarget.style.opacity = '0';
         fadeTimer = setTimeout(() => {
             // Phase 2: expand + reset translateY
             el.classList.add('open');
@@ -186,7 +189,7 @@ function initMorph(el, { initialValue, onSelect }) {
             el.setAttribute('aria-expanded', 'true');
             sizeTarget.style.maxHeight = (inner.scrollHeight + 8) + 'px'; // explicit px
             // Phase 3: fade items in (next frame so opacity:0 registers)
-            requestAnimationFrame(() => { inner.style.opacity = ''; });
+            requestAnimationFrame(() => { fadeTarget.style.opacity = ''; });
         }, FADE_MS);
     }
 
@@ -194,7 +197,7 @@ function initMorph(el, { initialValue, onSelect }) {
         if (!el.classList.contains('open')) return;
         clearTimeout(fadeTimer);
         // Phase 1: fade out items
-        inner.style.opacity = '0';
+        fadeTarget.style.opacity = '0';
         fadeTimer = setTimeout(() => {
             // Phase 2: collapse + offset to active item
             const active = inner.querySelector('.custom-dropdown-item.active');
@@ -204,7 +207,7 @@ function initMorph(el, { initialValue, onSelect }) {
             el.setAttribute('aria-expanded', 'false');
             sizeTarget.style.maxHeight = itemH + 'px'; // back to single item
             // Phase 3: fade active item back in
-            requestAnimationFrame(() => { inner.style.opacity = ''; });
+            requestAnimationFrame(() => { fadeTarget.style.opacity = ''; });
         }, FADE_MS);
     }
 
@@ -275,7 +278,8 @@ export function syncMorph(el, activeKey) {
     if (!inner) return;
     const active = inner.querySelector('.custom-dropdown-item.active');
     if (!active) return;
-    const isTop = !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
+    const isOverlay = !!inner.querySelector('.ddm-content');
+    const isTop = isOverlay || !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
     const target = inner.querySelector('.ddm-content') || inner;
     // Let the CSS transition handle the smooth slide
     target.style.transform = `translateY(${morphOffset(inner, active, isTop)}px)`;

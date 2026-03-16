@@ -151,6 +151,7 @@
     gap: 0.25rem;
     flex-shrink: 0;
     justify-content: center;
+    margin-left: auto;
 }
 /* Edit-only group — slides in/out */
 .toolbar-edit-group {
@@ -187,20 +188,28 @@
 .main-visual-header-container {
     width: 100%;
     max-width: var(--card-max-w, 100%);
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0;
     padding: 0.25rem 0 0.25rem;
     text-align: left;
 }
 [data-layout="edit"] .main-visual-header-container {
-    gap: 0.375rem;
     padding: 0.25rem 0 0.5rem;
 }
 [data-morph-to="edit"] .main-visual-header-container,
 [data-morph-to="browse"] .main-visual-header-container {
-    transition: gap var(--lm-move) ease var(--lm-d2),
-                padding var(--lm-move) ease var(--lm-d2);
+    transition: padding var(--lm-move) ease var(--lm-d2);
+}
+.main-visual-header-fields {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0;
+    max-width: 700px;
+}
+[data-layout="edit"] .main-visual-header-fields {
+    gap: 0.375rem;
+}
+[data-morph-to="edit"] .main-visual-header-fields,
+[data-morph-to="browse"] .main-visual-header-fields {
+    transition: gap var(--lm-move) ease var(--lm-d2);
 }
 
 /* Each row: label + field share parent columns via subgrid */
@@ -460,6 +469,9 @@
     background: var(--surface);
     transition: border-radius calc(var(--t-menu) * var(--t-speed)) ease, border-color calc(var(--t-menu) * var(--t-speed)) ease;
 }
+.main-visual-card:has(.main-visual-card-footer.footer-hidden) {
+    border-radius: 0;
+}
 image-viewer#imageViewer {
     margin-inline: auto;
     display: flex;
@@ -495,7 +507,6 @@ image-viewer#imageViewer {
     padding-top: 0;
     padding-bottom: 0;
     border-top-color: transparent;
-    opacity: 0;
 }
 [data-layout="edit"] .main-visual-card-footer.footer-hidden {
     max-height: none;

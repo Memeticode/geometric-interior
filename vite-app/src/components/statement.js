@@ -94,10 +94,6 @@ export function initStatementModal(dom) {
         const bodyMap = { developer: dom.developerBody, artist: dom.artistBody, governance: dom.governanceBody };
         const currentTab = Object.keys(bodyMap).find(k => !bodyMap[k].classList.contains('hidden')) || 'artist';
 
-        dom.statementModal.querySelectorAll('.modal-tab').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === tab);
-        });
-        /* Sync custom dropdown */
         syncMorph(dom.statementTabSelect, tab);
 
         if (!animate || currentTab === tab || statementFlipping) {
@@ -113,20 +109,11 @@ export function initStatementModal(dom) {
         const incoming = bodyMap[tab];
         const modalBody = dom.statementModal.querySelector('.modal-body');
         const modalBox = dom.statementModal.querySelector('.modal-box');
-        const FLIP_OUT_MS = 300;
+        /* Dissolve the modal body out */
+        modalBody.classList.add('luminous-dissolve-out');
 
-        /* Hide scrollbar for the entire transition (flip-out + flip-in) */
-        modalBody.style.overflow = 'hidden';
-
-        /* Make modal-box bg transparent so the body flip is visible
-           against the dark overlay backdrop */
-        modalBox.style.background = 'transparent';
-
-        /* Flip the entire modal body */
-        modalBody.classList.add('coin-flip-out');
-
-        setTimeout(() => {
-            modalBody.classList.remove('coin-flip-out');
+        modalBody.addEventListener('animationend', () => {
+            modalBody.classList.remove('luminous-dissolve-out');
 
             /* Suppress the modal-box height transition so it snaps instantly */
             modalBox.style.transition = 'none';
@@ -134,24 +121,21 @@ export function initStatementModal(dom) {
             outgoing.classList.add('hidden');
             dom.statementTitle.textContent = STATEMENT_TITLES[tab] || '';
             incoming.classList.remove('hidden');
-
-            modalBody.scrollTop = 0;
+            incoming.scrollTop = 0;
 
             /* Force reflow so the box settles at its new height before
                re-enabling transitions */
             void modalBox.offsetHeight;
             modalBox.style.transition = '';
 
-            modalBody.classList.add('coin-flip-in');
+            modalBody.classList.add('luminous-dissolve-in');
 
             const cleanup = () => {
-                modalBody.classList.remove('coin-flip-in');
-                modalBody.style.overflow = '';
-                modalBox.style.background = '';
+                modalBody.classList.remove('luminous-dissolve-in');
                 statementFlipping = false;
             };
             modalBody.addEventListener('animationend', cleanup, { once: true });
-        }, FLIP_OUT_MS);
+        }, { once: true });
     }
 
     async function openStatementModal(tab) {
@@ -198,8 +182,6 @@ export function initStatementModal(dom) {
 
     dom.statementModal.addEventListener('click', (e) => {
         if (e.target === dom.statementModal) closeStatementModal();
-        const tab = e.target.closest('.modal-tab');
-        if (tab) switchStatementTab(tab.dataset.tab);
     });
 
     /* Reload statement content on locale change */

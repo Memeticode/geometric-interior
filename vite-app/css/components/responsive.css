@@ -3,7 +3,7 @@
  *
  * xs   : 0–479px     — Small phone (base styles in component files)
  * sm   : 480–767px   — Large phone
- * md   : 768–1023px  — Tablet
+ * md   : 768–1023px  — Tablet 
  * lg   : 1024–1439px — Desktop
  * xl   : 1440px+     — Large desktop
  *
@@ -104,6 +104,7 @@
         font-size: 0.8125rem;
     }
 
+
 }
 
 /* ── sm — hi-dpi ── */
@@ -188,12 +189,6 @@
     }
     .modal-box {
         border-radius: 18px;
-    }
-    .modal-tabs {
-        display: flex;
-    }
-    .modal-tab-select {
-        display: none;
     }
     .modal-header {
         padding: 1rem 1.25rem;

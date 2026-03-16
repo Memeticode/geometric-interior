@@ -31,6 +31,8 @@ class ImageViewer extends HTMLElement {
     #fsAltAnim = null;
     /** @type {Animation|null} */
     #altAnim = null;
+    /** @type {Animation|null} */
+    #ctrlOpenAnim = null;
     #transitioning = false;
     #loading = false;
     #error = false;
@@ -333,175 +335,38 @@ class ImageViewer extends HTMLElement {
         return fresh;
     }
 
-    /** Show alt-text overlay — morphs from text button rect via layout animation. */
+    /** Show alt-text overlay with CSS scale+fade transition. */
     showAltText() {
         if (!this.#altText) return;
         if (this.#altAnim) { this.#altAnim.cancel(); this.#altAnim = null; }
 
-        const textBtn = this.#controlsEl.querySelector('.iv-text-btn');
-
-        // Hide text button immediately (overlay morphs from its position)
-        if (textBtn) {
-            textBtn.style.visibility = 'hidden';
-        }
-
-        // Fade out sibling controls (resolution, fullscreen)
-        const siblingBtns = [...this.#controlsEl.children].filter(el => el !== textBtn);
-        for (const sib of siblingBtns) {
-            sib.animate([{ opacity: 1 }, { opacity: 0 }],
-                { duration: this.#openDur * 0.3, easing: 'ease-out', fill: 'forwards' });
-        }
-
         this.#renderAltText();
-        this.#altOverlay.style.transition = 'none';
         this.#altOverlay.classList.add('visible');
         this.#altVisible = true;
         this.classList.add('alt-text-shown');
 
-        const btnRect = textBtn?.getBoundingClientRect();
-        if (btnRect) {
-            this.#altOverlay.offsetHeight; // force layout
-            const olRect = this.#altOverlay.getBoundingClientRect();
-            const wrapRect = this.#wrap.getBoundingClientRect();
-
-            // Rects relative to wrap (overlay's offset parent)
-            const fromTop  = btnRect.top  - wrapRect.top;
-            const fromLeft = btnRect.left - wrapRect.left;
-            const toTop    = olRect.top   - wrapRect.top;
-            const toLeft   = olRect.left  - wrapRect.left;
-
-            // Clip text while box is small
-            this.#altOverlay.style.overflow = 'hidden';
-
-            // Fade in content starting at 50% of the expand
-            const fadeDur = this.#openDur * 0.5;
-            for (const child of this.#altOverlay.children) {
-                child.animate([{ opacity: 0 }, { opacity: 1 }],
-                    { duration: fadeDur, delay: this.#openDur * 0.5,
-                      easing: 'ease-out', fill: 'both' });
-            }
-
-            this.#altAnim = this.#altOverlay.animate([
-                {
-                    top: fromTop + 'px', left: fromLeft + 'px',
-                    width: btnRect.width + 'px', height: btnRect.height + 'px',
-                    transform: 'none', borderRadius: '12px',
-                },
-                {
-                    top: toTop + 'px', left: toLeft + 'px',
-                    width: olRect.width + 'px', height: olRect.height + 'px',
-                    transform: 'none', borderRadius: '8px',
-                }
-            ], { duration: this.#openDur, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
-            this.#altAnim.finished.then(() => {
-                // Clear child fade animations
-                for (const child of this.#altOverlay.children) {
-                    child.getAnimations().forEach(a => a.cancel());
-                    child.style.opacity = '';
-                }
-                this.#altOverlay.style.overflow = '';
-                this.#altOverlay.style.transition = '';
-                this.#altAnim = null;
-                // Keep siblings hidden (animations hold forwards)
-            }).catch(() => {});
-        } else {
-            this.#altOverlay.style.transition = '';
-        }
+        // Keep controls visible while alt text is open
+        this.#showControlsPersistent();
 
         this.dispatchEvent(new CustomEvent('alt-text-toggle', { detail: { visible: true } }));
     }
 
-    /** Hide alt-text overlay — morphs back to text button rect. */
+    /** Hide alt-text overlay with CSS scale+fade transition. */
     dismissAltText(resetScroll = false) {
         if (this.#altAnim) { this.#altAnim.cancel(); this.#altAnim = null; }
 
-        const textBtn = this.#controlsEl.querySelector('.iv-text-btn');
-        const btnRect = textBtn?.getBoundingClientRect();
-        const olRect  = this.#altOverlay.getBoundingClientRect();
-
-        if (btnRect && olRect.width > 0) {
-            const wrapRect = this.#wrap.getBoundingClientRect();
-            const fromTop  = olRect.top   - wrapRect.top;
-            const fromLeft = olRect.left  - wrapRect.left;
-            const toTop    = btnRect.top  - wrapRect.top;
-            const toLeft   = btnRect.left - wrapRect.left;
-
-            this.#altOverlay.style.transition = 'none';
-            this.#altOverlay.style.overflow = 'hidden';
-
-            // Fade out content immediately, completing at 50% of the close
-            const fadeDur = this.#closeDur * 0.5;
-            for (const child of this.#altOverlay.children) {
-                child.animate([{ opacity: 1 }, { opacity: 0 }],
-                    { duration: fadeDur, easing: 'ease-in', fill: 'forwards' });
-            }
-
-            // Show text button immediately; fade in its label in second half
-            if (textBtn) {
-                textBtn.style.visibility = '';
-                textBtn.style.opacity = '0';
-                textBtn.animate([{ opacity: 0 }, { opacity: 1 }],
-                    { duration: this.#closeDur * 0.5, delay: this.#closeDur * 0.5,
-                      easing: 'ease-out', fill: 'forwards' });
-            }
-
-            // Keep controls visible throughout
-            this.#showControlsPersistent();
-
-            // Fade sibling controls (resolution, fullscreen) back in during second half
-            const siblingBtns = [...this.#controlsEl.children].filter(el => el !== textBtn);
-            for (const sib of siblingBtns) {
-                sib.getAnimations().forEach(a => a.cancel());
-                sib.style.opacity = '0';
-                sib.animate([{ opacity: 0 }, { opacity: 1 }],
-                    { duration: this.#closeDur * 0.5, delay: this.#closeDur * 0.5,
-                      easing: 'ease-out', fill: 'forwards' });
-            }
-
-            this.#altAnim = this.#altOverlay.animate([
-                {
-                    top: fromTop + 'px', left: fromLeft + 'px',
-                    width: olRect.width + 'px', height: olRect.height + 'px',
-                    transform: 'none', borderRadius: '8px',
-                },
-                {
-                    top: toTop + 'px', left: toLeft + 'px',
-                    width: btnRect.width + 'px', height: btnRect.height + 'px',
-                    transform: 'none', borderRadius: '12px',
-                }
-            ], { duration: this.#closeDur, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' });
-            this.#altAnim.finished.then(() => {
-                this.#altOverlay.classList.remove('visible');
-                this.#altOverlay.style.overflow = '';
-                this.#altOverlay.style.transition = '';
-                this.#altOverlay.getAnimations().forEach(a => a.cancel());
-                // Clear child content fade animations
-                for (const child of this.#altOverlay.children) {
-                    child.getAnimations().forEach(a => a.cancel());
-                    child.style.opacity = '';
-                }
-                this.#altAnim = null;
-                if (textBtn) {
-                    textBtn.getAnimations().forEach(a => a.cancel());
-                    textBtn.style.opacity = '';
-                }
-                // Reset auto-hide timer — siblings stay visible via fill:'forwards'
-                // until the controls bar itself fades out naturally
-                this.#resetControlsTimer();
-            }).catch(() => {});
-        } else {
-            this.#altOverlay.classList.remove('visible');
-            if (textBtn) textBtn.style.visibility = '';
-            // Restore sibling controls immediately
-            for (const sib of [...this.#controlsEl.children].filter(el => el !== textBtn)) {
-                sib.getAnimations().forEach(a => a.cancel());
-                sib.style.opacity = '';
-            }
-        }
-
+        this.#altOverlay.classList.remove('visible');
         if (resetScroll) this.#altOverlay.scrollTop = 0;
         this.#altVisible = false;
         this.classList.remove('alt-text-shown');
+
+        // Re-evaluate controls visibility
+        if (this.#controlsHovered) {
+            this.#showControlsPersistent();
+        } else {
+            this.#resetControlsTimer();
+        }
+
         this.dispatchEvent(new CustomEvent('alt-text-toggle', { detail: { visible: false } }));
     }
 
@@ -583,18 +448,29 @@ class ImageViewer extends HTMLElement {
         }
         media.id = 'fullscreenMedia';
 
-        // Position at final contained rect
-        media.style.top = finalRect.top + 'px';
-        media.style.left = finalRect.left + 'px';
-        media.style.width = finalRect.width + 'px';
-        media.style.height = finalRect.height + 'px';
+        // Media wrapper — holds media + controls, receives FLIP transform
+        const fsWrap = document.createElement('div');
+        fsWrap.className = 'fs-media-wrap';
+        if (finalRect.top < 34) fsWrap.classList.add('fs-controls-inset');
+        fsWrap.style.top = finalRect.top + 'px';
+        fsWrap.style.left = finalRect.left + 'px';
+        fsWrap.style.width = finalRect.width + 'px';
+        fsWrap.style.height = finalRect.height + 'px';
 
         // FLIP: inverse transform to gallery position
         const dx = wrapRect.left - finalRect.left;
         const dy = wrapRect.top - finalRect.top;
         const sx = wrapRect.width / finalRect.width;
         const sy = wrapRect.height / finalRect.height;
-        media.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+        fsWrap.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+
+        // Capture controls position before DOM move
+        const ctrlStartRect = this.#controlsEl.getBoundingClientRect();
+        // Swap fullscreen icon
+        const fsBtn = this.#controlsEl.querySelector('[aria-label="Fullscreen"]');
+        if (fsBtn) { fsBtn.innerHTML = CLOSE_SVG; fsBtn.setAttribute('aria-label', 'Exit fullscreen'); }
+        this.classList.add('iv-controls-active');
+        fsWrap.append(media);
 
         // Close button
         const closeBtn = document.createElement('button');
@@ -623,8 +499,11 @@ class ImageViewer extends HTMLElement {
         // Context menu
         const fsCtxMenu = this.#buildContextMenu(overlay, media);
 
-        overlay.append(media, closeBtn, altOverlay);
+        overlay.append(fsWrap, this.#controlsEl, altOverlay);
         if (fsCtxMenu) overlay.appendChild(fsCtxMenu);
+        // Fix controls at their viewer position during expansion
+        const ctrlRight = window.innerWidth - ctrlStartRect.right;
+        this.#controlsEl.style.cssText = `position:fixed;top:${ctrlStartRect.top}px;right:${ctrlRight}px;left:auto;bottom:auto;z-index:1;opacity:1;pointer-events:auto;`;
 
         // Click backdrop to close
         overlay.addEventListener('click', (e) => {
@@ -633,9 +512,9 @@ class ImageViewer extends HTMLElement {
 
         // Capture alt text state before DOM changes
         const wasAltVisible = this.#altVisible;
-        let altFlipFrom = null;
+        let inlineAltRect = null;
         if (wasAltVisible) {
-            altFlipFrom = this.#altOverlay.getBoundingClientRect();
+            inlineAltRect = this.#altOverlay.getBoundingClientRect();
             this.dismissAltText();
         }
 
@@ -643,31 +522,29 @@ class ImageViewer extends HTMLElement {
         this.#fullscreenOverlay = overlay;
         this.#fullscreen = true;
 
-        // FLIP alt text from inline to fullscreen position
-        if (wasAltVisible && altFlipFrom) {
+        // Show fullscreen alt text if it was visible inline
+        if (wasAltVisible) {
             altOverlay.innerHTML = '';
             const content = this.#buildAltContent
                 ? this.#buildAltContent({ wrapExtras: true })
                 : this.#buildSimpleAltContent();
             if (content) altOverlay.appendChild(content);
-            altOverlay.style.transition = 'none';
             altOverlay.classList.add('visible');
+            altOverlay.classList.add('fs-alt-expanded');
             this.#fsAltVisible = true;
 
-            altOverlay.offsetHeight; // force layout
-            const toRect = altOverlay.getBoundingClientRect();
-            const adx = (altFlipFrom.left + altFlipFrom.width / 2) - (toRect.left + toRect.width / 2);
-            const ady = (altFlipFrom.top + altFlipFrom.height / 2) - (toRect.top + toRect.height / 2);
-
-            this.#fsAltAnim = altOverlay.animate([
-                { transform: `translateX(-50%) translate(${adx}px, ${ady}px)`, opacity: 0 },
-                { transform: 'translateX(-50%)', opacity: 1 }
-            ], { duration: this.#openDur, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
-            this.#fsAltAnim.finished.then(() => {
-                altOverlay.style.transition = '';
-                altOverlay.classList.add('fs-alt-expanded');
-                this.#fsAltAnim = null;
-            }).catch(() => {});
+            // FLIP morph from inline alt position
+            if (inlineAltRect) {
+                const fsAltRect = altOverlay.getBoundingClientRect();
+                const dx = (inlineAltRect.left + inlineAltRect.width / 2) - (fsAltRect.left + fsAltRect.width / 2);
+                const dy = (inlineAltRect.top + inlineAltRect.height / 2) - (fsAltRect.top + fsAltRect.height / 2);
+                const sx = inlineAltRect.width / fsAltRect.width;
+                const sy = inlineAltRect.height / fsAltRect.height;
+                altOverlay.animate([
+                    { transform: `translateX(-50%) translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`, opacity: 0.5 },
+                    { transform: 'translateX(-50%)', opacity: 1 }
+                ], { duration: this.#openDur, easing: 'cubic-bezier(0.16, 1, 0.3, 1)' });
+            }
         } else {
             this.#fsAltVisible = false;
         }
@@ -677,11 +554,44 @@ class ImageViewer extends HTMLElement {
         this.#video.style.visibility = 'hidden';
 
         // Animate in
-        media.offsetHeight;
+        fsWrap.offsetHeight;
+
+        // Measure actual fullscreen target by temporarily placing controls in fsWrap
+        // (fsWrap has no transform yet since we haven't started the transition)
+        const savedCtrlCss = this.#controlsEl.style.cssText;
+        this.#controlsEl.style.cssText = '';
+        fsWrap.style.transform = 'none';
+        fsWrap.prepend(this.#controlsEl);
+        fsWrap.offsetHeight;
+        const ctrlEndRect = this.#controlsEl.getBoundingClientRect();
+        const ctrlTargetTop = ctrlEndRect.top;
+        const ctrlTargetRight = window.innerWidth - ctrlEndRect.right;
+        // Move controls back to overlay
+        overlay.append(this.#controlsEl);
+        this.#controlsEl.style.cssText = savedCtrlCss;
+        // Reset fsWrap transform for FLIP
+        fsWrap.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+        fsWrap.offsetHeight;
+
+        // FLIP controls from viewer position to fullscreen position
+        this.#ctrlOpenAnim = this.#controlsEl.animate([
+            { top: ctrlStartRect.top + 'px', right: ctrlRight + 'px' },
+            { top: ctrlTargetTop + 'px', right: ctrlTargetRight + 'px' }
+        ], { duration: this.#openDur, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' });
+        this.#ctrlOpenAnim.finished.then(() => {
+            // Update inline style to target before cancelling animation layer
+            this.#controlsEl.style.top = ctrlTargetTop + 'px';
+            this.#controlsEl.style.right = ctrlTargetRight + 'px';
+            this.#ctrlOpenAnim.cancel();
+            this.#ctrlOpenAnim = null;
+            fsWrap.prepend(this.#controlsEl);
+            this.#controlsEl.style.cssText = '';
+        }).catch(() => {});
+
         overlay.classList.add('fs-visible');
-        media.style.transition = `transform ${this.#openDur}ms cubic-bezier(0.16, 1, 0.3, 1)`;
-        media.classList.add('fs-animating');
-        media.style.transform = 'none';
+        fsWrap.style.transition = `transform ${this.#openDur}ms cubic-bezier(0.16, 1, 0.3, 1)`;
+        fsWrap.classList.add('fs-animating');
+        fsWrap.style.transform = 'none';
 
         this.dispatchEvent(new CustomEvent('fullscreen-open'));
     }
@@ -697,15 +607,23 @@ class ImageViewer extends HTMLElement {
         // Cleanup listeners
         if (overlay._fsResSync) document.removeEventListener('resolutionchange', overlay._fsResSync);
 
-        const media = overlay.querySelector('#fullscreenMedia');
-        if (!media) { overlay.remove(); return; }
+        const fsWrap = overlay.querySelector('.fs-media-wrap');
+        if (!fsWrap) { overlay.remove(); return; }
+
+        // Cancel any in-flight controls open animation
+        if (this.#ctrlOpenAnim) {
+            this.#ctrlOpenAnim.cancel();
+            this.#ctrlOpenAnim = null;
+            this.#controlsEl.style.cssText = '';
+            fsWrap.prepend(this.#controlsEl);
+        }
 
         const wrapRect = this.#wrap.getBoundingClientRect();
         const finalRect = {
-            top: parseFloat(media.style.top),
-            left: parseFloat(media.style.left),
-            width: parseFloat(media.style.width),
-            height: parseFloat(media.style.height),
+            top: parseFloat(fsWrap.style.top),
+            left: parseFloat(fsWrap.style.left),
+            width: parseFloat(fsWrap.style.width),
+            height: parseFloat(fsWrap.style.height),
         };
 
         const dx = wrapRect.left - finalRect.left;
@@ -720,44 +638,85 @@ class ImageViewer extends HTMLElement {
 
         if (wasFsAltVisible && altEl) {
             altEl.classList.remove('fs-alt-expanded');
-            const targetCenterX = wrapRect.left + wrapRect.width / 2;
-            const targetCenterY = wrapRect.top + wrapRect.height / 2;
             const fromRect = altEl.getBoundingClientRect();
-            const fromCenterX = fromRect.left + fromRect.width / 2;
-            const fromCenterY = fromRect.top + fromRect.height / 2;
-            const altDx = targetCenterX - fromCenterX;
-            const altDy = targetCenterY - fromCenterY;
+            const fromCX = fromRect.left + fromRect.width / 2;
+            const fromCY = fromRect.top + fromRect.height / 2;
+            // Target: bottom-center of inline viewer (approximate inline alt position)
+            const targetW = Math.min(wrapRect.width - 16, 800);
+            const targetCX = wrapRect.left + wrapRect.width / 2;
+            const s = targetW / fromRect.width;
+            const targetBottom = wrapRect.bottom - 8;
+            const targetCY = targetBottom - (fromRect.height * s) / 2;
+            const altDx = targetCX - fromCX;
+            const altDy = targetCY - fromCY;
 
             altEl.style.transition = 'none';
             altEl.animate([
                 { transform: 'translateX(-50%)', opacity: 1 },
-                { transform: `translateX(-50%) translate(${altDx}px, ${altDy}px)`, opacity: 0 }
+                { transform: `translateX(-50%) translate(${altDx}px, ${altDy}px) scale(${s})`, opacity: 0 }
             ], { duration: this.#closeDur, easing: 'cubic-bezier(0.33, 1, 0.68, 1)', fill: 'forwards' });
         } else if (altEl) {
             altEl.classList.remove('visible');
         }
 
+        // FLIP controls: move from fsWrap to overlay with fixed positioning
+        const ctrlFromRect = this.#controlsEl.getBoundingClientRect();
+        const ctrlFromRight = window.innerWidth - ctrlFromRect.right;
+        const fsBtnEl = this.#controlsEl.querySelector('[aria-label="Exit fullscreen"]');
+        if (fsBtnEl) { fsBtnEl.innerHTML = FULLSCREEN_SVG; fsBtnEl.setAttribute('aria-label', 'Fullscreen'); }
+        overlay.append(this.#controlsEl);
+        this.#controlsEl.style.cssText = `position:fixed;top:${ctrlFromRect.top}px;right:${ctrlFromRight}px;left:auto;bottom:auto;z-index:1;opacity:1;pointer-events:auto;`;
+
+        // Measure viewer target: briefly place controls in viewer
+        this.#controlsActive = true;
+        this.classList.add('iv-controls-active');
+        const savedCss = this.#controlsEl.style.cssText;
+        this.#controlsEl.style.cssText = 'visibility:hidden;';
+        this.append(this.#controlsEl);
+        const ctrlTargetRect = this.#controlsEl.getBoundingClientRect();
+        const ctrlTargetRight = window.innerWidth - ctrlTargetRect.right;
+        overlay.append(this.#controlsEl);
+        this.#controlsEl.style.cssText = savedCss;
+
+        // Animate controls from fullscreen to viewer position
+        let ctrlsDone = false;
+        const ctrlCloseAnim = this.#controlsEl.animate([
+            { top: ctrlFromRect.top + 'px', right: ctrlFromRight + 'px' },
+            { top: ctrlTargetRect.top + 'px', right: ctrlTargetRight + 'px' }
+        ], { duration: this.#closeDur, easing: 'ease-in', fill: 'forwards' });
+        ctrlCloseAnim.finished.then(() => { ctrlCloseAnim.cancel(); ctrlsDone = true; }).catch(() => { ctrlsDone = true; });
+
         overlay.classList.remove('fs-visible');
-        media.classList.remove('fs-animating');
-        media.style.transition = `transform ${this.#closeDur}ms ease-in`;
-        media.classList.add('fs-closing');
-        media.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+        fsWrap.classList.remove('fs-animating');
+        fsWrap.style.transition = `transform ${this.#closeDur}ms ease-in`;
+        fsWrap.classList.add('fs-closing');
+        fsWrap.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
 
-        media.addEventListener('transitionend', () => {
-            overlay.remove();
-            this.#img.style.visibility = '';
-            this.#video.style.visibility = '';
+        fsWrap.addEventListener('transitionend', () => {
+            const finish = () => {
+                // Move controls back to viewer
+                this.append(this.#controlsEl);
+                this.#controlsEl.style.cssText = '';
+                this.#controlsHovered = false;
+                this.#resetControlsTimer();
 
-            // Hand off to inline alt text
-            if (wasFsAltVisible && this.#altText) {
-                this.#altOverlay.style.transition = 'none';
-                this.showAltText();
-                requestAnimationFrame(() => { this.#altOverlay.style.transition = ''; });
-            }
+                overlay.remove();
+                this.#img.style.visibility = '';
+                this.#video.style.visibility = '';
 
-            this.dispatchEvent(new CustomEvent('fullscreen-close', {
-                detail: { wasAltVisible: wasFsAltVisible }
-            }));
+                // Hand off to inline alt text
+                if (wasFsAltVisible && this.#altText) {
+                    this.#altOverlay.style.transition = 'none';
+                    this.showAltText();
+                    requestAnimationFrame(() => { this.#altOverlay.style.transition = ''; });
+                }
+
+                this.dispatchEvent(new CustomEvent('fullscreen-close', {
+                    detail: { wasAltVisible: wasFsAltVisible }
+                }));
+            };
+            if (ctrlsDone) finish();
+            else ctrlCloseAnim.finished.then(finish).catch(finish);
         }, { once: true });
     }
 
@@ -810,15 +769,9 @@ class ImageViewer extends HTMLElement {
             }
         });
 
-        // Alt-text interaction hides controls
-        this.#altOverlay.addEventListener('pointerenter', () => {
-            this.#hideControls();
-        });
+        // Click alt-text overlay to dismiss
         this.#altOverlay.addEventListener('click', () => {
             if (this.#altVisible) this.dismissAltText();
-        });
-        this.#altOverlay.addEventListener('scroll', () => {
-            this.#hideControls();
         });
 
         // Click outside alt-text overlay dismisses it
@@ -858,6 +811,7 @@ class ImageViewer extends HTMLElement {
     }
 
     #hideControls() {
+        if (this.#altVisible) return;
         if (this.#controlsEl.querySelector('.custom-dropdown.open, dd-morph.open')) return;
         clearTimeout(this.#controlsTimer);
         this.#controlsTimer = 0;
@@ -903,8 +857,6 @@ class ImageViewer extends HTMLElement {
         if (!this.#fullscreenOverlay) return;
         const el = this.#fullscreenOverlay.querySelector('.fullscreen-alt-overlay');
         if (!el) return;
-
-        // Cancel any in-flight alt animation
         if (this.#fsAltAnim) { this.#fsAltAnim.cancel(); this.#fsAltAnim = null; }
 
         el.innerHTML = '';
@@ -913,55 +865,19 @@ class ImageViewer extends HTMLElement {
             : this.#buildSimpleAltContent();
         if (content) el.appendChild(content);
 
-        // FLIP: animate from inline position to fullscreen position
-        el.style.transition = 'none';
         el.classList.add('visible');
+        requestAnimationFrame(() => el.classList.add('fs-alt-expanded'));
         this.#fsAltVisible = true;
-
-        el.offsetHeight; // force layout
-        const toRect = el.getBoundingClientRect();
-        const wrapRect = this.#wrap.getBoundingClientRect();
-        const adx = (wrapRect.left + wrapRect.width / 2) - (toRect.left + toRect.width / 2);
-        const ady = (wrapRect.top + wrapRect.height / 2) - (toRect.top + toRect.height / 2);
-
-        this.#fsAltAnim = el.animate([
-            { transform: `translateX(-50%) translate(${adx}px, ${ady}px)`, opacity: 0 },
-            { transform: 'translateX(-50%)', opacity: 1 }
-        ], { duration: this.#openDur, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'none' });
-        this.#fsAltAnim.finished.then(() => {
-            el.style.transition = '';
-            el.classList.add('fs-alt-expanded');
-            this.#fsAltAnim = null;
-        }).catch(() => {});
     }
 
     #hideFsAlt() {
         if (!this.#fullscreenOverlay) return;
         const el = this.#fullscreenOverlay.querySelector('.fullscreen-alt-overlay');
         if (!el) { this.#fsAltVisible = false; return; }
-
-        // Cancel any in-flight alt animation
         if (this.#fsAltAnim) { this.#fsAltAnim.cancel(); this.#fsAltAnim = null; }
 
         el.classList.remove('fs-alt-expanded');
-
-        // FLIP: animate back toward inline position
-        const fromRect = el.getBoundingClientRect();
-        const wrapRect = this.#wrap.getBoundingClientRect();
-        const dx = (wrapRect.left + wrapRect.width / 2) - (fromRect.left + fromRect.width / 2);
-        const dy = (wrapRect.top + wrapRect.height / 2) - (fromRect.top + fromRect.height / 2);
-
-        el.style.transition = 'none';
-        this.#fsAltAnim = el.animate([
-            { transform: 'translateX(-50%)', opacity: 1 },
-            { transform: `translateX(-50%) translate(${dx}px, ${dy}px)`, opacity: 0 }
-        ], { duration: this.#closeDur, easing: 'ease-in', fill: 'forwards' });
-        this.#fsAltAnim.finished.then(() => {
-            el.classList.remove('visible');
-            el.style.transition = '';
-            el.getAnimations().forEach(a => a.cancel());
-            this.#fsAltAnim = null;
-        }).catch(() => {});
+        el.classList.remove('visible');
         this.#fsAltVisible = false;
     }
 
