@@ -7,7 +7,7 @@ import { loadProfiles, saveProfiles, deleteProfile, loadPortraits, getPortraitNa
 import { seedTagToLabel } from '@geometric-interior/core/text-generation/seed-tags.js';
 import { slugify } from '../components/slugify.js';
 import { t, getLocale } from '../i18n/locale.js';
-import { TRASH_SVG, ARROW_UP_SVG, ARROW_DOWN_SVG } from '../components/icons.js';
+import { TRASH_SVG, ARROW_UP_SVG, ARROW_DOWN_SVG } from '@svg-icons';
 
 /**
  * @param {object} opts

@@ -93,12 +93,13 @@ image-viewer[mode="canvas"] .iv-controls {
 
 /* ── Controls button styling (frosted glass) ── */
 .iv-controls .icon-btn {
-    height: 24px;
+    width: 2rem;
+    height: 2rem;
     border-radius: 3px;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 0.5rem;
+    padding: 0;
 }
 .iv-controls .icon-btn,
 .iv-controls .select-base {
@@ -131,7 +132,7 @@ image-viewer[mode="canvas"] .iv-controls {
 }
 .iv-controls .select-base,
 .iv-controls .custom-dropdown > .select-base {
-    height: 24px;
+    height: 2rem;
     padding: 0 0.5rem;
     border-radius: 3px;
     font-size: 0.625rem;
@@ -144,13 +145,10 @@ image-viewer[mode="canvas"] .iv-controls {
 }
 /* Text button — pill-shaped label button */
 .iv-controls .iv-text-btn {
-    width: auto;
-    height: 24px;
+    width: 2rem;
+    height: 2rem;
     border-radius: 3px;
-    padding: 0 0.5rem;
-    font-size: 0.625rem;
-    font-family: inherit;
-    letter-spacing: 0.02em;
+    padding: 0;
 }
 .iv-controls .iv-text-btn.iv-text-active {
     background-color: rgba(255, 255, 255, 0.22);
@@ -164,7 +162,8 @@ image-viewer[mode="canvas"] .iv-controls {
 /* ── dd-morph: unified expanding dropdown ── */
 
 /* The element itself — fixed layout footprint, inner overflows for overlay expansion */
-.iv-controls dd-morph.select-base {
+.iv-controls dd-morph.select-base,
+[data-theme="light"] .iv-controls dd-morph.select-base {
     display: block;
     position: relative;
     overflow: visible;
@@ -172,7 +171,13 @@ image-viewer[mode="canvas"] .iv-controls {
     padding: 0;
     border-radius: 3px;
     cursor: pointer;
+    background-color: transparent;
     background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    box-shadow: none;
 }
 
 /* Inner wrapper — carries visual styling, overflows dd-morph's fixed height */
@@ -207,16 +212,19 @@ image-viewer[mode="canvas"] .iv-controls {
                 opacity calc(var(--t-accent) * var(--t-speed)) ease;
 }
 
-/* Items — 24px so itemH matches outer dd-morph height (border-box with 1px border) */
+/* Items — 2rem tall, 3rem wide to fit resolution labels */
 .iv-controls dd-morph .custom-dropdown-item {
+    background: none;
+    border: none;
     color: rgba(255, 255, 255, 0.7);
     text-align: center;
     border-radius: 2px;
-    height: 24px;
+    width: 3rem;
+    height: 2rem;
     box-sizing: border-box;
-    padding: 0 0.5rem;
+    padding: 0;
     font-size: 0.625rem;
-    line-height: 24px;
+    line-height: 2rem;
     transition: background-color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
                 color calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
@@ -227,7 +235,7 @@ image-viewer[mode="canvas"] .iv-controls {
 .iv-controls dd-morph .custom-dropdown-item:hover {
     color: #fff;
 }
-.iv-controls dd-morph .custom-dropdown-item.active {
+.iv-controls dd-morph.open .custom-dropdown-item.active {
     position: relative;
     z-index: 1;
     background: rgba(180, 130, 255, 0.2);
@@ -250,7 +258,7 @@ image-viewer[mode="canvas"] .iv-controls {
 [data-theme="light"] .iv-controls dd-morph .custom-dropdown-item:hover {
     color: #000;
 }
-[data-theme="light"] .iv-controls dd-morph .custom-dropdown-item.active {
+[data-theme="light"] .iv-controls dd-morph.open .custom-dropdown-item.active {
     background: rgba(120, 40, 200, 0.12);
     color: rgb(100, 30, 180);
 }

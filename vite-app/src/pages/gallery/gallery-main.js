@@ -36,11 +36,12 @@ import { toast } from '../../components/toast.js';
 import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
 import {
+    createAltTextToggle, createFullscreenToggle,
     TRASH_SVG, RESTORE_SVG, EDIT_SVG, ADD_SVG, FULLSCREEN_SVG, CLOSE_SVG, ERROR_SVG, RETRY_SVG,
     UNDO_SVG, REDO_SVG, SAVE_SVG, RANDOMIZE_SVG, RENDER_SVG,
     FIELD_DIAMOND_SVG, DOWNLOAD_SVG, IMAGE_SVG, BUNDLE_SVG, SETTINGS_SVG, SHARE_SVG, LINK_SVG, ARROW_RIGHT_SVG,
     BLUESKY_SVG, FACEBOOK_SVG, GOOGLE_SVG, LINKEDIN_SVG, REDDIT_SVG, TWITTER_SVG, EMAIL_SVG,
-} from '../../components/icons.js';
+} from '@svg-icons';
 import { downloadBlob, injectPngTextChunks, safeName, toIsoLocalish } from '../../export/export.js';
 import { profileToConfig } from '@geometric-interior/core/config-schema.js';
 import { initGalleryWorker } from './gallery-worker-bridge.js';
@@ -50,6 +51,7 @@ import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
 import { initAnimationEditor, destroyAnimationEditor } from '../animation/anim-main.js';
 import { createLayoutMorph } from '../../components/layout-morph.js';
 import { showBlockOverlay, hideBlockOverlay } from '../../components/transition-overlay.js';
+import { initCarouselDebugPanel } from '../../components/carousel-debug-panel.js';
 
 /* ── Build header & footer DOM ── */
 createHeader(document.querySelector('.app-header'), { page: 'gallery' });
@@ -127,6 +129,7 @@ const carouselBrowser = document.getElementById('carouselBrowser');
 carouselBrowser.arrowNavStep = 1;
 carouselBrowser.arrowAutoSelect = true;
 carouselBrowser.sectionNavStep = 'page';
+initCarouselDebugPanel(carouselBrowser);
 const mainEl = document.querySelector('.main-content');
 const layoutMorph = createLayoutMorph(mainEl);
 
@@ -252,17 +255,20 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
 
 /* ── Set up gallery viewer controls ── */
 {
-    // Text button — toggles alt-text overlay
+    // Alt-text toggle button — morph icon (text lines ↔ X)
     const textBtn = document.createElement('button');
     textBtn.className = 'icon-btn iv-text-btn';
-    textBtn.textContent = t('gallery.altTextBtn');
     textBtn.setAttribute('aria-label', t('gallery.altTextBtn'));
+    const altTextIcon = createAltTextToggle(textBtn, { startVisible: true });
+    textBtn.morphIcon = altTextIcon;
     textBtn.addEventListener('click', () => {
         if (imageViewer.altVisible) imageViewer.dismissAltText();
         else imageViewer.showAltText();
     });
     imageViewer.addEventListener('alt-text-toggle', (e) => {
         textBtn.classList.toggle('iv-text-active', e.detail.visible);
+        if (e.detail.visible) altTextIcon.morph('waiting-close');
+        else altTextIcon.morph('waiting-open');
     });
 
     // Resolution dropdown (morph mode — single unified element)
@@ -283,14 +289,23 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
         <button class="custom-dropdown-item active" role="option" data-value="sd" data-label="540p" aria-selected="true">540p</button>
         <button class="custom-dropdown-item" role="option" data-value="pre" data-label="270p" aria-selected="false">270p</button>`;
 
-    // Fullscreen button
+    // Fullscreen toggle button — morph icon (outer brackets ↔ inner brackets)
     const fsBtn = document.createElement('button');
     fsBtn.className = 'icon-btn';
-    fsBtn.innerHTML = FULLSCREEN_SVG;
     fsBtn.setAttribute('aria-label', 'Fullscreen');
+    const fsIcon = createFullscreenToggle(fsBtn);
+    fsBtn.morphIcon = fsIcon;
     fsBtn.addEventListener('click', () => {
         if (imageViewer.isFullscreen) imageViewer.closeFullscreen();
         else openFullscreen();
+    });
+
+    // Coalesce / dissipate morph icons with controls show / hide
+    imageViewer.addEventListener('controls-show', () => {
+        fsIcon.coalesce();
+    });
+    imageViewer.addEventListener('controls-hide', () => {
+        fsIcon.dissipate();
     });
 
     imageViewer.setControls(textBtn, resDropdown, fsBtn);

@@ -1,4 +1,4 @@
-import { DOT_SVG } from './icons.js';
+import { DOT_SVG } from '@svg-icons';
 
 /**
  * Shared header builder — populates an empty <header> element with the correct

@@ -25,6 +25,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@geometric-interior': resolve(__dirname, '../geometric-interior/src'),
+      '@svg-icons': resolve(__dirname, '../svg-icons/src'),
     },
   },
   server: {

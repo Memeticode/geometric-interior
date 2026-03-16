@@ -507,7 +507,8 @@ carousel-dropdown-browser.cdb-grid-align-right .cdb-grid-section { justify-conte
     width: 100%;
     height: var(--cdb-label-height, 1.4rem);
     margin-bottom: 0.25rem;
-    overflow: hidden;
+    overflow-x: clip;
+    overflow-y: visible;
     pointer-events: none;
 }
 .cdb-section-label-container.cdb-labels-deferred .cdb-section-label {
@@ -529,6 +530,7 @@ carousel-dropdown-browser.cdb-grid-align-right .cdb-grid-section { justify-conte
     letter-spacing: 0.15em;
     color: var(--text-muted);
     padding-bottom: 0.25rem;
+    transform-origin: center bottom;
     transition: transform var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
                 opacity var(--carousel-speed, 0.85s) ease,
                 --underline-width var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1));

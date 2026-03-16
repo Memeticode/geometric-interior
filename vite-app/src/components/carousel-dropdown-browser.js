@@ -40,7 +40,7 @@
  * @fires expand-change — { expanded } when grid dropdown opens/closes
  */
 
-import { TRASH_SVG, ARROW_LEFT_SVG, ARROW_RIGHT_SVG, DBL_ARROW_LEFT_SVG, DBL_ARROW_RIGHT_SVG } from './icons.js';
+import { TRASH_SVG, ARROW_LEFT_SVG, ARROW_RIGHT_SVG, DBL_ARROW_LEFT_SVG, DBL_ARROW_RIGHT_SVG } from '@svg-icons';
 import { setSuppressTooltips } from './tooltips.js';
 import './flip-layout.js';
 
@@ -182,7 +182,7 @@ function readCard(el) {
 // ── Main component ──
 
 class CarouselDropdownBrowser extends HTMLElement {
-    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'grid-align', 'grid-items-align', 'section-align'];
+    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'grid-align', 'grid-items-align', 'section-align', 'label-perspective', 'label-depth'];
 
     // ── Configuration ──
     #arcZ = 24;
@@ -192,6 +192,8 @@ class CarouselDropdownBrowser extends HTMLElement {
     #infinite = true;              // wrap around or clamp at edges
     #bounce = 0.35;                // overshoot amount (0 = smooth, 1 = pronounced bounce)
     #expandable = true;            // whether the grid-expand toggle is available
+    #labelPerspective = PERSPECTIVE_D;  // perspective distance for section labels (px)
+    #labelDepth = 1;                    // depth multiplier for label track effect (0=flat, 1=match cards)
     #animatingExpand = false;       // guard against overlapping expand/collapse
     #expandTimers = [];             // setTimeout IDs for expand/collapse phases
     #expandSkipFn = null;           // closure to snap expand/collapse to end state
@@ -1457,6 +1459,17 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#applySectionAlignClass();
             if (this.#domBuilt) this.#positionCards();
         }
+        if (name === 'label-perspective') {
+            this.#labelPerspective = Math.max(50, parseFloat(val) || PERSPECTIVE_D);
+            if (this.#sectionLabelContainer) {
+                this.#sectionLabelContainer.style.perspective = this.#labelPerspective + 'px';
+            }
+            if (this.#domBuilt) this.#positionCards();
+        }
+        if (name === 'label-depth') {
+            this.#labelDepth = Math.max(0, Math.min(3, parseFloat(val) ?? 1));
+            if (this.#domBuilt) this.#positionCards();
+        }
     }
 
     /**
@@ -1787,6 +1800,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Section label container (per-section scrolling labels above track)
         this.#sectionLabelContainer = document.createElement('div');
         this.#sectionLabelContainer.className = 'cdb-section-label-container';
+        this.#sectionLabelContainer.style.perspective = this.#labelPerspective + 'px';
 
         this.#container.appendChild(this.#sectionLabelContainer);
         this.#container.appendChild(this.#viewport);
@@ -3001,13 +3015,23 @@ class CarouselDropdownBrowser extends HTMLElement {
     /** Position section labels using projected edges from FrameLayout.
      *  Labels are "sticky" — when a section extends off-screen, the label pins
      *  to the arc boundary edge (where cards transition out of the visible arc).
-     *  It only scrolls off when the last visible card exits. */
+     *  It only scrolls off when the last visible card exits.
+     *
+     *  Labels ride the same 3D arc as the cards: their vertical position (cy),
+     *  scale, depth (tz), and rotation (ry) are derived from the arc geometry
+     *  by inverse-mapping the label's center X back to an arc angle. */
     #applySectionLabels(frame, skipOpacity = false) {
         const halfVP = (this.#viewport ? this.#viewport.clientWidth : window.innerWidth) / 2;
         // Pin points: projected edges of a card at the arc boundary.
         // arcBoundaryLeft is negative (left side), arcBoundaryRight is positive (right side).
         const boundL = frame.arcBoundaryLeft ?? -halfVP;
         const boundR = frame.arcBoundaryRight ?? halfVP;
+
+        // Arc parameters for label depth computation
+        const isArc = !frame.linearMode;
+        const { R, dTheta, half } = frame;
+        const depth = this.#labelDepth;
+        const arcY = this.#arcY;
 
         // First pass: compute clamped positions for all visible sections
         const positions = [];
@@ -3059,7 +3083,38 @@ class CarouselDropdownBrowser extends HTMLElement {
             } else {
                 labelX = clampedLeft;
             }
-            sec.element.style.transform = `translateX(${labelX}px)`;
+
+            // Arc-matched transforms: inverse-map centerX to an arc position,
+            // then derive cy, sc, tz, ry using the same formulas as cards.
+            // Center labels are pushed closest to the viewer; edge labels recede.
+            let labelCy = 0, labelSc = 1, labelTz = 0, labelRy = 0;
+            if (isArc && depth > 0 && R > 0 && dTheta > 0) {
+                const centerX = (clampedLeft + clampedRight) / 2;
+                // Inverse arc: cx = R * sin(angle), so angle = asin(cx / R)
+                const sinArg = Math.max(-1, Math.min(1, centerX / R));
+                const angle = Math.asin(sinArg);
+                const effectiveOffset = angle / dTheta;
+                const abs = Math.abs(effectiveOffset);
+                const t = half > 0 ? Math.min(abs / half, 1) : 0;
+
+                // Vertical arc displacement (same quadratic as cards)
+                labelCy = -arcY * t * t * depth;
+                labelCy += Math.min(arcY, 0) / 2 * depth; // frown shift
+
+                // Scale: center gets a boost above 1.0, edges stay at 1.0
+                const scaleBoost = (1 - SCALE_MIN_ARC) * depth; // 0.30 * depth
+                labelSc = 1 + scaleBoost * (1 - t);
+
+                // Depth: center gets max forward push, edges sit at z=0
+                const maxTz = half * TZ_PER_POS * depth;
+                labelTz = maxTz * (1 - t);
+
+                // Rotation (rotateY — matching card arc tangent)
+                labelRy = Math.sign(centerX) * Math.min(Math.abs(angle) / DEG, RY_MAX_DEG) * depth;
+            }
+
+            sec.element.style.transform =
+                `translateX(${labelX}px) translateY(${labelCy}px) rotateY(${labelRy}deg) translateZ(${labelTz}px) scale(${labelSc})`;
             const underlineWidth = Math.min(textWidth, availableWidth);
             sec.element.style.setProperty('--underline-width', underlineWidth + 'px');
 

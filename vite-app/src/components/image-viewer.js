@@ -14,7 +14,7 @@
  * @fires canvas-error     {}                    — WebGL/canvas error
  */
 
-import { CLOSE_SVG, FULLSCREEN_SVG } from './icons.js';
+import { CLOSE_SVG, FULLSCREEN_SVG } from '@svg-icons';
 
 class ImageViewer extends HTMLElement {
 
@@ -466,9 +466,10 @@ class ImageViewer extends HTMLElement {
 
         // Capture controls position before DOM move
         const ctrlStartRect = this.#controlsEl.getBoundingClientRect();
-        // Swap fullscreen icon
+        // Morph fullscreen icon to close state
         const fsBtn = this.#controlsEl.querySelector('[aria-label="Fullscreen"]');
-        if (fsBtn) { fsBtn.innerHTML = CLOSE_SVG; fsBtn.setAttribute('aria-label', 'Exit fullscreen'); }
+        if (fsBtn?.morphIcon) { fsBtn.morphIcon.morph('waiting-close'); fsBtn.setAttribute('aria-label', 'Exit fullscreen'); }
+        else if (fsBtn) { fsBtn.innerHTML = CLOSE_SVG; fsBtn.setAttribute('aria-label', 'Exit fullscreen'); }
         this.classList.add('iv-controls-active');
         fsWrap.append(media);
 
@@ -663,7 +664,8 @@ class ImageViewer extends HTMLElement {
         const ctrlFromRect = this.#controlsEl.getBoundingClientRect();
         const ctrlFromRight = window.innerWidth - ctrlFromRect.right;
         const fsBtnEl = this.#controlsEl.querySelector('[aria-label="Exit fullscreen"]');
-        if (fsBtnEl) { fsBtnEl.innerHTML = FULLSCREEN_SVG; fsBtnEl.setAttribute('aria-label', 'Fullscreen'); }
+        if (fsBtnEl?.morphIcon) { fsBtnEl.morphIcon.morph('waiting-open'); fsBtnEl.setAttribute('aria-label', 'Fullscreen'); }
+        else if (fsBtnEl) { fsBtnEl.innerHTML = FULLSCREEN_SVG; fsBtnEl.setAttribute('aria-label', 'Fullscreen'); }
         overlay.append(this.#controlsEl);
         this.#controlsEl.style.cssText = `position:fixed;top:${ctrlFromRect.top}px;right:${ctrlFromRight}px;left:auto;bottom:auto;z-index:1;opacity:1;pointer-events:auto;`;
 
@@ -798,6 +800,7 @@ class ImageViewer extends HTMLElement {
         if (!this.#controlsActive) {
             this.#controlsActive = true;
             this.classList.add('iv-controls-active');
+            this.dispatchEvent(new CustomEvent('controls-show'));
         }
     }
 
@@ -806,6 +809,7 @@ class ImageViewer extends HTMLElement {
         if (!this.#controlsActive) {
             this.#controlsActive = true;
             this.classList.add('iv-controls-active');
+            this.dispatchEvent(new CustomEvent('controls-show'));
         }
         this.#resetControlsTimer();
     }
@@ -817,6 +821,7 @@ class ImageViewer extends HTMLElement {
         this.#controlsTimer = 0;
         this.#controlsActive = false;
         this.classList.remove('iv-controls-active');
+        this.dispatchEvent(new CustomEvent('controls-hide'));
     }
 
     #resetControlsTimer() {

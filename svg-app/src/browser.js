@@ -3,6 +3,7 @@ import {
   buildMorphSVG, applyState, setState, readState, lerpColor,
   COL, STATES, STATE_GROUPS,
   convergeState, dissipateState,
+  STATIC_ICON_REGISTRY, injectAnimatedSVG,
 } from '@svg-icons';
 
 const browser = document.getElementById('browser');
@@ -1779,6 +1780,222 @@ for (const group of STATE_GROUPS) {
       retConvBtn.style.display = gone ? '' : 'none';
       retDissBtn.style.display = gone ? '' : 'none';
 
+      playBtn.disabled = busy;
+      convBtn.disabled = busy;
+      dissBtn.disabled = busy;
+      retConvBtn.disabled = busy;
+      retDissBtn.disabled = busy;
+    };
+
+    list.appendChild(card);
+  }
+
+  details.appendChild(list);
+  browser.appendChild(details);
+}
+
+// ── Static / animated icons (non-morph) ──
+
+const STATIC_TRANS_DUR = 500;
+
+class StaticIconCtrl {
+  constructor(animCtrl, svgEl) {
+    this.animCtrl = animCtrl;
+    this.svgEl = svgEl;
+    this.playing = true;
+    this.visible = true;   // icon is showing
+    this.busy = false;     // transition in progress
+    this.transId = null;
+    this.onUpdate = null;
+  }
+
+  togglePlay() {
+    if (this.busy || !this.visible) return;
+    if (this.playing) { this.animCtrl.pause(); this.playing = false; }
+    else { this.animCtrl.play(); this.playing = true; }
+    this._notify();
+  }
+
+  // Converge = materialize from center (scale 0 → 1, opacity 0 → 1)
+  // Dissipate = dematerialize to center (scale 1 → 0, opacity 1 → 0)
+  depart(mode) {
+    if (this.busy || !this.visible) return;
+    this.busy = true;
+    this.animCtrl.pause();
+    this.playing = false;
+    this._notify();
+    const children = Array.from(this.svgEl.children);
+    // Read viewBox center for transform origin
+    const vb = this.svgEl.getAttribute('viewBox')?.split(/\s+/).map(Number) || [0, 0, 16, 16];
+    const cx = vb[0] + vb[2] / 2;
+    const cy = vb[1] + vb[3] / 2;
+    const t0 = performance.now();
+    const scatter = mode === 'dissipate'; // dissipate = scatter outward, converge = shrink inward
+    const tick = () => {
+      const raw = Math.min((performance.now() - t0) / STATIC_TRANS_DUR, 1);
+      const t = EASE(raw);
+      const s = 1 - t; // scale 1 → 0
+      const o = 1 - t; // opacity 1 → 0
+      for (let i = 0; i < children.length; i++) {
+        if (scatter) {
+          // Dissipate: each child drifts outward from center
+          const r = children[i].getBBox?.() || { x: cx, y: cy, width: 0, height: 0 };
+          const ex = (r.x + r.width / 2) - cx;
+          const ey = (r.y + r.height / 2) - cy;
+          const drift = t * 3;
+          children[i].setAttribute('transform',
+            `translate(${ex * drift} ${ey * drift}) translate(${cx} ${cy}) scale(${s}) translate(${-cx} ${-cy})`);
+        } else {
+          // Converge: shrink toward center
+          children[i].setAttribute('transform',
+            `translate(${cx} ${cy}) scale(${s}) translate(${-cx} ${-cy})`);
+        }
+        children[i].setAttribute('opacity', o);
+      }
+      if (raw < 1) {
+        this.transId = requestAnimationFrame(tick);
+      } else {
+        this.transId = null;
+        this.busy = false;
+        this.visible = false;
+        this._notify();
+      }
+    };
+    this.transId = requestAnimationFrame(tick);
+  }
+
+  arrive(mode) {
+    if (this.busy || this.visible) return;
+    this.busy = true;
+    this._notify();
+    const children = Array.from(this.svgEl.children);
+    const vb = this.svgEl.getAttribute('viewBox')?.split(/\s+/).map(Number) || [0, 0, 16, 16];
+    const cx = vb[0] + vb[2] / 2;
+    const cy = vb[1] + vb[3] / 2;
+    const t0 = performance.now();
+    const scatter = mode === 'dissipate';
+    const tick = () => {
+      const raw = Math.min((performance.now() - t0) / STATIC_TRANS_DUR, 1);
+      const t = EASE(raw);
+      const s = t; // scale 0 → 1
+      const o = t; // opacity 0 → 1
+      for (let i = 0; i < children.length; i++) {
+        if (scatter) {
+          const r = children[i].getBBox?.() || { x: cx, y: cy, width: 0, height: 0 };
+          const ex = (r.x + r.width / 2) - cx;
+          const ey = (r.y + r.height / 2) - cy;
+          const drift = (1 - t) * 3;
+          children[i].setAttribute('transform',
+            `translate(${ex * drift} ${ey * drift}) translate(${cx} ${cy}) scale(${s}) translate(${-cx} ${-cy})`);
+        } else {
+          children[i].setAttribute('transform',
+            `translate(${cx} ${cy}) scale(${s}) translate(${-cx} ${-cy})`);
+        }
+        children[i].setAttribute('opacity', o);
+      }
+      if (raw < 1) {
+        this.transId = requestAnimationFrame(tick);
+      } else {
+        // Reset transforms so the animation engine can take over cleanly
+        for (const child of children) {
+          child.removeAttribute('transform');
+          child.removeAttribute('opacity');
+        }
+        this.transId = null;
+        this.busy = false;
+        this.visible = true;
+        this.playing = true;
+        this.animCtrl.play();
+        this._notify();
+      }
+    };
+    this.transId = requestAnimationFrame(tick);
+  }
+
+  _notify() {
+    if (this.onUpdate) this.onUpdate();
+  }
+}
+
+const STATIC_GROUPS = [
+  { name: 'Geometric Interior', keys: ['alt-text', 'create', 'construct'] },
+  { name: 'Navigation', keys: ['arrow-up', 'arrow-down', 'arrow-left', 'arrow-right', 'dbl-arrow-left', 'dbl-arrow-right'] },
+  { name: 'Actions', keys: ['trash', 'restore', 'edit', 'add', 'close', 'fullscreen', 'save', 'undo', 'redo', 'randomize', 'render', 'settings', 'download', 'image', 'bundle'] },
+  { name: 'Status', keys: ['error', 'retry', 'warning'] },
+  { name: 'Separators & Markers', keys: ['dot', 'field-diamond'] },
+  { name: 'Resolution', keys: ['res-270', 'res-540', 'res-900', 'res-1080', 'res-1620', 'res-4k'] },
+  { name: 'Social / Sharing', keys: ['share', 'link', 'email', 'bluesky', 'facebook', 'google', 'linkedin', 'reddit', 'twitter', 'github'] },
+];
+
+for (const group of STATIC_GROUPS) {
+  const details = document.createElement('details');
+  details.open = true;
+  details.className = 'browser-group';
+
+  const summary = document.createElement('summary');
+  summary.className = 'browser-group-title';
+  summary.textContent = group.name;
+  details.appendChild(summary);
+
+  const list = document.createElement('div');
+  list.className = 'browser-list';
+
+  for (const key of group.keys) {
+    const entry = STATIC_ICON_REGISTRY[key];
+    if (!entry) continue;
+
+    const card = document.createElement('div');
+    card.className = 'browser-card';
+
+    const frame = document.createElement('div');
+    frame.className = 'svg-display';
+    frame.style.width = '48px';
+    frame.style.height = '48px';
+    const animCtrl = injectAnimatedSVG(frame, entry.svg, entry.anim, entry.config);
+    animCtrl.play();
+    card.appendChild(frame);
+
+    const ctrl = new StaticIconCtrl(animCtrl, animCtrl.el);
+
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'browser-card-info';
+    const nameEl = document.createElement('span');
+    nameEl.className = 'browser-name';
+    nameEl.textContent = key;
+    const descEl = document.createElement('span');
+    descEl.className = 'browser-desc';
+    descEl.textContent = entry.desc;
+    infoDiv.appendChild(nameEl);
+    infoDiv.appendChild(descEl);
+    card.appendChild(infoDiv);
+
+    // Controls
+    const controls = document.createElement('div');
+    controls.className = 'browser-controls';
+
+    const playBtn = btn('\u23f8', () => ctrl.togglePlay());
+    const convBtn = btn('\u21d3 Converge', () => ctrl.depart('converge'));
+    const dissBtn = btn('\u21d1 Dissipate', () => ctrl.depart('dissipate'));
+    const retConvBtn = btn('\u21d3 Return', () => ctrl.arrive('converge'));
+    const retDissBtn = btn('\u21d1 Return', () => ctrl.arrive('dissipate'));
+    retConvBtn.style.display = 'none';
+    retDissBtn.style.display = 'none';
+
+    controls.appendChild(playBtn);
+    controls.appendChild(convBtn);
+    controls.appendChild(dissBtn);
+    controls.appendChild(retConvBtn);
+    controls.appendChild(retDissBtn);
+    card.appendChild(controls);
+
+    ctrl.onUpdate = () => {
+      const { visible, busy, playing } = ctrl;
+      playBtn.textContent = playing ? '\u23f8' : '\u25b6';
+      playBtn.style.display = visible ? '' : 'none';
+      convBtn.style.display = visible ? '' : 'none';
+      dissBtn.style.display = visible ? '' : 'none';
+      retConvBtn.style.display = !visible && !busy ? '' : 'none';
+      retDissBtn.style.display = !visible && !busy ? '' : 'none';
       playBtn.disabled = busy;
       convBtn.disabled = busy;
       dissBtn.disabled = busy;

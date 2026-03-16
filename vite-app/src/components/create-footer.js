@@ -1,4 +1,4 @@
-import { GITHUB_SVG, SETTINGS_SVG } from './icons.js';
+import { GITHUB_SVG, SETTINGS_SVG } from '@svg-icons';
 
 /**
  * Shared footer builder — populates an empty <footer> element with the correct
