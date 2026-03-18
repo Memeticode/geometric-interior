@@ -505,10 +505,9 @@ carousel-dropdown-browser.cdb-grid-align-right .cdb-grid-section { justify-conte
 .cdb-section-label-container {
     position: relative;
     width: 100%;
-    height: var(--cdb-label-height, 1.4rem);
+    height: calc(var(--cdb-label-height, 1.4rem) + var(--cdb-label-arc-extra, 0px));
     margin-bottom: 0.25rem;
-    overflow-x: clip;
-    overflow-y: visible;
+    overflow: hidden;
     pointer-events: none;
 }
 .cdb-section-label-container.cdb-labels-deferred .cdb-section-label {

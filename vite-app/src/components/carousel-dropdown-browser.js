@@ -3033,6 +3033,21 @@ class CarouselDropdownBrowser extends HTMLElement {
         const depth = this.#labelDepth;
         const arcY = this.#arcY;
 
+        // Pre-compute the cy range so we can offset all labels to stay within bounds.
+        // Smile arcs (arcY > 0): cy goes negative (downward). Frown arcs (arcY < 0):
+        // cy can go positive (upward). We offset everything so min cy maps to 0.
+        let preMinCy = 0, preMaxCy = 0;
+        if (isArc && depth > 0) {
+            // cy at t=0: frown shift only
+            const cy0 = Math.min(arcY, 0) / 2 * depth;
+            // cy at t=1: full quadratic + frown shift
+            const cy1 = -arcY * depth + Math.min(arcY, 0) / 2 * depth;
+            preMinCy = Math.min(cy0, cy1);
+            preMaxCy = Math.max(cy0, cy1);
+        }
+        const cyOffset = -preMinCy; // shift all cy values up so minimum is at 0
+        const cyRange = preMaxCy - preMinCy; // total vertical span
+
         // First pass: compute clamped positions for all visible sections
         const positions = [];
         const visibleSections = new Set();
@@ -3097,9 +3112,11 @@ class CarouselDropdownBrowser extends HTMLElement {
                 const abs = Math.abs(effectiveOffset);
                 const t = half > 0 ? Math.min(abs / half, 1) : 0;
 
-                // Vertical arc displacement (same quadratic as cards)
+                // Vertical arc displacement (same quadratic as cards),
+                // offset so all values are non-negative (stays within container)
                 labelCy = -arcY * t * t * depth;
                 labelCy += Math.min(arcY, 0) / 2 * depth; // frown shift
+                labelCy += cyOffset;
 
                 // Scale: center gets a boost above 1.0, edges stay at 1.0
                 const scaleBoost = (1 - SCALE_MIN_ARC) * depth; // 0.30 * depth
@@ -3128,6 +3145,11 @@ class CarouselDropdownBrowser extends HTMLElement {
                 sec.element.style.maskImage = '';
                 sec.element.style.webkitMaskImage = '';
             }
+        }
+
+        // Set container extra height to accommodate the full cy range
+        if (this.#sectionLabelContainer) {
+            this.#sectionLabelContainer.style.setProperty('--cdb-label-arc-extra', cyRange + 'px');
         }
 
         return visibleSections;

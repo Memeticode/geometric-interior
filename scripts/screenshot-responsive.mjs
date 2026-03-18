@@ -42,11 +42,14 @@ const VIEWPORTS = {
 };
 
 // ── Page definitions ───────────────────────────────────────────────
+// Routes must match vite-app middleware rewrites (/images, /animations → index.html)
+// and the client-side router in gallery-main.js (parseRoute).
 const VITE_PAGES = [
-  { name: 'image-gallery',     path: '/image' },
-  { name: 'image-create',      path: '/image/create' },
-  { name: 'animation-gallery', path: '/animation' },
-  { name: 'animation-create',  path: '/animation/create' },
+  { name: 'gallery',            path: '/images' },
+  { name: 'portrait',           path: '/images/portraits/prism' },
+  { name: 'editor',             path: '/images/editor' },
+  { name: 'animation-gallery',  path: '/animations' },
+  { name: 'animation-editor',   path: '/animations/editor' },
 ];
 
 const SVG_PAGES = [
@@ -54,7 +57,6 @@ const SVG_PAGES = [
   { name: 'svg-browser',        path: '/pages/browser.html' },
   { name: 'svg-matrix',         path: '/pages/matrix.html' },
   { name: 'svg-buttons',        path: '/pages/custom-buttons.html' },
-  { name: 'svg-static',         path: '/pages/static.html' },
 ];
 
 // ── CLI args ───────────────────────────────────────────────────────

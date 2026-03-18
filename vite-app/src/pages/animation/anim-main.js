@@ -1,7 +1,7 @@
 /**
  * Animation Editor — mountable module for the gallery SPA.
  * Exports init/destroy functions called by gallery-main.js
- * when entering/leaving /animation/create.
+ * when entering/leaving /animations/editor.
  */
 
 import { toast } from '../../components/toast.js';
@@ -30,7 +30,7 @@ let instance = null;
 
 /**
  * Initialize the animation editor.
- * Call when navigating to /animation/create.
+ * Call when navigating to /animations/editor.
  * @returns {object} API: { destroy(), getAnimation() }
  */
 export function initAnimationEditor() {

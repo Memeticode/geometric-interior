@@ -28,11 +28,11 @@ export function createHeader(headerEl, { page }) {
         const pages = [
             { href: '/images', key: 'nav.gallery', label: 'Gallery' },
             { href: '/images/create', key: 'nav.imageEditor', label: 'Image Editor' },
-            { href: '/animation/create', key: 'nav.animationEditor', label: 'Animation Editor' },
+            { href: '/animations/editor', key: 'nav.animationEditor', label: 'Animation Editor' },
         ];
         for (const p of pages) {
             const isActive = (page === 'image' && p.href === '/images/create')
-                          || (page === 'animation' && p.href === '/animation/create');
+                          || (page === 'animation' && p.href === '/animations/editor');
             const cls = 'header-link' + (isActive ? ' header-link-active' : '');
             navLinks.push(`<a href="${p.href}" class="${cls}" data-i18n="${p.key}">${p.label}</a>`);
         }

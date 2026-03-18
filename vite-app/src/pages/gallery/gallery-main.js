@@ -11,8 +11,8 @@
  *   /images/generated/{id}                   — generated profile selected
  *   /images/editor                           — editing / adding an image
  *   /images/create                           — image generator panel (legacy)
- *   /animation                               — animation gallery
- *   /animation/create                        — animation editor
+ *   /animations                              — animation gallery
+ *   /animations/editor                      — animation editor
  */
 
 import '../../components/carousel-dropdown-browser.js';
@@ -692,9 +692,9 @@ function parseRoute() {
     const path = window.location.pathname;
 
     // Animation routes
-    if (path === '/animation/create') return { type: 'animation', mode: 'create', source: null, profileSlug: null };
-    if (path.startsWith('/animation')) {
-        const match = path.match(/^\/animation\/(portraits|local|generated)\/(.+)$/);
+    if (path === '/animations/editor') return { type: 'animation', mode: 'create', source: null, profileSlug: null };
+    if (path.startsWith('/animations')) {
+        const match = path.match(/^\/animations\/(portraits|local|generated)\/(.+)$/);
         if (match) return { type: 'animation', mode: 'gallery', source: match[1], profileSlug: match[2] };
         return { type: 'animation', mode: 'gallery', source: null, profileSlug: null };
     }
@@ -710,15 +710,15 @@ function parseRoute() {
 }
 
 function pushRoute() {
-    const base = activeType === 'animation' ? '/animation' : '/images';
-    const url = activeMode === 'create' ? `${base}/create` : base;
+    const base = activeType === 'animation' ? '/animations' : '/images';
+    const url = activeMode === 'create' ? `${base}/editor` : base;
     if (window.location.pathname !== url) {
         history.pushState({ type: activeType, mode: activeMode, profile: null }, '', url);
     }
 }
 
 function pushProfileRoute(name, isPortrait, assetId) {
-    const base = activeType === 'animation' ? '/animation' : '/images';
+    const base = activeType === 'animation' ? '/animations' : '/images';
     if (assetId) {
         const url = `${base}/generated/${assetId}`;
         if (window.location.pathname !== url) {

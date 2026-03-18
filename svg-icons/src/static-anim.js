@@ -136,11 +136,25 @@ function flutter(children, config, now) {
   const period = config.period || 1200;
   const cx = config.cx || 8;
   const cy = config.cy || 8;
-  const t = Math.sin(now / period);
-  const sy = 0.88 + 0.12 * ((t + 1) / 2);
-  const yBob = Math.sin(now / (period * 2)) * 0.5;
-  for (const child of children) {
-    child.setAttribute('transform', `translate(0 ${yBob}) translate(${cx} ${cy}) scale(1 ${sy}) translate(${-cx} ${-cy})`);
+  // Y bob for flight feel
+  const yBob = Math.sin(now / (period * 2)) * 0.6;
+  if (children.length === 2) {
+    // Two-wing mode (Bluesky): scaleX flap from center axis
+    const t = (Math.sin(now / period) + 1) / 2; // 0→1
+    const sx = 0.55 + 0.45 * t; // 0.55→1.0
+    // Left wing: scale from right edge (cx)
+    children[0].setAttribute('transform',
+      `translate(0 ${yBob}) translate(${cx} ${cy}) scale(${sx} 1) translate(${-cx} ${-cy})`);
+    // Right wing: mirror — scale from left edge (cx)
+    children[1].setAttribute('transform',
+      `translate(0 ${yBob}) translate(${cx} ${cy}) scale(${sx} 1) translate(${-cx} ${-cy})`);
+  } else {
+    // Fallback: whole-element scaleY squeeze
+    const t = Math.sin(now / period);
+    const sy = 0.88 + 0.12 * ((t + 1) / 2);
+    for (const child of children) {
+      child.setAttribute('transform', `translate(0 ${yBob}) translate(${cx} ${cy}) scale(1 ${sy}) translate(${-cx} ${-cy})`);
+    }
   }
 }
 
@@ -299,7 +313,7 @@ export const STATIC_ICON_REGISTRY = {
   'share':          { svg: SHARE_SVG, anim: 'radiate', desc: 'share — broadcast ripple' },
   'link':           { svg: LINK_SVG, anim: 'tug', desc: 'link — chain tug' },
   'email':          { svg: EMAIL_SVG, anim: 'unfold', desc: 'email — envelope peek' },
-  'bluesky':        { svg: BLUESKY_SVG, anim: 'flutter', config: { cx: 12, cy: 10.5 }, desc: 'Bluesky — butterfly flutter' },
+  'bluesky':        { svg: BLUESKY_SVG, anim: 'flutter', config: { cx: 12, cy: 11.5 }, desc: 'Bluesky — butterfly flap' },
   'facebook':       { svg: FACEBOOK_SVG, anim: 'pop', desc: 'Facebook — notification pop' },
   'google':         { svg: GOOGLE_SVG, anim: 'colorwheel', config: { period: 2000 }, desc: 'Google — segment sweep' },
   'linkedin':       { svg: LINKEDIN_SVG, anim: 'emerge', desc: 'LinkedIn — dot bow' },
