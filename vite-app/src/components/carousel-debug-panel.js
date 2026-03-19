@@ -188,17 +188,6 @@ export function initCarouselDebugPanel(carousel) {
             'Vertical arc \u2014 positive smiles, negative frowns',
             (v) => { carousel.setAttribute('arc-y', v); });
 
-        // ── Label Track ──
-        const secLabel = addSection(body, 'Label Track');
-
-        addSlider(secLabel, 'Perspective', attr('label-perspective', 1200), 50, 12000, 25, 'px',
-            'Vanishing point distance \u2014 lower is more dramatic',
-            (v) => { carousel.setAttribute('label-perspective', v); });
-
-        addSlider(secLabel, 'Depth', attr('label-depth', 1), 0, 3, 0.05, '\u00d7',
-            'Scale & depth multiplier for section label borders',
-            (v) => { carousel.setAttribute('label-depth', v); });
-
         // ── Layout ──
         const secLayout = addSection(body, 'Layout', true);
 

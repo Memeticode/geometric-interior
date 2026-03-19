@@ -5,3 +5,4 @@ export * from './icons.js';
 export * from './static-anim.js';
 export * from './toggle-icon.js';
 export * from './card-icon.js';
+export * from './icon-api.js';

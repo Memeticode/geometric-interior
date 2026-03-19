@@ -182,7 +182,7 @@ function readCard(el) {
 // ── Main component ──
 
 class CarouselDropdownBrowser extends HTMLElement {
-    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'grid-align', 'grid-items-align', 'section-align', 'label-perspective', 'label-depth'];
+    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'grid-align', 'grid-items-align', 'section-align'];
 
     // ── Configuration ──
     #arcZ = 24;
@@ -192,8 +192,6 @@ class CarouselDropdownBrowser extends HTMLElement {
     #infinite = true;              // wrap around or clamp at edges
     #bounce = 0.35;                // overshoot amount (0 = smooth, 1 = pronounced bounce)
     #expandable = true;            // whether the grid-expand toggle is available
-    #labelPerspective = PERSPECTIVE_D;  // perspective distance for section labels (px)
-    #labelDepth = 1;                    // depth multiplier for label track effect (0=flat, 1=match cards)
     #animatingExpand = false;       // guard against overlapping expand/collapse
     #expandTimers = [];             // setTimeout IDs for expand/collapse phases
     #expandSkipFn = null;           // closure to snap expand/collapse to end state
@@ -269,6 +267,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     #scrollListener = null;    // bound scroll listener for user-scroll detection
     #flipAnimations = [];  // Web Animations created by #animateCardsWA
     #sectionLabelContainer = null;
+    #labelResizeObserver = null;
     #sectionLabels = [];
 
 
@@ -1459,17 +1458,6 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#applySectionAlignClass();
             if (this.#domBuilt) this.#positionCards();
         }
-        if (name === 'label-perspective') {
-            this.#labelPerspective = Math.max(50, parseFloat(val) || PERSPECTIVE_D);
-            if (this.#sectionLabelContainer) {
-                this.#sectionLabelContainer.style.perspective = this.#labelPerspective + 'px';
-            }
-            if (this.#domBuilt) this.#positionCards();
-        }
-        if (name === 'label-depth') {
-            this.#labelDepth = Math.max(0, Math.min(3, parseFloat(val) ?? 1));
-            if (this.#domBuilt) this.#positionCards();
-        }
     }
 
     /**
@@ -1800,10 +1788,9 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Section label container (per-section scrolling labels above track)
         this.#sectionLabelContainer = document.createElement('div');
         this.#sectionLabelContainer.className = 'cdb-section-label-container';
-        this.#sectionLabelContainer.style.perspective = this.#labelPerspective + 'px';
 
-        this.#container.appendChild(this.#sectionLabelContainer);
         this.#container.appendChild(this.#viewport);
+        this.#container.appendChild(this.#sectionLabelContainer);
 
         // Dropdown
         this.#dropdown = document.createElement('div');
@@ -2269,7 +2256,33 @@ class CarouselDropdownBrowser extends HTMLElement {
                 el.className = 'cdb-section-label';
                 el.textContent = item.section;
                 this.#sectionLabelContainer.appendChild(el);
-                this.#sectionLabels.push({ element: el, sectionIndex: item.sectionIndex });
+                this.#sectionLabels.push({ element: el, sectionIndex: item.sectionIndex, textWidth: 0 });
+            }
+        }
+        // Push cards down to make room for labels when sections exist.
+        // Measure actual label height for accurate spacing and auto-update
+        // when CSS font-size changes via ResizeObserver.
+        if (this.#labelResizeObserver) {
+            this.#labelResizeObserver.disconnect();
+            this.#labelResizeObserver = null;
+        }
+        if (this.#viewport) {
+            if (this.#sectionLabels.length > 0) {
+                const firstLabel = this.#sectionLabels[0].element;
+                const measureLabels = () => {
+                    const h = firstLabel.offsetHeight || 20;
+                    this.#viewport.style.setProperty('--cdb-label-offset', h + 'px');
+                    this.#sectionLabelContainer.style.setProperty('--cdb-label-height', h + 'px');
+                    // Cache text widths for all labels (avoids layout thrashing during drag)
+                    for (const sec of this.#sectionLabels) {
+                        sec.textWidth = sec.element.scrollWidth;
+                    }
+                };
+                measureLabels();
+                this.#labelResizeObserver = new ResizeObserver(measureLabels);
+                this.#labelResizeObserver.observe(firstLabel);
+            } else {
+                this.#viewport.style.setProperty('--cdb-label-offset', '0px');
             }
         }
     }
@@ -3017,9 +3030,9 @@ class CarouselDropdownBrowser extends HTMLElement {
      *  to the arc boundary edge (where cards transition out of the visible arc).
      *  It only scrolls off when the last visible card exits.
      *
-     *  Labels ride the same 3D arc as the cards: their vertical position (cy),
-     *  scale, depth (tz), and rotation (ry) are derived from the arc geometry
-     *  by inverse-mapping the label's center X back to an arc angle. */
+     *  Labels sit at a fixed vertical position above the cards. Their depth (tz)
+     *  and rotation (ry) match the card arc geometry, derived by inverse-mapping
+     *  the label's center X back to an arc angle. */
     #applySectionLabels(frame, skipOpacity = false) {
         const halfVP = (this.#viewport ? this.#viewport.clientWidth : window.innerWidth) / 2;
         // Pin points: projected edges of a card at the arc boundary.
@@ -3027,33 +3040,16 @@ class CarouselDropdownBrowser extends HTMLElement {
         const boundL = frame.arcBoundaryLeft ?? -halfVP;
         const boundR = frame.arcBoundaryRight ?? halfVP;
 
-        // Arc parameters for label depth computation
+        // Arc parameters — labels share tz/ry with cards (no vertical displacement)
         const isArc = !frame.linearMode;
         const { R, dTheta, half } = frame;
-        const depth = this.#labelDepth;
-        const arcY = this.#arcY;
-
-        // Pre-compute the cy range so we can offset all labels to stay within bounds.
-        // Smile arcs (arcY > 0): cy goes negative (downward). Frown arcs (arcY < 0):
-        // cy can go positive (upward). We offset everything so min cy maps to 0.
-        let preMinCy = 0, preMaxCy = 0;
-        if (isArc && depth > 0) {
-            // cy at t=0: frown shift only
-            const cy0 = Math.min(arcY, 0) / 2 * depth;
-            // cy at t=1: full quadratic + frown shift
-            const cy1 = -arcY * depth + Math.min(arcY, 0) / 2 * depth;
-            preMinCy = Math.min(cy0, cy1);
-            preMaxCy = Math.max(cy0, cy1);
-        }
-        const cyOffset = -preMinCy; // shift all cy values up so minimum is at 0
-        const cyRange = preMaxCy - preMinCy; // total vertical span
 
         // First pass: compute clamped positions for all visible sections
         const positions = [];
         const visibleSections = new Set();
         for (const sec of this.#sectionLabels) {
             const span = frame.sectionSpans.get(sec.sectionIndex);
-            if (!span || !span.visible) {
+            if (!span) {
                 if (!skipOpacity) sec.element.style.opacity = '0';
                 continue;
             }
@@ -3075,21 +3071,10 @@ class CarouselDropdownBrowser extends HTMLElement {
         // Sort by left edge so we can detect overlaps with the next label
         positions.sort((a, b) => a.clampedLeft - b.clampedLeft);
 
-        // Second pass: apply positions and mask when adjacent labels overlap
-        const FADE_PX = 30;
+        // Sub-pass A: compute labelX for each position using cached textWidth
         for (let i = 0; i < positions.length; i++) {
             const { sec, clampedLeft, clampedRight } = positions[i];
-            const spanWidth = clampedRight - clampedLeft;
-
-            // Available width: section span, but capped if the next label intrudes
-            let availableWidth = spanWidth;
-            if (i + 1 < positions.length) {
-                const gap = positions[i + 1].clampedLeft - clampedLeft;
-                if (gap < availableWidth) availableWidth = gap;
-            }
-
-            if (!skipOpacity) sec.element.style.opacity = '';
-            const textWidth = sec.element.scrollWidth;
+            const textWidth = sec.textWidth || sec.element.scrollWidth;
             let labelX;
             if (this.#sectionAlign === 'center') {
                 labelX = (clampedLeft + clampedRight) / 2 - textWidth / 2;
@@ -3098,58 +3083,61 @@ class CarouselDropdownBrowser extends HTMLElement {
             } else {
                 labelX = clampedLeft;
             }
+            positions[i].labelX = labelX;
+            positions[i].textWidth = textWidth;
+        }
 
-            // Arc-matched transforms: inverse-map centerX to an arc position,
-            // then derive cy, sc, tz, ry using the same formulas as cards.
-            // Center labels are pushed closest to the viewer; edge labels recede.
-            let labelCy = 0, labelSc = 1, labelTz = 0, labelRy = 0;
-            if (isArc && depth > 0 && R > 0 && dTheta > 0) {
+        // Sub-pass B: apply transforms, opacity, underline, and overlap clipping
+        const EDGE_FADE = 60;
+        for (let i = 0; i < positions.length; i++) {
+            const { sec, clampedLeft, clampedRight, labelX, textWidth } = positions[i];
+            const spanWidth = clampedRight - clampedLeft;
+
+            // Fade labels in/out as they scroll on/off the carousel edges.
+            if (!skipOpacity) {
+                const fadeOpacity = Math.min(1, spanWidth / EDGE_FADE);
+                sec.element.style.opacity = fadeOpacity;
+            }
+
+            // Labels share tz/ry with cards for 3D depth, but stay at a
+            // fixed vertical level (no cy arc displacement).
+            let labelTz = 0, labelRy = 0;
+            if (isArc && R > 0 && dTheta > 0) {
                 const centerX = (clampedLeft + clampedRight) / 2;
-                // Inverse arc: cx = R * sin(angle), so angle = asin(cx / R)
                 const sinArg = Math.max(-1, Math.min(1, centerX / R));
                 const angle = Math.asin(sinArg);
                 const effectiveOffset = angle / dTheta;
                 const abs = Math.abs(effectiveOffset);
-                const t = half > 0 ? Math.min(abs / half, 1) : 0;
 
-                // Vertical arc displacement (same quadratic as cards),
-                // offset so all values are non-negative (stays within container)
-                labelCy = -arcY * t * t * depth;
-                labelCy += Math.min(arcY, 0) / 2 * depth; // frown shift
-                labelCy += cyOffset;
-
-                // Scale: center gets a boost above 1.0, edges stay at 1.0
-                const scaleBoost = (1 - SCALE_MIN_ARC) * depth; // 0.30 * depth
-                labelSc = 1 + scaleBoost * (1 - t);
-
-                // Depth: center gets max forward push, edges sit at z=0
-                const maxTz = half * TZ_PER_POS * depth;
-                labelTz = maxTz * (1 - t);
-
-                // Rotation (rotateY — matching card arc tangent)
-                labelRy = Math.sign(centerX) * Math.min(Math.abs(angle) / DEG, RY_MAX_DEG) * depth;
+                labelTz = -abs * TZ_PER_POS;
+                labelRy = Math.sign(centerX) * Math.min(Math.abs(angle) / DEG, RY_MAX_DEG);
             }
 
             sec.element.style.transform =
-                `translateX(${labelX}px) translateY(${labelCy}px) rotateY(${labelRy}deg) translateZ(${labelTz}px) scale(${labelSc})`;
-            const underlineWidth = Math.min(textWidth, availableWidth);
-            sec.element.style.setProperty('--underline-width', underlineWidth + 'px');
+                `translateX(${labelX}px) perspective(${PERSPECTIVE_D}px) rotateY(${labelRy}deg) translateZ(${labelTz}px)`;
+            sec.element.style.setProperty('--underline-width', Math.min(textWidth, spanWidth) + 'px');
 
-            // Always apply right-edge fade mask at the section boundary
-            if (availableWidth > 0) {
-                const fadeStart = Math.max(0, availableWidth - FADE_PX);
-                const mask = `linear-gradient(to right, black ${fadeStart}px, transparent ${availableWidth}px)`;
-                sec.element.style.maskImage = mask;
-                sec.element.style.webkitMaskImage = mask;
+            // Clip left label before right label's text would overlap
+            const CLIP_GAP = 32; // px gap so clip starts before overlap
+            const CLIP_FADE = 30; // px fade zone at clip edge
+            if (i + 1 < positions.length) {
+                const nextStart = positions[i + 1].labelX;
+                const clipAt = nextStart - labelX - CLIP_GAP;
+                if (clipAt < textWidth) {
+                    sec.element.style.maxWidth = Math.max(0, clipAt) + 'px';
+                    sec.element.style.maskImage =
+                        `linear-gradient(to right, black calc(100% - ${CLIP_FADE}px), transparent)`;
+                    sec.element.style.webkitMaskImage = sec.element.style.maskImage;
+                } else {
+                    sec.element.style.maxWidth = '';
+                    sec.element.style.maskImage = '';
+                    sec.element.style.webkitMaskImage = '';
+                }
             } else {
+                sec.element.style.maxWidth = '';
                 sec.element.style.maskImage = '';
                 sec.element.style.webkitMaskImage = '';
             }
-        }
-
-        // Set container extra height to accommodate the full cy range
-        if (this.#sectionLabelContainer) {
-            this.#sectionLabelContainer.style.setProperty('--cdb-label-arc-extra', cyRange + 'px');
         }
 
         return visibleSections;

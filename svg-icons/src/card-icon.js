@@ -71,6 +71,7 @@ export function createCardIcon(container, opts = {}) {
 
   // Internal state
   let currentState = initialState;
+  let lastVisibleState = initialState === 'empty' ? 'viewing' : initialState;
   let currentEmptyMode = 'converge';
   let morphing = false;
   let animId = null;
@@ -118,6 +119,7 @@ export function createCardIcon(container, opts = {}) {
     const fromSnap = readState(elMap, refState);
     const fromCol = COL_MAP[currentState];
 
+    if (to !== 'empty') lastVisibleState = to;
     targetState = to;
     targetMorphState = toMorphState;
     morphing = true;
@@ -154,7 +156,22 @@ export function createCardIcon(container, opts = {}) {
     const col = COL_MAP[to];
     stage.style.background = lerpColor(col.bg, col.bg, 0);
     stage.style.borderColor = lerpColor(col.bd, col.bd, 0);
+    if (to !== 'empty') lastVisibleState = to;
     currentState = to;
+  }
+
+  /** Dematerialize from current → empty. */
+  function dissipate(opts = {}) {
+    if (currentState === 'empty') return Promise.resolve();
+    if (opts.mode) currentEmptyMode = opts.mode;
+    lastVisibleState = currentState;
+    return morph('empty', { duration: 200, ...opts });
+  }
+
+  /** Materialize from empty → last visible state. */
+  function coalesce(opts = {}) {
+    if (opts.mode) currentEmptyMode = opts.mode;
+    return morph(lastVisibleState, { duration: 250, ...opts });
   }
 
   return {
@@ -162,6 +179,8 @@ export function createCardIcon(container, opts = {}) {
     morph,
     skip,
     set,
+    coalesce,
+    dissipate,
     get state() { return currentState; },
     get morphing() { return morphing; },
   };

@@ -12,6 +12,7 @@ import {
   altTextWaitingCloseState, altTextWaitingCloseEmphasizeState,
   fullscreenWaitingOpenState, fullscreenWaitingOpenEmphasizeState,
   fullscreenWaitingCloseState, fullscreenWaitingCloseEmphasizeState,
+  convergeState, dissipateState,
   COL,
 } from './morph-states.js';
 
@@ -43,13 +44,20 @@ export function createToggleIcon(container, config) {
   const size = config.size ?? 24;
   const col = config.col;
 
+  const EMPTY_MODES = { converge: convergeState, dissipate: dissipateState };
+  let emptyMode = 'converge';
+
   const MORPH_STATES = {
-    'empty': EMPTY_STATE,
     'waiting-open': config.states.waitingOpen,
     'waiting-open-emphasize': config.states.waitingOpenEmphasize,
     'waiting-close': config.states.waitingClose,
     'waiting-close-emphasize': config.states.waitingCloseEmphasize,
   };
+
+  function resolveState(key) {
+    if (key === 'empty') return EMPTY_MODES[emptyMode];
+    return MORPH_STATES[key];
+  }
 
   // Build DOM
   const svg = document.createElementNS(NS, 'svg');
@@ -71,7 +79,7 @@ export function createToggleIcon(container, config) {
   let targetMorphState = null;
 
   // Apply initial state
-  setState(elMap, MORPH_STATES[currentState]);
+  setState(elMap, resolveState(currentState));
 
   // ── Skip: snap to target state instantly ──
   function skip() {
@@ -84,12 +92,13 @@ export function createToggleIcon(container, config) {
   }
 
   // ── Morph to a new state ──
-  function morph(to, { duration = 300 } = {}) {
+  function morph(to, { duration = 300, mode } = {}) {
     if (morphing) skip();
-    const toMorphState = MORPH_STATES[to];
+    if (to === 'empty' && mode) emptyMode = mode;
+    const toMorphState = resolveState(to);
     if (!toMorphState) return Promise.resolve();
 
-    const refState = MORPH_STATES[currentState];
+    const refState = resolveState(currentState);
     const fromSnap = readState(elMap, refState);
 
     targetState = to;
@@ -121,9 +130,10 @@ export function createToggleIcon(container, config) {
   }
 
   // ── Set state instantly (no animation) ──
-  function set(to) {
+  function set(to, { mode } = {}) {
     if (morphing) skip();
-    const ms = MORPH_STATES[to];
+    if (to === 'empty' && mode) emptyMode = mode;
+    const ms = resolveState(to);
     if (!ms) return;
     setState(elMap, ms);
     currentState = to;
@@ -152,13 +162,15 @@ export function createToggleIcon(container, config) {
   }
 
   /** Materialize from empty → current logical state. */
-  function coalesce(opts) {
+  function coalesce(opts = {}) {
+    if (opts.mode) emptyMode = opts.mode;
     return morph(logicalState, { duration: 250, ...opts });
   }
 
   /** Dematerialize from current → empty. */
-  function dissipate(opts) {
+  function dissipate(opts = {}) {
     if (currentState === 'empty') return Promise.resolve();
+    if (opts.mode) emptyMode = opts.mode;
     return morph('empty', { duration: 200, ...opts });
   }
 

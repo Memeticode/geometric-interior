@@ -1,14 +1,19 @@
 import {
-  DURATION, EASE,
+  DURATION, EASE, NS,
   buildMorphSVG, applyState, setState, readState, lerpColor,
   COL, STATES, STATE_GROUPS,
   convergeState, dissipateState,
   STATIC_ICON_REGISTRY, injectAnimatedSVG,
+  ICON_CATALOG, ICON_GROUPS, TOGGLE_STATE_MAP,
+  createAltTextToggle, createFullscreenToggle, createCardIcon,
 } from '@svg-icons';
 
 const browser = document.getElementById('browser');
-const STAGE_SIZE = 48;
+const STAGE_SIZE = 40;
 const BLEND_IN_DUR = 500;
+
+// ── Global animation speed multiplier ──
+let animSpeed = 1;
 
 function colFor(key) {
   if (key === 'dots' || key === 'cross') return COL.def;
@@ -1570,28 +1575,24 @@ class IconCtrl {
   }
 
   togglePlay() {
-    if (this.status === 'playing') this.pause();
-    else if (this.status === 'idle' || this.status === 'settling') this.play();
+    if (this.status === 'playing' || this.status === 'settling') this.stop();
+    else if (this.status === 'idle') this.play();
   }
 
   play() {
     if (this.status !== 'idle' && this.status !== 'settling') return;
     this._stopAnim();
-    const fromSnap = this.status === 'settling'
-      ? readState(this.elMap, this.state)
-      : this.state;
     this.status = 'playing';
     this._notify();
-    this._startAnimFrom(fromSnap);
+    this._startAnimFrom(this.state);
   }
 
-  pause() {
-    if (this.status !== 'playing') return;
+  stop() {
+    if (this.status !== 'playing' && this.status !== 'settling') return;
     this._stopAnim();
-    const snap = readState(this.elMap, this.state);
-    this.status = 'settling';
+    setState(this.elMap, this.state);
+    this.status = 'idle';
     this._notify();
-    this._settle(snap);
   }
 
   depart(method) {
@@ -1639,7 +1640,7 @@ class IconCtrl {
     (function tick(now) {
       if (self.status !== 'playing') return;
       resetAnim(self.elMap, self.state);
-      const elapsed = now - t0;
+      const elapsed = (now - t0) * animSpeed;
       self.animFn(self.elMap, self.state, elapsed);
       if (elapsed < BLEND_IN_DUR) {
         const animSnap = readState(self.elMap, self.state);
@@ -1654,30 +1655,12 @@ class IconCtrl {
     if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
   }
 
-  _settle(fromSnap, duration = 600) {
-    const t0 = performance.now();
-    const self = this;
-    const toState = this.state;
-    (function tick(now) {
-      if (self.status !== 'settling') return;
-      const raw = Math.min((now - t0) / duration, 1);
-      const t = EASE(raw);
-      applyState(self.elMap, fromSnap, toState, t);
-      if (raw < 1) {
-        self.animId = requestAnimationFrame(tick);
-      } else {
-        self.animId = null;
-        self.status = 'idle';
-        self._notify();
-      }
-    })(performance.now());
-  }
-
   _morph(fromState, toState, colFrom, colTo, onDone) {
     const t0 = performance.now();
+    const dur = DURATION / animSpeed;
     const self = this;
     (function tick(now) {
-      const raw = Math.min((now - t0) / DURATION, 1);
+      const raw = Math.min((now - t0) / dur, 1);
       const t = EASE(raw);
       applyState(self.elMap, fromState, toState, t);
       self.stage.style.background = lerpColor(colFrom.bg, colTo.bg, t);
@@ -1694,107 +1677,37 @@ class IconCtrl {
 
 // ── Button helper ──
 
-function btn(text, onClick) {
+function dotBtn(glyph, title, onClick) {
   const b = document.createElement('button');
-  b.className = 'browser-btn';
-  b.textContent = text;
-  b.addEventListener('click', onClick);
+  b.className = 'browser-dot-btn';
+  b.textContent = glyph;
+  b.title = title;
+  b.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
   return b;
 }
 
-// ── Build browser ──
-
-for (const group of STATE_GROUPS) {
-  const keys = group.keys.filter(k => k !== 'converge' && k !== 'dissipate');
-  if (!keys.length) continue;
-  keys.sort();
-
-  const details = document.createElement('details');
-  details.open = true;
-  details.className = 'browser-group';
-
-  const summary = document.createElement('summary');
-  summary.className = 'browser-group-title';
-  summary.textContent = group.name;
-  details.appendChild(summary);
-
-  const list = document.createElement('div');
-  list.className = 'browser-list';
-
-  for (const key of keys) {
-    const info = ICON_INFO[key];
-    if (!info) continue;
-
-    const card = document.createElement('div');
-    card.className = 'browser-card';
-
-    // Stage on top
-    const { div: stage, svg } = makeStage();
-    const elMap = buildMorphSVG(svg);
-    const ctrl = new IconCtrl(key, stage, elMap);
-    card.appendChild(stage);
-
-    // Info
-    const infoDiv = document.createElement('div');
-    infoDiv.className = 'browser-card-info';
-    const nameEl = document.createElement('span');
-    nameEl.className = 'browser-name';
-    nameEl.textContent = key;
-    const descEl = document.createElement('span');
-    descEl.className = 'browser-desc';
-    descEl.textContent = info.desc;
-    infoDiv.appendChild(nameEl);
-    infoDiv.appendChild(descEl);
-    card.appendChild(infoDiv);
-
-    // Controls
-    const controls = document.createElement('div');
-    controls.className = 'browser-controls';
-
-    const playBtn = btn('\u25b6', () => ctrl.togglePlay());
-    const convBtn = btn('\u21d3 Converge', () => ctrl.depart('converge'));
-    const dissBtn = btn('\u21d1 Dissipate', () => ctrl.depart('dissipate'));
-    // Two return buttons — one for each return method
-    const retConvBtn = btn('\u21d3 Return', () => ctrl.arrive('converge'));
-    const retDissBtn = btn('\u21d1 Return', () => ctrl.arrive('dissipate'));
-    retConvBtn.style.display = 'none';
-    retDissBtn.style.display = 'none';
-
-    controls.appendChild(playBtn);
-    controls.appendChild(convBtn);
-    controls.appendChild(dissBtn);
-    controls.appendChild(retConvBtn);
-    controls.appendChild(retDissBtn);
-    card.appendChild(controls);
-
-    // State machine → update controls
-    ctrl.onUpdate = (status) => {
-      const visible = status === 'idle' || status === 'playing' || status === 'settling';
-      const gone = status === 'gone';
-      const busy = status === 'departing' || status === 'arriving';
-
-      playBtn.textContent = status === 'playing' ? '\u23f8' : '\u25b6';
-      playBtn.style.display = visible ? '' : 'none';
-      convBtn.style.display = visible ? '' : 'none';
-      dissBtn.style.display = visible ? '' : 'none';
-      retConvBtn.style.display = gone ? '' : 'none';
-      retDissBtn.style.display = gone ? '' : 'none';
-
-      playBtn.disabled = busy;
-      convBtn.disabled = busy;
-      dissBtn.disabled = busy;
-      retConvBtn.disabled = busy;
-      retDissBtn.disabled = busy;
-    };
-
-    list.appendChild(card);
-  }
-
-  details.appendChild(list);
-  browser.appendChild(details);
+function addTimerRing(btn, durationMs) {
+  const size = 20; // 16px btn + 4px margin
+  const r = size / 2 - 1;
+  const circ = 2 * Math.PI * r;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svg.classList.add('timer-ring');
+  const circle = document.createElementNS(ns, 'circle');
+  circle.setAttribute('cx', size / 2);
+  circle.setAttribute('cy', size / 2);
+  circle.setAttribute('r', r);
+  circle.setAttribute('stroke-dasharray', circ);
+  circle.setAttribute('stroke-dashoffset', circ);
+  svg.appendChild(circle);
+  svg.style.setProperty('--timer-circ', circ);
+  svg.style.setProperty('--timer-dur', `${durationMs}ms`);
+  btn.appendChild(svg);
+  return svg;
 }
 
-// ── Static / animated icons (non-morph) ──
+// ── Build browser (unified loop) ──
 
 const STATIC_TRANS_DUR = 500;
 
@@ -1811,7 +1724,7 @@ class StaticIconCtrl {
 
   togglePlay() {
     if (this.busy || !this.visible) return;
-    if (this.playing) { this.animCtrl.pause(); this.playing = false; }
+    if (this.playing) { this.animCtrl.settleOut(); this.playing = false; }
     else { this.animCtrl.play(); this.playing = true; }
     this._notify();
   }
@@ -1821,7 +1734,7 @@ class StaticIconCtrl {
   depart(mode) {
     if (this.busy || !this.visible) return;
     this.busy = true;
-    this.animCtrl.pause();
+    this.animCtrl.settleOut();
     this.playing = false;
     this._notify();
     const children = Array.from(this.svgEl.children);
@@ -1830,9 +1743,10 @@ class StaticIconCtrl {
     const cx = vb[0] + vb[2] / 2;
     const cy = vb[1] + vb[3] / 2;
     const t0 = performance.now();
+    const dur = STATIC_TRANS_DUR / animSpeed;
     const scatter = mode === 'dissipate'; // dissipate = scatter outward, converge = shrink inward
     const tick = () => {
-      const raw = Math.min((performance.now() - t0) / STATIC_TRANS_DUR, 1);
+      const raw = Math.min((performance.now() - t0) / dur, 1);
       const t = EASE(raw);
       const s = 1 - t; // scale 1 → 0
       const o = 1 - t; // opacity 1 → 0
@@ -1873,9 +1787,10 @@ class StaticIconCtrl {
     const cx = vb[0] + vb[2] / 2;
     const cy = vb[1] + vb[3] / 2;
     const t0 = performance.now();
+    const dur = STATIC_TRANS_DUR / animSpeed;
     const scatter = mode === 'dissipate';
     const tick = () => {
-      const raw = Math.min((performance.now() - t0) / STATIC_TRANS_DUR, 1);
+      const raw = Math.min((performance.now() - t0) / dur, 1);
       const t = EASE(raw);
       const s = t; // scale 0 → 1
       const o = t; // opacity 0 → 1
@@ -1917,127 +1832,401 @@ class StaticIconCtrl {
   }
 }
 
-const HOVER_GROUPS = new Set(['Resolution', 'Social / Sharing']);
+// ── Unified rendering loop ──
 
-const STATIC_GROUPS = [
-  { name: 'Geometric Interior', keys: ['alt-text', 'create', 'construct'] },
-  { name: 'Navigation', keys: ['arrow-up', 'arrow-down', 'arrow-left', 'arrow-right', 'dbl-arrow-left', 'dbl-arrow-right'] },
-  { name: 'Actions', keys: ['trash', 'restore', 'edit', 'add', 'close', 'fullscreen', 'save', 'undo', 'redo', 'randomize', 'render', 'settings', 'download', 'image', 'bundle'] },
-  { name: 'Status', keys: ['error', 'retry', 'warning'] },
-  { name: 'Separators & Markers', keys: ['dot', 'field-diamond'] },
-  { name: 'Resolution', keys: ['res-270', 'res-540', 'res-900', 'res-1080', 'res-1620', 'res-4k'] },
-  { name: 'Social / Sharing', keys: ['share', 'link', 'email', 'bluesky', 'facebook', 'google', 'linkedin', 'reddit', 'twitter', 'github'] },
-];
+function buildMorphCard(key) {
+  const info = ICON_INFO[key];
+  if (!info) return null;
+  const catalog = ICON_CATALOG[key];
+  const caps = catalog?.capabilities || {};
 
-for (const group of STATIC_GROUPS) {
-  const details = document.createElement('details');
-  details.open = true;
-  details.className = 'browser-group';
+  const card = document.createElement('div');
+  card.className = 'browser-card';
 
-  const summary = document.createElement('summary');
-  summary.className = 'browser-group-title';
-  summary.textContent = group.name;
-  details.appendChild(summary);
+  const nameEl = document.createElement('span');
+  nameEl.className = 'browser-name';
+  nameEl.textContent = key;
+  card.appendChild(nameEl);
 
-  const list = document.createElement('div');
-  list.className = 'browser-list';
+  const { div: stage, svg } = makeStage();
+  const elMap = buildMorphSVG(svg);
+  const ctrl = new IconCtrl(key, stage, elMap);
+  card.appendChild(stage);
 
-  const isHover = HOVER_GROUPS.has(group.name);
+  // Click thumbnail to toggle play
+  card.addEventListener('click', () => ctrl.togglePlay());
 
-  for (const key of group.keys) {
-    const entry = STATIC_ICON_REGISTRY[key];
-    if (!entry) continue;
+  // Control strip — play+label grouped left, converge/dissipate right
+  const strip = document.createElement('div');
+  strip.className = 'browser-strip';
 
-    const card = document.createElement('div');
-    card.className = 'browser-card';
+  const playGroup = document.createElement('div');
+  playGroup.className = 'browser-strip-play';
+  const playBtn = dotBtn('\u25b8', 'Play', () => ctrl.togglePlay());
+  const timerRing = addTimerRing(playBtn, 2000);
+  playGroup.appendChild(playBtn);
+  const label = document.createElement('span');
+  label.className = 'browser-strip-label';
+  label.textContent = 'morph';
+  label.title = info.desc;
+  playGroup.appendChild(label);
+  strip.appendChild(playGroup);
 
-    const frame = document.createElement('div');
-    frame.className = 'svg-display';
-    frame.style.width = '48px';
-    frame.style.height = '48px';
-    const animCtrl = injectAnimatedSVG(frame, entry.svg, entry.anim, entry.config);
+  const dots = document.createElement('div');
+  dots.className = 'browser-strip-dots';
+  let convBtn, dissBtn, retBtn;
+  let lastDepartMode = 'converge';
+  if (caps.converge) {
+    convBtn = dotBtn('\u21d3', 'Converge', () => { lastDepartMode = 'converge'; ctrl.depart('converge'); });
+    dots.appendChild(convBtn);
+  }
+  if (caps.dissipate) {
+    dissBtn = dotBtn('\u21d1', 'Dissipate', () => { lastDepartMode = 'dissipate'; ctrl.depart('dissipate'); });
+    dots.appendChild(dissBtn);
+  }
+  if (caps.converge || caps.dissipate) {
+    retBtn = dotBtn('\u21a9', 'Return', () => ctrl.arrive(lastDepartMode));
+    retBtn.style.display = 'none';
+    dots.appendChild(retBtn);
+  }
+  strip.appendChild(dots);
+  card.appendChild(strip);
 
-    if (isHover) {
-      // Hover-to-animate: start paused, play on hover, graceful settle on leave
-      card.addEventListener('mouseenter', () => {
-        animCtrl.play();
-      });
-      card.addEventListener('mouseleave', () => {
-        animCtrl.settleOut();
-      });
-    } else {
-      animCtrl.play();
-    }
+  ctrl.onUpdate = (status) => {
+    const visible = status === 'idle' || status === 'playing';
+    const gone = status === 'gone';
+    const busy = status === 'departing' || status === 'arriving';
+    const playing = status === 'playing';
+    playBtn.textContent = playing ? '\u00d7' : '\u25b8';
+    playBtn.title = playing ? 'Cancel' : 'Play';
+    timerRing.classList.toggle('active', playing);
+    playBtn.style.display = visible ? '' : 'none';
+    playBtn.disabled = busy;
+    if (convBtn) { convBtn.style.display = visible && !playing ? '' : 'none'; convBtn.disabled = busy; }
+    if (dissBtn) { dissBtn.style.display = visible && !playing ? '' : 'none'; dissBtn.disabled = busy; }
+    if (retBtn) { retBtn.style.display = gone ? '' : 'none'; retBtn.disabled = busy; }
+  };
 
-    card.appendChild(frame);
+  return card;
+}
 
-    if (!isHover) {
-      // Only non-hover groups get the StaticIconCtrl + buttons
-      const ctrl = new StaticIconCtrl(animCtrl, animCtrl.el);
+function buildStaticCard(key, behavior) {
+  const entry = STATIC_ICON_REGISTRY[key];
+  if (!entry) return null;
+  const catalog = ICON_CATALOG[key];
+  const caps = catalog?.capabilities || {};
 
-      const infoDiv = document.createElement('div');
-      infoDiv.className = 'browser-card-info';
-      const nameEl = document.createElement('span');
-      nameEl.className = 'browser-name';
-      nameEl.textContent = key;
-      const descEl = document.createElement('span');
-      descEl.className = 'browser-desc';
-      descEl.textContent = entry.desc;
-      infoDiv.appendChild(nameEl);
-      infoDiv.appendChild(descEl);
-      card.appendChild(infoDiv);
+  const card = document.createElement('div');
+  card.className = 'browser-card';
 
-      const controls = document.createElement('div');
-      controls.className = 'browser-controls';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'browser-name';
+  nameEl.textContent = key;
+  card.appendChild(nameEl);
 
-      const playBtn = btn('\u23f8', () => ctrl.togglePlay());
-      const convBtn = btn('\u21d3 Converge', () => ctrl.depart('converge'));
-      const dissBtn = btn('\u21d1 Dissipate', () => ctrl.depart('dissipate'));
-      const retConvBtn = btn('\u21d3 Return', () => ctrl.arrive('converge'));
-      const retDissBtn = btn('\u21d1 Return', () => ctrl.arrive('dissipate'));
-      retConvBtn.style.display = 'none';
-      retDissBtn.style.display = 'none';
+  const frame = document.createElement('div');
+  frame.className = 'svg-display';
+  frame.style.width = STAGE_SIZE + 'px';
+  frame.style.height = STAGE_SIZE + 'px';
+  const animCtrl = injectAnimatedSVG(frame, entry.svg, entry.anim, entry.config);
 
-      controls.appendChild(playBtn);
-      controls.appendChild(convBtn);
-      controls.appendChild(dissBtn);
-      controls.appendChild(retConvBtn);
-      controls.appendChild(retDissBtn);
-      card.appendChild(controls);
+  if (behavior === 'hover') {
+    card.addEventListener('mouseenter', () => animCtrl.play());
+    card.addEventListener('mouseleave', () => animCtrl.settleOut());
+  } else if (behavior === 'playFor') {
+    // Click thumbnail to play once
+    card.addEventListener('click', () => animCtrl.playFor(1000));
+  } else {
+    animCtrl.play();
+  }
+  card.appendChild(frame);
 
-      ctrl.onUpdate = () => {
-        const { visible, busy, playing } = ctrl;
-        playBtn.textContent = playing ? '\u23f8' : '\u25b6';
-        playBtn.style.display = visible ? '' : 'none';
-        convBtn.style.display = visible ? '' : 'none';
-        dissBtn.style.display = visible ? '' : 'none';
-        retConvBtn.style.display = !visible && !busy ? '' : 'none';
-        retDissBtn.style.display = !visible && !busy ? '' : 'none';
-        playBtn.disabled = busy;
-        convBtn.disabled = busy;
-        dissBtn.disabled = busy;
-        retConvBtn.disabled = busy;
-        retDissBtn.disabled = busy;
-      };
-    } else {
-      // Hover groups: just name + desc, no buttons
-      const infoDiv = document.createElement('div');
-      infoDiv.className = 'browser-card-info';
-      const nameEl = document.createElement('span');
-      nameEl.className = 'browser-name';
-      nameEl.textContent = key;
-      const descEl = document.createElement('span');
-      descEl.className = 'browser-desc';
-      descEl.textContent = entry.desc;
-      infoDiv.appendChild(nameEl);
-      infoDiv.appendChild(descEl);
-      card.appendChild(infoDiv);
-    }
+  const ctrl = new StaticIconCtrl(animCtrl, animCtrl.el);
 
-    list.appendChild(card);
+  // Click thumbnail to toggle play (auto behavior)
+  if (behavior !== 'hover' && behavior !== 'playFor') {
+    card.addEventListener('click', () => ctrl.togglePlay());
   }
 
-  details.appendChild(list);
-  browser.appendChild(details);
+  // Control strip — play+label grouped left, converge/dissipate right
+  const strip = document.createElement('div');
+  strip.className = 'browser-strip';
+
+  const playGroup = document.createElement('div');
+  playGroup.className = 'browser-strip-play';
+
+  if (behavior !== 'hover') {
+    let playBtn, convBtn, dissBtn, retBtn;
+    let lastDepartMode = 'converge';
+
+    if (behavior === 'playFor') {
+      playBtn = dotBtn('\u25b6', 'Play', () => animCtrl.playFor(1000));
+    } else {
+      playBtn = dotBtn('\u23f8', 'Pause', () => ctrl.togglePlay());
+    }
+    const timerRing = addTimerRing(playBtn, behavior === 'playFor' ? 1000 : 2000);
+    playGroup.appendChild(playBtn);
+
+    const label = document.createElement('span');
+    label.className = 'browser-strip-label';
+    label.textContent = entry.anim;
+    const configStr = entry.config ? Object.entries(entry.config).map(([k, v]) => `${k}: ${v}`).join(', ') : '';
+    label.title = configStr ? `${entry.desc} — ${configStr}` : entry.desc;
+    playGroup.appendChild(label);
+    strip.appendChild(playGroup);
+
+    const dots = document.createElement('div');
+    dots.className = 'browser-strip-dots';
+    if (caps.converge) {
+      convBtn = dotBtn('\u21d3', 'Converge', () => { lastDepartMode = 'converge'; ctrl.depart('converge'); });
+      dots.appendChild(convBtn);
+    }
+    if (caps.dissipate) {
+      dissBtn = dotBtn('\u21d1', 'Dissipate', () => { lastDepartMode = 'dissipate'; ctrl.depart('dissipate'); });
+      dots.appendChild(dissBtn);
+    }
+    if (caps.converge || caps.dissipate) {
+      retBtn = dotBtn('\u21a9', 'Return', () => ctrl.arrive(lastDepartMode));
+      retBtn.style.display = 'none';
+      dots.appendChild(retBtn);
+    }
+    strip.appendChild(dots);
+
+    ctrl.onUpdate = () => {
+      const { visible, busy, playing } = ctrl;
+      if (behavior !== 'playFor') {
+        playBtn.textContent = playing ? '\u00d7' : '\u25b8';
+        playBtn.title = playing ? 'Cancel' : 'Play';
+      }
+      timerRing.classList.toggle('active', playing);
+      playBtn.style.display = visible ? '' : 'none';
+      playBtn.disabled = busy;
+      if (convBtn) { convBtn.style.display = visible && !playing ? '' : 'none'; convBtn.disabled = busy; }
+      if (dissBtn) { dissBtn.style.display = visible && !playing ? '' : 'none'; dissBtn.disabled = busy; }
+      if (retBtn) { retBtn.style.display = !visible && !busy ? '' : 'none'; retBtn.disabled = busy; }
+    };
+  } else {
+    const label = document.createElement('span');
+    label.className = 'browser-strip-label';
+    label.textContent = entry.anim;
+    label.title = entry.desc;
+    playGroup.appendChild(label);
+    strip.appendChild(playGroup);
+  }
+
+  card.appendChild(strip);
+  return card;
+}
+
+// ── Toggle factory lookup ──
+
+const TOGGLE_FACTORIES = {
+  createAltTextToggle,
+  createFullscreenToggle,
+  createCardIcon,
+};
+
+function buildToggleCard(key) {
+  const catalog = ICON_CATALOG[key];
+  if (!catalog || catalog.type !== 'toggle') return null;
+  const caps = catalog.capabilities;
+  const stateMap = TOGGLE_STATE_MAP[key];
+  if (!stateMap) return null;
+
+  const card = document.createElement('div');
+  card.className = 'browser-card';
+
+  const nameEl = document.createElement('span');
+  nameEl.className = 'browser-name';
+  nameEl.textContent = key;
+  card.appendChild(nameEl);
+
+  const frame = document.createElement('div');
+  frame.style.width = STAGE_SIZE + 'px';
+  frame.style.height = STAGE_SIZE + 'px';
+  frame.style.position = 'relative';
+  const factory = TOGGLE_FACTORIES[catalog.factory];
+  const ctrl = factory(frame, { size: STAGE_SIZE, startVisible: true, initialState: key === 'card-icon' ? 'viewing' : undefined });
+  card.appendChild(frame);
+
+  // Hover → emphasize / deemphasize (toggle icons only, card-icon lacks this)
+  if (ctrl.emphasize) {
+    card.addEventListener('mouseenter', () => ctrl.emphasize());
+    card.addEventListener('mouseleave', () => ctrl.deemphasize());
+  }
+
+  // State thumbnails row
+  const stateRow = document.createElement('div');
+  stateRow.className = 'browser-state-row';
+  const thumbEls = [];
+
+  for (const stateName of catalog.states) {
+    const thumb = document.createElement('div');
+    thumb.className = 'browser-state-thumb';
+    thumb.title = stateName;
+
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('fill', 'none');
+    const elMap = buildMorphSVG(svg);
+    setState(elMap, stateMap[stateName]);
+    thumb.appendChild(svg);
+
+    // First state is active by default
+    if (thumbEls.length === 0) thumb.classList.add('active');
+
+    thumb.addEventListener('click', (e) => {
+      e.stopPropagation();
+      ctrl.morph(key === 'card-icon' ? stateName : stateName);
+      for (const t of thumbEls) t.classList.remove('active');
+      thumb.classList.add('active');
+    });
+
+    stateRow.appendChild(thumb);
+    thumbEls.push(thumb);
+  }
+  card.appendChild(stateRow);
+
+  // Control strip — label left, converge/dissipate right
+  const strip = document.createElement('div');
+  strip.className = 'browser-strip';
+
+  const playGroup = document.createElement('div');
+  playGroup.className = 'browser-strip-play';
+  const label = document.createElement('span');
+  label.className = 'browser-strip-label';
+  label.textContent = key === 'card-icon' ? 'card' : 'toggle';
+  label.title = catalog.desc;
+  playGroup.appendChild(label);
+  strip.appendChild(playGroup);
+
+  const dots = document.createElement('div');
+  dots.className = 'browser-strip-dots';
+  let convBtn, dissBtn, retBtn;
+  let lastDepartMode = 'converge';
+  let gone = false;
+
+  if (caps.converge) {
+    convBtn = dotBtn('\u21d3', 'Converge', () => {
+      lastDepartMode = 'converge';
+      gone = true;
+      ctrl.dissipate({ mode: 'converge' });
+      updateToggleDots();
+    });
+    dots.appendChild(convBtn);
+  }
+  if (caps.dissipate) {
+    dissBtn = dotBtn('\u21d1', 'Dissipate', () => {
+      lastDepartMode = 'dissipate';
+      gone = true;
+      ctrl.dissipate({ mode: 'dissipate' });
+      updateToggleDots();
+    });
+    dots.appendChild(dissBtn);
+  }
+  if (caps.converge || caps.dissipate) {
+    retBtn = dotBtn('\u21a9', 'Return', () => {
+      gone = false;
+      ctrl.coalesce({ mode: lastDepartMode });
+      updateToggleDots();
+    });
+    retBtn.style.display = 'none';
+    dots.appendChild(retBtn);
+  }
+  strip.appendChild(dots);
+  card.appendChild(strip);
+
+  function updateToggleDots() {
+    if (convBtn) convBtn.style.display = gone ? 'none' : '';
+    if (dissBtn) dissBtn.style.display = gone ? 'none' : '';
+    if (retBtn) retBtn.style.display = gone ? '' : 'none';
+  }
+
+  return card;
+}
+
+// ── Duration control panel ──
+
+const controlPanel = document.createElement('div');
+controlPanel.className = 'browser-controls';
+
+const speedLabel = document.createElement('span');
+speedLabel.className = 'browser-controls-label';
+speedLabel.textContent = 'speed';
+controlPanel.appendChild(speedLabel);
+
+const speedSlider = document.createElement('input');
+speedSlider.type = 'range';
+speedSlider.className = 'browser-controls-slider';
+speedSlider.min = '-2';
+speedSlider.max = '2';
+speedSlider.step = '0.25';
+speedSlider.value = '0';
+controlPanel.appendChild(speedSlider);
+
+const speedValue = document.createElement('span');
+speedValue.className = 'browser-controls-value';
+speedValue.textContent = '1\u00d7';
+controlPanel.appendChild(speedValue);
+
+speedSlider.addEventListener('input', () => {
+  animSpeed = Math.pow(2, parseFloat(speedSlider.value));
+  const label = animSpeed >= 1
+    ? animSpeed.toFixed(0) + '\u00d7'
+    : (1 / animSpeed) < 10
+      ? (1 / (1 / animSpeed)).toFixed(1).replace(/\.0$/, '') + '\u00d7'
+      : animSpeed.toFixed(2) + '\u00d7';
+  speedValue.textContent = animSpeed >= 1
+    ? animSpeed.toFixed(0) + '\u00d7'
+    : animSpeed.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + '\u00d7';
+});
+
+browser.appendChild(controlPanel);
+
+// ── Build icon groups ──
+
+for (const group of ICON_GROUPS) {
+  const groupEl = document.createElement('details');
+  groupEl.open = true;
+  groupEl.className = 'browser-group';
+
+  const groupSummary = document.createElement('summary');
+  groupSummary.className = 'browser-group-title';
+  groupSummary.textContent = group.name;
+  groupEl.appendChild(groupSummary);
+
+  for (const sub of group.subsections) {
+    const subEl = document.createElement('details');
+    subEl.open = true;
+    subEl.className = 'browser-subsection';
+
+    const subSummary = document.createElement('summary');
+    subSummary.className = 'browser-subsection-title';
+    subSummary.textContent = sub.name;
+    subEl.appendChild(subSummary);
+
+    const list = document.createElement('div');
+    list.className = 'browser-list';
+
+    for (const key of sub.keys) {
+      const catalog = ICON_CATALOG[key];
+      if (!catalog) continue;
+
+      let card;
+      if (catalog.type === 'toggle') {
+        card = buildToggleCard(key);
+      } else if (catalog.type === 'morph') {
+        card = buildMorphCard(key);
+      } else {
+        card = buildStaticCard(key, sub.behavior);
+      }
+      if (card) list.appendChild(card);
+    }
+
+    subEl.appendChild(list);
+    groupEl.appendChild(subEl);
+  }
+
+  browser.appendChild(groupEl);
 }
 

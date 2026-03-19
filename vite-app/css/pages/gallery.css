@@ -459,6 +459,16 @@
 .morph-row.fading {
     opacity: 0;
 }
+/* Ghost clone overlay for true crossfade on profile switch */
+.morph-field-ghost {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    transition: opacity var(--lm-fade) ease;
+}
+.morph-field-ghost.fading {
+    opacity: 0;
+}
 .main-visual-card {
     position: relative;
     z-index: 1;

@@ -124,6 +124,8 @@ const selectedVideo = imageViewer.getVideo();
 const cardFooter = document.querySelector('.main-visual-card-footer');
 const morphNameRow = document.querySelector('.morph-name');
 const morphSeedRow = document.querySelector('.morph-seed');
+const morphNameField = document.querySelector('.morph-name-field');
+const morphSeedField = document.querySelector('.morph-seed-field');
 
 /* ── Carousel component ── */
 const carouselBrowser = document.getElementById('carouselBrowser');
@@ -953,10 +955,28 @@ function applySelection(name, profile, isPortrait, assetId) {
     imageViewer.skipMedia();
 
     if (!instant) {
-        // Fade out text rows + footer commentary
-        morphNameRow.classList.add('fading');
-        morphSeedRow.classList.add('fading');
+        // Fade out footer commentary
         cardFooter.classList.add('fading');
+
+        // True crossfade for name/seed — ghost clones show old text fading out
+        // while real fields show new text fading in, both over full fadeDuration
+        for (const el of morphNameField.querySelectorAll('.morph-field-ghost')) el.remove();
+        for (const el of morphSeedField.querySelectorAll('.morph-field-ghost')) el.remove();
+
+        const nameGhost = morphNameField.cloneNode(true);
+        const seedGhost = morphSeedField.cloneNode(true);
+        nameGhost.classList.add('morph-field-ghost');
+        seedGhost.classList.add('morph-field-ghost');
+        morphNameField.appendChild(nameGhost);
+        morphSeedField.appendChild(seedGhost);
+
+        // Hide real content instantly — will fade in when ghost fades out
+        editNameField.style.transition = 'none';
+        editNameField.style.opacity = '0';
+        for (const sw of morphSeedField.querySelectorAll(':scope > .morph-select-wrap')) {
+            sw.style.transition = 'none';
+            sw.style.opacity = '0';
+        }
     }
 
     // Revoke old blob URLs
@@ -1003,7 +1023,7 @@ function applySelection(name, profile, isPortrait, assetId) {
         newAltText = altText || title;
     }
 
-    // Swap header text (name/seed) — masked by image crossfade
+    // Swap header text (name/seed) — crossfade via ghost clones
     const updateHeaderContent = () => {
         editNameField.value = displayName;
         if (Array.isArray(profile.seed)) {
@@ -1038,8 +1058,33 @@ function applySelection(name, profile, isPortrait, assetId) {
         }
 
         if (!instant) {
-            morphNameRow.classList.remove('fading');
-            morphSeedRow.classList.remove('fading');
+            // Crossfade: ghost fades out, real content fades in
+            requestAnimationFrame(() => {
+                const nameGhost = morphNameField.querySelector('.morph-field-ghost');
+                const seedGhost = morphSeedField.querySelector('.morph-field-ghost');
+                if (nameGhost) nameGhost.classList.add('fading');
+                if (seedGhost) seedGhost.classList.add('fading');
+
+                // Fade in real content
+                editNameField.style.transition = `opacity var(--lm-fade) ease`;
+                editNameField.style.opacity = '1';
+                for (const sw of morphSeedField.querySelectorAll(':scope > .morph-select-wrap')) {
+                    sw.style.transition = `opacity var(--lm-fade) ease`;
+                    sw.style.opacity = '1';
+                }
+
+                // Clean up after transition completes
+                setTimeout(() => {
+                    nameGhost?.remove();
+                    seedGhost?.remove();
+                    editNameField.style.transition = '';
+                    editNameField.style.opacity = '';
+                    for (const sw of morphSeedField.querySelectorAll(':scope > .morph-select-wrap')) {
+                        sw.style.transition = '';
+                        sw.style.opacity = '';
+                    }
+                }, fadeDuration + 50);
+            });
         }
     };
 

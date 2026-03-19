@@ -70,6 +70,7 @@ carousel-dropdown-browser[controls-position="below"] .cdb-strip.cdb-flattened .c
 
 .cdb-viewport {
     overflow: hidden;
+    padding-top: var(--cdb-label-offset, 0px);
 }
 
 .cdb-track {
@@ -167,7 +168,7 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
                rotateX(var(--rx, 0deg))
                translateZ(var(--tz, 0px))
                scale(var(--sc, 1));
-    transition: transform calc(var(--t-accent) * var(--t-speed)) ease,
+    transition: transform var(--carousel-speed, 0.85s) var(--cdb-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
                 box-shadow calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
                 border-color var(--carousel-speed, 0.85s) ease;
     transform-style: preserve-3d;
@@ -501,13 +502,14 @@ carousel-dropdown-browser.cdb-grid-align-right .cdb-grid-section { justify-conte
     color: #ff6666;
 }
 
-/* ── Per-section scrolling labels (above carousel track) ── */
+/* ── Per-section scrolling labels (overlaid on carousel track) ── */
 .cdb-section-label-container {
-    position: relative;
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    height: calc(var(--cdb-label-height, 1.4rem) + var(--cdb-label-arc-extra, 0px));
-    margin-bottom: 0.25rem;
-    overflow: hidden;
+    height: var(--cdb-label-height, 1.4rem);
+    z-index: 2;
     pointer-events: none;
 }
 .cdb-section-label-container.cdb-labels-deferred .cdb-section-label {
@@ -524,7 +526,8 @@ carousel-dropdown-browser.cdb-grid-align-right .cdb-grid-section { justify-conte
     top: 0;
     left: 50%;
     white-space: nowrap;
-    font-size: 0.65rem;
+    overflow: hidden;
+    font-size: 0.8rem;
     text-transform: uppercase;
     letter-spacing: 0.15em;
     color: var(--text-muted);
@@ -532,6 +535,7 @@ carousel-dropdown-browser.cdb-grid-align-right .cdb-grid-section { justify-conte
     transform-origin: center bottom;
     transition: transform var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
                 opacity var(--carousel-speed, 0.85s) ease,
+                max-width var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
                 --underline-width var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1));
     will-change: transform;
 }
