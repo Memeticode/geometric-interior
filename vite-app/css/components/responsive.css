@@ -69,8 +69,7 @@
         white-space: nowrap;
     }
     .header-statement {
-        flex: 1;
-        min-width: 0;
+        flex: none;
         white-space: normal;
         font-size: 0.6875rem;
     }
@@ -112,9 +111,6 @@
     /* Retina large-phone refinements */
     .header-statement {
         white-space: nowrap;
-        word-spacing: normal;
-        justify-content: center;
-        flex: initial;
     }
 }
 

@@ -41,6 +41,7 @@ import {
     UNDO_SVG, REDO_SVG, SAVE_SVG, RANDOMIZE_SVG, RENDER_SVG,
     FIELD_DIAMOND_SVG, DOWNLOAD_SVG, IMAGE_SVG, BUNDLE_SVG, SETTINGS_SVG, SHARE_SVG, LINK_SVG, ARROW_RIGHT_SVG,
     BLUESKY_SVG, FACEBOOK_SVG, GOOGLE_SVG, LINKEDIN_SVG, REDDIT_SVG, TWITTER_SVG, EMAIL_SVG,
+    injectAnimatedSVG, STATIC_ICON_REGISTRY,
 } from '@svg-icons';
 import { downloadBlob, injectPngTextChunks, safeName, toIsoLocalish } from '../../export/export.js';
 import { profileToConfig } from '@geometric-interior/core/config-schema.js';
@@ -2609,10 +2610,39 @@ async function exitEditMode(saved, fromPopstate) {
         rebuildFocusable();
     }
 
+    const SHARE_ACTION_TO_ICON = {
+        'share-copy': 'link', 'share-bluesky': 'bluesky', 'share-facebook': 'facebook',
+        'share-google': 'google', 'share-linkedin': 'linkedin', 'share-reddit': 'reddit',
+        'share-x': 'twitter', 'share-email': 'email',
+    };
+    /** @type {{ destroy: Function }[]} */
+    let ctxAnimCtrls = [];
+
+    function wireCtxSocialHover() {
+        // Clean up previous controllers
+        for (const c of ctxAnimCtrls) c.destroy();
+        ctxAnimCtrls = [];
+        for (const [action, key] of Object.entries(SHARE_ACTION_TO_ICON)) {
+            const btn = ctxMenu.querySelector(`[data-action="${action}"]`);
+            if (!btn) continue;
+            const iconSpan = btn.querySelector('.ctx-icon');
+            if (!iconSpan) continue;
+            const entry = STATIC_ICON_REGISTRY[key];
+            if (!entry) continue;
+            // Replace static SVG with animated version
+            iconSpan.innerHTML = '';
+            const ctrl = injectAnimatedSVG(iconSpan, entry.svg, entry.anim, entry.config);
+            ctxAnimCtrls.push(ctrl);
+            btn.addEventListener('mouseenter', () => ctrl.play());
+            btn.addEventListener('mouseleave', () => ctrl.settleOut());
+        }
+    }
+
     function showCtxMenu(x, y) {
         // Rebuild menu HTML (dynamic: Delete, Restore depend on state)
         ctxMenu.innerHTML = buildCtxMenuHTML();
         rebuildFocusable();
+        wireCtxSocialHover();
 
         // Re-attach browser hint handlers
         const hint = ctxMenu.querySelector('.ctx-browser');

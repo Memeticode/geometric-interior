@@ -115,23 +115,31 @@ export function initStatementModal(dom) {
         modalBody.addEventListener('animationend', () => {
             modalBody.classList.remove('luminous-dissolve-out');
 
-            /* Suppress the modal-box height transition so it snaps instantly */
-            modalBox.style.transition = 'none';
+            /* Capture old height before swap */
+            const oldH = modalBox.offsetHeight;
 
+            /* Swap content with transitions suppressed */
+            modalBox.style.transition = 'none';
             outgoing.classList.add('hidden');
             dom.statementTitle.textContent = STATEMENT_TITLES[tab] || '';
             incoming.classList.remove('hidden');
             incoming.scrollTop = 0;
 
-            /* Force reflow so the box settles at its new height before
-               re-enabling transitions */
+            /* Measure new natural height */
+            const newH = modalBox.offsetHeight;
+
+            /* Lock to old height, reflow, re-enable transition, animate to new */
+            modalBox.style.height = oldH + 'px';
             void modalBox.offsetHeight;
             modalBox.style.transition = '';
+            modalBox.style.height = newH + 'px';
 
+            /* Dissolve in (concurrent with height animation) */
             modalBody.classList.add('luminous-dissolve-in');
 
             const cleanup = () => {
                 modalBody.classList.remove('luminous-dissolve-in');
+                modalBox.style.height = '';
                 statementFlipping = false;
             };
             modalBody.addEventListener('animationend', cleanup, { once: true });

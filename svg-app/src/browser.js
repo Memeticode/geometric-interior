@@ -1917,6 +1917,8 @@ class StaticIconCtrl {
   }
 }
 
+const HOVER_GROUPS = new Set(['Resolution', 'Social / Sharing']);
+
 const STATIC_GROUPS = [
   { name: 'Geometric Interior', keys: ['alt-text', 'create', 'construct'] },
   { name: 'Navigation', keys: ['arrow-up', 'arrow-down', 'arrow-left', 'arrow-right', 'dbl-arrow-left', 'dbl-arrow-right'] },
@@ -1940,6 +1942,8 @@ for (const group of STATIC_GROUPS) {
   const list = document.createElement('div');
   list.className = 'browser-list';
 
+  const isHover = HOVER_GROUPS.has(group.name);
+
   for (const key of group.keys) {
     const entry = STATIC_ICON_REGISTRY[key];
     if (!entry) continue;
@@ -1952,56 +1956,83 @@ for (const group of STATIC_GROUPS) {
     frame.style.width = '48px';
     frame.style.height = '48px';
     const animCtrl = injectAnimatedSVG(frame, entry.svg, entry.anim, entry.config);
-    animCtrl.play();
+
+    if (isHover) {
+      // Hover-to-animate: start paused, play on hover, graceful settle on leave
+      card.addEventListener('mouseenter', () => {
+        animCtrl.play();
+      });
+      card.addEventListener('mouseleave', () => {
+        animCtrl.settleOut();
+      });
+    } else {
+      animCtrl.play();
+    }
+
     card.appendChild(frame);
 
-    const ctrl = new StaticIconCtrl(animCtrl, animCtrl.el);
+    if (!isHover) {
+      // Only non-hover groups get the StaticIconCtrl + buttons
+      const ctrl = new StaticIconCtrl(animCtrl, animCtrl.el);
 
-    const infoDiv = document.createElement('div');
-    infoDiv.className = 'browser-card-info';
-    const nameEl = document.createElement('span');
-    nameEl.className = 'browser-name';
-    nameEl.textContent = key;
-    const descEl = document.createElement('span');
-    descEl.className = 'browser-desc';
-    descEl.textContent = entry.desc;
-    infoDiv.appendChild(nameEl);
-    infoDiv.appendChild(descEl);
-    card.appendChild(infoDiv);
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'browser-card-info';
+      const nameEl = document.createElement('span');
+      nameEl.className = 'browser-name';
+      nameEl.textContent = key;
+      const descEl = document.createElement('span');
+      descEl.className = 'browser-desc';
+      descEl.textContent = entry.desc;
+      infoDiv.appendChild(nameEl);
+      infoDiv.appendChild(descEl);
+      card.appendChild(infoDiv);
 
-    // Controls
-    const controls = document.createElement('div');
-    controls.className = 'browser-controls';
+      const controls = document.createElement('div');
+      controls.className = 'browser-controls';
 
-    const playBtn = btn('\u23f8', () => ctrl.togglePlay());
-    const convBtn = btn('\u21d3 Converge', () => ctrl.depart('converge'));
-    const dissBtn = btn('\u21d1 Dissipate', () => ctrl.depart('dissipate'));
-    const retConvBtn = btn('\u21d3 Return', () => ctrl.arrive('converge'));
-    const retDissBtn = btn('\u21d1 Return', () => ctrl.arrive('dissipate'));
-    retConvBtn.style.display = 'none';
-    retDissBtn.style.display = 'none';
+      const playBtn = btn('\u23f8', () => ctrl.togglePlay());
+      const convBtn = btn('\u21d3 Converge', () => ctrl.depart('converge'));
+      const dissBtn = btn('\u21d1 Dissipate', () => ctrl.depart('dissipate'));
+      const retConvBtn = btn('\u21d3 Return', () => ctrl.arrive('converge'));
+      const retDissBtn = btn('\u21d1 Return', () => ctrl.arrive('dissipate'));
+      retConvBtn.style.display = 'none';
+      retDissBtn.style.display = 'none';
 
-    controls.appendChild(playBtn);
-    controls.appendChild(convBtn);
-    controls.appendChild(dissBtn);
-    controls.appendChild(retConvBtn);
-    controls.appendChild(retDissBtn);
-    card.appendChild(controls);
+      controls.appendChild(playBtn);
+      controls.appendChild(convBtn);
+      controls.appendChild(dissBtn);
+      controls.appendChild(retConvBtn);
+      controls.appendChild(retDissBtn);
+      card.appendChild(controls);
 
-    ctrl.onUpdate = () => {
-      const { visible, busy, playing } = ctrl;
-      playBtn.textContent = playing ? '\u23f8' : '\u25b6';
-      playBtn.style.display = visible ? '' : 'none';
-      convBtn.style.display = visible ? '' : 'none';
-      dissBtn.style.display = visible ? '' : 'none';
-      retConvBtn.style.display = !visible && !busy ? '' : 'none';
-      retDissBtn.style.display = !visible && !busy ? '' : 'none';
-      playBtn.disabled = busy;
-      convBtn.disabled = busy;
-      dissBtn.disabled = busy;
-      retConvBtn.disabled = busy;
-      retDissBtn.disabled = busy;
-    };
+      ctrl.onUpdate = () => {
+        const { visible, busy, playing } = ctrl;
+        playBtn.textContent = playing ? '\u23f8' : '\u25b6';
+        playBtn.style.display = visible ? '' : 'none';
+        convBtn.style.display = visible ? '' : 'none';
+        dissBtn.style.display = visible ? '' : 'none';
+        retConvBtn.style.display = !visible && !busy ? '' : 'none';
+        retDissBtn.style.display = !visible && !busy ? '' : 'none';
+        playBtn.disabled = busy;
+        convBtn.disabled = busy;
+        dissBtn.disabled = busy;
+        retConvBtn.disabled = busy;
+        retDissBtn.disabled = busy;
+      };
+    } else {
+      // Hover groups: just name + desc, no buttons
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'browser-card-info';
+      const nameEl = document.createElement('span');
+      nameEl.className = 'browser-name';
+      nameEl.textContent = key;
+      const descEl = document.createElement('span');
+      descEl.className = 'browser-desc';
+      descEl.textContent = entry.desc;
+      infoDiv.appendChild(nameEl);
+      infoDiv.appendChild(descEl);
+      card.appendChild(infoDiv);
+    }
 
     list.appendChild(card);
   }

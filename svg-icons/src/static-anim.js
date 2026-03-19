@@ -24,10 +24,12 @@ function breathe(children, config, now) {
   const period = config.period || 3000;
   const min = config.min || 0.65;
   const max = config.max || 1;
+  const f = config._fade ?? 1;
   for (let i = 0; i < children.length; i++) {
     const phase = (i / children.length) * Math.PI * 0.6;
     const t = (Math.sin(now / period + phase) + 1) / 2;
-    children[i].setAttribute('opacity', min + (max - min) * t);
+    const o = min + (max - min) * t;
+    children[i].setAttribute('opacity', 1 + (o - 1) * f);
   }
 }
 
@@ -35,9 +37,10 @@ function pulse(children, config, now) {
   const period = config.period || 2500;
   const min = config.min || 0.96;
   const max = config.max || 1.04;
+  const f = config._fade ?? 1;
   const t = (Math.sin(now / period) + 1) / 2;
-  const s = min + (max - min) * t;
-  const o = 0.7 + 0.3 * t;
+  const s = 1 + (min + (max - min) * t - 1) * f;
+  const o = 1 + (0.7 + 0.3 * t - 1) * f;
   for (const child of children) {
     child.setAttribute('transform', `translate(8 8) scale(${s}) translate(-8 -8)`);
     child.setAttribute('opacity', o);
@@ -47,21 +50,23 @@ function pulse(children, config, now) {
 function shimmer(children, config, now) {
   const period = config.period || 2000;
   const speed = config.speed || 0.003;
+  const f = config._fade ?? 1;
   for (let i = 0; i < children.length; i++) {
     const wave = Math.sin(now * speed - i * 0.5);
     const o = 0.55 + 0.45 * ((wave + 1) / 2);
-    children[i].setAttribute('opacity', o);
+    children[i].setAttribute('opacity', 1 + (o - 1) * f);
   }
 }
 
 function drift(children, config, now) {
   const amp = config.amp || 0.4;
   const period = config.period || 4000;
+  const f = config._fade ?? 1;
   for (let i = 0; i < children.length; i++) {
     const px = (i + 1) * 1.7;
     const py = (i + 1) * 2.3;
-    const dx = Math.sin(now / period + px) * amp;
-    const dy = Math.cos(now / (period * 1.3) + py) * amp;
+    const dx = Math.sin(now / period + px) * amp * f;
+    const dy = Math.cos(now / (period * 1.3) + py) * amp * f;
     children[i].setAttribute('transform', `translate(${dx} ${dy})`);
   }
 }
@@ -70,7 +75,8 @@ function spin(children, config, now) {
   const period = config.period || 10000;
   const cx = config.cx || 8;
   const cy = config.cy || 8;
-  const angle = (now / period) * 360 % 360;
+  const f = config._fade ?? 1;
+  const angle = ((now / period) * 360 % 360) * f;
   for (const child of children) {
     child.setAttribute('transform', `rotate(${angle} ${cx} ${cy})`);
   }
@@ -78,10 +84,12 @@ function spin(children, config, now) {
 
 function twinkle(children, config, now) {
   const period = config.period || 1800;
+  const f = config._fade ?? 1;
   for (let i = 0; i < children.length; i++) {
     const phase = i * 2.1 + i * i * 0.3;
     const t = (Math.sin(now / period + phase) + 1) / 2;
-    children[i].setAttribute('opacity', 0.5 + 0.5 * t);
+    const o = 0.5 + 0.5 * t;
+    children[i].setAttribute('opacity', 1 + (o - 1) * f);
   }
 }
 
@@ -89,19 +97,21 @@ function twinkle(children, config, now) {
 
 function radiate(children, config, now) {
   const period = config.period || 3000;
+  const f = config._fade ?? 1;
   for (let i = 0; i < children.length; i++) {
     const tag = children[i].tagName;
     if (tag === 'circle') {
       const phase = i * (Math.PI * 2 / 3);
       const t = (Math.sin(now / period + phase) + 1) / 2;
-      const scale = 0.85 + 0.3 * t;
+      const scale = 1 + (0.85 + 0.3 * t - 1) * f;
       const cx = parseFloat(children[i].getAttribute('cx'));
       const cy = parseFloat(children[i].getAttribute('cy'));
       children[i].setAttribute('transform', `translate(${cx} ${cy}) scale(${scale}) translate(${-cx} ${-cy})`);
-      children[i].setAttribute('opacity', 0.6 + 0.4 * t);
+      children[i].setAttribute('opacity', 1 + (0.6 + 0.4 * t - 1) * f);
     } else {
       const t = (Math.sin(now / (period * 0.7) + Math.PI) + 1) / 2;
-      children[i].setAttribute('opacity', 0.5 + 0.5 * t);
+      const o = 0.5 + 0.5 * t;
+      children[i].setAttribute('opacity', 1 + (o - 1) * f);
     }
   }
 }
@@ -109,12 +119,12 @@ function radiate(children, config, now) {
 function tug(children, config, now) {
   const period = config.period || 2500;
   const amp = config.amp || 0.6;
+  const f = config._fade ?? 1;
   const raw = (Math.sin(now / period) + 1) / 2;
-  // Cubic ease for snappy reconnect
   const t = raw < 0.5
     ? 4 * raw * raw * raw
     : 1 - Math.pow(-2 * raw + 2, 3) / 2;
-  const offset = t * amp;
+  const offset = t * amp * f;
   if (children.length >= 2) {
     children[0].setAttribute('transform', `translate(${-offset} ${-offset})`);
     children[1].setAttribute('transform', `translate(${offset} ${offset})`);
@@ -124,11 +134,11 @@ function tug(children, config, now) {
 function unfold(children, config, now) {
   const period = config.period || 3500;
   const maxAngle = config.maxAngle || 12;
+  const f = config._fade ?? 1;
   const t = (Math.sin(now / period) + 1) / 2;
-  // child[0] = rect (body), child[1] = path (V flap)
   if (children.length >= 2) {
-    children[1].setAttribute('transform', `rotate(${-maxAngle * t} 8 5)`);
-    children[0].setAttribute('opacity', 0.8 + 0.2 * t);
+    children[1].setAttribute('transform', `rotate(${-maxAngle * t * f} 8 5)`);
+    children[0].setAttribute('opacity', 1 + (0.8 + 0.2 * t - 1) * f);
   }
 }
 
@@ -136,22 +146,18 @@ function flutter(children, config, now) {
   const period = config.period || 1200;
   const cx = config.cx || 8;
   const cy = config.cy || 8;
-  // Y bob for flight feel
-  const yBob = Math.sin(now / (period * 2)) * 0.6;
+  const f = config._fade ?? 1;
+  const yBob = Math.sin(now / (period * 2)) * 0.6 * f;
   if (children.length === 2) {
-    // Two-wing mode (Bluesky): scaleX flap from center axis
-    const t = (Math.sin(now / period) + 1) / 2; // 0→1
-    const sx = 0.55 + 0.45 * t; // 0.55→1.0
-    // Left wing: scale from right edge (cx)
+    const t = (Math.sin(now / period) + 1) / 2;
+    const sx = 1 + (0.55 + 0.45 * t - 1) * f; // lerp toward 1 as f→0
     children[0].setAttribute('transform',
       `translate(0 ${yBob}) translate(${cx} ${cy}) scale(${sx} 1) translate(${-cx} ${-cy})`);
-    // Right wing: mirror — scale from left edge (cx)
     children[1].setAttribute('transform',
       `translate(0 ${yBob}) translate(${cx} ${cy}) scale(${sx} 1) translate(${-cx} ${-cy})`);
   } else {
-    // Fallback: whole-element scaleY squeeze
     const t = Math.sin(now / period);
-    const sy = 0.88 + 0.12 * ((t + 1) / 2);
+    const sy = 1 + (0.88 + 0.12 * ((t + 1) / 2) - 1) * f;
     for (const child of children) {
       child.setAttribute('transform', `translate(0 ${yBob}) translate(${cx} ${cy}) scale(1 ${sy}) translate(${-cx} ${-cy})`);
     }
@@ -161,16 +167,14 @@ function flutter(children, config, now) {
 function pop(children, config, now) {
   const period = config.period || 3000;
   const amp = config.amp || 1.2;
+  const f = config._fade ?? 1;
   const cycle = ((now / period) % 1 + 1) % 1;
   let dy = 0;
   if (cycle < 0.15) {
-    // Rise up
-    dy = -Math.sin(cycle / 0.15 * Math.PI) * amp;
+    dy = -Math.sin(cycle / 0.15 * Math.PI) * amp * f;
   } else if (cycle < 0.25) {
-    // Settle
-    dy = -Math.sin((cycle - 0.15) / 0.1 * Math.PI) * amp * 0.3;
+    dy = -Math.sin((cycle - 0.15) / 0.1 * Math.PI) * amp * 0.3 * f;
   }
-  // Rest for remaining 75%
   for (const child of children) {
     child.setAttribute('transform', `translate(0 ${dy})`);
   }
@@ -178,82 +182,84 @@ function pop(children, config, now) {
 
 function colorwheel(children, config, now) {
   const period = config.period || 2000;
+  const f = config._fade ?? 1;
   const n = children.length;
   if (n === 0) return;
   const pos = ((now / period) % 1) * n;
   for (let i = 0; i < n; i++) {
     const dist = Math.min(Math.abs(i - pos), n - Math.abs(i - pos));
     const o = 0.35 + 0.65 * Math.max(0, 1 - dist / 1.5);
-    children[i].setAttribute('opacity', o);
+    children[i].setAttribute('opacity', 1 + (o - 1) * f);
   }
 }
 
 function emerge(children, config, now) {
-  // LinkedIn: child[0]=dot circle, child[1]=I-bar, child[2]=in body
+  // LinkedIn: child[0]=defs, child[1]=clipped <g> (dot+bar), child[2]="in" body
+  // The "i" group bows toward "n"; the dot nods extra like looking down
   const period = config.period || 3000;
+  const f = config._fade ?? 1;
   if (children.length < 3) return;
   const t0 = (Math.sin(now / period) + 1) / 2;
-  const t1 = (Math.sin(now / period - Math.PI * 0.3) + 1) / 2;
   const t2 = (Math.sin(now / period - Math.PI * 0.6) + 1) / 2;
-  // Dot: gentle bow — rotate around bottom edge of circle (2.35, 4.55)
-  const bowAngle = (t0 - 0.5) * 16; // ±8°
-  children[0].setAttribute('transform', `rotate(${bowAngle} 2.35 4.55)`);
-  // I-bar: subtle opacity pulse
-  children[1].setAttribute('opacity', 0.85 + 0.15 * t1);
+  const iGroup = children[1];
+  // Bow the whole "i" group (clip-path prevents overlap with "n")
+  const bowAngle = t0 * 8 * f;
+  iGroup.setAttribute('transform', `rotate(${bowAngle} 2.35 13.5)`);
+  // Dot inside group: extra nod around its bottom edge
+  const dot = iGroup.children?.[0];
+  if (dot) {
+    const nodAngle = t0 * 22 * f;
+    dot.setAttribute('transform', `rotate(${nodAngle} 2.35 4.55)`);
+  }
   // "in" body: gentle slide-up + fade
-  const dy = (1 - t2) * 0.3;
+  const dy = (1 - t2) * 0.3 * f;
   children[2].setAttribute('transform', `translate(0 ${dy})`);
-  children[2].setAttribute('opacity', 0.8 + 0.2 * t2);
+  children[2].setAttribute('opacity', 1 + (0.8 + 0.2 * t2 - 1) * f);
 }
 
 function snoo(children, config, now) {
-  // Reddit: child[0]=body, child[1]=left eye, child[2]=right eye, child[3]=mouth
   const period = config.period || 3000;
+  const f = config._fade ?? 1;
   if (children.length < 4) return;
-  const angle = Math.sin(now / period) * 3;
-  // Body + mouth: gentle dangle rotation around neck area (8, 10)
+  const angle = Math.sin(now / period) * 3 * f;
   children[0].setAttribute('transform', `rotate(${angle} 8 10)`);
   children[3].setAttribute('transform', `rotate(${angle} 8 10)`);
-  // Left eye: follows body rotation, always visible
   children[1].setAttribute('transform', `rotate(${angle} 8 10)`);
-  // Right eye: follows body rotation + periodic wink (scale to 0)
   const winkCycle = ((now / period) % 1 + 1) % 1;
   let eyeScale = 1;
   if (winkCycle > 0.7 && winkCycle < 0.85) {
-    // Quick close and open
     const wt = (winkCycle - 0.7) / 0.15;
     eyeScale = wt < 0.5 ? 1 - wt * 2 : (wt - 0.5) * 2;
   }
+  eyeScale = 1 + (eyeScale - 1) * f;
   const ecx = 10.29, ecy = 9.36;
   children[2].setAttribute('transform',
     `rotate(${angle} 8 10) translate(${ecx} ${ecy}) scale(1 ${eyeScale}) translate(${-ecx} ${-ecy})`);
 }
 
 function stamp(children, config, now) {
-  // Twitter/X: single-path quick rotation snap with settle
   const period = config.period || 3000;
   const maxAngle = config.maxAngle || 12;
+  const f = config._fade ?? 1;
   const cycle = ((now / period) % 1 + 1) % 1;
   let angle = 0;
   if (cycle < 0.08) {
-    // Quick snap to max angle
     angle = Math.sin(cycle / 0.08 * Math.PI / 2) * maxAngle;
   } else if (cycle < 0.2) {
-    // Elastic settle back with overshoot
     const st = (cycle - 0.08) / 0.12;
     angle = maxAngle * Math.cos(st * Math.PI * 1.5) * (1 - st);
   }
-  // Rest for remaining 80%
+  angle *= f;
   for (const child of children) {
     child.setAttribute('transform', `rotate(${angle} 8 8)`);
   }
 }
 
 function sway(children, config, now) {
-  // GitHub: cat rocks side to side around bottom center
   const period = config.period || 4000;
-  const angle = Math.sin(now / period) * 3;
-  const dx = Math.sin(now / (period * 0.7)) * 0.3;
+  const f = config._fade ?? 1;
+  const angle = Math.sin(now / period) * 3 * f;
+  const dx = Math.sin(now / (period * 0.7)) * 0.3 * f;
   for (const child of children) {
     child.setAttribute('transform', `translate(${dx} 0) rotate(${angle} 8 14)`);
   }
@@ -342,26 +348,84 @@ export function injectAnimatedSVG(container, svgString, animType, config = {}) {
   const animFn = ANIM_FNS[animType];
   let running = false;
   let rafId = null;
+  // Fade state: 'in' = ramping up, 'out' = settling down, null = full strength
+  let fadeMode = null;
+  let fadeStart = 0;
+  const FADE_IN_DUR = 300;
+  const FADE_OUT_DUR = 350;
 
   function getChildren() {
     return Array.from(svgEl.children);
   }
 
+  const fadeConfig = { ...config };
+
   function tick(now) {
     if (!running) return;
-    animFn(getChildren(), config, now);
+    const children = getChildren();
+    if (fadeMode === 'out') {
+      const raw = Math.min((now - fadeStart) / FADE_OUT_DUR, 1);
+      fadeConfig._fade = 1 - raw * raw; // 1 → 0 quadratic
+      animFn(children, fadeConfig, now);
+      if (raw >= 1) {
+        running = false;
+        fadeMode = null;
+        for (const child of children) {
+          child.removeAttribute('transform');
+          child.removeAttribute('opacity');
+        }
+        return;
+      }
+    } else if (fadeMode === 'in') {
+      const raw = Math.min((now - fadeStart) / FADE_IN_DUR, 1);
+      fadeConfig._fade = raw * raw; // 0 → 1 quadratic
+      animFn(children, fadeConfig, now);
+      if (raw >= 1) fadeMode = null;
+    } else {
+      animFn(children, config, now);
+    }
     rafId = requestAnimationFrame(tick);
   }
 
   function play() {
+    if (fadeMode === 'out' && running) {
+      // Reverse the settle-out into a fade-in from current fade level
+      const now = performance.now();
+      const outRaw = Math.min((now - fadeStart) / FADE_OUT_DUR, 1);
+      const currentFade = 1 - outRaw * outRaw;
+      // Start fade-in from where we are: set fadeStart so that raw² = currentFade
+      fadeMode = 'in';
+      fadeStart = now - Math.sqrt(currentFade) * FADE_IN_DUR;
+      return;
+    }
     if (running || !animFn) return;
     running = true;
+    fadeMode = 'in';
+    fadeStart = performance.now();
     rafId = requestAnimationFrame(tick);
   }
 
   function pause() {
     running = false;
+    fadeMode = null;
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  }
+
+  /** Gracefully fade animation to rest over ~350ms, then stop. */
+  function settleOut() {
+    if (!running || !animFn) return;
+    const now = performance.now();
+    if (fadeMode === 'in') {
+      // Reverse the fade-in: start settle from current fade level
+      const inRaw = Math.min((now - fadeStart) / FADE_IN_DUR, 1);
+      const currentFade = inRaw * inRaw;
+      // Set fadeStart so that 1 - raw² = currentFade → raw = sqrt(1 - currentFade)
+      fadeMode = 'out';
+      fadeStart = now - Math.sqrt(1 - currentFade) * FADE_OUT_DUR;
+    } else {
+      fadeMode = 'out';
+      fadeStart = now;
+    }
   }
 
   function destroy() {
@@ -369,7 +433,7 @@ export function injectAnimatedSVG(container, svgString, animType, config = {}) {
     svgEl.remove();
   }
 
-  return { el: svgEl, play, pause, destroy };
+  return { el: svgEl, play, pause, settleOut, destroy };
 }
 
 /**
