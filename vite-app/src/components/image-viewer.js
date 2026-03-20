@@ -451,6 +451,8 @@ class ImageViewer extends HTMLElement {
         // Media wrapper — holds media + controls, receives FLIP transform
         const fsWrap = document.createElement('div');
         fsWrap.className = 'fs-media-wrap';
+        const ctrlPos = this.getAttribute('controls-pos');
+        if (ctrlPos) fsWrap.setAttribute('controls-pos', ctrlPos);
         if (finalRect.top < 34) fsWrap.classList.add('fs-controls-inset');
         fsWrap.style.top = finalRect.top + 'px';
         fsWrap.style.left = finalRect.left + 'px';
@@ -503,8 +505,7 @@ class ImageViewer extends HTMLElement {
         overlay.append(fsWrap, this.#controlsEl, altOverlay);
         if (fsCtxMenu) overlay.appendChild(fsCtxMenu);
         // Fix controls at their viewer position during expansion
-        const ctrlRight = window.innerWidth - ctrlStartRect.right;
-        this.#controlsEl.style.cssText = `position:fixed;top:${ctrlStartRect.top}px;right:${ctrlRight}px;left:auto;bottom:auto;z-index:1;opacity:1;pointer-events:auto;`;
+        this.#controlsEl.style.cssText = `position:fixed;top:${ctrlStartRect.top}px;left:${ctrlStartRect.left}px;right:auto;bottom:auto;z-index:1;opacity:1;pointer-events:auto;`;
 
         // Click backdrop to close
         overlay.addEventListener('click', (e) => {
@@ -566,7 +567,7 @@ class ImageViewer extends HTMLElement {
         fsWrap.offsetHeight;
         const ctrlEndRect = this.#controlsEl.getBoundingClientRect();
         const ctrlTargetTop = ctrlEndRect.top;
-        const ctrlTargetRight = window.innerWidth - ctrlEndRect.right;
+        const ctrlTargetLeft = ctrlEndRect.left;
         // Move controls back to overlay
         overlay.append(this.#controlsEl);
         this.#controlsEl.style.cssText = savedCtrlCss;
@@ -576,13 +577,13 @@ class ImageViewer extends HTMLElement {
 
         // FLIP controls from viewer position to fullscreen position
         this.#ctrlOpenAnim = this.#controlsEl.animate([
-            { top: ctrlStartRect.top + 'px', right: ctrlRight + 'px' },
-            { top: ctrlTargetTop + 'px', right: ctrlTargetRight + 'px' }
+            { top: ctrlStartRect.top + 'px', left: ctrlStartRect.left + 'px' },
+            { top: ctrlTargetTop + 'px', left: ctrlTargetLeft + 'px' }
         ], { duration: this.#openDur, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'forwards' });
         this.#ctrlOpenAnim.finished.then(() => {
             // Update inline style to target before cancelling animation layer
             this.#controlsEl.style.top = ctrlTargetTop + 'px';
-            this.#controlsEl.style.right = ctrlTargetRight + 'px';
+            this.#controlsEl.style.left = ctrlTargetLeft + 'px';
             this.#ctrlOpenAnim.cancel();
             this.#ctrlOpenAnim = null;
             fsWrap.prepend(this.#controlsEl);
@@ -662,12 +663,11 @@ class ImageViewer extends HTMLElement {
 
         // FLIP controls: move from fsWrap to overlay with fixed positioning
         const ctrlFromRect = this.#controlsEl.getBoundingClientRect();
-        const ctrlFromRight = window.innerWidth - ctrlFromRect.right;
         const fsBtnEl = this.#controlsEl.querySelector('[aria-label="Exit fullscreen"]');
         if (fsBtnEl?.morphIcon) { fsBtnEl.morphIcon.morph('waiting-open'); fsBtnEl.setAttribute('aria-label', 'Fullscreen'); }
         else if (fsBtnEl) { fsBtnEl.innerHTML = FULLSCREEN_SVG; fsBtnEl.setAttribute('aria-label', 'Fullscreen'); }
         overlay.append(this.#controlsEl);
-        this.#controlsEl.style.cssText = `position:fixed;top:${ctrlFromRect.top}px;right:${ctrlFromRight}px;left:auto;bottom:auto;z-index:1;opacity:1;pointer-events:auto;`;
+        this.#controlsEl.style.cssText = `position:fixed;top:${ctrlFromRect.top}px;left:${ctrlFromRect.left}px;right:auto;bottom:auto;z-index:1;opacity:1;pointer-events:auto;`;
 
         // Measure viewer target: briefly place controls in viewer
         this.#controlsActive = true;
@@ -676,15 +676,14 @@ class ImageViewer extends HTMLElement {
         this.#controlsEl.style.cssText = 'visibility:hidden;';
         this.append(this.#controlsEl);
         const ctrlTargetRect = this.#controlsEl.getBoundingClientRect();
-        const ctrlTargetRight = window.innerWidth - ctrlTargetRect.right;
         overlay.append(this.#controlsEl);
         this.#controlsEl.style.cssText = savedCss;
 
         // Animate controls from fullscreen to viewer position
         let ctrlsDone = false;
         const ctrlCloseAnim = this.#controlsEl.animate([
-            { top: ctrlFromRect.top + 'px', right: ctrlFromRight + 'px' },
-            { top: ctrlTargetRect.top + 'px', right: ctrlTargetRight + 'px' }
+            { top: ctrlFromRect.top + 'px', left: ctrlFromRect.left + 'px' },
+            { top: ctrlTargetRect.top + 'px', left: ctrlTargetRect.left + 'px' }
         ], { duration: this.#closeDur, easing: 'ease-in', fill: 'forwards' });
         ctrlCloseAnim.finished.then(() => { ctrlCloseAnim.cancel(); ctrlsDone = true; }).catch(() => { ctrlsDone = true; });
 

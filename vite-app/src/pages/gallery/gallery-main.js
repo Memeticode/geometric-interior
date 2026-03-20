@@ -35,6 +35,7 @@ import { getLocalizedWords, seedTagToLabel } from '@geometric-interior/core/text
 import { toast } from '../../components/toast.js';
 import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
+import { hideTooltip } from '../../components/tooltips.js';
 import {
     createAltTextToggle, createFullscreenToggle,
     TRASH_SVG, RESTORE_SVG, EDIT_SVG, ADD_SVG, FULLSCREEN_SVG, CLOSE_SVG, ERROR_SVG, RETRY_SVG,
@@ -212,6 +213,8 @@ let editPanel = null;          // initGeneratePanel instance for inline edit
 let editWorkerBridge = null;   // worker bridge for edit preview canvas
 let editInitialized = false;
 let editWorkerFailed = false;  // true if worker init or WebGL context failed
+let editInitialSnapshot = null; // snapshot of controls at edit entry, for change detection
+let editSourceCardKey = null;  // carousel card key of the source entry being edited
 
 /* ── Edit-mode DOM refs ── */
 const contentArea = document.getElementById('mainContentArea');
@@ -245,7 +248,6 @@ btnLeft.innerHTML = UNDO_SVG;
 btnRight.innerHTML = REDO_SVG;
 saveBtn.innerHTML = SAVE_SVG;
 btnAdd.innerHTML = RANDOMIZE_SVG;
-document.getElementById('morphFieldIcon').innerHTML = FIELD_DIAMOND_SVG;
 genSaveBtn.innerHTML = SAVE_SVG;
 genRenderBtn.innerHTML = RENDER_SVG;
 genUndoBtn.innerHTML = UNDO_SVG;
@@ -262,19 +264,21 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
     const textBtn = document.createElement('button');
     textBtn.className = 'icon-btn iv-text-btn';
     textBtn.setAttribute('aria-label', t('gallery.altTextBtn'));
-    const altTextIcon = createAltTextToggle(textBtn, { startVisible: true });
+    textBtn.setAttribute('data-tooltip', t('iv.altText'));
+    textBtn.setAttribute('data-i18n-tooltip', 'iv.altText');
+    const altTextIcon = createAltTextToggle(textBtn, { startVisible: false });
     textBtn.morphIcon = altTextIcon;
+    textBtn.addEventListener('mouseenter', () => altTextIcon.startShimmer());
+    textBtn.addEventListener('mouseleave', () => altTextIcon.stopShimmer());
     textBtn.addEventListener('click', () => {
         if (imageViewer.altVisible) imageViewer.dismissAltText();
         else imageViewer.showAltText();
     });
     imageViewer.addEventListener('alt-text-toggle', (e) => {
         textBtn.classList.toggle('iv-text-active', e.detail.visible);
-        if (e.detail.visible) altTextIcon.morph('waiting-close');
-        else altTextIcon.morph('waiting-open');
     });
 
-    // Resolution dropdown (morph mode — single unified element)
+    // Resolution dropdown (morph mode — single unified element, SVG pixel-grid icons)
     const resDropdown = document.createElement('dd-morph');
     resDropdown.className = 'select-base morph-overlay';
     resDropdown.id = 'imageResolutionDropdown';
@@ -283,35 +287,80 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
     resDropdown.setAttribute('aria-expanded', 'false');
     resDropdown.setAttribute('aria-label', 'Resolution');
     resDropdown.setAttribute('data-i18n-aria', 'footer.resolutionLabel');
+    resDropdown.setAttribute('data-tooltip', t('iv.resolution'));
+    resDropdown.setAttribute('data-i18n-tooltip', 'iv.resolution');
     resDropdown.setAttribute('tabindex', '0');
-    resDropdown.innerHTML = `
-        <button class="custom-dropdown-item" role="option" data-value="4k" data-label="2160p" aria-selected="false">2160p</button>
-        <button class="custom-dropdown-item" role="option" data-value="qhd" data-label="1620p" aria-selected="false">1620p</button>
-        <button class="custom-dropdown-item" role="option" data-value="fhd" data-label="1080p" aria-selected="false">1080p</button>
-        <button class="custom-dropdown-item" role="option" data-value="hd" data-label="900p" aria-selected="false">900p</button>
-        <button class="custom-dropdown-item active" role="option" data-value="sd" data-label="540p" aria-selected="true">540p</button>
-        <button class="custom-dropdown-item" role="option" data-value="pre" data-label="270p" aria-selected="false">270p</button>`;
+    const R = STATIC_ICON_REGISTRY;
+    const resItems = [
+        { key: 'res-4k', value: '4k', label: '2160p' },
+        { key: 'res-1620', value: 'qhd', label: '1620p' },
+        { key: 'res-1080', value: 'fhd', label: '1080p' },
+        { key: 'res-900', value: 'hd', label: '900p' },
+        { key: 'res-540', value: 'sd', label: '540p', active: true },
+        { key: 'res-270', value: 'pre', label: '270p' },
+    ];
+    resDropdown.innerHTML = resItems.map(it =>
+        `<button class="custom-dropdown-item${it.active ? ' active' : ''}" role="option" data-value="${it.value}" data-label="${it.label}" aria-selected="${it.active ? 'true' : 'false'}"></button>`
+    ).join('');
+    // Inject animated SVGs — ripple on hover, playFor on click
+    const resAnims = new Map();
+    resDropdown.querySelectorAll('.custom-dropdown-item').forEach((btn, i) => {
+        const entry = R[resItems[i].key];
+        const anim = injectAnimatedSVG(btn, entry.svg, entry.anim, { ...entry.config });
+        resAnims.set(btn, anim);
+        btn.addEventListener('mouseenter', () => anim.play());
+        btn.addEventListener('mouseleave', () => anim.settleOut());
+        btn.addEventListener('click', () => anim.playFor(entry.config?.period || 600));
+    });
+    // Collapsed hover — items have pointer-events:none, so drive the active item's anim from the dropdown
+    const getActiveAnim = () => {
+        const active = resDropdown.querySelector('.custom-dropdown-item.active');
+        return active && resAnims.get(active);
+    };
+    resDropdown.addEventListener('mouseenter', () => {
+        if (!resDropdown.classList.contains('open')) getActiveAnim()?.play();
+    });
+    resDropdown.addEventListener('mouseleave', () => {
+        if (!resDropdown.classList.contains('open')) getActiveAnim()?.settleOut();
+    });
+
+    // Suppress tooltip when dropdown is open
+    new MutationObserver(() => {
+        if (resDropdown.classList.contains('open')) {
+            resDropdown.removeAttribute('data-tooltip');
+            hideTooltip();
+        } else {
+            resDropdown.setAttribute('data-tooltip', t('iv.resolution'));
+        }
+    }).observe(resDropdown, { attributes: true, attributeFilter: ['class'] });
 
     // Fullscreen toggle button — morph icon (outer brackets ↔ inner brackets)
     const fsBtn = document.createElement('button');
     fsBtn.className = 'icon-btn';
     fsBtn.setAttribute('aria-label', 'Fullscreen');
+    fsBtn.setAttribute('data-tooltip', t('iv.fullscreen'));
+    fsBtn.setAttribute('data-i18n-tooltip', 'iv.fullscreen');
     const fsIcon = createFullscreenToggle(fsBtn);
     fsBtn.morphIcon = fsIcon;
+    fsBtn.addEventListener('mouseenter', () => fsIcon.startShimmer());
+    fsBtn.addEventListener('mouseleave', () => fsIcon.stopShimmer());
     fsBtn.addEventListener('click', () => {
         if (imageViewer.isFullscreen) imageViewer.closeFullscreen();
         else openFullscreen();
     });
 
     // Coalesce / dissipate morph icons with controls show / hide
+    // mode: 'converge' — primitives emerge from / collapse to center point
     imageViewer.addEventListener('controls-show', () => {
-        fsIcon.coalesce();
+        altTextIcon.coalesce({ mode: 'converge' });
+        fsIcon.coalesce({ mode: 'converge' });
     });
     imageViewer.addEventListener('controls-hide', () => {
-        fsIcon.dissipate();
+        altTextIcon.dissipate({ mode: 'converge' });
+        fsIcon.dissipate({ mode: 'converge' });
     });
 
-    imageViewer.setControls(textBtn, resDropdown, fsBtn);
+    imageViewer.setControls(fsBtn, textBtn, resDropdown);
     initResolutionSelector(resDropdown, { animate: true });
 
     // Error overlay content
@@ -368,15 +417,16 @@ function fitAllSelects() {
 /** Append comma to displayed option text of first two seed selects (browse mode) */
 function addSelectCommas() {
     for (const sel of [editTagArr, editTagStr]) {
+        // Strip stale commas from all options first
+        for (const o of sel.options) { if (o.text.endsWith(',')) o.text = o.text.slice(0, -1); }
         const opt = sel.options[sel.selectedIndex];
         if (opt && !opt.text.endsWith(',')) opt.text += ',';
     }
 }
-/** Strip trailing comma from first two seed selects (edit mode) */
+/** Strip trailing comma from all options in first two seed selects (edit mode) */
 function removeSelectCommas() {
     for (const sel of [editTagArr, editTagStr]) {
-        const opt = sel.options[sel.selectedIndex];
-        if (opt && opt.text.endsWith(',')) opt.text = opt.text.slice(0, -1);
+        for (const o of sel.options) { if (o.text.endsWith(',')) o.text = o.text.slice(0, -1); }
     }
 }
 
@@ -600,7 +650,10 @@ carouselBrowser.addEventListener('item-select', (e) => {
         return;
     }
     if (editMode) {
-        exitEditMode(false);
+        tryExitEditMode(false).then(exited => {
+            if (exited) selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
+        });
+        return;
     }
     selectProfile(entry.name, entry.profile, entry.isPortrait, entry.assetId);
 });
@@ -768,7 +821,14 @@ function applyRoute() {
 
     // Exiting edit mode via popstate (back button)
     if (editMode && activeMode !== 'edit') {
-        exitEditMode(false, true);
+        tryExitEditMode(true).then(exited => {
+            if (!exited) {
+                // User cancelled — push edit route back so URL matches edit state
+                activeMode = 'edit';
+                pushEditRoute();
+            }
+        });
+        return;
     }
 
     // Handle create mode transitions
@@ -944,6 +1004,86 @@ function getDisplaySrc(name, profile, isPortrait) {
 
 let footerSwapTimer = null;
 
+/** Create ghost clones for name/seed crossfade. Returns { startFade }. */
+function setupFieldCrossfade() {
+    for (const el of morphNameField.querySelectorAll('.morph-field-ghost')) el.remove();
+    for (const el of morphSeedField.querySelectorAll('.morph-field-ghost')) el.remove();
+
+    const nameGhost = morphNameField.cloneNode(true);
+    const seedGhost = morphSeedField.cloneNode(true);
+    nameGhost.classList.add('morph-field-ghost');
+    seedGhost.classList.add('morph-field-ghost');
+
+    // cloneNode doesn't preserve dynamic state of <select>/<input>/<textarea>,
+    // so sync values and selectedIndex manually into the ghost clones.
+    const origSelects = morphSeedField.querySelectorAll(':scope > .morph-select-wrap select');
+    const ghostSelects = seedGhost.querySelectorAll(':scope > .morph-select-wrap select');
+    for (let i = 0; i < origSelects.length; i++) {
+        if (ghostSelects[i]) ghostSelects[i].selectedIndex = origSelects[i].selectedIndex;
+    }
+    const ghostNameInput = nameGhost.querySelector('input, textarea');
+    if (ghostNameInput) ghostNameInput.value = editNameField.value;
+
+    morphNameField.appendChild(nameGhost);
+    morphSeedField.appendChild(seedGhost);
+
+    // Hide real fields instantly. No transition:none — CSS padding/border
+    // transitions must stay active so the real field and ghost stay aligned.
+    editNameField.style.opacity = '0';
+    for (const sw of morphSeedField.querySelectorAll(':scope > .morph-select-wrap')) {
+        sw.style.transition = 'none';
+        sw.style.opacity = '0';
+    }
+
+    return {
+        startFade(duration) {
+            requestAnimationFrame(() => {
+                // Ghost fade-out via class + inline transition
+                const dur = `opacity ${duration}ms ease`;
+                nameGhost.style.transition = dur;
+                seedGhost.style.transition = dur;
+                nameGhost.classList.add('fading');
+                seedGhost.classList.add('fading');
+
+                // Name field: use Web Animations API for opacity so it doesn't
+                // override the CSS padding/border transitions via inline style.
+                const nameAnim = editNameField.animate(
+                    [{ opacity: 0 }, { opacity: 1 }],
+                    { duration, easing: 'ease', fill: 'forwards' },
+                );
+
+                // Seed wraps: no padding transition concern, use inline style
+                for (const sw of morphSeedField.querySelectorAll(':scope > .morph-select-wrap')) {
+                    sw.style.transition = dur;
+                    sw.style.opacity = '1';
+                }
+
+                setTimeout(() => {
+                    nameGhost?.remove();
+                    seedGhost?.remove();
+                    // Commit final opacity and clear the animation
+                    nameAnim.cancel();
+                    editNameField.style.opacity = '';
+                    for (const sw of morphSeedField.querySelectorAll(':scope > .morph-select-wrap')) {
+                        sw.style.transition = '';
+                        sw.style.opacity = '';
+                    }
+                }, duration + 50);
+            });
+        },
+    };
+}
+
+/** Temporarily strip data-lm-text-replace so V-dip animation doesn't run. */
+function suppressTextReplace() {
+    const els = [...mainEl.querySelectorAll('[data-lm-text-replace]')];
+    const saved = els.map(el => [el, el.dataset.lmTextReplace]);
+    for (const el of els) delete el.dataset.lmTextReplace;
+    requestAnimationFrame(() => {
+        for (const [el, val] of saved) el.dataset.lmTextReplace = val;
+    });
+}
+
 function applySelection(name, profile, isPortrait, assetId) {
     selected = { name, isPortrait, assetId };
     const instant = document.documentElement.classList.contains('no-transitions');
@@ -958,25 +1098,8 @@ function applySelection(name, profile, isPortrait, assetId) {
         // Fade out footer commentary
         cardFooter.classList.add('fading');
 
-        // True crossfade for name/seed — ghost clones show old text fading out
-        // while real fields show new text fading in, both over full fadeDuration
-        for (const el of morphNameField.querySelectorAll('.morph-field-ghost')) el.remove();
-        for (const el of morphSeedField.querySelectorAll('.morph-field-ghost')) el.remove();
-
-        const nameGhost = morphNameField.cloneNode(true);
-        const seedGhost = morphSeedField.cloneNode(true);
-        nameGhost.classList.add('morph-field-ghost');
-        seedGhost.classList.add('morph-field-ghost');
-        morphNameField.appendChild(nameGhost);
-        morphSeedField.appendChild(seedGhost);
-
-        // Hide real content instantly — will fade in when ghost fades out
-        editNameField.style.transition = 'none';
-        editNameField.style.opacity = '0';
-        for (const sw of morphSeedField.querySelectorAll(':scope > .morph-select-wrap')) {
-            sw.style.transition = 'none';
-            sw.style.opacity = '0';
-        }
+        // True crossfade for name/seed via ghost clones
+        var cf = setupFieldCrossfade();
     }
 
     // Revoke old blob URLs
@@ -1058,33 +1181,7 @@ function applySelection(name, profile, isPortrait, assetId) {
         }
 
         if (!instant) {
-            // Crossfade: ghost fades out, real content fades in
-            requestAnimationFrame(() => {
-                const nameGhost = morphNameField.querySelector('.morph-field-ghost');
-                const seedGhost = morphSeedField.querySelector('.morph-field-ghost');
-                if (nameGhost) nameGhost.classList.add('fading');
-                if (seedGhost) seedGhost.classList.add('fading');
-
-                // Fade in real content
-                editNameField.style.transition = `opacity var(--lm-fade) ease`;
-                editNameField.style.opacity = '1';
-                for (const sw of morphSeedField.querySelectorAll(':scope > .morph-select-wrap')) {
-                    sw.style.transition = `opacity var(--lm-fade) ease`;
-                    sw.style.opacity = '1';
-                }
-
-                // Clean up after transition completes
-                setTimeout(() => {
-                    nameGhost?.remove();
-                    seedGhost?.remove();
-                    editNameField.style.transition = '';
-                    editNameField.style.opacity = '';
-                    for (const sw of morphSeedField.querySelectorAll(':scope > .morph-select-wrap')) {
-                        sw.style.transition = '';
-                        sw.style.opacity = '';
-                    }
-                }, fadeDuration + 50);
-            });
+            cf.startFade(fadeDuration);
         }
     };
 
@@ -1712,21 +1809,46 @@ async function handleSave(name, seed, controls, camera, commentary, currentAsset
         }
     }
 
+    // Check for name collision with existing generated assets (exclude current asset).
+    // Loop in case the user renames to yet another existing name.
+    let finalName = name;
+    for (;;) {
+        const duplicate = generatedAssets.find(a => a.name === finalName && a.id !== currentAssetId);
+        if (!duplicate) break;
+        const result = await showNameConflictModal(finalName);
+        if (!result) return null; // cancelled
+        if (result.action === 'overwrite') {
+            // Overwrite the existing asset that has this name
+            duplicate.seed = seed;
+            duplicate.controls = controls;
+            duplicate.thumbDataUrl = thumbDataUrl || duplicate.thumbDataUrl;
+            duplicate.meta = { ...duplicate.meta, seed, controls, camera, commentary, title: finalName };
+            duplicate.name = finalName;
+            await putAsset(duplicate);
+            generatedAssets = await getAllAssets();
+            refreshSavedGrid();
+            toast(`Overwritten "${finalName}"`);
+            return { id: duplicate.id, overwritten: true };
+        }
+        // 'rename' — use the new name provided by the user, re-check for collisions
+        finalName = result.name;
+    }
+
     // Save as new
     const id = generateAssetId();
     const asset = {
         id,
-        name,
+        name: finalName,
         thumbDataUrl,
         seed,
         controls,
-        meta: { seed, controls, camera, commentary, title: name },
+        meta: { seed, controls, camera, commentary, title: finalName },
         createdAt: Date.now(),
     };
     await putAsset(asset);
     generatedAssets = await getAllAssets();
     refreshSavedGrid();
-    toast(`Saved "${name}"`);
+    toast(`Saved "${finalName}"`);
     return { id, overwritten: false };
 }
 
@@ -1778,6 +1900,90 @@ function showSaveConflictModal(name) {
         modal.append(title, msg, btns);
         backdrop.appendChild(modal);
         document.body.appendChild(backdrop);
+    });
+}
+
+/**
+ * Show a modal when the chosen name collides with an existing saved image.
+ * Returns { action: 'overwrite' } | { action: 'rename', name: string } | null.
+ */
+function showNameConflictModal(existingName) {
+    return new Promise(resolve => {
+        const backdrop = document.createElement('div');
+        backdrop.className = 'gen-modal-backdrop';
+
+        const modal = document.createElement('div');
+        modal.className = 'gen-modal';
+
+        const titleEl = document.createElement('div');
+        titleEl.className = 'gen-modal-title';
+        titleEl.textContent = t('confirm.nameExists');
+
+        const msg = document.createElement('div');
+        msg.className = 'gen-modal-msg';
+        msg.textContent = t('confirm.nameExistsMsg', { name: existingName });
+
+        const input = document.createElement('input');
+        input.className = 'gen-modal-input';
+        input.type = 'text';
+        input.value = existingName;
+        input.maxLength = 60;
+        input.placeholder = t('control.name.placeholder');
+
+        const btns = document.createElement('div');
+        btns.className = 'gen-modal-btns';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'gen-modal-btn';
+        cancelBtn.textContent = t('btn.cancel');
+
+        const overwriteBtn = document.createElement('button');
+        overwriteBtn.className = 'gen-modal-btn';
+        overwriteBtn.textContent = t('btn.overwrite');
+
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'gen-modal-btn primary';
+        renameBtn.textContent = t('btn.save');
+
+        function updateRenameBtn() {
+            const val = input.value.trim();
+            // Enable "Save" only if name changed and is non-empty
+            const isRenamed = val && val !== existingName;
+            renameBtn.disabled = !isRenamed;
+            renameBtn.textContent = isRenamed ? t('btn.save') : t('btn.save');
+        }
+        input.addEventListener('input', updateRenameBtn);
+        updateRenameBtn();
+
+        function close(result) {
+            backdrop.remove();
+            resolve(result);
+        }
+
+        cancelBtn.addEventListener('click', () => close(null));
+        overwriteBtn.addEventListener('click', () => close({ action: 'overwrite' }));
+        renameBtn.addEventListener('click', () => {
+            const val = input.value.trim();
+            if (val && val !== existingName) close({ action: 'rename', name: val });
+        });
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const val = input.value.trim();
+                if (val && val !== existingName) close({ action: 'rename', name: val });
+            }
+        });
+
+        backdrop.addEventListener('click', (e) => {
+            if (e.target === backdrop) close(null);
+        });
+
+        btns.append(cancelBtn, overwriteBtn, renameBtn);
+        modal.append(titleEl, msg, input, btns);
+        backdrop.appendChild(modal);
+        document.body.appendChild(backdrop);
+
+        // Focus input and select text for easy renaming
+        requestAnimationFrame(() => input.select());
     });
 }
 
@@ -2250,8 +2456,8 @@ function initEditMode() {
         saveBtn: saveBtn,
         randomizeBtn: null,   // randomize handled by btnAdd morph
         renderBtn: null, // render button removed from toolbar
-        undoBtn: null,        // undo handled by btnLeft morph
-        redoBtn: null,        // redo handled by btnRight morph
+        undoBtn: btnLeft,
+        redoBtn: btnRight,
         fullscreenBtn: null,
         nameCounter: editNameCounter,
         nameError: editNameError,
@@ -2273,7 +2479,7 @@ function initEditMode() {
         async onSave(name, seed, controls, camera, commentary, assetId) {
             const result = await handleSave(name, seed, controls, camera, commentary, assetId);
             if (result) {
-                exitEditMode(true);
+                exitEditMode(true, false, result.id);
             }
             return result;
         },
@@ -2363,6 +2569,124 @@ editRetry.addEventListener('click', () => {
     }
 });
 
+// ── Edit change tracking ──
+
+/** Capture a snapshot of the current edit panel state for change detection. */
+function captureEditSnapshot() {
+    if (!editPanel) return null;
+    return {
+        seed: JSON.stringify(editPanel.readSeed()),
+        controls: JSON.stringify(editPanel.readControls()),
+        camera: JSON.stringify(editPanel.readCamera()),
+        name: editPanel.readName(),
+        commentary: editPanel.readCommentary(),
+    };
+}
+
+/** Check whether edit state has changed from the initial snapshot. */
+function hasEditChanges() {
+    if (!editInitialSnapshot || !editPanel) return false;
+    const current = captureEditSnapshot();
+    if (!current) return false;
+    // For portraits, ignore the auto-appended "(User Version)" name change
+    const ignoreName = editSourceEntry?.isPortrait;
+    return current.seed !== editInitialSnapshot.seed
+        || current.controls !== editInitialSnapshot.controls
+        || current.camera !== editInitialSnapshot.camera
+        || (!ignoreName && current.name !== editInitialSnapshot.name)
+        || current.commentary !== editInitialSnapshot.commentary;
+}
+
+// ── Editing overlay on carousel card ──
+
+const EDITING_DOT_SVG = `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="6"/></svg>`;
+
+/** Add a translucent editing indicator dot overlay to a carousel card thumbnail. */
+function addEditingOverlay(cardKey) {
+    const card = carouselBrowser.querySelector(`.cdb-card[data-flip-key="${CSS.escape(cardKey)}"]`);
+    if (!card) return;
+    const imgWrap = card.querySelector('.cdb-card-img');
+    if (!imgWrap || imgWrap.querySelector('.cdb-editing-overlay')) return;
+    const overlay = document.createElement('div');
+    overlay.className = 'cdb-editing-overlay';
+    overlay.innerHTML = EDITING_DOT_SVG;
+    imgWrap.appendChild(overlay);
+}
+
+/** Remove editing overlay from any carousel card that has one. */
+function removeEditingOverlay() {
+    const overlays = carouselBrowser.querySelectorAll('.cdb-editing-overlay');
+    for (const el of overlays) el.remove();
+}
+
+// ── Unsaved changes prompt ──
+
+/**
+ * Show an unsaved-changes prompt before exiting edit mode.
+ * Returns 'save' | 'save-new' | 'discard' | null (cancelled).
+ */
+function showUnsavedChangesPrompt() {
+    const entry = editSourceEntry;
+    const name = editPanel ? editPanel.readName() : '';
+    const isPortrait = entry?.isPortrait;
+    const isExistingAsset = !!(editPanel && editPanel.currentAssetId);
+
+    const msgKey = isPortrait ? 'confirm.unsavedEditsPortraitMsg' : 'confirm.unsavedEditsMsg';
+    const message = t(msgKey, { name });
+
+    const actions = [
+        { label: t('btn.cancel') },  // resolves undefined → caller treats as cancelled
+        { label: t('btn.discard'), value: 'discard' },
+    ];
+
+    if (isPortrait) {
+        // Portraits cannot be overwritten — only save as new
+        actions.push({ label: t('btn.saveAsNew'), value: 'save-new', primary: true });
+    } else if (isExistingAsset) {
+        // Existing user image — overwrite or save as new
+        actions.push({ label: t('btn.save'), value: 'save' });
+        actions.push({ label: t('btn.saveAsNew'), value: 'save-new', primary: true });
+    } else {
+        // New/add mode or user profile without asset — just save
+        actions.push({ label: t('btn.save'), value: 'save', primary: true });
+    }
+
+    return showConfirm(t('confirm.unsavedChanges'), message, actions);
+}
+
+/**
+ * Attempt to exit edit mode, prompting for unsaved changes if needed.
+ * @param {boolean} fromPopstate — true if triggered by browser back/forward
+ * @returns {Promise<boolean>} — true if exit proceeded, false if user cancelled
+ */
+async function tryExitEditMode(fromPopstate = false) {
+    if (!editMode) return true;
+
+    if (hasEditChanges()) {
+        const result = await showUnsavedChangesPrompt();
+        if (!result) return false; // cancelled — stay in edit mode
+
+        if (result === 'save' || result === 'save-new') {
+            const saveName = editPanel.readName();
+            const seed = editPanel.readSeed();
+            const controls = editPanel.readControls();
+            const camera = editPanel.readCamera();
+            const commentary = editPanel.readCommentary();
+            const assetId = result === 'save' ? editPanel.currentAssetId : null;
+            const saveResult = await handleSave(saveName, seed, controls, camera, commentary, assetId);
+            if (saveResult) {
+                await exitEditMode(true, fromPopstate, saveResult.id);
+                return true;
+            }
+            return false; // save was cancelled/failed
+        }
+        // 'discard' — fall through to exit
+    }
+
+    await exitEditMode(false, fromPopstate);
+    return true;
+}
+
 async function enterEditMode(mode, entry, fromPopstate) {
     if (editMode) return; // already in edit mode
 
@@ -2386,6 +2710,25 @@ async function enterEditMode(mode, entry, fromPopstate) {
 
     // Populate inputs
     const isRandomize = !(mode === 'edit' && entry?.profile);
+
+    // Pre-set shared DOM elements to browse-mode values before ghost capture,
+    // so the crossfade ghost doesn't show random init values on first edit.
+    // Use entry.name (no suffix) so the ghost matches what the user currently sees;
+    // setValues() will then set the edit-mode name (with suffix) on the hidden real field.
+    if (!isRandomize && entry?.profile?.seed && Array.isArray(entry.profile.seed)) {
+        editNameField.value = entry.name;
+        editTagArr.value = String(entry.profile.seed[0]);
+        editTagStr.value = String(entry.profile.seed[1]);
+        editTagDet.value = String(entry.profile.seed[2]);
+    }
+
+    // Capture ghost clones of the current browse-mode fields BEFORE any mutations,
+    // so the crossfade transitions smoothly from old state to new.
+    const cfEdit = setupFieldCrossfade();
+    suppressTextReplace();
+
+    // Set values on the now-hidden real fields (ghost overlay hides them).
+    // Both branches run before the morph so the crossfade spans the full transition.
     if (!isRandomize) {
         const displayName = entry.isPortrait ? entry.name + ' (User Version)' : entry.name;
         editPanel.setValues(
@@ -2396,25 +2739,41 @@ async function enterEditMode(mode, entry, fromPopstate) {
             entry.profile.commentary,
         );
         editPanel.setUnlocked();
+        removeSelectCommas();
+        editInitialSnapshot = captureEditSnapshot();
+    } else {
+        editPanel.randomize();
+        removeSelectCommas();
+        editInitialSnapshot = captureEditSnapshot();
     }
     editCommentaryField.placeholder = 'Add commentary (optional)';
 
-    // Transform the "Add Image" card into an "Editing" indicator and select it
-    // (must happen BEFORE layout morph so card has cdb-placeholder when CSS applies)
-    const addCardEl = carouselBrowser.querySelector(
-        'carousel-dropdown-browser-card[key="__add_image__"]'
-    );
-    if (addCardEl) {
-        addCardEl.label = t('gallery.editing');
-        addCardEl.placeholder = true;
-        addCardEl.thumbSrc = '';
-    }
-    // Clear any previous error state on the carousel card
-    const prevErrorCard = carouselBrowser.querySelector('.cdb-card[data-flip-key="__add_image__"] .cdb-card-img.cdb-img-error');
-    if (prevErrorCard) prevErrorCard.classList.remove('cdb-img-error');
+    // Determine which carousel card to focus during editing
+    if (mode === 'edit' && entry) {
+        // Rotate to the source card and add an editing overlay
+        editSourceCardKey = entry.assetId || entry.name;
+        carouselBrowser.selectedKey = editSourceCardKey;
+        carouselBrowser.syncToKey(editSourceCardKey);
+        // Add editing overlay dot to the source card's thumbnail
+        requestAnimationFrame(() => addEditingOverlay(editSourceCardKey));
+    } else {
+        // Add mode: use the __add_image__ placeholder card
+        editSourceCardKey = '__add_image__';
+        const addCardEl = carouselBrowser.querySelector(
+            'carousel-dropdown-browser-card[key="__add_image__"]'
+        );
+        if (addCardEl) {
+            addCardEl.label = t('gallery.editing');
+            addCardEl.placeholder = true;
+            addCardEl.thumbSrc = '';
+        }
+        // Clear any previous error state on the carousel card
+        const prevErrorCard = carouselBrowser.querySelector('.cdb-card[data-flip-key="__add_image__"] .cdb-card-img.cdb-img-error');
+        if (prevErrorCard) prevErrorCard.classList.remove('cdb-img-error');
 
-    carouselBrowser.selectedKey = '__add_image__';
-    carouselBrowser.syncToKey('__add_image__');
+        carouselBrowser.selectedKey = '__add_image__';
+        carouselBrowser.syncToKey('__add_image__');
+    }
 
     // Wait for carousel microtask to patch card DOM (adds cdb-placeholder class)
     await new Promise(r => queueMicrotask(r));
@@ -2422,15 +2781,13 @@ async function enterEditMode(mode, entry, fromPopstate) {
     // Toggle editing layout (triggers all CSS cross-fade transitions)
     contentArea.style.setProperty('--editing-label', `"${t('gallery.editing')}"`);
     layoutMorph.morph('edit', {
-        onSwap() {
-            if (isRandomize) editPanel.randomize();
-            removeSelectCommas();
-        },
         onSkip() {
             carouselBrowser.skip();
             imageViewer.skipMedia();
         },
     });
+    // Start name/seed crossfade immediately so it spans the full morph transition
+    cfEdit.startFade(layoutMorph.duration);
 
     // Hide alt text overlay when entering edit mode
     dismissAltText(true);
@@ -2456,7 +2813,7 @@ async function enterEditMode(mode, entry, fromPopstate) {
     }
 }
 
-async function exitEditMode(saved, fromPopstate) {
+async function exitEditMode(saved, fromPopstate, savedAssetId) {
     if (!editMode) return;
 
     if (saved) {
@@ -2482,10 +2839,16 @@ async function exitEditMode(saved, fromPopstate) {
         }
     }
 
-    // Restore button tooltips for browse mode
-    btnLeft.setAttribute('data-tooltip', 'Previous');
-    btnRight.setAttribute('data-tooltip', 'Next');
+    // Restore button tooltips and disabled states for browse mode
+    updateArrowStates();
     btnAdd.setAttribute('data-tooltip', 'Add new');
+
+    // Remove editing overlay from source card
+    removeEditingOverlay();
+
+    // Capture portrait info before editSourceEntry is cleared (needed for name revert after ghost)
+    const sourceWasPortrait = !saved && editSourceEntry?.isPortrait;
+    const sourceEntryName = editSourceEntry?.name;
 
     // Capture thumbnail before clearing editMode (so capturePreviewThumb uses editWorkerBridge)
     const addCardEl = carouselBrowser.querySelector(
@@ -2495,6 +2858,8 @@ async function exitEditMode(saved, fromPopstate) {
 
     editMode = null;
     editSourceEntry = null;
+    editInitialSnapshot = null;
+    editSourceCardKey = null;
 
     // Revert the "Editing" card — show thumbnail if available, else placeholder
     if (addCardEl) {
@@ -2517,16 +2882,24 @@ async function exitEditMode(saved, fromPopstate) {
         !editCommentaryField.value.trim() && !selectedGenTitle.textContent);
 
     // Morph back to browse after card attributes are updated so CSS transitions animate smoothly
+    const cfBrowse = setupFieldCrossfade();
+    // Revert "(User Version)" suffix on the now-hidden real field,
+    // so the crossfade transitions from edit name → browse name.
+    if (sourceWasPortrait && sourceEntryName) {
+        editNameField.value = sourceEntryName;
+    }
+    // Prepare browse-mode select formatting on the hidden real fields
+    addSelectCommas();
+    fitAllSelects();
+    suppressTextReplace();
     layoutMorph.morph('browse', {
-        onSwap() {
-            addSelectCommas();
-            fitAllSelects();
-        },
         onSkip() {
             carouselBrowser.skip();
             imageViewer.skipMedia();
         },
     });
+    // Start name/seed crossfade immediately so it spans the full morph transition
+    cfBrowse.startFade(layoutMorph.duration);
 
     // Mark carousel card with error state if worker failed
     if (editWorkerFailed) {
@@ -2539,6 +2912,15 @@ async function exitEditMode(saved, fromPopstate) {
         });
     }
 
+    // After save, select the saved image and sync carousel to it
+    if (saved && savedAssetId) {
+        const savedEntry = navigableList.find(e => e.assetId === savedAssetId);
+        if (savedEntry) {
+            applySelection(savedEntry.name, savedEntry.profile, false, savedAssetId);
+            carouselBrowser.selectedKey = savedAssetId;
+            carouselBrowser.syncToKey(savedAssetId);
+        }
+    }
 }
 
 // ── Edit/Add/Save/Render button handlers ──
@@ -2572,6 +2954,11 @@ async function exitEditMode(saved, fromPopstate) {
 
     /** Build context menu HTML dynamically based on current state. */
     function buildCtxMenuHTML() {
+        // Edit mode: minimal menu
+        if (editMode) {
+            return `<button class="ctx-item" role="menuitem" data-action="cancel-edit"><span class="ctx-icon">${CLOSE_SVG}</span>${t('gallery.ctxCancelEdit', 'Cancel Edit')}</button>`;
+        }
+
         const entry = navigableList[currentIndex];
         const isGenerated = entry && entry.assetId;
         pruneExpired();
@@ -2775,6 +3162,13 @@ async function exitEditMode(saved, fromPopstate) {
             return;
         }
 
+        // Cancel Edit
+        if (action === 'cancel-edit') {
+            hideCtxMenu();
+            tryExitEditMode(false);
+            return;
+        }
+
         // Edit
         if (action === 'edit') {
             hideCtxMenu();
@@ -2957,7 +3351,6 @@ async function exitEditMode(saved, fromPopstate) {
 
     // Desktop: right-click
     viewerWrap.addEventListener('contextmenu', (e) => {
-        if (editMode) return;
         if (allowNativeCtx) { allowNativeCtx = false; return; }
         e.preventDefault();
         if (ctxVisible) { hideCtxMenu(); return; }
@@ -2968,7 +3361,6 @@ async function exitEditMode(saved, fromPopstate) {
     let lpTimer = 0;
     let lpFired = false;
     viewerWrap.addEventListener('touchstart', (e) => {
-        if (editMode) return;
         if (e.touches.length !== 1) return;
         lpFired = false;
         const touch = e.touches[0];
@@ -3022,26 +3414,14 @@ btnAdd.addEventListener('click', () => {
     }
 });
 
-saveBtn.addEventListener('click', () => {
-    if (editMode && editPanel) {
-        const name = editPanel.readName();
-        const seed = editPanel.readSeed();
-        const controls = editPanel.readControls();
-        const camera = editPanel.readCamera();
-        const commentary = editPanel.readCommentary();
-        handleSave(name, seed, controls, camera, commentary, editPanel.currentAssetId).then(result => {
-            if (result) exitEditMode(true);
-        });
-    }
-});
-
+// Save button click is handled by the edit panel's onSave callback (generate-panel.js).
 // renderBtn removed from toolbar
 
 /* ── Keyboard navigation ── */
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (editMode) {
-            exitEditMode(false);
+            tryExitEditMode(false);
             return;
         }
         if (imageViewer.isFullscreen) {

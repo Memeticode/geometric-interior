@@ -5,7 +5,8 @@
  *   layout  (550ms) — page rearrangements that block interaction
  *                     gallery ↔ edit/generate morph, carousel expand/collapse
  *   content (250ms) — content swaps within the same layout
- *                     image selection crossfade, image swap
+ *                     image selection crossfade, image swap,
+ *                     carousel rotation, grid expand/collapse
  *   menu    (300ms) — overlays and panels that don't rearrange the page
  *                     fullscreen open/close, dropdown, alt-text morph
  *   accent  (150ms) — subtle micro-interactions

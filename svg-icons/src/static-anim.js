@@ -12,7 +12,7 @@ import {
   ERROR_SVG, RETRY_SVG, WARNING_SVG,
   DOT_SVG, FIELD_DIAMOND_SVG,
   RES_270_SVG, RES_540_SVG, RES_900_SVG, RES_1080_SVG, RES_1620_SVG, RES_4K_SVG,
-  SHARE_SVG, LINK_SVG, EMAIL_SVG,
+  SHARE_SVG, LINK_SVG, TEXT_SVG, EMAIL_SVG,
   BLUESKY_SVG, FACEBOOK_SVG, GOOGLE_SVG, LINKEDIN_SVG, REDDIT_SVG, TWITTER_SVG,
   GITHUB_SVG,
   ALT_TEXT_SVG, CREATE_SVG, CONSTRUCT_SVG,
@@ -138,7 +138,13 @@ function unfold(children, config, now) {
   const maxAngle = config.maxAngle || 12;
   const f = config._fade ?? 1;
   const t = (Math.sin(now / period) + 1) / 2;
-  if (children.length >= 2) {
+  if (children.length >= 3) {
+    // 3-part envelope: [0] body, [1] inner V, [2] flap
+    // Flap opens (rotates around top edge), inner V fades in as flap lifts
+    children[2].setAttribute('transform', `rotate(${-maxAngle * t * f} 8 5)`);
+    children[1].setAttribute('opacity', 1 + (0.3 + 0.7 * t - 1) * f);
+    children[0].setAttribute('opacity', 1 + (0.85 + 0.15 * t - 1) * f);
+  } else if (children.length >= 2) {
     children[1].setAttribute('transform', `rotate(${-maxAngle * t * f} 8 5)`);
     children[0].setAttribute('opacity', 1 + (0.8 + 0.2 * t - 1) * f);
   }
@@ -341,11 +347,14 @@ function ripple(children, config, now) {
     config._diagRange = (Math.max(...diags) - config._diagMin) || 1;
   }
 
-  // One-shot sweep: use _animStart so it always begins from upper-left
+  // Looping sweep with pause between cycles
   if (!config._animStart) config._animStart = now;
   const elapsed = now - config._animStart;
+  const pause = config.pause ?? period * 2;
+  const cycleLen = period + pause;
+  const cyclePos = elapsed % cycleLen;
   // Extend range so wave fully enters and exits
-  const wave = Math.min(elapsed / period, 1);
+  const wave = Math.min(cyclePos / period, 1);
   const wavePos = -0.3 + wave * 1.6; // -0.3 to 1.3
   const waveWidth = 0.3;
 
@@ -430,9 +439,40 @@ function wipe(children, config, now) {
     `translate(${cx} ${cy}) scale(${s}) translate(${-cx} ${-cy})`);
 }
 
+function typewrite(children, config, now) {
+  // children[0]=bubble, [1]=line1 (h6), [2]=line2 (h3.5)
+  const period = config.period || 1200;
+  const f = config._fade ?? 1;
+  if (children.length < 3) return;
+
+  // Set up stroke-dasharray on first call
+  if (!config._lineSetup) {
+    config._lineSetup = true;
+    config._l1 = children[1].getTotalLength?.() || 6;
+    config._l2 = children[2].getTotalLength?.() || 3.5;
+    children[1].setAttribute('stroke-dasharray', config._l1);
+    children[2].setAttribute('stroke-dasharray', config._l2);
+  }
+
+  const { _l1: l1, _l2: l2 } = config;
+
+  // One-shot draw: lines extend then stay
+  if (!config._animStart) config._animStart = now;
+  const elapsed = now - config._animStart;
+  const drawDur = period * 0.4; // line 2 finishes at 0.4 × period
+  const d1 = Math.min(elapsed / (period * 0.25), 1);
+  const d2 = Math.min(Math.max((elapsed - period * 0.15) / (period * 0.25), 0), 1);
+  children[1].setAttribute('stroke-dashoffset', l1 * (1 - d1) * f);
+  children[2].setAttribute('stroke-dashoffset', l2 * (1 - d2) * f);
+
+  // Subtle breathe on bubble
+  const bo = 1 + (0.85 + 0.15 * ((Math.sin(now / 3000) + 1) / 2) - 1) * f;
+  children[0].setAttribute('opacity', bo);
+}
+
 const ANIM_FNS = {
   breathe, pulse, shimmer, drift, spin, twinkle,
-  radiate, tug, unfold, flutter, pop, colorwheel, emerge, snoo, stamp, sway,
+  radiate, tug, unfold, flutter, pop, colorwheel, emerge, snoo, stamp, sway, typewrite,
   ripple, wipe,
 };
 
@@ -483,8 +523,9 @@ export const STATIC_ICON_REGISTRY = {
   'res-4k':         { svg: RES_4K_SVG, anim: 'ripple', config: { period: 600 }, desc: '4K \u2014 7\u00d77 grid' },
   // Social / sharing — each with a unique animation (short periods for one-shot playFor)
   'share':          { svg: SHARE_SVG, anim: 'radiate', config: { period: 800 }, desc: 'share — broadcast ripple' },
-  'link':           { svg: LINK_SVG, anim: 'tug', config: { period: 600, amp: 1.5 }, desc: 'link — chain tug' },
-  'email':          { svg: EMAIL_SVG, anim: 'unfold', config: { period: 700, maxAngle: 18 }, desc: 'email — envelope peek' },
+  'link':           { svg: LINK_SVG, anim: 'tug', config: { period: 600, amp: 0.8 }, desc: 'link — chain tug' },
+  'text':           { svg: TEXT_SVG, anim: 'typewrite', config: { period: 1200 }, desc: 'text — lines type in' },
+  'email':          { svg: EMAIL_SVG, anim: 'unfold', config: { period: 700, maxAngle: 25 }, desc: 'email — envelope open' },
   'bluesky':        { svg: BLUESKY_SVG, anim: 'flutter', config: { cx: 12, cy: 11.5, period: 500 }, desc: 'Bluesky — butterfly flap' },
   'facebook':       { svg: FACEBOOK_SVG, anim: 'pop', config: { period: 600, amp: 2.5 }, desc: 'Facebook — notification pop' },
   'google':         { svg: GOOGLE_SVG, anim: 'colorwheel', config: { period: 700 }, desc: 'Google — segment sweep' },

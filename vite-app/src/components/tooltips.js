@@ -127,10 +127,14 @@ export function initTooltips() {
     }
 
     /* --- Desktop: hover shows/hides tooltips --- */
+    /* Only info-icon / label-info tooltips (config items) are shown on hover;
+       all other data-tooltip elements are kept in markup but suppressed. */
     document.addEventListener('mouseover', (e) => {
         if (recentTouch || suppressed) return;
         const el = findTooltip(e.target);
-        if (el && !el.hasAttribute('data-tooltip-click')) showTooltip(el, e.clientX, e.clientY);
+        if (!el || el.hasAttribute('data-tooltip-click')) return;
+        if (!el.matches('.info-icon, .label-info') && !el.querySelector('.info-icon')) return;
+        showTooltip(el, e.clientX, e.clientY);
     });
 
     document.addEventListener('mouseout', (e) => {

@@ -169,10 +169,6 @@ export function initCarouselDebugPanel(carousel) {
             'Global transition speed multiplier (\u2011\u2011t\u2011speed)',
             (v) => { document.documentElement.style.setProperty('--t-speed', v); });
 
-        addSlider(secTiming, 'Flip Duration', attr('flip-duration', 1500), 100, 3000, 50, 'ms',
-            'Expand/collapse grid animation duration',
-            (v) => { carousel.setAttribute('flip-duration', v); });
-
         addSlider(secTiming, 'Bounce', attr('bounce', 0.35), 0, 1, 0.05, '',
             'Overshoot easing on scroll snap',
             (v) => { carousel.setAttribute('bounce', v); });

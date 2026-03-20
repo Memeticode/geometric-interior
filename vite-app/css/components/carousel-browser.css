@@ -13,7 +13,11 @@
 }
 
 /* Host element must be block to form a proper containing block for phantoms */
-carousel-dropdown-browser { display: block; position: relative; font-family: var(--font-primary); max-width: 90%; margin-inline: auto; }
+carousel-dropdown-browser {
+    display: block; position: relative; font-family: var(--font-primary); max-width: 90%; margin-inline: auto;
+    /* Carousel rotation speed — content tier, synced with image/text crossfade */
+    --carousel-speed: calc(var(--t-content) * var(--t-speed));
+}
 
 /* Hide data elements */
 carousel-dropdown-browser-card,
@@ -147,8 +151,8 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
     align-items: center;
     cursor: pointer;
     transform: translate(-50%, -50%) translateX(var(--cx, 0px)) translateY(var(--cy, 0px));
-    transition: transform var(--carousel-speed, 0.85s) var(--cdb-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
-                opacity var(--carousel-speed, 0.85s) ease;
+    transition: transform var(--carousel-speed) var(--cdb-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
+                opacity var(--carousel-speed) ease;
     opacity: var(--card-opacity, 1);
     will-change: transform, opacity;
     user-select: none;
@@ -168,9 +172,9 @@ carousel-dropdown-browser.cdb-t-below .cdb-track {
                rotateX(var(--rx, 0deg))
                translateZ(var(--tz, 0px))
                scale(var(--sc, 1));
-    transition: transform var(--carousel-speed, 0.85s) var(--cdb-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
+    transition: transform var(--carousel-speed) var(--cdb-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
                 box-shadow calc(var(--t-accent) * 1.33 * var(--t-speed)) ease,
-                border-color var(--carousel-speed, 0.85s) ease;
+                border-color var(--carousel-speed) ease;
     transform-style: preserve-3d;
 }
 .cdb-card.cdb-selected .cdb-card-frame {
@@ -324,7 +328,7 @@ carousel-dropdown-browser.cdb-t-h-right .cdb-grid-card-name { text-align: right;
 .cdb-card.cdb-rest-mask.cdb-mask-left .cdb-card-frame,
 .cdb-card.cdb-rest-mask.cdb-mask-right .cdb-card-frame {
     transition: transform calc(var(--t-accent) * var(--t-speed)) ease,
-                --mask-size var(--carousel-speed, 0.85s) ease,
+                --mask-size var(--carousel-speed) ease,
                 box-shadow calc(var(--t-accent) * 1.33 * var(--t-speed)) ease;
 }
 
@@ -533,10 +537,10 @@ carousel-dropdown-browser.cdb-grid-align-right .cdb-grid-section { justify-conte
     color: var(--text-muted);
     padding-bottom: 0.25rem;
     transform-origin: center bottom;
-    transition: transform var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
-                opacity var(--carousel-speed, 0.85s) ease,
-                max-width var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
-                --underline-width var(--carousel-speed, 0.85s) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1));
+    transition: transform var(--carousel-speed) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
+                opacity var(--carousel-speed) ease,
+                max-width var(--carousel-speed) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1)),
+                --underline-width var(--carousel-speed) var(--cdb-label-easing, cubic-bezier(0.25, 0.1, 0.25, 1));
     will-change: transform;
 }
 .cdb-section-label::after {
@@ -642,7 +646,7 @@ carousel-dropdown-browser.cdb-sec-align-right .cdb-grid-section-header { text-al
 .cdb-card.cdb-placeholder .cdb-card-img {
     background: var(--bg);
     position: relative;
-    transition: background var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background var(--cdb-morph-dur, var(--carousel-speed)) cubic-bezier(0.4, 0, 0.2, 1);
 }
 .cdb-card.cdb-placeholder .cdb-card-img img {
     display: none;
@@ -652,7 +656,7 @@ carousel-dropdown-browser.cdb-sec-align-right .cdb-grid-section-header { text-al
     background: var(--bg);
     position: relative;
     aspect-ratio: 14 / 9;
-    transition: background var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background var(--cdb-morph-dur, var(--carousel-speed)) cubic-bezier(0.4, 0, 0.2, 1);
 }
 .cdb-grid-card.cdb-placeholder img {
     display: none;
@@ -672,15 +676,15 @@ carousel-dropdown-browser.cdb-sec-align-right .cdb-grid-section-header { text-al
 .cdb-morph-icon line,
 .cdb-morph-icon circle {
     transition:
-        x1 var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
-        y1 var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
-        x2 var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
-        y2 var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
-        cx var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
-        cy var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
-        r  var(--cdb-morph-dur, 0.85s) cubic-bezier(0.4, 0, 0.2, 1),
-        opacity var(--cdb-morph-dur, 0.85s) ease,
-        stroke-dasharray var(--cdb-morph-dur, 0.85s) ease;
+        x1 var(--cdb-morph-dur, var(--carousel-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+        y1 var(--cdb-morph-dur, var(--carousel-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+        x2 var(--cdb-morph-dur, var(--carousel-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+        y2 var(--cdb-morph-dur, var(--carousel-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+        cx var(--cdb-morph-dur, var(--carousel-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+        cy var(--cdb-morph-dur, var(--carousel-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+        r  var(--cdb-morph-dur, var(--carousel-speed)) cubic-bezier(0.4, 0, 0.2, 1),
+        opacity var(--cdb-morph-dur, var(--carousel-speed)) ease,
+        stroke-dasharray var(--cdb-morph-dur, var(--carousel-speed)) ease;
 }
 
 /* ── Plus state (default) — edges collapsed at node positions (zero-length) ── */
@@ -740,6 +744,26 @@ carousel-dropdown-browser.cdb-sec-align-right .cdb-grid-section-header { text-al
 }
 [data-layout="edit"] .cdb-grid-card.cdb-placeholder {
     background: var(--accent-bg);
+}
+
+/* Editing overlay dot — shown on source card thumbnail during edit mode */
+.cdb-editing-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+    z-index: 2;
+    border-radius: inherit;
+}
+.cdb-editing-overlay svg {
+    width: 28px;
+    height: 28px;
+    color: var(--accent, #a78bfa);
+    opacity: 0.85;
+    filter: drop-shadow(0 0 6px currentColor);
 }
 
 /* Error state for placeholder card (WebGL failure) */

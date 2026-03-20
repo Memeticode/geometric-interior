@@ -76,6 +76,38 @@ a:hover { color: #999; }
 .browser-subsection:not([open]) > .browser-subsection-title::before { content: '\25b8 '; }
 .browser-subsection-title:hover { color: #777; }
 
+/* ── Browser — controls panel ── */
+
+.browser-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.browser-controls-label {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #555;
+}
+
+.browser-controls-slider {
+  width: 100px;
+  height: 3px;
+  accent-color: #555;
+  cursor: pointer;
+}
+
+.browser-controls-value {
+  font-size: 0.625rem;
+  color: #777;
+  min-width: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Browser — card grid ── */
 
 .browser-list {
@@ -102,44 +134,68 @@ a:hover { color: #999; }
 }
 
 .browser-name {
-  font-size: 0.5625rem;
-  color: #777;
+  font-size: 0.6875rem;
+  color: #888;
   text-align: left;
   align-self: flex-start;
   line-height: 1;
 }
 
-/* ── Browser — control strip ── */
+/* ── Browser — card sections ── */
 
-.browser-strip {
+.browser-card-section {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   width: 100%;
-  gap: 3px;
-  min-height: 14px;
-}
-
-.browser-strip-play {
-  display: flex;
-  align-items: center;
   gap: 2px;
 }
 
-.browser-strip-label {
+.browser-card-section-label {
+  font-size: 0.5625rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  cursor: default;
+  line-height: 1;
+}
+
+/* ── Browser — card sub-sections ── */
+
+.browser-card-sub {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 3px;
+  min-height: 14px;
+  padding-left: 2px;
+}
+
+.browser-card-sub-label {
   font-size: 0.4375rem;
-  color: #555;
+  color: #444;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+  cursor: default;
+}
+
+.browser-card-sub-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.browser-card-type {
+  font-size: 0.4375rem;
+  color: #444;
   text-transform: lowercase;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: default;
-}
-
-.browser-strip-dots {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* ── Browser — dot buttons ── */

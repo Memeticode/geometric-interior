@@ -21,7 +21,7 @@ export const ICON_CATALOG = {};
 // Static icons — from STATIC_ICON_REGISTRY
 const PLAYFOR_KEYS = new Set([
   'res-270', 'res-540', 'res-900', 'res-1080', 'res-1620', 'res-4k',
-  'share', 'link', 'email', 'bluesky', 'facebook', 'google',
+  'share', 'link', 'text', 'email', 'bluesky', 'facebook', 'google',
   'linkedin', 'reddit', 'twitter', 'github',
 ]);
 
@@ -68,7 +68,7 @@ ICON_CATALOG['alt-text-toggle'] = {
   desc: 'alt-text overlay toggle',
   factory: 'createAltTextToggle',
   states: ['waiting-open', 'waiting-close'],
-  capabilities: { animate: false, morph: true, converge: true, dissipate: true, playFor: false },
+  capabilities: { animate: true, morph: true, converge: true, dissipate: true, playFor: false },
 };
 
 ICON_CATALOG['fullscreen-toggle'] = {
@@ -76,7 +76,7 @@ ICON_CATALOG['fullscreen-toggle'] = {
   desc: 'fullscreen toggle',
   factory: 'createFullscreenToggle',
   states: ['waiting-open', 'waiting-close'],
-  capabilities: { animate: false, morph: true, converge: true, dissipate: true, playFor: false },
+  capabilities: { animate: true, morph: true, converge: true, dissipate: true, playFor: false },
 };
 
 ICON_CATALOG['card-icon'] = {
@@ -123,7 +123,7 @@ export const ICON_GROUPS = [
       {
         name: 'Menu \u2014 Share',
         behavior: 'playFor',
-        keys: ['link', 'email', 'bluesky', 'facebook', 'google', 'linkedin', 'reddit', 'twitter'],
+        keys: ['link', 'text', 'email', 'bluesky', 'facebook', 'google', 'linkedin', 'reddit', 'twitter'],
       },
       {
         name: 'Menu \u2014 Download',

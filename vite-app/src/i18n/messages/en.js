@@ -193,6 +193,10 @@ export default {
     'confirm.saveBeforeSwitch': 'Save \u201c{name}\u201d before switching?',
     'confirm.saveAsNew': 'Save \u201c{name}\u201d as a new profile?',
     'confirm.discardAndRandomize': 'Discard unsaved changes and randomize?',
+    'confirm.unsavedEditsMsg': 'You have unsaved changes to \u201c{name}\u201d.',
+    'confirm.unsavedEditsPortraitMsg': 'You have unsaved changes based on \u201c{name}\u201d.',
+    'confirm.nameExists': 'Name Already Exists',
+    'confirm.nameExistsMsg': 'An image named \u201c{name}\u201d already exists. Overwrite it, or enter a new name?',
     'confirm.deleteProfile': 'Delete Profile',
     'confirm.deleteConfirm': 'Delete \u201c{name}\u201d?',
 
@@ -204,6 +208,7 @@ export default {
     'btn.save': 'Save',
     'btn.delete': 'Delete',
     'btn.import': 'Import',
+    'btn.saveAsNew': 'Save as New',
 
     /* ── Import modal ── */
     'import.title': 'Import Profile',
@@ -278,6 +283,9 @@ export default {
     'gallery.moveDown': 'Move down',
     'gallery.deleteProfile': 'Delete',
     'gallery.altTextBtn': 'Text',
+    'iv.altText': 'Toggle alt text',
+    'iv.resolution': 'Render resolution',
+    'iv.fullscreen': 'Toggle fullscreen',
     'gallery.ctxEdit': 'Edit',
     'gallery.ctxAdd': 'Add',
     'gallery.ctxShare': 'Share',
@@ -286,6 +294,7 @@ export default {
     'gallery.ctxDownloadConfig': 'Configuration',
     'gallery.ctxDownloadBundle': 'Bundle',
     'gallery.ctxDelete': 'Delete',
+    'gallery.ctxCancelEdit': 'Cancel Edit',
     'gallery.ctxRestore': 'Restore deleted',
     'gallery.ctxBrowserDesktop': 'Right-click here for browser menu',
     'gallery.ctxBrowserTouch': 'Long-press here for browser menu',

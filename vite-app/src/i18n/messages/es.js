@@ -193,6 +193,10 @@ export default {
     'confirm.saveBeforeSwitch': '\u00bfGuardar \u201c{name}\u201d antes de cambiar?',
     'confirm.saveAsNew': '\u00bfGuardar \u201c{name}\u201d como nuevo perfil?',
     'confirm.discardAndRandomize': '\u00bfDescartar cambios no guardados y aleatorizar?',
+    'confirm.unsavedEditsMsg': 'Tienes cambios sin guardar en \u201c{name}\u201d.',
+    'confirm.unsavedEditsPortraitMsg': 'Tienes cambios sin guardar basados en \u201c{name}\u201d.',
+    'confirm.nameExists': 'El nombre ya existe',
+    'confirm.nameExistsMsg': 'Ya existe una imagen llamada \u201c{name}\u201d. \u00bfSobrescribirla o introducir un nombre nuevo?',
     'confirm.deleteProfile': 'Eliminar perfil',
     'confirm.deleteConfirm': '\u00bfEliminar \u201c{name}\u201d?',
 
@@ -204,6 +208,7 @@ export default {
     'btn.save': 'Guardar',
     'btn.delete': 'Eliminar',
     'btn.import': 'Importar',
+    'btn.saveAsNew': 'Guardar como nuevo',
 
     /* ── Import modal ── */
     'import.title': 'Importar perfil',
@@ -278,6 +283,9 @@ export default {
     'gallery.moveDown': 'Bajar',
     'gallery.deleteProfile': 'Eliminar',
     'gallery.altTextBtn': 'Texto',
+    'iv.altText': 'Alternar texto alternativo',
+    'iv.resolution': 'Resolución de renderizado',
+    'iv.fullscreen': 'Alternar pantalla completa',
     'gallery.ctxEdit': 'Editar',
     'gallery.ctxAdd': 'Añadir',
     'gallery.ctxShare': 'Compartir',
@@ -286,6 +294,7 @@ export default {
     'gallery.ctxDownloadConfig': 'Configuración',
     'gallery.ctxDownloadBundle': 'Paquete',
     'gallery.ctxDelete': 'Eliminar',
+    'gallery.ctxCancelEdit': 'Cancelar edición',
     'gallery.ctxRestore': 'Restaurar eliminados',
     'gallery.ctxBrowserDesktop': 'Clic derecho aquí para el menú del navegador',
     'gallery.ctxBrowserTouch': 'Mantén presionado aquí para el menú del navegador',

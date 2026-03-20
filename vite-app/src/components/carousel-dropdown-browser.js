@@ -182,12 +182,12 @@ function readCard(el) {
 // ── Main component ──
 
 class CarouselDropdownBrowser extends HTMLElement {
-    static observedAttributes = ['arc-z', 'arc-y', 'flip-duration', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'grid-align', 'grid-items-align', 'section-align'];
+    static observedAttributes = ['arc-z', 'arc-y', 'controls-position', 'infinite', 'bounce', 'expandable', 'card-title', 'grid-align', 'grid-items-align', 'section-align'];
 
     // ── Configuration ──
     #arcZ = 24;
     #arcY = ARC_Y_CONTAINER_BREAKPOINTS[0].arcY;
-    #flipDuration = 1500;
+
     #controlsPosition = 'above'; // 'above' | 'below'
     #infinite = true;              // wrap around or clamp at edges
     #bounce = 0.35;                // overshoot amount (0 = smooth, 1 = pronounced bounce)
@@ -360,6 +360,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         const idx = this.#items.findIndex(it => it.key === key);
         if (idx >= 0) {
             this.#centerIdx = idx;
+            this.#container.style.removeProperty('--carousel-speed');
             this.#positionCards();
         }
     }
@@ -509,7 +510,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         }
 
         const sectionLabelRects = this.#captureSectionLabelRects();
-        const dur = this.#flipDuration * this.#readSpeed();
+        const dur = this.#readContentDurMs();
         this.style.setProperty('--cdb-morph-dur', dur + 'ms');
         const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
         const cardW = this.#readCardW();
@@ -928,7 +929,7 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#toggle.disabled = true;
         this.#toggle.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
 
-        const dur = this.#flipDuration * this.#readSpeed();
+        const dur = this.#readContentDurMs();
         this.style.setProperty('--cdb-morph-dur', dur + 'ms');
         const easing = 'cubic-bezier(0.4, 0, 0.2, 1)';
         const cardW = this.#readCardW();
@@ -1425,7 +1426,7 @@ class CarouselDropdownBrowser extends HTMLElement {
     attributeChangedCallback(name, _old, val) {
         if (name === 'arc-z') { this.#arcZ = Math.round(parseFloat(val)) || 24; if (this.#domBuilt) this.#positionCards(); }
         if (name === 'arc-y') { this.#arcY = parseFloat(val) ?? ARC_Y_CONTAINER_BREAKPOINTS[0].arcY; this.#syncArcYExtra(); if (this.#domBuilt) this.#positionCards(); }
-        if (name === 'flip-duration') this.#flipDuration = parseInt(val, 10) || 450;
+
         if (name === 'controls-position') {
             this.#controlsPosition = val === 'below' ? 'below' : 'above';
             this.#appendStripChildren();
@@ -1561,9 +1562,12 @@ class CarouselDropdownBrowser extends HTMLElement {
         this.#syncArcYExtra();
     }
 
-    /** Read global speed multiplier (--t-speed) for transition scaling. */
-    #readSpeed() {
-        return parseFloat(getComputedStyle(this).getPropertyValue('--t-speed')) || 1;
+    /** Read content-tier duration in ms, speed-scaled. Matches --t-content × --t-speed. */
+    #readContentDurMs() {
+        const s = getComputedStyle(this);
+        const base = parseFloat(s.getPropertyValue('--t-content')) || 0.25; // seconds
+        const speed = parseFloat(s.getPropertyValue('--t-speed')) || 1;
+        return base * speed * 1000;
     }
 
     #updateEasing() {
@@ -2111,7 +2115,7 @@ class CarouselDropdownBrowser extends HTMLElement {
 
         if (idx !== this.#centerIdx) {
             this.#centerIdx = idx;
-            this.#container.style.setProperty('--carousel-speed', (0.85 * this.#readSpeed()) + 's');
+            this.#container.style.removeProperty('--carousel-speed');
             this.#positionCards();
             this.#emitCenterChange();
         }
@@ -3396,7 +3400,7 @@ class CarouselDropdownBrowser extends HTMLElement {
             const t = this.#items.length;
             const nearest = ((Math.round(this.#dragFractionalCenter) % t) + t) % t;
             this.#centerIdx = nearest;
-            this.#container.style.setProperty('--carousel-speed', (0.85 * this.#readSpeed()) + 's');
+            this.#container.style.removeProperty('--carousel-speed');
             track.classList.remove('cdb-dragging');
             this.#positionCards();
             this.#emitCenterChange();
@@ -3527,7 +3531,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                 this.#centerIdx = Math.max(0, Math.min(total - 1, this.#centerIdx + n));
             }
             this.#track.classList.add('cdb-dragging');
-            this.#container.style.setProperty('--carousel-speed', (0.85 * this.#readSpeed()) + 's');
+            this.#container.style.removeProperty('--carousel-speed');
             this.#positionCards();
             this.#emitCenterChange();
             if (this.#arrowAutoSelect) {
@@ -3538,7 +3542,7 @@ class CarouselDropdownBrowser extends HTMLElement {
                     }));
                 }
             }
-            setTimeout(() => this.#track.classList.remove('cdb-dragging'), 900);
+            setTimeout(() => this.#track.classList.remove('cdb-dragging'), this.#readContentDurMs() + 50);
         };
 
         btn.addEventListener('pointerdown', (e) => {
@@ -3677,10 +3681,10 @@ class CarouselDropdownBrowser extends HTMLElement {
             this.#resetHoverState();
             this.#centerIdx = targetIdx;
             this.#track.classList.add('cdb-dragging');
-            this.#container.style.setProperty('--carousel-speed', (0.85 * this.#readSpeed()) + 's');
+            this.#container.style.removeProperty('--carousel-speed');
             this.#positionCards();
             this.#emitCenterChange();
-            setTimeout(() => this.#track.classList.remove('cdb-dragging'), 900);
+            setTimeout(() => this.#track.classList.remove('cdb-dragging'), this.#readContentDurMs() + 50);
         });
     }
 

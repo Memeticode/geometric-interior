@@ -174,6 +174,44 @@ export function createToggleIcon(container, config) {
     return morph('empty', { duration: 200, ...opts });
   }
 
+  // ── Ambient shimmer ──
+  let shimmerOn = false;
+  let shimmerRaf = null;
+
+  function startShimmer() {
+    if (shimmerOn) return;
+    shimmerOn = true;
+    (function tick(now) {
+      if (!shimmerOn) return;
+      if (!morphing && currentState !== 'empty') {
+        const st = resolveState(currentState);
+        for (let i = 1; i <= 8; i++) {
+          const k = 'L' + i;
+          const s = Math.sin(now / (1200 + i * 300) * Math.PI * 2 + i * 2.3) * 0.5 + 0.5;
+          const bo = st[k]?.o ?? 0;
+          if (bo > 0) {
+            elMap[k].setAttribute('opacity', bo * (0.75 + 0.25 * s));
+            const bsw = st[k]?.sw ?? 0;
+            if (bsw > 0) elMap[k].setAttribute('stroke-width', bsw * (0.85 + 0.15 * s));
+          }
+        }
+        for (let i = 1; i <= 4; i++) {
+          const k = 'C' + i;
+          const s = Math.sin(now / (1500 + i * 400) * Math.PI * 2 + i * 1.7) * 0.5 + 0.5;
+          const bo = st[k]?.o ?? 0;
+          if (bo > 0) elMap[k].setAttribute('opacity', bo * (0.7 + 0.3 * s));
+        }
+      }
+      shimmerRaf = requestAnimationFrame(tick);
+    })(performance.now());
+  }
+
+  function stopShimmer() {
+    shimmerOn = false;
+    if (shimmerRaf) { cancelAnimationFrame(shimmerRaf); shimmerRaf = null; }
+    if (currentState !== 'empty') setState(elMap, resolveState(currentState));
+  }
+
   return {
     el: svg,
     morph,
@@ -184,6 +222,8 @@ export function createToggleIcon(container, config) {
     toggle,
     coalesce,
     dissipate,
+    startShimmer,
+    stopShimmer,
     get state() { return currentState; },
     get logicalState() { return logicalState; },
     get morphing() { return morphing; },

@@ -1595,6 +1595,17 @@ class IconCtrl {
     this._notify();
   }
 
+  reset() {
+    this._stopAnim();
+    if (this.timer) { clearTimeout(this.timer); this.timer = null; }
+    setState(this.elMap, this.state);
+    this.stage.style.background = lerpColor(this.col.bg, this.col.bg, 0);
+    this.stage.style.borderColor = lerpColor(this.col.bd, this.col.bd, 0);
+    this.status = 'idle';
+    this.departMethod = null;
+    this._notify();
+  }
+
   depart(method) {
     if (this.status === 'departing' || this.status === 'arriving' || this.status === 'gone') return;
     this._stopAnim();
@@ -1684,6 +1695,29 @@ function dotBtn(glyph, title, onClick) {
   b.title = title;
   b.addEventListener('click', (e) => { e.stopPropagation(); onClick(); });
   return b;
+}
+
+function cardSection(labelText) {
+  const section = document.createElement('div');
+  section.className = 'browser-card-section';
+  const label = document.createElement('span');
+  label.className = 'browser-card-section-label';
+  label.textContent = labelText;
+  section.appendChild(label);
+  return section;
+}
+
+function cardSub(labelText) {
+  const sub = document.createElement('div');
+  sub.className = 'browser-card-sub';
+  const label = document.createElement('span');
+  label.className = 'browser-card-sub-label';
+  label.textContent = labelText;
+  sub.appendChild(label);
+  const controls = document.createElement('div');
+  controls.className = 'browser-card-sub-controls';
+  sub.appendChild(controls);
+  return { sub, controls };
 }
 
 function addTimerRing(btn, durationMs) {
@@ -1827,6 +1861,20 @@ class StaticIconCtrl {
     this.transId = requestAnimationFrame(tick);
   }
 
+  reset() {
+    if (this.transId) { cancelAnimationFrame(this.transId); this.transId = null; }
+    this.animCtrl.settleOut();
+    this.playing = false;
+    this.busy = false;
+    const children = Array.from(this.svgEl.children);
+    for (const child of children) {
+      child.removeAttribute('transform');
+      child.removeAttribute('opacity');
+    }
+    this.visible = true;
+    this._notify();
+  }
+
   _notify() {
     if (this.onUpdate) this.onUpdate();
   }
@@ -1853,44 +1901,44 @@ function buildMorphCard(key) {
   const ctrl = new IconCtrl(key, stage, elMap);
   card.appendChild(stage);
 
-  // Click thumbnail to toggle play
   card.addEventListener('click', () => ctrl.togglePlay());
 
-  // Control strip — play+label grouped left, converge/dissipate right
-  const strip = document.createElement('div');
-  strip.className = 'browser-strip';
+  // ── Animation (main section) ──
+  const animSection = cardSection('animation');
 
-  const playGroup = document.createElement('div');
-  playGroup.className = 'browser-strip-play';
+  // In-place sub
+  const { sub: inplaceSub, controls: inplaceCtrls } = cardSub('in-place');
   const playBtn = dotBtn('\u25b8', 'Play', () => ctrl.togglePlay());
   const timerRing = addTimerRing(playBtn, 2000);
-  playGroup.appendChild(playBtn);
-  const label = document.createElement('span');
-  label.className = 'browser-strip-label';
-  label.textContent = 'morph';
-  label.title = info.desc;
-  playGroup.appendChild(label);
-  strip.appendChild(playGroup);
+  inplaceCtrls.appendChild(playBtn);
+  const resetBtn = dotBtn('\u21ba', 'Reset', () => ctrl.reset());
+  inplaceCtrls.appendChild(resetBtn);
+  const typeLabel = document.createElement('span');
+  typeLabel.className = 'browser-card-type';
+  typeLabel.textContent = info.desc;
+  inplaceCtrls.appendChild(typeLabel);
+  animSection.appendChild(inplaceSub);
 
-  const dots = document.createElement('div');
-  dots.className = 'browser-strip-dots';
+  // Transitions sub
   let convBtn, dissBtn, retBtn;
   let lastDepartMode = 'converge';
-  if (caps.converge) {
-    convBtn = dotBtn('\u21d3', 'Converge', () => { lastDepartMode = 'converge'; ctrl.depart('converge'); });
-    dots.appendChild(convBtn);
-  }
-  if (caps.dissipate) {
-    dissBtn = dotBtn('\u21d1', 'Dissipate', () => { lastDepartMode = 'dissipate'; ctrl.depart('dissipate'); });
-    dots.appendChild(dissBtn);
-  }
   if (caps.converge || caps.dissipate) {
+    const { sub: transSub, controls: transCtrls } = cardSub('transitions');
+    if (caps.converge) {
+      convBtn = dotBtn('\u21d3', 'Converge', () => { lastDepartMode = 'converge'; ctrl.depart('converge'); });
+      transCtrls.appendChild(convBtn);
+    }
+    if (caps.dissipate) {
+      dissBtn = dotBtn('\u21d1', 'Dissipate', () => { lastDepartMode = 'dissipate'; ctrl.depart('dissipate'); });
+      transCtrls.appendChild(dissBtn);
+    }
     retBtn = dotBtn('\u21a9', 'Return', () => ctrl.arrive(lastDepartMode));
     retBtn.style.display = 'none';
-    dots.appendChild(retBtn);
+    transCtrls.appendChild(retBtn);
+    animSection.appendChild(transSub);
   }
-  strip.appendChild(dots);
-  card.appendChild(strip);
+
+  card.appendChild(animSection);
 
   ctrl.onUpdate = (status) => {
     const visible = status === 'idle' || status === 'playing';
@@ -1900,7 +1948,6 @@ function buildMorphCard(key) {
     playBtn.textContent = playing ? '\u00d7' : '\u25b8';
     playBtn.title = playing ? 'Cancel' : 'Play';
     timerRing.classList.toggle('active', playing);
-    playBtn.style.display = visible ? '' : 'none';
     playBtn.disabled = busy;
     if (convBtn) { convBtn.style.display = visible && !playing ? '' : 'none'; convBtn.disabled = busy; }
     if (dissBtn) { dissBtn.style.display = visible && !playing ? '' : 'none'; dissBtn.disabled = busy; }
@@ -1934,8 +1981,9 @@ function buildStaticCard(key, behavior) {
     card.addEventListener('mouseenter', () => animCtrl.play());
     card.addEventListener('mouseleave', () => animCtrl.settleOut());
   } else if (behavior === 'playFor') {
-    // Click thumbnail to play once
-    card.addEventListener('click', () => animCtrl.playFor(1000));
+    const dur = entry.config?.period || 1000;
+    card.addEventListener('click', () => animCtrl.playFor(dur));
+    card.addEventListener('mouseenter', () => animCtrl.playFor(dur));
   } else {
     animCtrl.play();
   }
@@ -1943,54 +1991,35 @@ function buildStaticCard(key, behavior) {
 
   const ctrl = new StaticIconCtrl(animCtrl, animCtrl.el);
 
-  // Click thumbnail to toggle play (auto behavior)
   if (behavior !== 'hover' && behavior !== 'playFor') {
     card.addEventListener('click', () => ctrl.togglePlay());
   }
 
-  // Control strip — play+label grouped left, converge/dissipate right
-  const strip = document.createElement('div');
-  strip.className = 'browser-strip';
+  // ── Animation (main section) ──
+  const animSection = cardSection('animation');
+  let convBtn, dissBtn, retBtn;
+  let lastDepartMode = 'converge';
 
-  const playGroup = document.createElement('div');
-  playGroup.className = 'browser-strip-play';
-
+  // In-place sub
   if (behavior !== 'hover') {
-    let playBtn, convBtn, dissBtn, retBtn;
-    let lastDepartMode = 'converge';
-
+    const { sub: inplaceSub, controls: inplaceCtrls } = cardSub('in-place');
+    let playBtn, timerRing;
     if (behavior === 'playFor') {
       playBtn = dotBtn('\u25b6', 'Play', () => animCtrl.playFor(1000));
     } else {
-      playBtn = dotBtn('\u23f8', 'Pause', () => ctrl.togglePlay());
+      playBtn = dotBtn('\u25b8', 'Play', () => ctrl.togglePlay());
     }
-    const timerRing = addTimerRing(playBtn, behavior === 'playFor' ? 1000 : 2000);
-    playGroup.appendChild(playBtn);
-
-    const label = document.createElement('span');
-    label.className = 'browser-strip-label';
-    label.textContent = entry.anim;
+    timerRing = addTimerRing(playBtn, behavior === 'playFor' ? 1000 : 2000);
+    inplaceCtrls.appendChild(playBtn);
+    const resetBtn = dotBtn('\u21ba', 'Reset', () => ctrl.reset());
+    inplaceCtrls.appendChild(resetBtn);
+    const typeLabel = document.createElement('span');
+    typeLabel.className = 'browser-card-type';
+    typeLabel.textContent = entry.anim;
     const configStr = entry.config ? Object.entries(entry.config).map(([k, v]) => `${k}: ${v}`).join(', ') : '';
-    label.title = configStr ? `${entry.desc} — ${configStr}` : entry.desc;
-    playGroup.appendChild(label);
-    strip.appendChild(playGroup);
-
-    const dots = document.createElement('div');
-    dots.className = 'browser-strip-dots';
-    if (caps.converge) {
-      convBtn = dotBtn('\u21d3', 'Converge', () => { lastDepartMode = 'converge'; ctrl.depart('converge'); });
-      dots.appendChild(convBtn);
-    }
-    if (caps.dissipate) {
-      dissBtn = dotBtn('\u21d1', 'Dissipate', () => { lastDepartMode = 'dissipate'; ctrl.depart('dissipate'); });
-      dots.appendChild(dissBtn);
-    }
-    if (caps.converge || caps.dissipate) {
-      retBtn = dotBtn('\u21a9', 'Return', () => ctrl.arrive(lastDepartMode));
-      retBtn.style.display = 'none';
-      dots.appendChild(retBtn);
-    }
-    strip.appendChild(dots);
+    typeLabel.title = configStr ? `${entry.desc} — ${configStr}` : entry.desc;
+    inplaceCtrls.appendChild(typeLabel);
+    animSection.appendChild(inplaceSub);
 
     ctrl.onUpdate = () => {
       const { visible, busy, playing } = ctrl;
@@ -1999,22 +2028,32 @@ function buildStaticCard(key, behavior) {
         playBtn.title = playing ? 'Cancel' : 'Play';
       }
       timerRing.classList.toggle('active', playing);
-      playBtn.style.display = visible ? '' : 'none';
       playBtn.disabled = busy;
       if (convBtn) { convBtn.style.display = visible && !playing ? '' : 'none'; convBtn.disabled = busy; }
       if (dissBtn) { dissBtn.style.display = visible && !playing ? '' : 'none'; dissBtn.disabled = busy; }
       if (retBtn) { retBtn.style.display = !visible && !busy ? '' : 'none'; retBtn.disabled = busy; }
     };
-  } else {
-    const label = document.createElement('span');
-    label.className = 'browser-strip-label';
-    label.textContent = entry.anim;
-    label.title = entry.desc;
-    playGroup.appendChild(label);
-    strip.appendChild(playGroup);
   }
 
-  card.appendChild(strip);
+  // Transitions sub
+  if (caps.converge || caps.dissipate) {
+    const { sub: transSub, controls: transCtrls } = cardSub('transitions');
+    if (caps.converge) {
+      convBtn = dotBtn('\u21d3', 'Converge', () => { lastDepartMode = 'converge'; ctrl.depart('converge'); });
+      transCtrls.appendChild(convBtn);
+    }
+    if (caps.dissipate) {
+      dissBtn = dotBtn('\u21d1', 'Dissipate', () => { lastDepartMode = 'dissipate'; ctrl.depart('dissipate'); });
+      transCtrls.appendChild(dissBtn);
+    }
+    retBtn = dotBtn('\u21a9', 'Return', () => ctrl.arrive(lastDepartMode));
+    retBtn.style.display = 'none';
+    transCtrls.appendChild(retBtn);
+    animSection.appendChild(transSub);
+  }
+
+  card.appendChild(animSection);
+
   return card;
 }
 
@@ -2049,97 +2088,152 @@ function buildToggleCard(key) {
   const ctrl = factory(frame, { size: STAGE_SIZE, startVisible: true, initialState: key === 'card-icon' ? 'viewing' : undefined });
   card.appendChild(frame);
 
-  // Hover → emphasize / deemphasize (toggle icons only, card-icon lacks this)
+  // Start ambient shimmer for animated toggles
+  if (caps.animate && ctrl.startShimmer) ctrl.startShimmer();
+
+  let playing = false;
+
   if (ctrl.emphasize) {
-    card.addEventListener('mouseenter', () => ctrl.emphasize());
-    card.addEventListener('mouseleave', () => ctrl.deemphasize());
+    card.addEventListener('mouseenter', () => { if (!playing) ctrl.emphasize(); });
+    card.addEventListener('mouseleave', () => { if (!playing) ctrl.deemphasize(); });
   }
 
-  // State thumbnails row
-  const stateRow = document.createElement('div');
-  stateRow.className = 'browser-state-row';
-  const thumbEls = [];
+  // ── Animation (main section) ──
+  const animSection = cardSection('animation');
+  let convBtn, dissBtn, retBtn;
+  let playBtn, timerRing;
+  let lastDepartMode = 'converge';
+  let gone = false;
+  let loopTimer = null;
 
+  function highlightThumb(stateName) {
+    for (const t of thumbEls) t.classList.toggle('active', t.title === stateName);
+  }
+
+  // In-place sub (toggle animation loop)
+  if (caps.animate) {
+    const { sub: inplaceSub, controls: inplaceCtrls } = cardSub('in-place');
+
+    async function toggleLoop() {
+      if (!playing) return;
+      const dur = 400 / animSpeed;
+      await ctrl.toggle({ duration: dur });
+      if (!playing) return;
+      const base = ctrl.state.replace(/-emphasize$/, '');
+      highlightThumb(base);
+      const pause = 600 / animSpeed;
+      loopTimer = setTimeout(() => toggleLoop(), pause);
+    }
+
+    function startPlay() {
+      if (gone) return;
+      playing = true;
+      playBtn.textContent = '\u00d7';
+      playBtn.title = 'Stop';
+      timerRing.classList.add('active');
+      updateToggleDots();
+      toggleLoop();
+    }
+
+    function stopPlay() {
+      playing = false;
+      if (loopTimer) { clearTimeout(loopTimer); loopTimer = null; }
+      playBtn.textContent = '\u25b8';
+      playBtn.title = 'Play';
+      timerRing.classList.remove('active');
+      updateToggleDots();
+    }
+
+    playBtn = dotBtn('\u25b8', 'Play', () => {
+      if (playing) stopPlay(); else startPlay();
+    });
+    timerRing = addTimerRing(playBtn, 1000);
+    inplaceCtrls.appendChild(playBtn);
+
+    const typeLabel = document.createElement('span');
+    typeLabel.className = 'browser-card-type';
+    typeLabel.textContent = 'toggle';
+    inplaceCtrls.appendChild(typeLabel);
+
+    animSection.appendChild(inplaceSub);
+  }
+
+  // States sub
+  const { sub: statesSub, controls: statesCtrls } = cardSub('states');
+  const thumbEls = [];
   for (const stateName of catalog.states) {
     const thumb = document.createElement('div');
     thumb.className = 'browser-state-thumb';
     thumb.title = stateName;
-
     const svg = document.createElementNS(NS, 'svg');
     svg.setAttribute('viewBox', '0 0 24 24');
     svg.setAttribute('fill', 'none');
     const elMap = buildMorphSVG(svg);
     setState(elMap, stateMap[stateName]);
     thumb.appendChild(svg);
-
-    // First state is active by default
     if (thumbEls.length === 0) thumb.classList.add('active');
-
     thumb.addEventListener('click', (e) => {
       e.stopPropagation();
-      ctrl.morph(key === 'card-icon' ? stateName : stateName);
-      for (const t of thumbEls) t.classList.remove('active');
-      thumb.classList.add('active');
+      if (playing) return;
+      ctrl.morph(stateName);
+      highlightThumb(stateName);
     });
-
-    stateRow.appendChild(thumb);
+    statesCtrls.appendChild(thumb);
     thumbEls.push(thumb);
   }
-  card.appendChild(stateRow);
+  const resetBtn = dotBtn('\u21ba', 'Reset', () => {
+    if (playing) return;
+    gone = false;
+    ctrl.set(key === 'card-icon' ? 'viewing' : 'waiting-open');
+    if (caps.animate && ctrl.startShimmer) ctrl.startShimmer();
+    highlightThumb(catalog.states[0]);
+    updateToggleDots();
+  });
+  statesCtrls.appendChild(resetBtn);
+  animSection.appendChild(statesSub);
 
-  // Control strip — label left, converge/dissipate right
-  const strip = document.createElement('div');
-  strip.className = 'browser-strip';
-
-  const playGroup = document.createElement('div');
-  playGroup.className = 'browser-strip-play';
-  const label = document.createElement('span');
-  label.className = 'browser-strip-label';
-  label.textContent = key === 'card-icon' ? 'card' : 'toggle';
-  label.title = catalog.desc;
-  playGroup.appendChild(label);
-  strip.appendChild(playGroup);
-
-  const dots = document.createElement('div');
-  dots.className = 'browser-strip-dots';
-  let convBtn, dissBtn, retBtn;
-  let lastDepartMode = 'converge';
-  let gone = false;
-
-  if (caps.converge) {
-    convBtn = dotBtn('\u21d3', 'Converge', () => {
-      lastDepartMode = 'converge';
-      gone = true;
-      ctrl.dissipate({ mode: 'converge' });
-      updateToggleDots();
-    });
-    dots.appendChild(convBtn);
-  }
-  if (caps.dissipate) {
-    dissBtn = dotBtn('\u21d1', 'Dissipate', () => {
-      lastDepartMode = 'dissipate';
-      gone = true;
-      ctrl.dissipate({ mode: 'dissipate' });
-      updateToggleDots();
-    });
-    dots.appendChild(dissBtn);
-  }
+  // Transitions sub
   if (caps.converge || caps.dissipate) {
+    const { sub: transSub, controls: transCtrls } = cardSub('transitions');
+    if (caps.converge) {
+      convBtn = dotBtn('\u21d3', 'Converge', () => {
+        lastDepartMode = 'converge';
+        gone = true;
+        if (ctrl.stopShimmer) ctrl.stopShimmer();
+        ctrl.dissipate({ mode: 'converge' });
+        updateToggleDots();
+      });
+      transCtrls.appendChild(convBtn);
+    }
+    if (caps.dissipate) {
+      dissBtn = dotBtn('\u21d1', 'Dissipate', () => {
+        lastDepartMode = 'dissipate';
+        gone = true;
+        if (ctrl.stopShimmer) ctrl.stopShimmer();
+        ctrl.dissipate({ mode: 'dissipate' });
+        updateToggleDots();
+      });
+      transCtrls.appendChild(dissBtn);
+    }
     retBtn = dotBtn('\u21a9', 'Return', () => {
       gone = false;
       ctrl.coalesce({ mode: lastDepartMode });
+      if (caps.animate && ctrl.startShimmer) ctrl.startShimmer();
       updateToggleDots();
     });
     retBtn.style.display = 'none';
-    dots.appendChild(retBtn);
+    transCtrls.appendChild(retBtn);
+    animSection.appendChild(transSub);
   }
-  strip.appendChild(dots);
-  card.appendChild(strip);
+
+  card.appendChild(animSection);
 
   function updateToggleDots() {
-    if (convBtn) convBtn.style.display = gone ? 'none' : '';
-    if (dissBtn) dissBtn.style.display = gone ? 'none' : '';
-    if (retBtn) retBtn.style.display = gone ? '' : 'none';
+    const showMain = !gone && !playing;
+    if (convBtn) convBtn.style.display = showMain ? '' : 'none';
+    if (dissBtn) dissBtn.style.display = showMain ? '' : 'none';
+    if (retBtn) retBtn.style.display = gone && !playing ? '' : 'none';
+    if (playBtn) playBtn.style.display = gone ? 'none' : '';
   }
 
   return card;
@@ -2171,14 +2265,8 @@ controlPanel.appendChild(speedValue);
 
 speedSlider.addEventListener('input', () => {
   animSpeed = Math.pow(2, parseFloat(speedSlider.value));
-  const label = animSpeed >= 1
-    ? animSpeed.toFixed(0) + '\u00d7'
-    : (1 / animSpeed) < 10
-      ? (1 / (1 / animSpeed)).toFixed(1).replace(/\.0$/, '') + '\u00d7'
-      : animSpeed.toFixed(2) + '\u00d7';
-  speedValue.textContent = animSpeed >= 1
-    ? animSpeed.toFixed(0) + '\u00d7'
-    : animSpeed.toFixed(2).replace(/0+$/, '').replace(/\.$/, '') + '\u00d7';
+  const s = animSpeed >= 1 ? animSpeed.toFixed(0) : animSpeed.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+  speedValue.textContent = s + '\u00d7';
 });
 
 browser.appendChild(controlPanel);

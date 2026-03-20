@@ -69,6 +69,7 @@ export function createLayoutMorph(container, options = {}) {
     const api = {
         get state() { return state; },
         get morphing() { return morphing; },
+        get duration() { return readDuration(); },
 
         /** Skip the in-flight morph — snap to end state. */
         skip() {
