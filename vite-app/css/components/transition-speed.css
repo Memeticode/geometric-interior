@@ -47,7 +47,7 @@
  */
 :root {
     /* ── Global speed multiplier (1 = production, higher = debug slow-mo) ── */
-    --t-speed:   5;
+    --t-speed:   10;
 
     /* ── Tier base durations ── */
     --t-content: 0.25s;
@@ -59,14 +59,14 @@
     --t-modal-out: 0.25s;    /* box dissolve-out    (content tier) */
 
     /* ── Layout morph phase durations (before speed scaling) ── */
-    --lm-out-base:   0.2s;    /* phase 1 (out) duration */
-    --lm-move-base:  0.3s;    /* phase 2 (move) duration */
-    --lm-in-base:    0.2s;    /* phase 3 (in) duration */
+    --lm-out-base:   0.5s;    /* phase 1 (out) duration */
+    --lm-move-base:  0.8s;    /* phase 2 (move) duration */
+    --lm-in-base:    0.5s;    /* phase 3 (in) duration */
 
     /* ── Layout morph phase delays — when each phase starts ── */
     --lm-d1-base:    0s;      /* phase 1 starts immediately */
-    --lm-d2-base:    0.15s;   /* phase 2 starts 150ms in (overlaps tail of phase 1) */
-    --lm-d3-base:    0.35s;   /* phase 3 starts 350ms in (after phase 2 begins) */
+    --lm-d2-base:    0.1s;   /* phase 2 starts 150ms in (overlaps tail of phase 1) */
+    --lm-d3-base:    0.4s;   /* phase 3 starts 350ms in (after phase 2 begins) */
 
     /* ── Speed-scaled morph phases — consumed by CSS transition rules ── */
     --lm-out:    calc(var(--lm-out-base)  * var(--t-speed)); /* phase 1 duration */

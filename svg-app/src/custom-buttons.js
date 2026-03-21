@@ -3,7 +3,7 @@
 // ══════════════════════════════════════════════════════════════
 
 import { createCardIcon } from './buttons/card-icon.js';
-import { createAltTextToggle, createFullscreenToggle } from './buttons/toggle-icon.js';
+import { createTextToggle, createFullscreenToggle } from './buttons/toggle-icon.js';
 import { createStateDiagram } from './buttons/state-diagram.js';
 
 const app = document.getElementById('app');
@@ -210,7 +210,7 @@ function buildAltTextToggleDemo() {
   const topRow = el('div', 'demo-top-row');
 
   const iconFrame = el('div', 'demo-icon-frame');
-  const icon = createAltTextToggle(iconFrame, { size: 48 });
+  const icon = createTextToggle(iconFrame, { size: 48 });
 
   iconFrame.addEventListener('click', () => {
     altTextMorphTo(icon.isOpen ? 'waiting-open' : 'waiting-close');

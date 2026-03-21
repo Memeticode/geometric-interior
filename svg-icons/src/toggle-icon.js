@@ -12,6 +12,8 @@ import {
   altTextWaitingCloseState, altTextWaitingCloseEmphasizeState,
   fullscreenWaitingOpenState, fullscreenWaitingOpenEmphasizeState,
   fullscreenWaitingCloseState, fullscreenWaitingCloseEmphasizeState,
+  textShortWaitingOpenState, textShortWaitingOpenEmphasizeState,
+  textShortWaitingCloseState, textShortWaitingCloseEmphasizeState,
   convergeState, dissipateState,
   COL,
 } from './morph-states.js';
@@ -233,7 +235,7 @@ export function createToggleIcon(container, config) {
 
 // ── Preconfigured factories ──
 
-export function createAltTextToggle(container, opts = {}) {
+export function createTextToggle(container, opts = {}) {
   return createToggleIcon(container, {
     size: opts.size ?? 24,
     initialOpen: opts.initialOpen ?? false,
@@ -259,6 +261,21 @@ export function createFullscreenToggle(container, opts = {}) {
       waitingOpenEmphasize: fullscreenWaitingOpenEmphasizeState,
       waitingClose: fullscreenWaitingCloseState,
       waitingCloseEmphasize: fullscreenWaitingCloseEmphasizeState,
+    },
+  });
+}
+
+export function createTextShortToggle(container, opts = {}) {
+  return createToggleIcon(container, {
+    size: opts.size ?? 24,
+    initialOpen: opts.initialOpen ?? false,
+    startVisible: opts.startVisible ?? false,
+    col: COL['text-short-waiting-open'],
+    states: {
+      waitingOpen: textShortWaitingOpenState,
+      waitingOpenEmphasize: textShortWaitingOpenEmphasizeState,
+      waitingClose: textShortWaitingCloseState,
+      waitingCloseEmphasize: textShortWaitingCloseEmphasizeState,
     },
   });
 }

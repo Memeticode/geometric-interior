@@ -174,6 +174,23 @@ class ImageViewer extends HTMLElement {
         if (this.#altVisible) this.#renderAltText();
     }
 
+    /** Commentary text shown above alt-text in the overlay. */
+    #commentary = '';
+    get commentary() { return this.#commentary; }
+    set commentary(v) {
+        this.#commentary = v || '';
+        if (this.#altVisible) this.#renderAltText();
+    }
+
+    /** Text overlay mode: 'short' (commentary only) or 'full' (commentary + alt-text). */
+    #textMode = 'short';
+    get textMode() { return this.#textMode; }
+    set textMode(v) {
+        if (v !== 'short' && v !== 'full') return;
+        this.#textMode = v;
+        if (this.#altVisible) this.#renderAltText();
+    }
+
     get mode() { return this.#mode; }
     set mode(v) {
         if (v !== 'image' && v !== 'canvas' && v !== 'video') return;
@@ -221,7 +238,7 @@ class ImageViewer extends HTMLElement {
      * @param {() => void} [opts.onSwap] — called at the midpoint when content is hidden
      * @returns {Promise<void>} resolves when fade-in completes
      */
-    setMedia({ src, alt, altText, video, fadeDuration = 250, onSwap } = {}) {
+    setMedia({ src, alt, altText, commentary, video, fadeDuration = 250, onSwap } = {}) {
         // Cancel any in-flight crossfade
         this.skipMedia();
 
@@ -240,7 +257,9 @@ class ImageViewer extends HTMLElement {
 
         // Swap metadata immediately
         if (alt !== undefined) this.#img.alt = alt;
-        if (altText !== undefined) { this.#altText = altText; if (this.#altVisible) this.#renderAltText(); }
+        if (altText !== undefined) { this.#altText = altText; }
+        if (commentary !== undefined) { this.#commentary = commentary; }
+        if (altText !== undefined || commentary !== undefined) { if (this.#altVisible) this.#renderAltText(); }
         if (video) { this.mode = 'video'; this.#video.src = video; } else { this.mode = 'image'; }
         onSwap?.();
 
@@ -337,7 +356,7 @@ class ImageViewer extends HTMLElement {
 
     /** Show alt-text overlay with CSS scale+fade transition. */
     showAltText() {
-        if (!this.#altText) return;
+        if (!this.#altText && !this.#commentary) return;
         if (this.#altAnim) { this.#altAnim.cancel(); this.#altAnim = null; }
 
         this.#renderAltText();
@@ -832,16 +851,30 @@ class ImageViewer extends HTMLElement {
     #renderAltText() {
         this.#altOverlay.innerHTML = '';
         const frag = document.createDocumentFragment();
-        const sep1 = document.createElement('div');
-        sep1.className = 'fullscreen-alt-sep';
-        frag.appendChild(sep1);
-        const bodyEl = document.createElement('div');
-        bodyEl.className = 'fullscreen-alt-body';
-        bodyEl.textContent = this.#altText;
-        frag.appendChild(bodyEl);
-        const sep2 = document.createElement('div');
-        sep2.className = 'fullscreen-alt-sep';
-        frag.appendChild(sep2);
+        const commentary = this.#commentary;
+        const altText = this.#altText;
+
+        // Commentary first (if any)
+        if (commentary) {
+            const cEl = document.createElement('div');
+            cEl.className = 'fullscreen-alt-commentary';
+            cEl.textContent = commentary;
+            frag.appendChild(cEl);
+        }
+
+        // Alt-text body (only in full mode)
+        if (this.#textMode === 'full' && altText) {
+            if (commentary) {
+                const sep = document.createElement('div');
+                sep.className = 'fullscreen-alt-sep';
+                frag.appendChild(sep);
+            }
+            const bodyEl = document.createElement('div');
+            bodyEl.className = 'fullscreen-alt-body';
+            bodyEl.textContent = altText;
+            frag.appendChild(bodyEl);
+        }
+
         this.#altOverlay.appendChild(frag);
     }
 

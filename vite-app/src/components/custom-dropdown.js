@@ -125,7 +125,7 @@ export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSele
  * Expanded: full height, all items visible.
  */
 function initMorph(el, { initialValue, onSelect }) {
-    // Wrap items in an inner container for translateY animation
+    // Wrap items in an inner container for translate animation
     const inner = document.createElement('div');
     inner.className = 'ddm-inner';
     while (el.firstChild) inner.appendChild(el.firstChild);
@@ -133,11 +133,14 @@ function initMorph(el, { initialValue, onSelect }) {
 
     if (initialValue) syncActive(el, initialValue);
 
+    // Horizontal mode — expand along X axis instead of Y
+    const horiz = el.classList.contains('morph-horizontal');
+
     // Overlay mode always clips from the top of .ddm-inner, so always use top offset
     const isTop = () => overlay || !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
 
-    // Overlay mode: inner overflows el's fixed height, expanding over content.
-    // Content wrapper inside inner receives translateY so the pill stays fixed.
+    // Overlay mode: inner overflows el's fixed size, expanding over content.
+    // Content wrapper inside inner receives translate so the pill stays fixed.
     const overlay = el.classList.contains('morph-overlay');
     const sizeTarget = overlay ? inner : el;
     let transformTarget = inner;
@@ -149,6 +152,22 @@ function initMorph(el, { initialValue, onSelect }) {
         transformTarget = content;
     }
 
+    // ── Axis helpers ──
+    const sizeProp = horiz ? 'maxWidth' : 'maxHeight';
+    const layoutProp = horiz ? 'width' : 'height';
+    const scrollDim = horiz ? 'scrollWidth' : 'scrollHeight';
+    const translate = (v) => horiz ? `translateX(${v}px)` : `translateY(${v}px)`;
+    const measureItem = (item) => horiz
+        ? (item?.offsetWidth || 24)
+        : (item?.offsetHeight || 24);
+    const horizOffset = (inner, active, isLeft) => {
+        if (isLeft) return -active.offsetLeft;
+        return inner.offsetWidth - active.offsetWidth - active.offsetLeft;
+    };
+    const calcOffset = horiz
+        ? (inner, active) => horizOffset(inner, active, true)
+        : (inner, active) => morphOffset(inner, active, isTop());
+
     // ── Measure & set collapsed state ──
     el.style.transition = 'none';
     inner.style.transition = 'none';
@@ -158,14 +177,14 @@ function initMorph(el, { initialValue, onSelect }) {
 
     const activeItem = inner.querySelector('.custom-dropdown-item.active');
     const anyItem = inner.querySelector('.custom-dropdown-item');
-    const itemH = activeItem?.offsetHeight || anyItem?.offsetHeight || 24;
+    const itemSize = measureItem(activeItem || anyItem);
 
-    const offset = activeItem ? morphOffset(inner, activeItem, isTop()) : 0;
-    transformTarget.style.transform = `translateY(${offset}px)`;
+    const offset = activeItem ? calcOffset(inner, activeItem) : 0;
+    transformTarget.style.transform = translate(offset);
 
     el.classList.remove('open');
-    sizeTarget.style.maxHeight = itemH + 'px'; // explicit px — drives transition
-    if (overlay) el.style.height = itemH + 'px'; // hold layout space
+    sizeTarget.style[sizeProp] = itemSize + 'px'; // explicit px — drives transition
+    if (overlay) el.style[layoutProp] = itemSize + 'px'; // hold layout space
     el.offsetHeight;
     el.style.removeProperty('transition');
     inner.style.removeProperty('transition');
@@ -183,11 +202,11 @@ function initMorph(el, { initialValue, onSelect }) {
         // Phase 1: fade out current visible text
         fadeTarget.style.opacity = '0';
         fadeTimer = setTimeout(() => {
-            // Phase 2: expand + reset translateY
+            // Phase 2: expand + reset translate
             el.classList.add('open');
-            transformTarget.style.transform = 'translateY(0)';
+            transformTarget.style.transform = translate(0);
             el.setAttribute('aria-expanded', 'true');
-            sizeTarget.style.maxHeight = (inner.scrollHeight + 8) + 'px'; // explicit px
+            sizeTarget.style[sizeProp] = (inner[scrollDim] + 8) + 'px'; // explicit px
             // Phase 3: fade items in (next frame so opacity:0 registers)
             requestAnimationFrame(() => { fadeTarget.style.opacity = ''; });
         }, FADE_MS);
@@ -201,11 +220,11 @@ function initMorph(el, { initialValue, onSelect }) {
         fadeTimer = setTimeout(() => {
             // Phase 2: collapse + offset to active item
             const active = inner.querySelector('.custom-dropdown-item.active');
-            const off = active ? morphOffset(inner, active, isTop()) : 0;
+            const off = active ? calcOffset(inner, active) : 0;
             el.classList.remove('open');
-            transformTarget.style.transform = `translateY(${off}px)`;
+            transformTarget.style.transform = translate(off);
             el.setAttribute('aria-expanded', 'false');
-            sizeTarget.style.maxHeight = itemH + 'px'; // back to single item
+            sizeTarget.style[sizeProp] = itemSize + 'px'; // back to single item
             // Phase 3: fade active item back in
             requestAnimationFrame(() => { fadeTarget.style.opacity = ''; });
         }, FADE_MS);
@@ -278,11 +297,16 @@ export function syncMorph(el, activeKey) {
     if (!inner) return;
     const active = inner.querySelector('.custom-dropdown-item.active');
     if (!active) return;
+    const horiz = el.classList.contains('morph-horizontal');
     const isOverlay = !!inner.querySelector('.ddm-content');
     const isTop = isOverlay || !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
     const target = inner.querySelector('.ddm-content') || inner;
     // Let the CSS transition handle the smooth slide
-    target.style.transform = `translateY(${morphOffset(inner, active, isTop)}px)`;
+    if (horiz) {
+        target.style.transform = `translateX(${-active.offsetLeft}px)`;
+    } else {
+        target.style.transform = `translateY(${morphOffset(inner, active, isTop)}px)`;
+    }
 }
 
 // ═══════════════════════════════════════════════════════

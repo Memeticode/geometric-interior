@@ -40,6 +40,10 @@ export const COL = {
   'alt-text-waiting-open-emphasize': { bg: [24, 26, 28], bd: [34, 38, 44] },
   'alt-text-waiting-close':           { bg: [24, 26, 28], bd: [34, 38, 44] },
   'alt-text-waiting-close-emphasize': { bg: [24, 26, 28], bd: [34, 38, 44] },
+  'text-short-waiting-open':           { bg: [24, 26, 28], bd: [34, 38, 44] },
+  'text-short-waiting-open-emphasize': { bg: [24, 26, 28], bd: [34, 38, 44] },
+  'text-short-waiting-close':           { bg: [24, 26, 28], bd: [34, 38, 44] },
+  'text-short-waiting-close-emphasize': { bg: [24, 26, 28], bd: [34, 38, 44] },
   'fullscreen-waiting-open':           { bg: [26, 26, 28], bd: [38, 38, 46] },
   'fullscreen-waiting-open-emphasize': { bg: [26, 26, 28], bd: [38, 38, 46] },
   'fullscreen-waiting-close':           { bg: [26, 26, 28], bd: [38, 38, 46] },
@@ -650,6 +654,52 @@ export const altTextWaitingCloseEmphasizeState = {
   P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
 };
 
+// Text-Short Toggle — waiting-open (2 text lines)
+export const textShortWaitingOpenState = {
+  L1: { ...S(6.75, 9.75, 20.25, 9.75), sw: 1.5, da: '100 0', o: 1 },
+  L2: { ...S(3.75, 14.25, 17.25, 14.25), sw: 1.5, da: '100 0', o: 1 },
+  L3: HP, L4: HP, L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: HC, C2: HC, C3: HC, C4: HC, C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Text-Short Toggle — waiting-open-emphasize (lines extend + spread vertically)
+export const textShortWaitingOpenEmphasizeState = {
+  L1: { ...S(5.75, 8.75, 21.25, 8.75), sw: 1.75, da: '100 0', o: 1 },
+  L2: { ...S(2.75, 15.25, 18.25, 15.25), sw: 1.75, da: '100 0', o: 1 },
+  L3: HP, L4: HP, L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: { cx: 5.75, cy: 8.75, r: 0.6, o: 0.5 },
+  C2: { cx: 2.75, cy: 15.25, r: 0.6, o: 0.5 },
+  C3: HC, C4: HC, C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Text-Short Toggle — waiting-close (X shape)
+export const textShortWaitingCloseState = {
+  L1: { ...S(6, 6, 18, 18), sw: 1.5, da: '100 0', o: 0.9 },
+  L2: { ...S(18, 6, 6, 18), sw: 1.5, da: '100 0', o: 0.9 },
+  L3: HP, L4: HP, L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: { cx: 6, cy: 6, r: 0.8, o: 0.6 },
+  C2: { cx: 18, cy: 18, r: 0.8, o: 0.6 },
+  C3: { cx: 18, cy: 6, r: 0.8, o: 0.6 },
+  C4: { cx: 6, cy: 18, r: 0.8, o: 0.6 },
+  C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
+// Text-Short Toggle — waiting-close-emphasize (expanded X)
+export const textShortWaitingCloseEmphasizeState = {
+  L1: { ...S(5, 5, 19, 19), sw: 1.75, da: '100 0', o: 1 },
+  L2: { ...S(19, 5, 5, 19), sw: 1.75, da: '100 0', o: 1 },
+  L3: HP, L4: HP, L5: HP, L6: HP, L7: HP, L8: HP,
+  C1: { cx: 5, cy: 5, r: 1, o: 0.7 },
+  C2: { cx: 19, cy: 19, r: 1, o: 0.7 },
+  C3: { cx: 19, cy: 5, r: 1, o: 0.7 },
+  C4: { cx: 5, cy: 19, r: 1, o: 0.7 },
+  C5: HC, C6: HC, C7: HC,
+  P1: { cx: 12, cy: 12, r: 0, o: 0, sw: 0.75 },
+};
+
 // Fullscreen Toggle — waiting-open (outer corner brackets, enter fullscreen)
 export const fullscreenWaitingOpenState = {
   L1: { ...S(4, 4, 9, 4), sw: 1.5, da: '100 0', o: 0.85 },
@@ -777,6 +827,10 @@ export const STATES = {
   'fullscreen-waiting-open-emphasize': fullscreenWaitingOpenEmphasizeState,
   'fullscreen-waiting-close': fullscreenWaitingCloseState,
   'fullscreen-waiting-close-emphasize': fullscreenWaitingCloseEmphasizeState,
+  'text-short-waiting-open': textShortWaitingOpenState,
+  'text-short-waiting-open-emphasize': textShortWaitingOpenEmphasizeState,
+  'text-short-waiting-close': textShortWaitingCloseState,
+  'text-short-waiting-close-emphasize': textShortWaitingCloseEmphasizeState,
 };
 
 // ── Subgroups for organized display ──
@@ -784,7 +838,7 @@ export const STATE_GROUPS = [
   { name: 'transitions', keys: ['converge', 'dissipate'] },
   { name: 'utility', keys: ['error', 'eye', 'heartbeat', 'loading', 'retry', 'scan'] },
   { name: 'alien', keys: ['array', 'beacon', 'bloom', 'coil', 'cross', 'dots', 'fracture', 'gate', 'glyph', 'hex', 'knot', 'orbit', 'portal', 'pulse', 'seer', 'sigil', 'thorn', 'void', 'dimension', 'wave'] },
-  { name: 'geometric interior', keys: ['alt-text', 'create', 'construct', 'alt-text-waiting-open', 'alt-text-waiting-open-emphasize', 'alt-text-waiting-close', 'alt-text-waiting-close-emphasize', 'fullscreen-waiting-open', 'fullscreen-waiting-open-emphasize', 'fullscreen-waiting-close', 'fullscreen-waiting-close-emphasize'] },
+  { name: 'geometric interior', keys: ['alt-text', 'create', 'construct', 'alt-text-waiting-open', 'alt-text-waiting-open-emphasize', 'alt-text-waiting-close', 'alt-text-waiting-close-emphasize', 'fullscreen-waiting-open', 'fullscreen-waiting-open-emphasize', 'fullscreen-waiting-close', 'fullscreen-waiting-close-emphasize', 'text-short-waiting-open', 'text-short-waiting-open-emphasize', 'text-short-waiting-close', 'text-short-waiting-close-emphasize'] },
 ];
 
 // Resolve COL key for a state key

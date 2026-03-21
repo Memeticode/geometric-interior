@@ -284,6 +284,8 @@ export default {
     'gallery.deleteProfile': 'Delete',
     'gallery.altTextBtn': 'Text',
     'iv.altText': 'Toggle alt text',
+    'iv.textShort': 'Commentary only',
+    'iv.textFull': 'Full description',
     'iv.resolution': 'Render resolution',
     'iv.fullscreen': 'Toggle fullscreen',
     'gallery.ctxEdit': 'Edit',

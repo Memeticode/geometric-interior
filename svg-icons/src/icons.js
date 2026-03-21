@@ -1,5 +1,6 @@
 // ── Geometric Interior ──
 export const ALT_TEXT_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4.5 3h9"/><path d="M2.5 6h9"/><path d="M2.5 9h11"/><path d="M2.5 12h5.5"/></svg>';
+export const TEXT_SHORT_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4.5 6.5h9"/><path d="M2.5 9.5h9"/></svg>';
 export const CREATE_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10"/><path d="M3 8h10"/><circle cx="8" cy="8" r="1.3" fill="currentColor" stroke="none"/></svg>';
 export const CONSTRUCT_SVG = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7L5 11.5H11L12.5 7"/><path d="M3.5 7L8 3.5" stroke-dasharray="2 2"/><path d="M12.5 7L8 3.5" stroke-dasharray="2 2"/><circle cx="8" cy="3.5" r="0.9" fill="currentColor" stroke="none"/></svg>';
 

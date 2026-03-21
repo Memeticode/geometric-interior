@@ -10,6 +10,7 @@ import { STATES } from './morph-states.js';
 import {
   altTextWaitingOpenState, altTextWaitingCloseState,
   fullscreenWaitingOpenState, fullscreenWaitingCloseState,
+  textShortWaitingOpenState, textShortWaitingCloseState,
   createState, constructState,
 } from './morph-states.js';
 
@@ -21,7 +22,7 @@ export const ICON_CATALOG = {};
 // Static icons — from STATIC_ICON_REGISTRY
 const PLAYFOR_KEYS = new Set([
   'res-270', 'res-540', 'res-900', 'res-1080', 'res-1620', 'res-4k',
-  'share', 'link', 'text', 'email', 'bluesky', 'facebook', 'google',
+  'share', 'link', 'text', 'text-short', 'email', 'bluesky', 'facebook', 'google',
   'linkedin', 'reddit', 'twitter', 'github',
 ]);
 
@@ -43,7 +44,7 @@ for (const [key, entry] of Object.entries(STATIC_ICON_REGISTRY)) {
 
 // Morph icons — from STATES (exclude converge/dissipate and waiting states)
 const MORPH_EXCLUDE = new Set(['converge', 'dissipate']);
-const WAITING_RE = /^(alt-text-waiting|fullscreen-waiting)/;
+const WAITING_RE = /^(alt-text-waiting|fullscreen-waiting|text-short-waiting)/;
 
 for (const key of Object.keys(STATES)) {
   if (MORPH_EXCLUDE.has(key) || WAITING_RE.test(key)) continue;
@@ -63,10 +64,10 @@ for (const key of Object.keys(STATES)) {
 }
 
 // Toggle icons — preconfigured multi-state morph icons
-ICON_CATALOG['alt-text-toggle'] = {
+ICON_CATALOG['text-toggle'] = {
   type: 'toggle',
-  desc: 'alt-text overlay toggle',
-  factory: 'createAltTextToggle',
+  desc: 'text overlay toggle',
+  factory: 'createTextToggle',
   states: ['waiting-open', 'waiting-close'],
   capabilities: { animate: true, morph: true, converge: true, dissipate: true, playFor: false },
 };
@@ -75,6 +76,14 @@ ICON_CATALOG['fullscreen-toggle'] = {
   type: 'toggle',
   desc: 'fullscreen toggle',
   factory: 'createFullscreenToggle',
+  states: ['waiting-open', 'waiting-close'],
+  capabilities: { animate: true, morph: true, converge: true, dissipate: true, playFor: false },
+};
+
+ICON_CATALOG['text-short-toggle'] = {
+  type: 'toggle',
+  desc: 'text-short toggle (2 lines / X)',
+  factory: 'createTextShortToggle',
   states: ['waiting-open', 'waiting-close'],
   capabilities: { animate: true, morph: true, converge: true, dissipate: true, playFor: false },
 };
@@ -90,13 +99,17 @@ ICON_CATALOG['card-icon'] = {
 // ── State data map for rendering toggle state thumbnails ──
 
 export const TOGGLE_STATE_MAP = {
-  'alt-text-toggle': {
+  'text-toggle': {
     'waiting-open': altTextWaitingOpenState,
     'waiting-close': altTextWaitingCloseState,
   },
   'fullscreen-toggle': {
     'waiting-open': fullscreenWaitingOpenState,
     'waiting-close': fullscreenWaitingCloseState,
+  },
+  'text-short-toggle': {
+    'waiting-open': textShortWaitingOpenState,
+    'waiting-close': textShortWaitingCloseState,
   },
   'card-icon': {
     'viewing': createState,
@@ -113,7 +126,7 @@ export const ICON_GROUPS = [
       {
         name: 'Viewer Control',
         behavior: 'mixed',
-        keys: ['alt-text-toggle', 'res-270', 'res-540', 'res-900', 'res-1080', 'res-1620', 'res-4k', 'fullscreen-toggle'],
+        keys: ['text-toggle', 'text-short-toggle', 'res-270', 'res-540', 'res-900', 'res-1080', 'res-1620', 'res-4k', 'fullscreen-toggle'],
       },
       {
         name: 'Viewer Menu',
@@ -123,7 +136,7 @@ export const ICON_GROUPS = [
       {
         name: 'Menu \u2014 Share',
         behavior: 'playFor',
-        keys: ['link', 'text', 'email', 'bluesky', 'facebook', 'google', 'linkedin', 'reddit', 'twitter'],
+        keys: ['link', 'text', 'text-short', 'email', 'bluesky', 'facebook', 'google', 'linkedin', 'reddit', 'twitter'],
       },
       {
         name: 'Menu \u2014 Download',

@@ -15,7 +15,7 @@ import {
   SHARE_SVG, LINK_SVG, TEXT_SVG, EMAIL_SVG,
   BLUESKY_SVG, FACEBOOK_SVG, GOOGLE_SVG, LINKEDIN_SVG, REDDIT_SVG, TWITTER_SVG,
   GITHUB_SVG,
-  ALT_TEXT_SVG, CREATE_SVG, CONSTRUCT_SVG,
+  ALT_TEXT_SVG, TEXT_SHORT_SVG, CREATE_SVG, CONSTRUCT_SVG,
 } from './icons.js';
 
 // ── Animation implementations ──
@@ -440,18 +440,22 @@ function wipe(children, config, now) {
 }
 
 function typewrite(children, config, now) {
-  // children[0]=bubble, [1]=line1 (h6), [2]=line2 (h3.5)
+  // 3 children: [0]=bubble, [1]=line1, [2]=line2
+  // 2 children: [0]=line1, [1]=line2 (no bubble)
   const period = config.period || 1200;
   const f = config._fade ?? 1;
-  if (children.length < 3) return;
+  const hasBubble = children.length >= 3;
+  const li1 = hasBubble ? 1 : 0;
+  const li2 = hasBubble ? 2 : 1;
+  if (children.length < 2) return;
 
   // Set up stroke-dasharray on first call
   if (!config._lineSetup) {
     config._lineSetup = true;
-    config._l1 = children[1].getTotalLength?.() || 6;
-    config._l2 = children[2].getTotalLength?.() || 3.5;
-    children[1].setAttribute('stroke-dasharray', config._l1);
-    children[2].setAttribute('stroke-dasharray', config._l2);
+    config._l1 = children[li1].getTotalLength?.() || 9;
+    config._l2 = children[li2].getTotalLength?.() || 9;
+    children[li1].setAttribute('stroke-dasharray', config._l1);
+    children[li2].setAttribute('stroke-dasharray', config._l2);
   }
 
   const { _l1: l1, _l2: l2 } = config;
@@ -459,15 +463,16 @@ function typewrite(children, config, now) {
   // One-shot draw: lines extend then stay
   if (!config._animStart) config._animStart = now;
   const elapsed = now - config._animStart;
-  const drawDur = period * 0.4; // line 2 finishes at 0.4 × period
   const d1 = Math.min(elapsed / (period * 0.25), 1);
   const d2 = Math.min(Math.max((elapsed - period * 0.15) / (period * 0.25), 0), 1);
-  children[1].setAttribute('stroke-dashoffset', l1 * (1 - d1) * f);
-  children[2].setAttribute('stroke-dashoffset', l2 * (1 - d2) * f);
+  children[li1].setAttribute('stroke-dashoffset', l1 * (1 - d1) * f);
+  children[li2].setAttribute('stroke-dashoffset', l2 * (1 - d2) * f);
 
-  // Subtle breathe on bubble
-  const bo = 1 + (0.85 + 0.15 * ((Math.sin(now / 3000) + 1) / 2) - 1) * f;
-  children[0].setAttribute('opacity', bo);
+  // Subtle breathe on bubble (if present)
+  if (hasBubble) {
+    const bo = 1 + (0.85 + 0.15 * ((Math.sin(now / 3000) + 1) / 2) - 1) * f;
+    children[0].setAttribute('opacity', bo);
+  }
 }
 
 const ANIM_FNS = {
@@ -481,6 +486,7 @@ const ANIM_FNS = {
 export const STATIC_ICON_REGISTRY = {
   // Geometric Interior
   'alt-text':       { svg: ALT_TEXT_SVG, anim: 'breathe', desc: 'alt-text lines' },
+  'text-short':     { svg: TEXT_SHORT_SVG, anim: 'typewrite', config: { period: 1200 }, desc: 'text — 2 lines type in' },
   'create':         { svg: CREATE_SVG, anim: 'pulse', desc: 'create / add' },
   'construct':      { svg: CONSTRUCT_SVG, anim: 'twinkle', desc: 'construct scene' },
   // Navigation

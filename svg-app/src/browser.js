@@ -5,7 +5,7 @@ import {
   convergeState, dissipateState,
   STATIC_ICON_REGISTRY, injectAnimatedSVG,
   ICON_CATALOG, ICON_GROUPS, TOGGLE_STATE_MAP,
-  createAltTextToggle, createFullscreenToggle, createCardIcon,
+  createTextToggle, createFullscreenToggle, createTextShortToggle, createCardIcon,
 } from '@svg-icons';
 
 const browser = document.getElementById('browser');
@@ -2060,8 +2060,9 @@ function buildStaticCard(key, behavior) {
 // ── Toggle factory lookup ──
 
 const TOGGLE_FACTORIES = {
-  createAltTextToggle,
+  createTextToggle,
   createFullscreenToggle,
+  createTextShortToggle,
   createCardIcon,
 };
 

@@ -105,7 +105,7 @@ image-viewer[mode="canvas"] .iv-controls {
     color: rgba(255, 255, 255, 0.8);
 }
 .iv-controls .icon-btn:hover { color: #fff; }
-.iv-controls .iv-text-btn.iv-text-active { color: #fff; }
+.iv-controls .iv-text-dd.iv-text-active .ddm-inner { color: #fff; }
 
 /* Frosted glass background — scales from outside in on show, inside out on hide */
 .iv-controls .icon-btn::before {
@@ -146,12 +146,16 @@ image-viewer.iv-controls-active .iv-controls .icon-btn::before {
     height: 12px;
     display: block;
 }
-/* Text button */
-.iv-controls .iv-text-btn {
+/* Text dropdown */
+.iv-controls .iv-text-dd {
     width: 2rem;
     height: 2rem;
     border-radius: 3px;
     padding: 0;
+}
+.iv-controls .iv-text-dd .custom-dropdown-item svg {
+    width: 24px !important;
+    height: 24px !important;
 }
 
 /* ── Resolution SVG icons in dropdown ── */
@@ -226,13 +230,34 @@ image-viewer.iv-controls-active .iv-controls .ddm-inner {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
-/* Content wrapper inside inner — receives translateY so pill stays fixed */
+/* Content wrapper inside inner — receives translate so pill stays fixed */
 .iv-controls .ddm-content {
     display: flex;
     flex-direction: column;
     gap: 0.125rem;
     transition: transform calc(var(--t-menu) * var(--t-speed)) cubic-bezier(0.16, 1, 0.3, 1),
                 opacity calc(var(--t-accent) * var(--t-speed)) ease;
+}
+
+/* ── Horizontal morph mode — expand along X axis ── */
+.iv-controls dd-morph.morph-horizontal {
+    height: 2rem;
+}
+.iv-controls dd-morph.morph-horizontal .ddm-inner {
+    flex-direction: row;
+    transition: max-width var(--lm-collapse) cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow var(--lm-collapse) ease,
+                transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+image-viewer.iv-controls-active .iv-controls dd-morph.morph-horizontal .ddm-inner {
+    transition: max-width var(--lm-collapse) cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow var(--lm-collapse) ease,
+                transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.iv-controls dd-morph.morph-horizontal .ddm-content {
+    flex-direction: row;
 }
 
 /* Items — 2rem square to match icon buttons */

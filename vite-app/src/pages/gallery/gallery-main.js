@@ -37,7 +37,7 @@ import { showConfirm } from '../../components/modals.js';
 import { slugify } from '../../components/slugify.js';
 import { hideTooltip } from '../../components/tooltips.js';
 import {
-    createAltTextToggle, createFullscreenToggle,
+    createTextToggle, createFullscreenToggle, createTextShortToggle,
     TRASH_SVG, RESTORE_SVG, EDIT_SVG, ADD_SVG, FULLSCREEN_SVG, CLOSE_SVG, ERROR_SVG, RETRY_SVG,
     UNDO_SVG, REDO_SVG, SAVE_SVG, RANDOMIZE_SVG, RENDER_SVG,
     FIELD_DIAMOND_SVG, DOWNLOAD_SVG, IMAGE_SVG, BUNDLE_SVG, SETTINGS_SVG, SHARE_SVG, LINK_SVG, ARROW_RIGHT_SVG,
@@ -49,7 +49,7 @@ import { profileToConfig } from '@geometric-interior/core/config-schema.js';
 import { initGalleryWorker } from './gallery-worker-bridge.js';
 import { createRenderQueue } from './render-queue.js';
 import { initGeneratePanel, renderQueueUI } from './generate-panel.js';
-// import { initCustomDropdown } from '../../components/custom-dropdown.js'; // slideshow removed
+import { initCustomDropdown } from '../../components/custom-dropdown.js';
 import { initAnimationEditor, destroyAnimationEditor } from '../animation/anim-main.js';
 import { createLayoutMorph } from '../../components/layout-morph.js';
 import { showBlockOverlay, hideBlockOverlay } from '../../components/transition-overlay.js';
@@ -260,27 +260,87 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
 
 /* ── Set up gallery viewer controls ── */
 {
-    // Alt-text toggle button — morph icon (text lines ↔ X)
-    const textBtn = document.createElement('button');
-    textBtn.className = 'icon-btn iv-text-btn';
-    textBtn.setAttribute('aria-label', t('gallery.altTextBtn'));
-    textBtn.setAttribute('data-tooltip', t('iv.altText'));
-    textBtn.setAttribute('data-i18n-tooltip', 'iv.altText');
-    const altTextIcon = createAltTextToggle(textBtn, { startVisible: false });
-    textBtn.morphIcon = altTextIcon;
-    textBtn.addEventListener('mouseenter', () => altTextIcon.startShimmer());
-    textBtn.addEventListener('mouseleave', () => altTextIcon.stopShimmer());
-    textBtn.addEventListener('click', () => {
-        if (imageViewer.altVisible) imageViewer.dismissAltText();
-        else imageViewer.showAltText();
-    });
+    // Text overlay dropdown (dd-morph — short/full mode + X close)
+    const textDropdown = document.createElement('dd-morph');
+    textDropdown.className = 'select-base morph-overlay iv-text-dd';
+    textDropdown.id = 'imageTextDropdown';
+    textDropdown.setAttribute('role', 'listbox');
+    textDropdown.setAttribute('aria-haspopup', 'listbox');
+    textDropdown.setAttribute('aria-expanded', 'false');
+    textDropdown.setAttribute('aria-label', t('gallery.altTextBtn'));
+    textDropdown.setAttribute('data-tooltip', t('iv.altText'));
+    textDropdown.setAttribute('data-i18n-tooltip', 'iv.altText');
+    textDropdown.setAttribute('tabindex', '0');
+
+    const shortBtn = document.createElement('button');
+    shortBtn.className = 'custom-dropdown-item active';
+    shortBtn.setAttribute('role', 'option');
+    shortBtn.dataset.value = 'short';
+    shortBtn.dataset.label = 'Short';
+    shortBtn.setAttribute('aria-selected', 'true');
+
+    const fullBtn = document.createElement('button');
+    fullBtn.className = 'custom-dropdown-item';
+    fullBtn.setAttribute('role', 'option');
+    fullBtn.dataset.value = 'full';
+    fullBtn.dataset.label = 'Full';
+    fullBtn.setAttribute('aria-selected', 'false');
+
+    const shortIcon = createTextShortToggle(shortBtn, { startVisible: false });
+    const fullIcon = createTextToggle(fullBtn, { startVisible: false });
+
+    textDropdown.appendChild(shortBtn);
+    textDropdown.appendChild(fullBtn);
+
+    // Track text-overlay state locally
+    let textMode = 'short';
+    const textIconMap = { short: shortIcon, full: fullIcon };
+
+    // Open text + morph to X on collapsed click; dropdown also opens via initMorph
+    textDropdown.addEventListener('click', () => {
+        if (!textDropdown.classList.contains('open')) {
+            if (!imageViewer.altVisible) {
+                imageViewer.textMode = textMode;
+                imageViewer.showAltText();
+            }
+            textIconMap[textMode].morph('waiting-close');
+        }
+    }, true); // capture phase — fires before initMorph's handler
+
+    // Suppress tooltip when open; morph X back when dropdown closes while text is open
+    new MutationObserver(() => {
+        if (textDropdown.classList.contains('open')) {
+            textDropdown.removeAttribute('data-tooltip');
+            hideTooltip();
+        } else {
+            textDropdown.setAttribute('data-tooltip', t('iv.altText'));
+            if (imageViewer.altVisible) {
+                textIconMap[textMode].morph('waiting-open');
+            }
+        }
+    }).observe(textDropdown, { attributes: true, attributeFilter: ['class'] });
+
+    // Active state brightness
     imageViewer.addEventListener('alt-text-toggle', (e) => {
-        textBtn.classList.toggle('iv-text-active', e.detail.visible);
+        textDropdown.classList.toggle('iv-text-active', e.detail.visible);
     });
+
+    // Hover shimmer — collapsed: active icon; open: individual items
+    const getActiveTextIcon = () => textIconMap[textMode];
+    textDropdown.addEventListener('mouseenter', () => {
+        if (!textDropdown.classList.contains('open')) getActiveTextIcon()?.startShimmer();
+    });
+    textDropdown.addEventListener('mouseleave', () => {
+        if (!textDropdown.classList.contains('open')) getActiveTextIcon()?.stopShimmer();
+    });
+    shortBtn.addEventListener('mouseenter', () => shortIcon.startShimmer());
+    shortBtn.addEventListener('mouseleave', () => shortIcon.stopShimmer());
+    fullBtn.addEventListener('mouseenter', () => fullIcon.startShimmer());
+    fullBtn.addEventListener('mouseleave', () => fullIcon.stopShimmer());
 
     // Resolution dropdown (morph mode — single unified element, SVG pixel-grid icons)
     const resDropdown = document.createElement('dd-morph');
-    resDropdown.className = 'select-base morph-overlay';
+    resDropdown.className = 'select-base morph-overlay morph-horizontal';
     resDropdown.id = 'imageResolutionDropdown';
     resDropdown.setAttribute('role', 'listbox');
     resDropdown.setAttribute('aria-haspopup', 'listbox');
@@ -352,15 +412,38 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
     // Coalesce / dissipate morph icons with controls show / hide
     // mode: 'converge' — primitives emerge from / collapse to center point
     imageViewer.addEventListener('controls-show', () => {
-        altTextIcon.coalesce({ mode: 'converge' });
+        shortIcon.coalesce({ mode: 'converge' });
+        fullIcon.coalesce({ mode: 'converge' });
         fsIcon.coalesce({ mode: 'converge' });
     });
     imageViewer.addEventListener('controls-hide', () => {
-        altTextIcon.dissipate({ mode: 'converge' });
+        shortIcon.dissipate({ mode: 'converge' });
+        fullIcon.dissipate({ mode: 'converge' });
         fsIcon.dissipate({ mode: 'converge' });
     });
 
-    imageViewer.setControls(fsBtn, textBtn, resDropdown);
+    imageViewer.setControls(textDropdown, fsBtn, resDropdown);
+    initCustomDropdown(textDropdown, {
+        initialValue: 'short',
+        animate: true,
+        onSelect(value) {
+            if (imageViewer.altVisible && value === textMode) {
+                // Clicked the X (active item) → close text
+                textIconMap[textMode].morph('waiting-open');
+                imageViewer.dismissAltText();
+            } else if (imageViewer.altVisible) {
+                // Switch mode — morph old X back, update
+                textIconMap[textMode].morph('waiting-open');
+                textMode = value;
+                imageViewer.textMode = value;
+            } else {
+                // Text was closed — open in selected mode
+                textMode = value;
+                imageViewer.textMode = value;
+                imageViewer.showAltText();
+            }
+        },
+    });
     initResolutionSelector(resDropdown, { animate: true });
 
     // Error overlay content
@@ -463,7 +546,7 @@ function buildAltContent({ wrapExtras = false } = {}) {
         seedLabel = seedTagToLabel(profile.seed, locale);
     }
 
-    const commentary = editCommentaryField.value || '';
+    const commentary = editMode ? editCommentaryField.value || '' : imageViewer.commentary || '';
     const altTextStr = imageViewer.altText || '';
 
     const frag = document.createDocumentFragment();
@@ -1188,12 +1271,18 @@ function applySelection(name, profile, isPortrait, assetId) {
     // Swap footer text (commentary/gen title) — deferred to fade midpoint
     const updateFooterContent = () => {
         selectedGenTitle.textContent = newGenTitle;
-        editCommentaryField.value = newCommentary;
 
-        // Hide commentary box if empty (slide in/out via CSS transition)
-        morphCommentary.classList.toggle('collapsed', !editCommentaryField.value);
+        // Commentary is only populated in edit mode; in browse mode keep field empty
+        if (editMode) {
+            editCommentaryField.value = newCommentary;
+        } else {
+            editCommentaryField.value = '';
+        }
 
-        const shouldHide = !editCommentaryField.value && !selectedGenTitle.textContent;
+        // Hide commentary box in browse mode (always collapsed; edit CSS overrides)
+        morphCommentary.classList.toggle('collapsed', !editMode || !editCommentaryField.value);
+
+        const shouldHide = !selectedGenTitle.textContent && (!editMode || !editCommentaryField.value);
 
         // Toggle footer-hidden — CSS transitions handle max-height, padding, border
         cardFooter.classList.toggle('footer-hidden', shouldHide);
@@ -1206,6 +1295,7 @@ function applySelection(name, profile, isPortrait, assetId) {
         src: newSrc,
         alt: newAlt,
         altText: newAltText,
+        commentary: newCommentary,
         fadeDuration: instant ? 0 : fadeDuration,
         onSwap: updateHeaderContent,
     }).then(() => {
@@ -1535,8 +1625,7 @@ function applyAnimSelection(assetId) {
     addSelectCommas();
 
     const meta = asset.meta || {};
-    selectedGenTitle.textContent = '';
-    editCommentaryField.value = meta.durationS
+    selectedGenTitle.textContent = meta.durationS
         ? `${meta.durationS.toFixed(1)}s animation at ${meta.fps || 30}fps (${meta.width || '?'}×${meta.height || '?'})`
         : '';
 
@@ -2876,10 +2965,10 @@ async function exitEditMode(saved, fromPopstate, savedAssetId) {
         }
     }
 
-    // Collapse commentary if empty so it slides out during browse morph
-    morphCommentary.classList.toggle('collapsed', !editCommentaryField.value.trim());
-    cardFooter.classList.toggle('footer-hidden',
-        !editCommentaryField.value.trim() && !selectedGenTitle.textContent);
+    // Clear commentary — not shown in browse mode
+    editCommentaryField.value = '';
+    morphCommentary.classList.add('collapsed');
+    cardFooter.classList.toggle('footer-hidden', !selectedGenTitle.textContent);
 
     // Morph back to browse after card attributes are updated so CSS transitions animate smoothly
     const cfBrowse = setupFieldCrossfade();
@@ -3532,7 +3621,7 @@ document.addEventListener('localechange', () => {
         if (profile) {
             const displayName = profile.displayName || selected.name;
             editNameField.value = displayName;
-            editCommentaryField.value = profile.commentary || '';
+            if (editMode) editCommentaryField.value = profile.commentary || '';
             const { title, altText } = generateProfileText(profile);
             if (selected.isPortrait) {
                 selectedGenTitle.textContent = '';
