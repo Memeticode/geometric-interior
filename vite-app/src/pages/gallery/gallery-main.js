@@ -340,7 +340,7 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
 
     // Resolution dropdown (morph mode — single unified element, SVG pixel-grid icons)
     const resDropdown = document.createElement('dd-morph');
-    resDropdown.className = 'select-base morph-overlay morph-horizontal';
+    resDropdown.className = 'select-base morph-overlay';
     resDropdown.id = 'imageResolutionDropdown';
     resDropdown.setAttribute('role', 'listbox');
     resDropdown.setAttribute('aria-haspopup', 'listbox');
@@ -426,6 +426,7 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
     initCustomDropdown(textDropdown, {
         initialValue: 'short',
         animate: true,
+        direction: 'left',
         onSelect(value) {
             if (imageViewer.altVisible && value === textMode) {
                 // Clicked the X (active item) → close text
@@ -444,7 +445,7 @@ document.getElementById('genErrorIcon').innerHTML = ERROR_SVG;
             }
         },
     });
-    initResolutionSelector(resDropdown, { animate: true });
+    initResolutionSelector(resDropdown, { animate: true, direction: 'right' });
 
     // Error overlay content
     imageViewer.setErrorContent(

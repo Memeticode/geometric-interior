@@ -32,14 +32,16 @@
  * @param {string} [opts.labelText] - Override label text on init
  * @param {(value: string, label: string) => void} opts.onSelect - Called when an item is selected
  * @param {boolean} [opts.animate] - Enable morph-mode (dd-morph element)
+ * @param {'down'|'up'|'left'|'right'} [opts.direction='down'] - Expansion direction
+ * @param {boolean} [opts.stickyActive=false] - If true, collapsed view stays fixed (no translate to active item)
  */
-export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSelect, animate }) {
+export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSelect, animate, direction, stickyActive }) {
     if (!dropdownEl) return;
 
     const isMorph = animate && dropdownEl.tagName === 'DD-MORPH';
 
     if (isMorph) {
-        initMorph(dropdownEl, { initialValue, onSelect });
+        initMorph(dropdownEl, { initialValue, onSelect, direction, stickyActive });
         return;
     }
 
@@ -119,12 +121,22 @@ export function initCustomDropdown(dropdownEl, { initialValue, labelText, onSele
 // ── dd-morph: unified single-element dropdown ──
 // ═══════════════════════════════════════════════════════
 
+/** @type {WeakMap<HTMLElement, {horiz: boolean, isStart: boolean, stickyActive: boolean}>} */
+const morphConfigs = new WeakMap();
+
 /**
  * Initialize a <dd-morph> element. All items live inside it directly.
- * Collapsed: clips to one item height, inner wrapper translates to show active.
- * Expanded: full height, all items visible.
+ * Collapsed: clips to one item size, inner wrapper translates to show active.
+ * Expanded: full size, all items visible.
+ *
+ * @param {HTMLElement} el
+ * @param {object} opts
+ * @param {string} [opts.initialValue]
+ * @param {(value: string, label: string) => void} [opts.onSelect]
+ * @param {'down'|'up'|'left'|'right'} [opts.direction='down'] - Expansion direction
+ * @param {boolean} [opts.stickyActive=false] - If true, collapsed view stays fixed
  */
-function initMorph(el, { initialValue, onSelect }) {
+function initMorph(el, { initialValue, onSelect, direction = 'down', stickyActive = false }) {
     // Wrap items in an inner container for translate animation
     const inner = document.createElement('div');
     inner.className = 'ddm-inner';
@@ -133,11 +145,17 @@ function initMorph(el, { initialValue, onSelect }) {
 
     if (initialValue) syncActive(el, initialValue);
 
-    // Horizontal mode — expand along X axis instead of Y
-    const horiz = el.classList.contains('morph-horizontal');
+    // Derive axis and alignment from direction
+    const horiz = direction === 'left' || direction === 'right';
+    const isStart = direction === 'down' || direction === 'right';
 
-    // Overlay mode always clips from the top of .ddm-inner, so always use top offset
-    const isTop = () => overlay || !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
+    // Add CSS classes for axis and direction
+    if (horiz) el.classList.add('morph-horizontal');
+    if (direction === 'left') el.classList.add('morph-expand-left');
+    if (direction === 'up') el.classList.add('morph-expand-up');
+
+    // Store config for syncMorph
+    morphConfigs.set(el, { horiz, isStart, stickyActive });
 
     // Overlay mode: inner overflows el's fixed size, expanding over content.
     // Content wrapper inside inner receives translate so the pill stays fixed.
@@ -160,13 +178,17 @@ function initMorph(el, { initialValue, onSelect }) {
     const measureItem = (item) => horiz
         ? (item?.offsetWidth || 24)
         : (item?.offsetHeight || 24);
-    const horizOffset = (inner, active, isLeft) => {
-        if (isLeft) return -active.offsetLeft;
-        return inner.offsetWidth - active.offsetWidth - active.offsetLeft;
-    };
-    const calcOffset = horiz
-        ? (inner, active) => horizOffset(inner, active, true)
-        : (inner, active) => morphOffset(inner, active, isTop());
+
+    function calcOffset(inner, active) {
+        if (horiz) {
+            return isStart ? -active.offsetLeft : (inner.offsetWidth - active.offsetWidth - active.offsetLeft);
+        }
+        return isStart ? -active.offsetTop : (inner.offsetHeight - active.offsetHeight - active.offsetTop);
+    }
+
+    function collapsedOffset(inner, active) {
+        return stickyActive ? 0 : calcOffset(inner, active);
+    }
 
     // ── Measure & set collapsed state ──
     el.style.transition = 'none';
@@ -179,7 +201,7 @@ function initMorph(el, { initialValue, onSelect }) {
     const anyItem = inner.querySelector('.custom-dropdown-item');
     const itemSize = measureItem(activeItem || anyItem);
 
-    const offset = activeItem ? calcOffset(inner, activeItem) : 0;
+    const offset = activeItem ? collapsedOffset(inner, activeItem) : 0;
     transformTarget.style.transform = translate(offset);
 
     el.classList.remove('open');
@@ -220,7 +242,7 @@ function initMorph(el, { initialValue, onSelect }) {
         fadeTimer = setTimeout(() => {
             // Phase 2: collapse + offset to active item
             const active = inner.querySelector('.custom-dropdown-item.active');
-            const off = active ? calcOffset(inner, active) : 0;
+            const off = active ? collapsedOffset(inner, active) : 0;
             el.classList.remove('open');
             transformTarget.style.transform = translate(off);
             el.setAttribute('aria-expanded', 'false');
@@ -277,15 +299,6 @@ function initMorph(el, { initialValue, onSelect }) {
 }
 
 /**
- * Calculate translateY offset to position the active item at the
- * visible edge of the collapsed element.
- */
-function morphOffset(inner, activeItem, isTop) {
-    if (isTop) return -activeItem.offsetTop;
-    return inner.offsetHeight - activeItem.offsetHeight - activeItem.offsetTop;
-}
-
-/**
  * Sync a <dd-morph> element's visual state after an external value change.
  * Smoothly transitions the inner wrapper to show the new active item.
  */
@@ -297,15 +310,16 @@ export function syncMorph(el, activeKey) {
     if (!inner) return;
     const active = inner.querySelector('.custom-dropdown-item.active');
     if (!active) return;
-    const horiz = el.classList.contains('morph-horizontal');
-    const isOverlay = !!inner.querySelector('.ddm-content');
-    const isTop = isOverlay || !el.closest('image-viewer') || !!el.closest('image-viewer[controls-pos^="top"]');
+    const cfg = morphConfigs.get(el);
+    if (!cfg) return;
+    if (cfg.stickyActive) return; // no translate needed
     const target = inner.querySelector('.ddm-content') || inner;
-    // Let the CSS transition handle the smooth slide
-    if (horiz) {
-        target.style.transform = `translateX(${-active.offsetLeft}px)`;
+    if (cfg.horiz) {
+        const off = cfg.isStart ? -active.offsetLeft : (inner.offsetWidth - active.offsetWidth - active.offsetLeft);
+        target.style.transform = `translateX(${off}px)`;
     } else {
-        target.style.transform = `translateY(${morphOffset(inner, active, isTop)}px)`;
+        const off = cfg.isStart ? -active.offsetTop : (inner.offsetHeight - active.offsetHeight - active.offsetTop);
+        target.style.transform = `translateY(${off}px)`;
     }
 }
 

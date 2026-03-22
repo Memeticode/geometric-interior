@@ -40,7 +40,7 @@ export function setResolution(key) {
     }));
 }
 
-export function initResolutionSelector(dropdownEl, { animate } = {}) {
+export function initResolutionSelector(dropdownEl, { animate, direction } = {}) {
     if (!dropdownEl) return;
     const cur = getResolution();
 
@@ -48,6 +48,7 @@ export function initResolutionSelector(dropdownEl, { animate } = {}) {
         initialValue: cur.key,
         onSelect(value) { setResolution(value); },
         animate,
+        direction,
     });
 
     document.addEventListener('resolutionchange', (e) => {

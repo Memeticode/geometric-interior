@@ -258,6 +258,30 @@ image-viewer.iv-controls-active .iv-controls dd-morph.morph-horizontal .ddm-inne
 }
 .iv-controls dd-morph.morph-horizontal .ddm-content {
     flex-direction: row;
+    flex-shrink: 0;
+}
+.iv-controls dd-morph.morph-horizontal .custom-dropdown-item {
+    flex-shrink: 0;
+}
+
+/* Horizontal overlay: absolute-position inner so it overflows without disrupting flex layout */
+.iv-controls dd-morph.morph-horizontal.morph-overlay .ddm-inner {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%) scale(1.35);
+}
+image-viewer.iv-controls-active .iv-controls dd-morph.morph-horizontal.morph-overlay .ddm-inner {
+    transform: translateY(-50%) scale(1);
+}
+/* Left-expanding: anchor inner to right edge, reverse item flow so active is at clip edge */
+.iv-controls dd-morph.morph-expand-left.morph-overlay .ddm-inner {
+    left: auto;
+    right: 0;
+    flex-direction: row-reverse;
+}
+.iv-controls dd-morph.morph-expand-left .ddm-content {
+    flex-direction: row-reverse;
 }
 
 /* Items — 2rem square to match icon buttons */
