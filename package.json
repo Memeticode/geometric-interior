@@ -23,10 +23,12 @@
     "test:lib:browser": "node geometric-interior/__tests__/browser/run-lib-browser.mjs",
     "test:lib": "node geometric-interior/__tests__/run-lib-all.mjs",
     "test:all": "node vite-app/__tests__/run-all.mjs",
-    "gen:starter-images": "node scripts/gen-starter-profile-images.mjs",
-    "dev:render": "vite --config scripts/vite.config.js --port 5204",
-    "dev:svg": "cd svg-app && vite",
-    "build:svg": "cd svg-app && vite build"
+    "gen:starter-images": "node research/scripts/gen-starter-profile-images.mjs",
+    "dev:render": "vite --config research/scripts/vite.config.js --port 5204",
+    "render:single": "node research/scripts/render-single.mjs",
+    "screenshot:responsive": "node research/scripts/screenshot-responsive.mjs",
+    "dev:svg": "cd research/svg-app && vite",
+    "build:svg": "cd research/svg-app && vite build"
   },
   "peerDependencies": {
     "postprocessing": "^6.36.0",

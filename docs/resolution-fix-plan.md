@@ -443,7 +443,7 @@ Render Meditation at 840×540 before and after. The images should be pixel-ident
 Render Meditation at all 6 resolution tiers. Compare relative glow coverage:
 
 ```
-node workflows/update-cached-renders/render.mjs --profile="Meditation"
+node research/workflows/update-cached-renders/render.mjs --profile="Meditation"
 ```
 
 The glow halos should appear the same relative size across thumb, SD, HD, FHD, QHD, and 4K. All should match the current SD appearance.

@@ -15,12 +15,13 @@ explore-*.mjs
 /output
 
 
-workflows/**/*.png
-scripts/**/*.png
-scripts/**.png
+# Generated render output (research/ holds archived exploration work)
+research/workflows/**/*.png
+research/workflows/image-param-space-exploration/output/chat-export-01.txt
+sampler-captures/
+research/scripts/**/*.png
+research/scripts/**.png
 
 screenshots/**/*.png
 output/screenshots/**/*.png
-sampler-captures/
 notes.txt
-workflows/image-param-space-exploration/output/chat-export-01.txt
