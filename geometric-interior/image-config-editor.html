@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Config Editor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0e;
+      color: #c8c8d0;
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+      font-size: 13px;
+      padding: 20px;
+    }
+    h1 { font-size: 16px; font-weight: 500; margin-bottom: 16px; color: #e0e0e8; }
+    h2 {
+      font-size: 11px; font-weight: 500; color: #888;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      margin: 14px 0 8px;
+    }
+    h2:first-child { margin-top: 0; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* ── Controls panel ── */
+    .panel {
+      padding: 12px 16px;
+      background: #12121a;
+      border-radius: 6px;
+      border: 1px solid #1e1e2a;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 90px 1fr 44px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .row label {
+      color: #888; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .row .val { color: #6868a0; font-size: 11px; text-align: right; }
+    input[type="range"] { width: 100%; accent-color: #6060b0; }
+    select, textarea {
+      background: #1a1a26;
+      color: #d0d0d8;
+      border: 1px solid #2a2a3a;
+      border-radius: 3px;
+      padding: 4px 8px;
+      font-family: inherit;
+      font-size: 12px;
+      width: 100%;
+    }
+    select:focus, input:focus, textarea:focus { outline: 1px solid #5050a0; border-color: #5050a0; }
+
+    button {
+      background: #2a2a4a;
+      color: #c8c8e0;
+      border: 1px solid #3a3a5a;
+      border-radius: 4px;
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    button:hover { background: #3a3a5a; }
+    .buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+
+    /* ── Output ── */
+    .output { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+    .toolbar select { width: auto; }
+    .toolbar .stat { color: #6868a0; font-size: 11px; }
+    #canvasHost { background: #000; border: 1px solid #1e1e2a; border-radius: 4px; overflow: hidden; }
+    #canvas { display: block; width: 100%; height: auto; }
+    .meta-title { font-size: 15px; color: #e0e0e8; }
+    .meta-alt { color: #9898a8; line-height: 1.5; white-space: pre-wrap; }
+
+    textarea#json { height: 320px; resize: vertical; line-height: 1.4; }
+    #jsonStatus { font-size: 11px; margin-top: 4px; min-height: 14px; }
+    #jsonStatus.ok { color: #60a070; }
+    #jsonStatus.err { color: #c06060; white-space: pre-wrap; }
+
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Config Editor</h1>
+
+  <div class="layout">
+    <!-- ── Left: controls ── -->
+    <div class="panel">
+      <h2>Preset</h2>
+      <select id="preset"><option value="">— load a starter profile —</option></select>
+
+      <h2>Seed</h2>
+      <div class="row"><label>Arrange</label><select id="tag0"></select><span></span></div>
+      <div class="row"><label>Structure</label><select id="tag1"></select><span></span></div>
+      <div class="row"><label>Detail</label><select id="tag2"></select><span></span></div>
+
+      <h2>Color</h2>
+      <div id="colorSliders"></div>
+
+      <h2>Structure</h2>
+      <div id="structureSliders"></div>
+
+      <h2>Camera</h2>
+      <div id="cameraSliders"></div>
+
+      <div class="buttons">
+        <button id="randomizeBtn">Randomize</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <!-- ── Right: output ── -->
+    <div class="output">
+      <div class="toolbar">
+        <select id="size">
+          <option value="800x520">800 × 520</option>
+          <option value="1200x780">1200 × 780</option>
+          <option value="1600x1040">1600 × 1040</option>
+          <option value="1920x1080">1920 × 1080</option>
+          <option value="1080x1080">1080 × 1080</option>
+        </select>
+        <button id="downloadBtn">Download PNG</button>
+        <button id="copyLinkBtn">Copy link</button>
+        <span class="stat" id="stats"></span>
+      </div>
+
+      <div id="canvasHost"><canvas id="canvas" width="800" height="520"></canvas></div>
+
+      <div>
+        <div class="meta-title" id="title"></div>
+        <div class="meta-alt" id="altText"></div>
+      </div>
+
+      <div class="panel">
+        <h2>Config JSON (still-v2)</h2>
+        <textarea id="json" spellcheck="false"></textarea>
+        <div id="jsonStatus"></div>
+        <div class="buttons">
+          <button id="applyJsonBtn">Apply JSON</button>
+          <button id="copyJsonBtn">Copy JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import {
+      createRenderer, validateStillConfig, configToProfile, profileToConfig,
+      ARRANGEMENT_WORDS, STRUCTURE_WORDS, DETAIL_WORDS,
+    } from './src/index.js';
+    import starterProfiles from '../vite-app/src/stores/starter-profiles.json';
+
+    /* ── Parameter definitions ── */
+    const COLOR_KEYS = ['hue', 'spectrum', 'chroma'];
+    const STRUCTURE_KEYS = ['density', 'luminosity', 'bloom', 'fracture', 'coherence', 'scale', 'division', 'faceting', 'flow'];
+    const CAMERA_DEFS = [
+      { key: 'zoom',      min: 0,    max: 1,   step: 0.001, def: 0.375 },  // = renderer's un-overridden distance (1.0)
+      { key: 'rotation',  min: -180, max: 180, step: 1,     def: 0 },
+      { key: 'elevation', min: -180, max: 180, step: 1,     def: 0 },
+    ];
+    const DEFAULT_STATE = {
+      name: 'Untitled',
+      seedTag: [0, 0, 0],
+      controls: Object.fromEntries([...COLOR_KEYS, ...STRUCTURE_KEYS].map(k => [k, 0.5])),
+      camera: Object.fromEntries(CAMERA_DEFS.map(d => [d.key, d.def])),
+    };
+
+    let state = structuredClone(DEFAULT_STATE);
+
+    /* ── DOM ── */
+    const $ = id => document.getElementById(id);
+    const canvas = $('canvas');
+    const jsonEl = $('json');
+    const jsonStatus = $('jsonStatus');
+    const tagSelects = [$('tag0'), $('tag1'), $('tag2')];
+    const sliderEls = {};   // key → { input, val, row }
+
+    function makeSlider(host, key, min, max, step, onInput) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.innerHTML = `<label>${key}</label><input type="range" min="${min}" max="${max}" step="${step}"/><span class="val"></span>`;
+      const input = row.querySelector('input');
+      const val = row.querySelector('.val');
+      input.addEventListener('input', () => onInput(parseFloat(input.value)));
+      host.appendChild(row);
+      sliderEls[key] = { input, val, row };
+    }
+
+    for (const k of COLOR_KEYS) makeSlider($('colorSliders'), k, 0, 1, 0.001, v => { state.controls[k] = v; changed(); });
+    for (const k of STRUCTURE_KEYS) makeSlider($('structureSliders'), k, 0, 1, 0.001, v => { state.controls[k] = v; changed(); });
+    for (const d of CAMERA_DEFS) makeSlider($('cameraSliders'), d.key, d.min, d.max, d.step, v => { state.camera[d.key] = v; changed({ cameraOnly: true }); });
+
+    [ARRANGEMENT_WORDS, STRUCTURE_WORDS, DETAIL_WORDS].forEach((words, slot) => {
+      tagSelects[slot].innerHTML = words.map((w, i) => `<option value="${i}">${i} · ${w}</option>`).join('');
+      tagSelects[slot].addEventListener('change', () => { state.seedTag[slot] = +tagSelects[slot].value; changed(); });
+    });
+
+
+    /* ── Presets ── */
+    const presets = [];
+    for (const sectionId of starterProfiles['section-order']) {
+      const section = starterProfiles.sections[sectionId];
+      const group = document.createElement('optgroup');
+      group.label = section.name;
+      for (const [id, p] of Object.entries(section.portraits)) {
+        presets.push(p);
+        group.insertAdjacentHTML('beforeend', `<option value="${presets.length - 1}">${p.name}</option>`);
+      }
+      $('preset').appendChild(group);
+    }
+    $('preset').addEventListener('change', e => {
+      if (e.target.value === '') return;
+      const p = presets[+e.target.value];
+      loadProfile(p.name, { seed: p.seed, controls: { ...DEFAULT_STATE.controls, ...p.controls } }, p.camera);
+    });
+
+    /* ── State ↔ config ── */
+    function stateToConfig() {
+      const config = profileToConfig(state.name, { seed: [...state.seedTag], controls: { ...state.controls } });
+      config.camera = { ...state.camera };
+      return config;
+    }
+
+    // Seed tags only: text-intent configs are schema-valid but rejected here
+    function validate(data) {
+      const res = validateStillConfig(data);
+      if (res.ok && !data.seedTag) return { ok: false, errors: ['seedTag: required (text seeds are not supported)'] };
+      return res;
+    }
+
+    function loadProfile(name, profile, camera) {
+      state.name = name;
+      state.seedTag = [...profile.seed];
+      state.controls = { ...DEFAULT_STATE.controls, ...profile.controls };
+      state.camera = { ...DEFAULT_STATE.camera, ...(camera || {}) };
+      syncUI();
+      changed();
+    }
+
+    function loadConfig(config) {
+      const { name, profile } = configToProfile(config);
+      loadProfile(name, profile, config.camera);
+    }
+
+    function syncUI() {
+      for (const k of [...COLOR_KEYS, ...STRUCTURE_KEYS]) sliderEls[k].input.value = state.controls[k];
+      for (const d of CAMERA_DEFS) sliderEls[d.key].input.value = state.camera[d.key];
+      state.seedTag.forEach((v, i) => { tagSelects[i].value = v; });
+    }
+
+    function syncLabels() {
+      for (const k of [...COLOR_KEYS, ...STRUCTURE_KEYS]) sliderEls[k].val.textContent = state.controls[k].toFixed(3);
+      for (const d of CAMERA_DEFS) {
+        const v = state.camera[d.key];
+        sliderEls[d.key].val.textContent = d.step < 1 ? v.toFixed(3) : String(v);
+      }
+    }
+
+    /* ── Renderer ── */
+    const renderer = createRenderer(canvas, { dpr: 1 });
+    window._renderer = renderer;
+
+    function applySize() {
+      const [w, h] = $('size').value.split('x').map(Number);
+      // Pin render resolution; otherwise renderWith() syncs to the CSS display size
+      renderer.setTargetResolution(w, h);
+    }
+    $('size').addEventListener('change', () => { applySize(); changed(); });
+
+    function applyCamera() {
+      // Same zoom → distance mapping as vite-app render-bridge sendCameraState()
+      const dist = Math.pow(3, 0.6 - 1.6 * state.camera.zoom);
+      renderer.setCameraState(dist, state.camera.rotation, state.camera.elevation);
+    }
+
+    let pending = null;   // null | 'full' | 'camera'
+    function changed({ cameraOnly = false } = {}) {
+      syncLabels();
+      writeJson();
+      writeHash();
+      const kind = cameraOnly ? 'camera' : 'full';
+      if (pending === 'full') return;
+      const first = pending === null;
+      pending = kind;
+      if (first) requestAnimationFrame(flush);
+    }
+
+    let lastMeta = null;
+    function flush() {
+      const kind = pending;
+      pending = null;
+      applyCamera();
+      const t0 = performance.now();
+      if (kind === 'camera' && lastMeta) {
+        renderer.renderFrame();
+      } else {
+        lastMeta = renderer.renderWith([...state.seedTag], { ...state.controls });
+        $('title').textContent = lastMeta.title;
+        $('altText').textContent = lastMeta.altText;
+      }
+      const ms = performance.now() - t0;
+      $('stats').textContent = `${canvas.width}×${canvas.height} · ${lastMeta.nodeCount} nodes · ${ms.toFixed(0)} ms (${kind})`;
+    }
+
+    /* ── JSON panel ── */
+    let jsonDirty = false;
+    jsonEl.addEventListener('input', () => {
+      jsonDirty = true;
+      try {
+        const res = validate(JSON.parse(jsonEl.value));
+        setJsonStatus(res.ok ? 'Valid — click Apply' : res.errors.join('\n'), res.ok);
+      } catch (err) {
+        setJsonStatus(err.message, false);
+      }
+    });
+
+    function setJsonStatus(msg, ok) {
+      jsonStatus.textContent = msg;
+      jsonStatus.className = ok ? 'ok' : 'err';
+    }
+
+    function writeJson() {
+      if (jsonDirty) return;   // don't clobber in-progress edits
+      jsonEl.value = JSON.stringify(stateToConfig(), null, 2);
+      setJsonStatus('', true);
+    }
+
+    $('applyJsonBtn').addEventListener('click', () => {
+      try {
+        const data = JSON.parse(jsonEl.value);
+        const res = validate(data);
+        if (!res.ok) { setJsonStatus(res.errors.join('\n'), false); return; }
+        jsonDirty = false;
+        loadConfig(data);
+        setJsonStatus('Applied', true);
+      } catch (err) {
+        setJsonStatus(err.message, false);
+      }
+    });
+
+    $('copyJsonBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(JSON.stringify(stateToConfig(), null, 2));
+    });
+
+    /* ── Buttons ── */
+    $('randomizeBtn').addEventListener('click', () => {
+      for (const k of Object.keys(state.controls)) state.controls[k] = Math.round(Math.random() * 1000) / 1000;
+      state.seedTag = state.seedTag.map(() => Math.floor(Math.random() * ARRANGEMENT_WORDS.length));
+      for (const d of CAMERA_DEFS) {
+        const steps = Math.round((d.max - d.min) / d.step);
+        state.camera[d.key] = +(d.min + Math.floor(Math.random() * (steps + 1)) * d.step).toFixed(3);
+      }
+      jsonDirty = false;
+      syncUI();
+      changed();
+    });
+
+    $('resetBtn').addEventListener('click', () => {
+      state = structuredClone(DEFAULT_STATE);
+      jsonDirty = false;
+      $('preset').value = '';
+      syncUI();
+      changed();
+    });
+
+    $('downloadBtn').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      const slug = (lastMeta?.title || state.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      a.download = `${slug || 'render'}.png`;
+      a.click();
+    });
+
+    $('copyLinkBtn').addEventListener('click', () => navigator.clipboard.writeText(location.href));
+
+    /* ── URL hash persistence (#<encoded still-v2 config>) ── */
+    function writeHash() {
+      history.replaceState(null, '', '#' + encodeURIComponent(JSON.stringify(stateToConfig())));
+    }
+
+    function readHash() {
+      if (location.hash.length < 2) return false;
+      try {
+        const data = JSON.parse(decodeURIComponent(location.hash.slice(1)));
+        if (!validate(data).ok) return false;
+        loadConfig(data);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    /* ── Init ── */
+    applySize();
+    if (!readHash()) {
+      syncUI();
+      changed();
+    }
+  </script>
+</body>
+</html>
