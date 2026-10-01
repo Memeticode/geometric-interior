@@ -23,8 +23,8 @@ console.log('\n=== Params Tests ===\n');
 test('deriveParams returns an object with expected keys', () => {
     const p = deriveParams(MID);
     const expectedKeys = [
-        'density', 'cameraZ', 'cameraFov', 'cameraOffsetX', 'cameraOffsetY',
-        'bgConfig', 'bloomStrength', 'bloomThreshold',
+        'cameraZ', 'cameraFov', 'cameraOffsetX', 'cameraOffsetY',
+        'fogColor', 'bloomStrength', 'bloomThreshold',
         'chromaticAberration', 'vignetteStrength', 'envelopeRadii',
     ];
     for (const key of expectedKeys) {
@@ -48,15 +48,12 @@ test('deriveParams produces finite numbers', () => {
     }
 });
 
-test('bgConfig has valid gradient stops', () => {
-    const p = deriveParams(MID);
-    assert(p.bgConfig && p.bgConfig.gradient, 'missing bgConfig.gradient');
-    const stops = p.bgConfig.gradient.stops;
-    assert(Array.isArray(stops) && stops.length >= 2, 'bgConfig.gradient.stops should have ≥2 stops');
-    for (const stop of stops) {
-        assert(stop.t >= 0 && stop.t <= 1, `stop.t out of range: ${stop.t}`);
-        for (const c of stop.rgb) {
-            assert(c >= 0, `stop rgb component negative: ${c}`);
+test('fogColor (background center) is near-black across extremes', () => {
+    for (const v of [0, 0.5, 1]) {
+        const p = deriveParams({ ...MID, hue: v, chroma: v, luminosity: v });
+        assert(p.fogColor.length === 3, 'fogColor should be an RGB triple');
+        for (const c of p.fogColor) {
+            assert(c >= 0 && c <= 0.008, `fogColor component out of near-black range: ${c}`);
         }
     }
 });
@@ -102,8 +99,8 @@ test('different density values produce different dotConfig counts', () => {
 });
 
 test('deriveParams at extreme corners (all-zero, all-one) does not throw', () => {
-    deriveParams({ ...MID, density: 0, luminosity: 0, fracture: 0, depth: 0, coherence: 0 });
-    deriveParams({ ...MID, density: 1, luminosity: 1, fracture: 1, depth: 1, coherence: 1 });
+    deriveParams({ ...MID, density: 0, luminosity: 0, fracture: 0, coherence: 0 });
+    deriveParams({ ...MID, density: 1, luminosity: 1, fracture: 1, coherence: 1 });
 });
 
 export { passed, failed };

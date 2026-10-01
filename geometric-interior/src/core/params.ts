@@ -1,44 +1,29 @@
 /**
- * Controls → derived engine parameters for the demo scene builder.
+ * Controls → derived engine parameters for the scene builder.
  */
 
 import { controlLerp } from '../utils/math.js';
 import { hslToRgb01 } from '../utils/color.js';
 import type { Controls } from './schemas.js';
 import type { DerivedParams } from '../render-engine/models.js';
-import type { BgConfig } from '../render-engine/background.js';
 
 export function deriveParams(controls: Controls): DerivedParams {
     const c = controls;
     const cl = controlLerp;
     const frac = 1 - c.fracture;
 
-    // --- Color derivation (replaces palette system) ---
+    // --- Color derivation ---
     const baseHue = c.hue * 360;
     const hueRange = 10 + 350 * c.spectrum * c.spectrum;
     const saturation = cl(c.chroma, 0.05, 0.65, 1.0);
     const lumScale = cl(c.luminosity, 0.65, 1.0, 1.5);
 
-    // fogColor/bgColor must stay in 0.001-0.006 range
+    // Background center color — must stay near-black (≤ 0.008 per channel)
     const fogSaturation = 0.3 * Math.max(saturation, 0.15);
     const fogLightness = 0.004 * lumScale;
-    const bgLightness = 0.002 * lumScale;
     const rawFogColor = hslToRgb01(baseHue, fogSaturation, fogLightness);
-    const rawBgColor = hslToRgb01(baseHue, fogSaturation * 0.6, bgLightness);
     const clampColor = (v: number) => Math.max(0, Math.min(0.008, v));
     const fogColor: [number, number, number] = [clampColor(rawFogColor[0]), clampColor(rawFogColor[1]), clampColor(rawFogColor[2])];
-    const bgColor: [number, number, number] = [clampColor(rawBgColor[0]), clampColor(rawBgColor[1]), clampColor(rawBgColor[2])];
-    const bgConfig: BgConfig = {
-        gradient: {
-            type: 'radial',
-            stops: [
-                { t: 0.0, rgb: [fogColor[0], fogColor[1], fogColor[2]] },
-                { t: 1.0, rgb: [0.0, 0.0, 0.0] },
-            ],
-        },
-        texture: { type: 'none', scale: 0.5, strength: 0.0 },
-        flow:    { type: 'none', angle: 0.0, strength: 0.0 },
-    };
 
     // --- Envelope ---
     const envelopeRadii: [number, number, number] = [
@@ -47,7 +32,7 @@ export function deriveParams(controls: Controls): DerivedParams {
         cl(frac, 0.85, 1.15, 1.50),
     ];
 
-    // --- Camera (fixed at midpoint values — depth removed) ---
+    // --- Camera (fixed) ---
     const cameraZ = 3.5;
     const cameraFov = 50;
     const cameraOffsetX = 0;
@@ -230,14 +215,9 @@ export function deriveParams(controls: Controls): DerivedParams {
     };
 
     return {
-        density: c.density,
-        fracture: c.fracture,
-        luminosity: c.luminosity,
         baseHue,
         hueRange,
         saturation,
-        bgConfig,
-        bgColor,
         fogColor,
         envelopeRadii,
         cameraZ,

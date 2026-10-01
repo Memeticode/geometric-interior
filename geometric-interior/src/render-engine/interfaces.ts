@@ -4,15 +4,12 @@
 
 import type { Controls, RenderMeta } from '../core/schemas.js';
 import type { Seed } from '../core/text-generation/seed-tags.js';
-import type { BgConfig } from './background.js';
 
 /** Renderer instance returned by createRenderer() */
 export interface Renderer {
     renderWith(seed: Seed, controls: Controls, locale?: string): RenderMeta;
     /** Re-render the current scene (e.g. after a camera change) without rebuilding it. */
     renderFrame(): void;
-    /** Override the derived background config (applies on the next render). */
-    setBgConfig(config: BgConfig): void;
     setCameraState(zoom: number, orbitY: number, orbitX: number): void;
     clearCameraState(): void;
     resize(width: number, height: number): void;

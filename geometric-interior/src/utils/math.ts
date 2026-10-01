@@ -8,7 +8,7 @@ export function lerp(a: number, b: number, t: number): number { return a + (b - 
 
 /**
  * Asymmetric lerp: t=0 → lo, t=0.5 → mid (exact), t=1 → hi.
- * Used for slider parameterization where mid is the demo default.
+ * Used for slider parameterization where mid is the default.
  */
 export function controlLerp(t: number, lo: number, mid: number, hi: number): number {
     t = clamp01(t);

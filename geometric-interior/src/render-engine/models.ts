@@ -3,7 +3,6 @@
  */
 
 import type { Vector3, Color } from 'three';
-import type { BgConfig } from './background.js';
 
 /** Curve config per tier */
 export interface CurveTierConfig {
@@ -79,14 +78,9 @@ export interface FacetingParams {
 
 /** Derived engine parameters from deriveParams() */
 export interface DerivedParams {
-    density: number;
-    fracture: number;
-    luminosity: number;
     baseHue: number;
     hueRange: number;
     saturation: number;
-    bgConfig: BgConfig;
-    bgColor: [number, number, number];
     fogColor: [number, number, number];
     envelopeRadii: [number, number, number];
     cameraZ: number;

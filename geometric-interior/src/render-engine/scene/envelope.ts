@@ -5,9 +5,8 @@
 import { Vector3 } from 'three';
 import type { DivisionParams } from '../models.js';
 
-// Reusable temporaries for envelopeNormal (avoids 7 Vector3 allocations per call)
+// Reusable temporary for envelopeNormal (avoids Vector3 allocations per call)
 const _enp = new Vector3();
-const _enGrad = new Vector3();
 
 const DEFAULT_DIV: DivisionParams = {
     grooveDepth: 0.2,

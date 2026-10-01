@@ -24,7 +24,7 @@ const SUITES = [
     'test-params.mjs',
     'test-schema.mjs',
     'test-text.mjs',
-    'test-palettes.mjs',
+    'test-color.mjs',
     'test-seed-tags.mjs',
 ];
 

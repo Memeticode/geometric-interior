@@ -3,7 +3,7 @@
  * Supports locale-specific word tables (en, es).
  */
 
-/** Hue-based color words (replaces palette-based lookup). */
+/** Hue-based color words. */
 export const HUE_WORD_MAP: Record<string, Array<{ max: number; words: string[] }>> = {
     en: [
         { max: 30,  words: ['Ruby', 'Crimson', 'Carmine', 'Scarlet'] },

@@ -171,7 +171,6 @@ function accumulateSkirt(
     positions: number[],        // flat [x,y,z, ...]
     uvs: number[],              // flat [u,v, ...]
     nx: number, ny: number, nz: number,  // face normal
-    vertCount: number,          // 3 or 6
     boundaryIndices: number[],  // indices of boundary vertices (3 or 4)
     color: THREE.Color,
     baseOpacity: number,
@@ -369,7 +368,7 @@ export function createFoldingChain(
             accumulatePlane(accum, positions, QUAD_UVS, nx, ny, nz, 6, color,
                 baseOpacity, baseEdgeOpacity * avgAlpha, quadAlphas, ns, nst,
                 config.edgeColorOffset, groupQuat, origin);
-            accumulateSkirt(accum, positions, QUAD_UVS, nx, ny, nz, 6,
+            accumulateSkirt(accum, positions, QUAD_UVS, nx, ny, nz,
                 QUAD_BOUNDARY, color, baseOpacity, quadAlphas, ns, nst,
                 config.crackExtendScale, groupQuat, origin);
         } else {
@@ -387,7 +386,7 @@ export function createFoldingChain(
             accumulatePlane(accum, positions, TRI_UVS, nx, ny, nz, 3, color,
                 baseOpacity, baseEdgeOpacity * avgAlpha, triAlphas, ns, nst,
                 config.edgeColorOffset, groupQuat, origin);
-            accumulateSkirt(accum, positions, TRI_UVS, nx, ny, nz, 3,
+            accumulateSkirt(accum, positions, TRI_UVS, nx, ny, nz,
                 TRI_BOUNDARY, color, baseOpacity, triAlphas, ns, nst,
                 config.crackExtendScale, groupQuat, origin);
         }

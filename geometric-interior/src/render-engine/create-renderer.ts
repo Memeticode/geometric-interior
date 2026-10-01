@@ -17,11 +17,11 @@ import { deriveParams } from '../core/params.js';
 import { parseSeed, createTagStreams } from '../core/text-generation/seed-tags.js';
 import { generateTitle } from '../core/text-generation/title-text.js';
 import { generateAltText } from '../core/text-generation/alt-text.js';
-import { buildDemoScene } from './demo/build-scene.js';
-import { createGlowTexture } from './demo/dots.js';
+import { buildScene } from './scene/build-scene.js';
+import { createGlowTexture } from './scene/dots.js';
 import type { Controls, RenderMeta, Seed } from '../core/schemas.js';
 import type { Renderer, RendererOptions } from './interfaces.js';
-import { Background, defaultBgConfig } from './background.js';
+import { Background } from './background.js';
 
 export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts: RendererOptions = {}): Renderer {
     const renderer = new THREE.WebGLRenderer({
@@ -78,7 +78,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
     // --- Cached reusable objects ---
 
-    const bg = new Background(defaultBgConfig());
+    const bg = new Background();
 
     const cachedGlowTexture = createGlowTexture();
 
@@ -164,10 +164,10 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
         clearScene(scene);
 
-        bg.setConfig(params.bgConfig);
+        bg.setCenterColor(params.fogColor);
         scene.add(bg.mesh);
 
-        const result = buildDemoScene(params, streams, scene, cachedGlowTexture);
+        const result = buildScene(params, streams, scene, cachedGlowTexture);
 
         bloomEffect.intensity = params.bloomStrength;
         bloomEffect.luminanceMaterial.threshold = params.bloomThreshold;
@@ -267,16 +267,11 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         composer.render();
     }
 
-    function setBgConfig(config: import('./background.js').BgConfig): void {
-        bg.setConfig(config);
-    }
-
     return {
         renderWith, dispose, resize, syncSize, setDPR,
         setTargetResolution, clearTargetResolution,
         renderFrame,
         setCameraState, clearCameraState,
-        setBgConfig,
         getCanvas: () => canvas,
     };
 }

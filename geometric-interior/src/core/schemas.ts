@@ -16,9 +16,6 @@ import { TAG_LIST_LENGTH } from './text-generation/seed-tags.js';
 /** Number in [0, 1] */
 const unit = z.number().min(0).max(1);
 
-/** RGB triple */
-const rgbTriple = z.tuple([z.number(), z.number(), z.number()]);
-
 // ──────────────────────────────────────
 // Seed
 // ──────────────────────────────────────
@@ -50,8 +47,6 @@ export const CameraConfigSchema = z.object({
 // Controls (user-facing sliders)
 // ──────────────────────────────────────
 
-// Future topology ideas (removed — only flow-field was implemented):
-// icosahedral, möbius, multi-attractor
 export const ControlsSchema = z.object({
     hue: unit.default(0.5),
     spectrum: unit.default(0.5),
@@ -65,21 +60,6 @@ export const ControlsSchema = z.object({
     division: unit.default(0.5),
     faceting: unit.default(0.5),
     flow: unit.default(0.5),
-});
-
-// ──────────────────────────────────────
-// PaletteData
-// ──────────────────────────────────────
-
-export const PaletteDataSchema = z.object({
-    label: z.string(),
-    baseHue: z.number(),
-    hueRange: z.number(),
-    saturation: z.number(),
-    fogColor: rgbTriple,
-    bgColor: rgbTriple,
-    edgeColor: rgbTriple,
-    accentHue: z.number(),
 });
 
 // ──────────────────────────────────────
@@ -201,7 +181,6 @@ export type SeedTag = z.infer<typeof SeedTagSchema>;
 export type Seed = z.infer<typeof SeedSchema>;
 export type CameraConfig = z.infer<typeof CameraConfigSchema>;
 export type Controls = z.infer<typeof ControlsSchema>;
-export type PaletteData = z.infer<typeof PaletteDataSchema>;
 export type StillConfig = z.infer<typeof StillConfigSchema>;
 export type RenderMeta = z.infer<typeof RenderMetaSchema>;
 export type Profile = z.infer<typeof ProfileSchema>;

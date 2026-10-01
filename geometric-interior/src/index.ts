@@ -5,7 +5,6 @@ export {
     ProfileSchema,
     SeedTagSchema,
     SeedSchema,
-    PaletteDataSchema,
     RenderMetaSchema,
     CameraConfigSchema,
     ImageAssetMetaSchema,
@@ -15,7 +14,6 @@ export {
 // Core types (all from schemas)
 export type {
     Controls,
-    PaletteData,
     StillConfig,
     RenderMeta,
     Profile,
@@ -26,29 +24,9 @@ export type {
     ImageAssetMeta,
 } from './core/schemas.js';
 
-// SceneRngStreams (internal type, lives in seed-tags)
-export type { SceneRngStreams } from './core/text-generation/seed-tags.js';
-
-// Render engine data types (internal, unchanged)
-export type {
-    DerivedParams,
-    DotConfig,
-    CurveTierConfig,
-    ChainTierConfig,
-    GlowPointDatum,
-    LightUniforms,
-    DotPosition,
-    BatchAccumulators,
-    CurveSample,
-    GuideCurve,
-} from './render-engine/models.js';
-
-// Render engine interfaces
-export type {
-    Renderer,
-    RendererOptions,
-    SceneBuildResult,
-} from './render-engine/interfaces.js';
+// Renderer types
+export type { Renderer, RendererOptions } from './render-engine/interfaces.js';
+export type { DerivedParams } from './render-engine/models.js';
 
 // Renderer
 export { createRenderer } from './render-engine/create-renderer.js';
@@ -56,9 +34,6 @@ export { createRenderer } from './render-engine/create-renderer.js';
 // Config conversion
 export { configToProfile, profileToConfig } from './core/config-schema.js';
 export { deriveParams } from './core/params.js';
-
-// Palettes
-export { PALETTES, PRESETS } from './core/palettes.js';
 
 // Utils — math, PRNG, color
 export { clamp01, lerp, controlLerp } from './utils/math.js';
