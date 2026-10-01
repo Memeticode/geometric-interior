@@ -2,12 +2,11 @@
  * Zod schemas — single source of truth for all boundary types.
  *
  * Types are derived via z.infer<> and re-exported for consumers.
- * Internal types (DerivedParams, FrameState, SceneRngStreams, etc.)
+ * Internal types (DerivedParams, SceneRngStreams, etc.)
  * remain as plain TS interfaces in their respective files.
  */
 
 import { z } from 'zod';
-import { EASING_TYPES } from '../utils/easing.js';
 import { TAG_LIST_LENGTH } from './text-generation/seed-tags.js';
 
 // ──────────────────────────────────────
@@ -36,12 +35,6 @@ export const SeedSchema = z.union([
     z.string().min(1),
     SeedTagSchema,
 ]);
-
-// ──────────────────────────────────────
-// Easing
-// ──────────────────────────────────────
-
-export const EasingTypeSchema = z.enum(EASING_TYPES);
 
 // ──────────────────────────────────────
 // Camera
@@ -185,73 +178,6 @@ export const StarterProfilesSchema = z.object({
 });
 
 // ──────────────────────────────────────
-// Animation types
-// ──────────────────────────────────────
-
-export const ContentEventSchema = z.object({
-    type: z.enum(['expand', 'pause', 'transition', 'collapse']),
-    duration: z.number().positive(),
-    easing: EasingTypeSchema,
-    config: ControlsSchema.optional(),
-    seed: SeedSchema.optional(),
-    camera: z.object({
-        zoom: z.number().optional(),
-        rotation: z.number().optional(),
-    }).optional(),
-});
-
-export const CameraStateSchema = z.object({
-    zoom: z.number().optional(),
-    orbitY: z.number().optional(),
-    orbitX: z.number().optional(),
-});
-
-export const CameraMoveSchema = z.object({
-    type: z.enum(['zoom', 'rotate']),
-    startTime: z.number().nonnegative(),
-    endTime: z.number().nonnegative(),
-    easing: EasingTypeSchema,
-    from: CameraStateSchema,
-    to: CameraStateSchema,
-});
-
-export const ParamTrackSchema = z.object({
-    param: z.enum(['twinkle', 'dynamism']),
-    startTime: z.number().nonnegative(),
-    endTime: z.number().nonnegative(),
-    easing: EasingTypeSchema,
-    from: unit,
-    to: unit,
-});
-
-export const FocusStateSchema = z.object({
-    focalDepth: unit,
-    blurAmount: unit,
-});
-
-export const FocusTrackSchema = z.object({
-    startTime: z.number().nonnegative(),
-    endTime: z.number().nonnegative(),
-    easing: EasingTypeSchema,
-    from: FocusStateSchema,
-    to: FocusStateSchema,
-});
-
-export const AnimationSettingsSchema = z.object({
-    fps: z.number().int().positive(),
-    width: z.number().int().positive(),
-    height: z.number().int().positive(),
-});
-
-export const AnimationSchema = z.object({
-    settings: AnimationSettingsSchema,
-    events: z.array(ContentEventSchema).min(1),
-    cameraMoves: z.array(CameraMoveSchema),
-    paramTracks: z.array(ParamTrackSchema),
-    focusTracks: z.array(FocusTrackSchema).optional(),
-});
-
-// ──────────────────────────────────────
 // Asset metadata (formalizes IndexedDB storage)
 // ──────────────────────────────────────
 
@@ -267,25 +193,12 @@ export const ImageAssetMetaSchema = z.object({
     height: z.number().int().positive(),
 });
 
-export const AnimAssetMetaSchema = z.object({
-    title: z.string(),
-    altText: z.string(),
-    commentary: z.string().default(''),
-    animation: AnimationSchema,
-    fps: z.number().int().positive(),
-    totalFrames: z.number().int().positive(),
-    durationS: z.number().positive(),
-    width: z.number().int().positive(),
-    height: z.number().int().positive(),
-});
-
 // ──────────────────────────────────────
 // Inferred types
 // ──────────────────────────────────────
 
 export type SeedTag = z.infer<typeof SeedTagSchema>;
 export type Seed = z.infer<typeof SeedSchema>;
-export type EasingType = z.infer<typeof EasingTypeSchema>;
 export type CameraConfig = z.infer<typeof CameraConfigSchema>;
 export type Controls = z.infer<typeof ControlsSchema>;
 export type PaletteData = z.infer<typeof PaletteDataSchema>;
@@ -296,16 +209,7 @@ export type StarterGenerated = z.infer<typeof StarterGeneratedSchema>;
 export type StarterPortrait = z.infer<typeof StarterPortraitSchema>;
 export type StarterSection = z.infer<typeof StarterSectionSchema>;
 export type StarterProfiles = z.infer<typeof StarterProfilesSchema>;
-export type ContentEvent = z.infer<typeof ContentEventSchema>;
-export type CameraState = z.infer<typeof CameraStateSchema>;
-export type CameraMove = z.infer<typeof CameraMoveSchema>;
-export type ParamTrack = z.infer<typeof ParamTrackSchema>;
-export type FocusState = z.infer<typeof FocusStateSchema>;
-export type FocusTrack = z.infer<typeof FocusTrackSchema>;
-export type AnimationSettings = z.infer<typeof AnimationSettingsSchema>;
-export type Animation = z.infer<typeof AnimationSchema>;
 export type ImageAssetMeta = z.infer<typeof ImageAssetMetaSchema>;
-export type AnimAssetMeta = z.infer<typeof AnimAssetMetaSchema>;
 
 // ──────────────────────────────────────
 // ValidationResult — plain type (output format, not validated data)

@@ -9,14 +9,9 @@ uniform float uBackLightFactor;
 uniform float uIlluminationCap;
 uniform float uAmbientLight;
 uniform float uEdgeFadeThreshold;
-uniform float uMorphFade;
-uniform float uTime;
-uniform float uSparkleIntensity;
-uniform float uDriftSpeed;
 uniform float uAttenuationCoeff;
 
 varying float fAlpha;
-varying float vFoldAlpha;
 varying vec3 vWorldPos;
 varying vec3 vWorldNormal;
 varying vec2 vUv;
@@ -86,16 +81,15 @@ float nebulaCracks(vec2 uv) {
     return line1 * 0.4 + line2 * 0.25 + line3 * 0.1;
 }
 
-float nebulaDust(vec2 uv, float time) {
-    float drift = time * 0.02 * uDriftSpeed;
+float nebulaDust(vec2 uv) {
     float d = 0.0;
-    d += noise3D(vec3(uv * 3.0 + drift * 0.3, drift * 0.1)) * 0.5;
-    d += noise3D(vec3(uv * 6.5 + drift * 0.5, 3.0 + drift * 0.15)) * 0.3;
-    d += noise3D(vec3(uv * 14.0 + drift * 0.8, 7.0 + drift * 0.2)) * 0.2;
+    d += noise3D(vec3(uv * 3.0, 0.0)) * 0.5;
+    d += noise3D(vec3(uv * 6.5, 3.0)) * 0.3;
+    d += noise3D(vec3(uv * 14.0, 7.0)) * 0.2;
     return d;
 }
 
-float starSparkle(vec2 p, float scale, float time) {
+float starSparkle(vec2 p, float scale) {
     p *= scale;
     vec2 cell = floor(p);
     vec2 f = fract(p);
@@ -111,11 +105,10 @@ float starSparkle(vec2 p, float scale, float time) {
                     hash(vec3(cellId, 20.0))
                 );
                 float d = length(f - g - starPos);
-                // Per-sparkle flicker: unique phase and rate from cell hash
+                // Per-sparkle brightness: unique phase from cell hash
                 float phase = hash(vec3(cellId, 40.0)) * 6.283;
-                float rate = 0.5 + hash(vec3(cellId, 50.0)) * 1.5;
-                float flicker = 0.5 + 0.5 * sin(time * rate * 6.283 + phase);
-                sparkle += smoothstep(0.07, 0.0, d) * (brightness - 0.75) * 4.0 * mix(1.0, flicker, uSparkleIntensity);
+                float flicker = 0.5 + 0.5 * sin(phase);
+                sparkle += smoothstep(0.07, 0.0, d) * (brightness - 0.75) * 4.0 * flicker;
             }
         }
     }
@@ -159,12 +152,12 @@ void main() {
     float crackGlow = cracks * (ambient + illumination) * 0.7 * crackFade;
     finalColor += (modColor * crackGlow * 0.8 + vec3(crackGlow) * 0.2);
 
-    float dust = nebulaDust(patternCoord, uTime) * 0.6 * baseFade;
+    float dust = nebulaDust(patternCoord) * 0.6 * baseFade;
     float dustGlow = dust * (ambient + illumination) * 0.1;
     finalColor += modColor * dustGlow;
 
-    float sparkles = (starSparkle(patternCoord, 7.0, uTime)
-                   + starSparkle(patternCoord, 13.0, uTime) * 0.5) * 0.6 * baseFade;
+    float sparkles = (starSparkle(patternCoord, 7.0)
+                   + starSparkle(patternCoord, 13.0) * 0.5) * 0.6 * baseFade;
     float sparkleGlow = sparkles * (ambient + illumination) * 0.25;
     finalColor += vec3(sparkleGlow) * 0.5 + modColor * sparkleGlow * 0.5;
 
@@ -177,7 +170,5 @@ void main() {
     finalAlpha *= edgeFade;
     finalColor *= edgeFade;
 
-    finalAlpha *= vFoldAlpha;
-    finalColor *= vFoldAlpha;
-    gl_FragColor = vec4(finalColor * uMorphFade, max(finalAlpha, 0.0) * uMorphFade);
+    gl_FragColor = vec4(finalColor, max(finalAlpha, 0.0));
 }

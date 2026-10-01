@@ -1,8 +1,8 @@
 /**
- * Tests for generateTitle, generateAltText, generateAnimAltText.
+ * Tests for generateTitle, generateAltText.
  */
 import {
-    generateTitle, generateAltText, generateAnimAltText,
+    generateTitle, generateAltText,
     xmur3, mulberry32,
 } from '../../dist/geometric-interior.js';
 
@@ -246,34 +246,6 @@ test('generateAltText: same params, different seeds → different text', () => {
     }
     // 3×3×3 = 27 seed combos → should be mostly unique
     assert(texts.size >= 20, `only ${texts.size}/27 unique across seed variations`);
-});
-
-/* ── Animation alt-text tests ── */
-
-test('generateAnimAltText returns non-empty string', () => {
-    const landmarks = [
-        { name: 'A', controls: MID },
-        { name: 'B', controls: { ...MID, density: 0.8 } },
-    ];
-    const keyframeTexts = [
-        { name: 'A', title: 'Title A' },
-        { name: 'B', title: 'Title B' },
-    ];
-    const alt = generateAnimAltText(landmarks, 5.0, keyframeTexts);
-    assert(typeof alt === 'string' && alt.length > 0, `empty anim alt text`);
-});
-
-test('generateAnimAltText mentions duration', () => {
-    const landmarks = [
-        { name: 'A', controls: MID },
-        { name: 'B', controls: { ...MID, density: 0.8 } },
-    ];
-    const keyframeTexts = [
-        { name: 'A', title: 'Title A' },
-        { name: 'B', title: 'Title B' },
-    ];
-    const alt = generateAnimAltText(landmarks, 5.0, keyframeTexts);
-    assert(alt.includes('5'), `anim alt text should mention duration: "${alt}"`);
 });
 
 export { passed, failed };

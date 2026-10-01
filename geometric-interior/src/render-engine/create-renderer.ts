@@ -10,22 +10,17 @@ import {
     BloomEffect,
     ChromaticAberrationEffect,
     VignetteEffect,
-    DepthOfFieldEffect,
     BlendFunction,
 } from 'postprocessing';
 import { xmur3, mulberry32 } from '../utils/prng.js';
-import { lerp } from '../utils/math.js';
 import { deriveParams } from '../core/params.js';
-import { parseSeed, createTagStreams, seedToString } from '../core/text-generation/seed-tags.js';
+import { parseSeed, createTagStreams } from '../core/text-generation/seed-tags.js';
 import { generateTitle } from '../core/text-generation/title-text.js';
 import { generateAltText } from '../core/text-generation/alt-text.js';
 import { buildDemoScene } from './demo/build-scene.js';
-import { matchDots, buildMorphGlowGeometry } from './demo/dot-matching.js';
-import { createDemoGlowMaterial } from './materials.js';
 import { createGlowTexture } from './demo/dots.js';
 import type { Controls, RenderMeta, Seed } from '../core/schemas.js';
-import type { DerivedParams } from './models.js';
-import type { Renderer, RendererOptions, SceneRefs } from './interfaces.js';
+import type { Renderer, RendererOptions } from './interfaces.js';
 import { Background, defaultBgConfig } from './background.js';
 
 export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts: RendererOptions = {}): Renderer {
@@ -73,22 +68,12 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         darkness: 0.5,
     });
 
-    const dofEffect = new DepthOfFieldEffect(camera, {
-        focusDistance: 0.0,
-        focalLength: 0.05,
-        bokehScale: 2.0,
-    });
-    const dofPass = new EffectPass(camera, dofEffect);
-    dofPass.enabled = false; // disabled by default — zero overhead
-
     const effectPass = new EffectPass(
         camera,
         bloomEffect,
         chromaticAberrationEffect,
         vignetteEffect,
     );
-
-    composer.addPass(dofPass);  // DOF blur before bloom/CA/vignette
     composer.addPass(effectPass);
 
     // --- Cached reusable objects ---
@@ -97,16 +82,19 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
     const cachedGlowTexture = createGlowTexture();
 
+    /** Release an object's GPU resources (geometry, material, instance buffers). */
+    function disposeObject(obj: THREE.Object3D): void {
+        if ((obj as THREE.Mesh).geometry) (obj as THREE.Mesh).geometry.dispose();
+        if ((obj as THREE.Mesh).material) ((obj as THREE.Mesh).material as THREE.Material).dispose();
+        // geometry.dispose() does not free instanceMatrix/instanceColor buffers
+        if ((obj as THREE.InstancedMesh).isInstancedMesh) (obj as THREE.InstancedMesh).dispose();
+    }
+
     function clearScene(targetScene: THREE.Scene): void {
         while (targetScene.children.length > 0) {
             const child = targetScene.children[0];
-            if (child === bg.mesh) {
-                targetScene.remove(child);
-                continue;
-            }
             targetScene.remove(child);
-            if ((child as THREE.Mesh).geometry) (child as THREE.Mesh).geometry.dispose();
-            if ((child as THREE.Mesh).material) ((child as THREE.Mesh).material as THREE.Material).dispose();
+            if (child !== bg.mesh) disposeObject(child);
         }
     }
 
@@ -153,17 +141,8 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         targetH = 0;
     }
 
-    // --- Persistent scene state for render loop ---
-    let currentRefs: SceneRefs | null = null;
-    let currentParams: DerivedParams | null = null;
+    /** Camera position before the zoom/orbit override is applied. */
     const baseCameraPos = new THREE.Vector3();
-
-    // --- Fold animation state ---
-    let foldProgress = 1.0;
-    let foldTarget = 1.0;
-    const FOLD_IN_SPEED = 1.25;  // 0→1 in ~800ms
-    const FOLD_OUT_SPEED = 1.67; // 1→0 in ~600ms
-    let lastUpdateTime = 0;
 
     function renderWith(seed: Seed, controls: Controls, locale: string = 'en'): RenderMeta {
         syncSize();
@@ -183,7 +162,6 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         camera.lookAt(0, 0, 0);
         baseCameraPos.set(params.cameraOffsetX, params.cameraOffsetY, params.cameraZ);
 
-        currentRefs = null;
         clearScene(scene);
 
         bg.setConfig(params.bgConfig);
@@ -191,33 +169,12 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
 
         const result = buildDemoScene(params, streams, scene, cachedGlowTexture);
 
-        // Store refs for persistent render loop
-        currentRefs = result.refs;
-        currentParams = params;
-
-        // Apply current fold state to new scene
-        if (currentRefs.faceMat) currentRefs.faceMat.uniforms.uFoldProgress.value = foldProgress;
-        if (currentRefs.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = foldProgress;
-        if (currentRefs.glowMat) {
-            currentRefs.glowMat.uniforms.uFoldProgress.value = foldProgress;
-        }
-        if (currentRefs.tendrilMat) { currentRefs.tendrilMat.uniforms.uOpacity.value = foldProgress; }
-        if (currentRefs.sphereMat) { currentRefs.sphereMat.opacity = foldProgress; currentRefs.sphereMat.transparent = true; }
-
-        // Apply current animation config to new materials
-        applyAnimConfig();
-
         bloomEffect.intensity = params.bloomStrength;
         bloomEffect.luminanceMaterial.threshold = params.bloomThreshold;
-
-        const ca = params.chromaticAberration;
-        chromaticAberrationEffect.offset.set(ca, ca);
-
+        chromaticAberrationEffect.offset.set(params.chromaticAberration, params.chromaticAberration);
         vignetteEffect.darkness = params.vignetteStrength;
 
-        applyCameraOverride();
-        bg.update(camera);
-        composer.render();
+        renderFrame();
 
         const titleRng = mulberry32(xmur3('title-' + tag[0] + '-' + tag[1] + '-' + tag[2])());
         const title = generateTitle(controls, titleRng, locale);
@@ -245,185 +202,14 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         renderer.setPixelRatio(Math.min(newDpr, 2));
     }
 
-    // --- Morph transition support ---
-
-    let morphState: {
-        refsA: SceneRefs;
-        refsB: SceneRefs;
-        paramsA: ReturnType<typeof deriveParams>;
-        paramsB: ReturnType<typeof deriveParams>;
-        morphGlow: THREE.Mesh | null;
-        morphGlowMat: THREE.ShaderMaterial | null;
-    } | null = null;
-
-    function setMorphFade(refs: SceneRefs, value: number): void {
-        if (refs.faceMat) refs.faceMat.uniforms.uMorphFade.value = value;
-        if (refs.edgeMat) refs.edgeMat.uniforms.uMorphFade.value = value;
-        if (refs.glowMat) refs.glowMat.uniforms.uMorphFade.value = value;
-        if (refs.tendrilMat) refs.tendrilMat.uniforms.uOpacity.value = value;
-        if (refs.sphereMat) refs.sphereMat.opacity = value;
-    }
-
-    /** Mark sphere materials as transparent (call once in morphPrepare, not per frame). */
-    function prepareMorphRefs(refs: SceneRefs): void {
-        if (refs.sphereMat) refs.sphereMat.transparent = true;
-    }
-
-    function disposeRefs(refs: SceneRefs): void {
-        const objects = [refs.faceMesh, refs.edgeLines, refs.tendrilLines, refs.glowPoints, refs.sphereInst];
-        for (const obj of objects) {
-            if (obj) {
-                scene.remove(obj);
-                if ((obj as THREE.Mesh).geometry) (obj as THREE.Mesh).geometry.dispose();
-                if ((obj as THREE.Mesh).material) ((obj as THREE.Mesh).material as THREE.Material).dispose();
-            }
-        }
-    }
-
-    function morphPrepare(
-        seedA: Seed, controlsA: Controls, seedB: Seed, controlsB: Controls,
-    ): void {
-        syncSize();
-        clearScene(scene);
-
-        const paramsA = deriveParams(controlsA);
-        const paramsB = deriveParams(controlsB);
-
-        bg.setConfig(paramsA.bgConfig);
-        scene.add(bg.mesh);
-
-        const streamsA = createTagStreams(parseSeed(seedA));
-        const resultA = buildDemoScene(paramsA, streamsA, scene, cachedGlowTexture);
-
-        const streamsB = createTagStreams(parseSeed(seedB));
-        const resultB = buildDemoScene(paramsB, streamsB, scene, cachedGlowTexture);
-
-        prepareMorphRefs(resultA.refs);
-        prepareMorphRefs(resultB.refs);
-        setMorphFade(resultA.refs, 1.0);
-        setMorphFade(resultB.refs, 0.0);
-
-        const glowDataA = resultA.refs.glowPointData || [];
-        const glowDataB = resultB.refs.glowPointData || [];
-        let morphGlow: THREE.Mesh | null = null;
-        let morphGlowMat: THREE.ShaderMaterial | null = null;
-
-        if (glowDataA.length > 0 || glowDataB.length > 0) {
-            const matching = matchDots(glowDataA, glowDataB);
-            const morphGlowGeom = buildMorphGlowGeometry(glowDataA, glowDataB, matching);
-            morphGlowMat = createDemoGlowMaterial(cachedGlowTexture);
-            morphGlow = new THREE.Mesh(morphGlowGeom, morphGlowMat);
-            morphGlow.frustumCulled = false;
-            morphGlow.renderOrder = 0;
-            scene.add(morphGlow);
-        }
-
-        if (resultA.refs.glowPoints) resultA.refs.glowPoints.visible = false;
-        if (resultB.refs.glowPoints) resultB.refs.glowPoints.visible = false;
-
-        camera.fov = paramsA.cameraFov;
-        camera.aspect = getAspect();
-        camera.updateProjectionMatrix();
-        camera.position.set(paramsA.cameraOffsetX, paramsA.cameraOffsetY, paramsA.cameraZ);
-        camera.lookAt(0, 0, 0);
-
-        bloomEffect.intensity = paramsA.bloomStrength;
-        bloomEffect.luminanceMaterial.threshold = paramsA.bloomThreshold;
-        chromaticAberrationEffect.offset.set(paramsA.chromaticAberration, paramsA.chromaticAberration);
-        vignetteEffect.darkness = paramsA.vignetteStrength;
-
-        morphState = {
-            refsA: resultA.refs,
-            refsB: resultB.refs,
-            paramsA,
-            paramsB,
-            morphGlow,
-            morphGlowMat,
-        };
-
-        bg.update(camera);
-        composer.render();
-    }
-
-    function morphUpdate(t: number): void {
-        if (!morphState) return;
-
-        const { refsA, refsB, paramsA, paramsB, morphGlowMat: mGlowMat } = morphState;
-
-        setMorphFade(refsA, 1.0 - t);
-        setMorphFade(refsB, t);
-
-        if (mGlowMat) {
-            mGlowMat.uniforms.uMorphT.value = t;
-        }
-
-        camera.fov = lerp(paramsA.cameraFov, paramsB.cameraFov, t);
-        camera.position.set(
-            lerp(paramsA.cameraOffsetX, paramsB.cameraOffsetX, t),
-            lerp(paramsA.cameraOffsetY, paramsB.cameraOffsetY, t),
-            lerp(paramsA.cameraZ, paramsB.cameraZ, t),
-        );
-        camera.aspect = getAspect();
-        camera.updateProjectionMatrix();
-        camera.lookAt(0, 0, 0);
-        baseCameraPos.copy(camera.position);
-
-        bg.lerpConfig(paramsA.bgConfig, paramsB.bgConfig, t);
-
-        bloomEffect.intensity = lerp(paramsA.bloomStrength, paramsB.bloomStrength, t);
-        bloomEffect.luminanceMaterial.threshold = lerp(paramsA.bloomThreshold, paramsB.bloomThreshold, t);
-        const caVal = lerp(paramsA.chromaticAberration, paramsB.chromaticAberration, t);
-        chromaticAberrationEffect.offset.set(caVal, caVal);
-        vignetteEffect.darkness = lerp(paramsA.vignetteStrength, paramsB.vignetteStrength, t);
-
-        const attenVal = lerp(paramsA.attenuationCoeff, paramsB.attenuationCoeff, t);
-        if (refsA.faceMat) refsA.faceMat.uniforms.uAttenuationCoeff.value = attenVal;
-        if (refsB.faceMat) refsB.faceMat.uniforms.uAttenuationCoeff.value = attenVal;
-
-        applyCameraOverride();
-        bg.update(camera);
-        composer.render();
-    }
-
-    function morphEnd(): void {
-        if (!morphState) return;
-
-        const { refsA, refsB, morphGlow, paramsB } = morphState;
-
-        disposeRefs(refsA);
-
-        if (morphGlow) {
-            scene.remove(morphGlow);
-            morphGlow.geometry.dispose();
-            (morphGlow.material as THREE.Material).dispose();
-        }
-
-        if (refsB.glowPoints) refsB.glowPoints.visible = true;
-
-        setMorphFade(refsB, 1.0);
-        if (refsB.glowMat) {
-            refsB.glowMat.uniforms.uMorphT.value = 0.0;
-        }
-
-        // Persist scene B as the current scene for render loop
-        currentRefs = refsB;
-        currentParams = paramsB;
-        baseCameraPos.set(paramsB.cameraOffsetX, paramsB.cameraOffsetY, paramsB.cameraZ);
-
-        composer.render();
-
-        morphState = null;
-    }
-
-    // --- Camera override (Phase 3: animation camera moves) ---
+    // --- Camera override (zoom / orbit) ---
     let cameraOverrideZoom = 1.0;
     let cameraOverrideOrbitY = 0;  // degrees
     let cameraOverrideOrbitX = 0;  // degrees
 
     /**
-     * Apply camera zoom/orbit override to the current camera position.
-     * Call right before each render (after the base camera has been set by
-     * renderWith/morphUpdate). Modifies camera.position in place.
+     * Apply camera zoom/orbit override to the base camera position.
+     * Modifies camera.position in place.
      */
     function applyCameraOverride(): void {
         camera.position.copy(baseCameraPos);
@@ -474,117 +260,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         cameraOverrideOrbitX = 0;
     }
 
-    // --- Animation config ---
-    let animConfig = { sparkle: 1.0, drift: 1.0, wobble: 1.0 };
-
-    function applyAnimConfig(): void {
-        if (currentRefs?.faceMat) {
-            currentRefs.faceMat.uniforms.uSparkleIntensity.value = animConfig.sparkle;
-            currentRefs.faceMat.uniforms.uDriftSpeed.value = animConfig.drift;
-        }
-        if (currentRefs?.glowMat) {
-            currentRefs.glowMat.uniforms.uWobbleAmp.value = animConfig.wobble;
-        }
-    }
-
-    function setAnimConfig(config: { sparkle?: number; drift?: number; wobble?: number }): void {
-        if (config.sparkle !== undefined) animConfig.sparkle = config.sparkle;
-        if (config.drift !== undefined) animConfig.drift = config.drift;
-        if (config.wobble !== undefined) animConfig.wobble = config.wobble;
-        applyAnimConfig();
-    }
-
-    /**
-     * Set live animatable parameters from the timeline system.
-     * twinkle → sparkle (face) + wobble (glow dot position/size oscillation)
-     * dynamism → drift (face micro-animation)
-     */
-    function setLiveParams(params: { twinkle?: number; dynamism?: number }): void {
-        if (params.twinkle !== undefined) {
-            animConfig.sparkle = params.twinkle;
-            animConfig.wobble = params.twinkle;
-        }
-        if (params.dynamism !== undefined) {
-            animConfig.drift = params.dynamism;
-        }
-        applyAnimConfig();
-    }
-
-    // --- Depth-of-field / focus control ---
-
-    function setFocusState(focalDepth: number, blurAmount: number): void {
-        if (blurAmount <= 0.001) {
-            dofPass.enabled = false;
-            return;
-        }
-        dofPass.enabled = true;
-        // focalDepth 0-1 maps to normalized focus distance (near → far)
-        dofEffect.cocMaterial.focusDistance = focalDepth;
-        dofEffect.bokehScale = blurAmount * 5; // scale 0-1 → 0-5 bokeh
-    }
-
-    function clearFocusState(): void {
-        dofPass.enabled = false;
-    }
-
-    // --- Render loop methods ---
-
-    /** Reusable Object3D for InstancedMesh matrix updates */
-    const _dummyObj = new THREE.Object3D();
-
-    function updateTime(seconds: number): void {
-        const dt = seconds - lastUpdateTime;
-        lastUpdateTime = seconds;
-
-        if (!currentRefs) return;
-
-        // Update uTime on all materials
-        if (currentRefs.faceMat) currentRefs.faceMat.uniforms.uTime.value = seconds;
-        if (currentRefs.edgeMat) currentRefs.edgeMat.uniforms.uTime.value = seconds;
-        if (currentRefs.glowMat) currentRefs.glowMat.uniforms.uTime.value = seconds;
-
-        // Light sphere wobble — update InstancedMesh matrices + light uniforms
-        // (matches shader wobble so sphere positions stay in sync with glow dots)
-        if (currentRefs.sphereInst && currentRefs.glowPointData) {
-            const lightPositions = currentRefs.lightUniforms.uLightPositions.value;
-            const sphereData = currentRefs.glowPointData;
-            const count = Math.min(sphereData.length, currentRefs.sphereInst.count);
-            const wAmp = animConfig.wobble;
-            for (let i = 0; i < count; i++) {
-                const bp = sphereData[i];
-                const phase = bp.position.x * 12.9898 + bp.position.y * 78.233;
-                const wx = Math.sin(seconds * 0.8 + phase) * 0.008 * wAmp;
-                const wy = Math.cos(seconds * 0.6 + phase + 1.57) * 0.006 * wAmp;
-                const wz = Math.sin(seconds * 0.5 + phase + 3.14) * 0.005 * wAmp;
-                _dummyObj.position.set(bp.position.x + wx, bp.position.y + wy, bp.position.z + wz);
-                _dummyObj.scale.setScalar(bp.size * 0.015);
-                _dummyObj.updateMatrix();
-                currentRefs.sphereInst.setMatrixAt(i, _dummyObj.matrix);
-                if (i < lightPositions.length) {
-                    lightPositions[i].set(bp.position.x + wx, bp.position.y + wy, bp.position.z + wz);
-                }
-            }
-            currentRefs.sphereInst.instanceMatrix.needsUpdate = true;
-        }
-
-        // Fold animation
-        updateFold(dt);
-    }
-
-    function updateFold(dt: number): void {
-        if (foldProgress === foldTarget || dt <= 0) return;
-        const speed = foldTarget > foldProgress ? FOLD_IN_SPEED : FOLD_OUT_SPEED;
-        const dir = foldTarget > foldProgress ? 1 : -1;
-        foldProgress = Math.max(0, Math.min(1, foldProgress + dir * speed * dt));
-        // Snap to target if close enough
-        if (Math.abs(foldProgress - foldTarget) < 0.001) foldProgress = foldTarget;
-        if (currentRefs?.faceMat) currentRefs.faceMat.uniforms.uFoldProgress.value = foldProgress;
-        if (currentRefs?.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = foldProgress;
-        if (currentRefs?.glowMat) currentRefs.glowMat.uniforms.uFoldProgress.value = foldProgress;
-        if (currentRefs?.tendrilMat) { currentRefs.tendrilMat.uniforms.uOpacity.value = foldProgress; }
-        if (currentRefs?.sphereMat) { currentRefs.sphereMat.opacity = foldProgress; currentRefs.sphereMat.transparent = true; }
-    }
-
+    /** Re-render the current scene (e.g. after a camera change) without rebuilding it. */
     function renderFrame(): void {
         applyCameraOverride();
         bg.update(camera);
@@ -595,29 +271,12 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         bg.setConfig(config);
     }
 
-    function foldIn(): void { foldTarget = 1.0; }
-    function foldOut(): void { foldTarget = 0.0; }
-    function setFoldImmediate(v: number): void {
-        foldProgress = v;
-        foldTarget = v;
-        if (currentRefs?.faceMat) currentRefs.faceMat.uniforms.uFoldProgress.value = v;
-        if (currentRefs?.edgeMat) currentRefs.edgeMat.uniforms.uFoldProgress.value = v;
-        if (currentRefs?.glowMat) currentRefs.glowMat.uniforms.uFoldProgress.value = v;
-        if (currentRefs?.tendrilMat) { currentRefs.tendrilMat.uniforms.uOpacity.value = v; }
-        if (currentRefs?.sphereMat) { currentRefs.sphereMat.opacity = v; currentRefs.sphereMat.transparent = true; }
-    }
-    function isFoldComplete(): boolean { return foldProgress === foldTarget; }
-
     return {
         renderWith, dispose, resize, syncSize, setDPR,
         setTargetResolution, clearTargetResolution,
-        morphPrepare, morphUpdate, morphEnd,
-        updateTime, renderFrame, setAnimConfig,
+        renderFrame,
         setCameraState, clearCameraState,
-        setLiveParams,
-        setFocusState, clearFocusState,
         setBgConfig,
-        foldIn, foldOut, setFoldImmediate, isFoldComplete,
         getCanvas: () => canvas,
     };
 }

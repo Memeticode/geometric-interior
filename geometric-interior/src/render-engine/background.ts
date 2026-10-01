@@ -11,11 +11,9 @@
  *   scene.add(bg.mesh);                    // once
  *   bg.setConfig(config);                  // on renderWith
  *   bg.update(camera);                     // after every camera update
- *   bg.lerpConfig(configA, configB, t);    // during morphUpdate
  */
 
 import * as THREE from 'three';
-import { lerp } from '../utils/math.js';
 import bgVertSrc from './shaders/background.vert.glsl?raw';
 import bgFragSrc from './shaders/background.frag.glsl?raw';
 
@@ -218,58 +216,6 @@ export class Background {
         u.uFlowType.value     = FLOW_TYPE[config.flow.type];
         u.uFlowAngle.value    = config.flow.angle;
         u.uFlowStrength.value = config.flow.strength;
-    }
-
-    /**
-     * Linearly interpolate between two configs for morph transitions.
-     *
-     * Assumes both configs have the same gradient type, stop count, and
-     * stop positions — only the stop colors, texture, and flow values are
-     * lerped. If structures differ, config `a` is applied without lerping.
-     */
-    lerpConfig(a: BgConfig, b: BgConfig, t: number): void {
-        const u = this.mat.uniforms;
-        const stopsA = a.gradient.stops;
-        const stopsB = b.gradient.stops;
-
-        if (
-            a.gradient.type !== b.gradient.type ||
-            stopsA.length !== stopsB.length
-        ) {
-            this.setConfig(a);
-            return;
-        }
-
-        u.uGradientType.value = GRADIENT_TYPE[a.gradient.type];
-
-        const count = Math.min(stopsA.length, MAX_STOPS);
-        u.uStopCount.value = count;
-
-        const stopT     = u.uStopT.value    as number[];
-        const stopColor = u.uStopColor.value as THREE.Vector3[];
-        for (let i = 0; i < MAX_STOPS; i++) {
-            if (i < count) {
-                stopT[i] = lerp(stopsA[i].t, stopsB[i].t, t);
-                stopColor[i].set(
-                    lerp(stopsA[i].rgb[0], stopsB[i].rgb[0], t),
-                    lerp(stopsA[i].rgb[1], stopsB[i].rgb[1], t),
-                    lerp(stopsA[i].rgb[2], stopsB[i].rgb[2], t),
-                );
-            } else {
-                stopT[i] = 1.0;
-                stopColor[i].copy(stopColor[Math.max(0, count - 1)]);
-            }
-        }
-
-        // Lerp texture
-        u.uTexType.value     = TEX_TYPE[t < 0.5 ? a.texture.type : b.texture.type];
-        u.uTexScale.value    = lerp(a.texture.scale,    b.texture.scale,    t);
-        u.uTexStrength.value = lerp(a.texture.strength, b.texture.strength, t);
-
-        // Lerp flow
-        u.uFlowType.value     = FLOW_TYPE[t < 0.5 ? a.flow.type : b.flow.type];
-        u.uFlowAngle.value    = lerp(a.flow.angle,    b.flow.angle,    t);
-        u.uFlowStrength.value = lerp(a.flow.strength, b.flow.strength, t);
     }
 
     dispose(): void {

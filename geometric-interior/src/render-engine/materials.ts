@@ -25,11 +25,6 @@ export function createDemoFaceMaterial(lightUniforms: LightUniforms, config: Der
             uAmbientLight: { value: config.ambientLight },
             uEdgeFadeThreshold: { value: config.edgeFadeThreshold },
             uAttenuationCoeff: { value: config.attenuationCoeff },
-            uMorphFade: { value: 1.0 },
-            uTime: { value: 0.0 },
-            uFoldProgress: { value: 1.0 },
-            uSparkleIntensity: { value: 1.0 },
-            uDriftSpeed: { value: 1.0 },
         },
         vertexShader: demoFaceVertSrc,
         fragmentShader: demoFaceFragSrc,
@@ -45,11 +40,6 @@ export function createDemoFaceMaterial(lightUniforms: LightUniforms, config: Der
  */
 export function createDemoEdgeMaterial(): THREE.ShaderMaterial {
     return new THREE.ShaderMaterial({
-        uniforms: {
-            uMorphFade: { value: 1.0 },
-            uTime: { value: 0.0 },
-            uFoldProgress: { value: 1.0 },
-        },
         vertexShader: `
             // Per-vertex (base quad corners)
             attribute vec2 aLineCorner; // (along, side): along=0..1, side=-0.5..+0.5
@@ -61,15 +51,10 @@ export function createDemoEdgeMaterial(): THREE.ShaderMaterial {
             attribute float aEndAlpha;
             attribute vec3 aColor;
             attribute float aOpacity;
-            attribute float aFoldDelay;
-            attribute vec3 aFoldOrigin;
-
-            uniform float uFoldProgress;
 
             varying float fAlpha;
             varying vec3 vEdgeColor;
             varying float vEdgeOpacity;
-            varying float vFoldAlpha;
 
             // 1px at SD (540px height) in NDC
             #define LINE_WIDTH_NDC (2.0 / 540.0)
@@ -83,22 +68,11 @@ export function createDemoEdgeMaterial(): THREE.ShaderMaterial {
                 vEdgeColor = aColor;
                 vEdgeOpacity = aOpacity;
 
-                // Fold animation (same smoothstep logic as before)
-                float delayStart = aFoldDelay * 0.7;
-                float available = 1.0 - delayStart;
-                float localT = clamp((uFoldProgress - delayStart) / max(available, 0.001), 0.0, 1.0);
-                localT = localT * localT * (3.0 - 2.0 * localT);
-                vFoldAlpha = localT;
-
-                // Apply fold to both endpoints
+                // Project both endpoints to clip space
                 vec3 worldA = (modelMatrix * vec4(aStartPos, 1.0)).xyz;
                 vec3 worldB = (modelMatrix * vec4(aEndPos, 1.0)).xyz;
-                vec3 foldedA = mix(aFoldOrigin, worldA, localT);
-                vec3 foldedB = mix(aFoldOrigin, worldB, localT);
-
-                // Project both endpoints to clip space
-                vec4 clipA = projectionMatrix * viewMatrix * vec4(foldedA, 1.0);
-                vec4 clipB = projectionMatrix * viewMatrix * vec4(foldedB, 1.0);
+                vec4 clipA = projectionMatrix * viewMatrix * vec4(worldA, 1.0);
+                vec4 clipB = projectionMatrix * viewMatrix * vec4(worldB, 1.0);
 
                 // Select clip position for this vertex
                 vec4 clip = mix(clipA, clipB, along);
@@ -126,13 +100,11 @@ export function createDemoEdgeMaterial(): THREE.ShaderMaterial {
             }
         `,
         fragmentShader: `
-            uniform float uMorphFade;
             varying float fAlpha;
             varying vec3 vEdgeColor;
             varying float vEdgeOpacity;
-            varying float vFoldAlpha;
             void main() {
-                gl_FragColor = vec4(vEdgeColor * uMorphFade, vEdgeOpacity * fAlpha * uMorphFade * vFoldAlpha);
+                gl_FragColor = vec4(vEdgeColor, vEdgeOpacity * fAlpha);
             }
         `,
         transparent: true,
@@ -146,9 +118,6 @@ export function createDemoEdgeMaterial(): THREE.ShaderMaterial {
  */
 export function createDemoTendrilMaterial(): THREE.ShaderMaterial {
     return new THREE.ShaderMaterial({
-        uniforms: {
-            uOpacity: { value: 1.0 },
-        },
         vertexShader: `
             // Per-vertex (base quad corners)
             attribute vec2 aLineCorner; // (along, side)
@@ -201,10 +170,9 @@ export function createDemoTendrilMaterial(): THREE.ShaderMaterial {
             }
         `,
         fragmentShader: `
-            uniform float uOpacity;
             varying vec3 vColor;
             void main() {
-                gl_FragColor = vec4(vColor * uOpacity, uOpacity);
+                gl_FragColor = vec4(vColor, 1.0);
             }
         `,
         transparent: true,
@@ -222,11 +190,6 @@ export function createDemoGlowMaterial(glowTexture: THREE.Texture): THREE.Shader
     return new THREE.ShaderMaterial({
         uniforms: {
             uGlowMap: { value: glowTexture },
-            uMorphFade: { value: 1.0 },
-            uMorphT: { value: 0.0 },
-            uTime: { value: 0.0 },
-            uFoldProgress: { value: 1.0 },
-            uWobbleAmp: { value: 1.0 },
         },
         vertexShader: demoGlowVertSrc,
         fragmentShader: demoGlowFragSrc,

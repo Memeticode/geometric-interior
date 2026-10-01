@@ -46,7 +46,7 @@ export function buildDemoScene(
     let sphereMat: THREE.MeshBasicMaterial | null = null;
     if (sphereInstData.length > 0) {
         const sphereGeo = new THREE.SphereGeometry(1, 16, 12);
-        sphereMat = new THREE.MeshBasicMaterial({ depthWrite: false });
+        sphereMat = new THREE.MeshBasicMaterial({ depthWrite: false, transparent: true });
         sphereInst = new THREE.InstancedMesh(sphereGeo, sphereMat, sphereInstData.length);
         const dummy = new THREE.Object3D();
         for (let i = 0; i < sphereInstData.length; i++) {
@@ -91,16 +91,6 @@ export function buildDemoScene(
             new THREE.InstancedBufferAttribute(centers, 3));
         glowGeom.setAttribute('aSize',
             new THREE.InstancedBufferAttribute(sizes, 1));
-
-        // Morph attributes (defaults for static rendering — shader handles aMatchFlag < 0.5)
-        glowGeom.setAttribute('aCenterTo',
-            new THREE.InstancedBufferAttribute(new Float32Array(count * 3), 3));
-        glowGeom.setAttribute('aSizeTo',
-            new THREE.InstancedBufferAttribute(new Float32Array(count), 1));
-        glowGeom.setAttribute('aMatchFlag',
-            new THREE.InstancedBufferAttribute(new Float32Array(count), 1));  // all 0
-        glowGeom.setAttribute('aFadeDir',
-            new THREE.InstancedBufferAttribute(new Float32Array(count), 1));  // all 0
 
         glowMat = createDemoGlowMaterial(glowTexture);
         glowPoints = new THREE.Mesh(glowGeom, glowMat);
@@ -229,8 +219,6 @@ export function buildDemoScene(
         geom.setAttribute('aNoiseScale', new THREE.BufferAttribute(new Float32Array(faceAccum.noiseScale), 1));
         geom.setAttribute('aNoiseStrength', new THREE.BufferAttribute(new Float32Array(faceAccum.noiseStrength), 1));
         geom.setAttribute('aCrackExtend', new THREE.BufferAttribute(new Float32Array(faceAccum.crackExtend), 1));
-        geom.setAttribute('aFoldDelay', new THREE.BufferAttribute(new Float32Array(faceAccum.foldDelay), 1));
-        geom.setAttribute('aFoldOrigin', new THREE.BufferAttribute(new Float32Array(faceAccum.foldOrigin), 3));
 
         faceMat = createDemoFaceMaterial(lightUniforms, params);
         faceMat.uniforms.uCameraPos.value.set(0, 0, params.cameraZ);
@@ -253,8 +241,6 @@ export function buildDemoScene(
         const endAlpha   = new Float32Array(segCount);
         const eColor     = new Float32Array(segCount * 3);
         const eOpacity   = new Float32Array(segCount);
-        const eFoldDelay = new Float32Array(segCount);
-        const eFoldOrigin = new Float32Array(segCount * 3);
 
         for (let i = 0; i < segCount; i++) {
             startPos[i * 3]     = edgeAccum.pos[i * 6];
@@ -269,10 +255,6 @@ export function buildDemoScene(
             eColor[i * 3 + 1]   = edgeAccum.color[i * 6 + 1];
             eColor[i * 3 + 2]   = edgeAccum.color[i * 6 + 2];
             eOpacity[i]         = edgeAccum.opacity[i * 2];
-            eFoldDelay[i]       = edgeAccum.foldDelay[i * 2];
-            eFoldOrigin[i * 3]     = edgeAccum.foldOrigin[i * 6];
-            eFoldOrigin[i * 3 + 1] = edgeAccum.foldOrigin[i * 6 + 1];
-            eFoldOrigin[i * 3 + 2] = edgeAccum.foldOrigin[i * 6 + 2];
         }
 
         const edgeGeom = new THREE.InstancedBufferGeometry();
@@ -289,8 +271,6 @@ export function buildDemoScene(
         edgeGeom.setAttribute('aEndAlpha',   new THREE.InstancedBufferAttribute(endAlpha, 1));
         edgeGeom.setAttribute('aColor',      new THREE.InstancedBufferAttribute(eColor, 3));
         edgeGeom.setAttribute('aOpacity',    new THREE.InstancedBufferAttribute(eOpacity, 1));
-        edgeGeom.setAttribute('aFoldDelay',  new THREE.InstancedBufferAttribute(eFoldDelay, 1));
-        edgeGeom.setAttribute('aFoldOrigin', new THREE.InstancedBufferAttribute(eFoldOrigin, 3));
 
         edgeMat = createDemoEdgeMaterial();
         edgeLines = new THREE.Mesh(edgeGeom, edgeMat);
@@ -376,20 +356,5 @@ export function buildDemoScene(
     return {
         nodeCount: allDotPositions.length,
         faceCount,
-        refs: {
-            glowPoints,
-            glowMat,
-            sphereInst,
-            sphereMat,
-            faceMesh,
-            faceMat,
-            edgeLines,
-            edgeMat,
-            tendrilLines,
-            tendrilMat,
-            glowPointData,
-            lightUniforms,
-        },
     };
 }
-

@@ -21,13 +21,11 @@ if (!existsSync(libPath)) {
 
 const SUITES = [
     'test-prng.mjs',
-    'test-interpolation.mjs',
     'test-params.mjs',
     'test-schema.mjs',
     'test-text.mjs',
     'test-palettes.mjs',
     'test-seed-tags.mjs',
-    'test-timeline.mjs',
 ];
 
 let totalPassed = 0, totalFailed = 0;

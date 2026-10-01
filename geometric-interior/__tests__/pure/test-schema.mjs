@@ -1,7 +1,7 @@
 /**
  * Tests for validateStillConfig, configToProfile, profileToConfig.
  */
-import { validateStillConfig, configToProfile, profileToConfig, ControlsSchema, ImageAssetMetaSchema, AnimAssetMetaSchema, AnimationSchema } from '../../dist/geometric-interior.js';
+import { validateStillConfig, configToProfile, profileToConfig, ControlsSchema, ImageAssetMetaSchema } from '../../dist/geometric-interior.js';
 
 let passed = 0, failed = 0;
 
@@ -234,24 +234,6 @@ test('ImageAssetMetaSchema includes optional camera', () => {
     const parsed = ImageAssetMetaSchema.parse(meta);
     assert(parsed.camera !== undefined, 'expected camera in parsed meta');
     assert(parsed.camera.rotation === 45, `expected rotation 45, got ${parsed.camera.rotation}`);
-});
-
-test('AnimAssetMetaSchema accepts full meta with animation', () => {
-    const anim = {
-        settings: { fps: 30, width: 1920, height: 1080 },
-        events: [{ type: 'expand', duration: 1.5, easing: 'ease-out', config: {}, seed: 'test' }],
-        cameraMoves: [],
-        paramTracks: [],
-    };
-    const meta = {
-        title: 'Anim', altText: 'desc', commentary: 'my notes',
-        animation: anim,
-        fps: 30, totalFrames: 90, durationS: 3.0,
-        width: 1920, height: 1080,
-    };
-    const parsed = AnimAssetMetaSchema.parse(meta);
-    assert(parsed.commentary === 'my notes', `expected commentary, got "${parsed.commentary}"`);
-    assert(parsed.animation.settings.fps === 30, 'expected animation in parsed meta');
 });
 
 export { passed, failed };

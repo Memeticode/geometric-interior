@@ -9,7 +9,6 @@ const SUITES = [
     { mod: './test-palette-variations.mjs', label: 'Palette Variations' },
     { mod: './test-control-ranges.mjs', label: 'Control Ranges' },
     { mod: './test-canvas-integrity.mjs', label: 'Canvas Integrity' },
-    { mod: './test-morph-sequence.mjs', label: 'Morph Sequence' },
 ];
 
 let totalPassed = 0, totalFailed = 0;

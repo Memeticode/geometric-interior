@@ -179,13 +179,6 @@ export interface CurveSample {
 /** Guide curve — Vector3 array with tier annotation */
 export type GuideCurve = Vector3[] & { tier: string };
 
-/** Dot matching result */
-export interface DotMatching {
-    matched: Array<{ fromIdx: number; toIdx: number }>;
-    unmatchedFrom: number[];
-    unmatchedTo: number[];
-}
-
 /** Batch accumulators for face and edge rendering */
 export interface BatchAccumulators {
     faceAccum: {
@@ -198,15 +191,11 @@ export interface BatchAccumulators {
         noiseScale: number[];
         noiseStrength: number[];
         crackExtend: number[];
-        foldDelay: number[];
-        foldOrigin: number[];
     };
     edgeAccum: {
         pos: number[];
         alpha: number[];
         color: number[];
         opacity: number[];
-        foldDelay: number[];
-        foldOrigin: number[];
     };
 }
