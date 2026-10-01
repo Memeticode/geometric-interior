@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>Still Image Test Page</title>
+</head>
+<body>
+  <canvas id="canvas" width="320" height="200"></canvas>
+  <script type="module">
+    import { createRenderer } from '../../src/index.ts';
+
+    const canvas = document.getElementById('canvas');
+    const renderer = createRenderer(canvas, { dpr: 1 });
+
+    /** Render one config and return the SHA-256 of its RGBA pixels. */
+    window.renderHash = async ({ seed, controls, camera, width, height }) => {
+      renderer.setTargetResolution(width, height);
+      if (camera) renderer.setCameraState(camera.distance, camera.rotation, camera.elevation);
+      else renderer.clearCameraState();
+      renderer.renderWith(seed, controls);
+
+      const copy = document.createElement('canvas');
+      copy.width = canvas.width;
+      copy.height = canvas.height;
+      const ctx = copy.getContext('2d');
+      ctx.drawImage(canvas, 0, 0);
+      const pixels = ctx.getImageData(0, 0, copy.width, copy.height).data;
+      const digest = await crypto.subtle.digest('SHA-256', pixels);
+      return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+    };
+    window.ready = true;
+  </script>
+</body>
+</html>

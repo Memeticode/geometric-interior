@@ -2,6 +2,7 @@
  * Deterministic PRNG utilities.
  */
 
+/** String hash: returns a generator of 32-bit unsigned seeds derived from `str` (use to seed mulberry32). */
 export function xmur3(str: string): () => number {
     let h = 1779033703 ^ str.length;
     for (let i = 0; i < str.length; i++) {
@@ -16,6 +17,7 @@ export function xmur3(str: string): () => number {
     };
 }
 
+/** Seeded PRNG: returns a function yielding deterministic floats in [0, 1) from a 32-bit seed. */
 export function mulberry32(a: number): () => number {
     return function () {
         let t = a += 0x6D2B79F5;
