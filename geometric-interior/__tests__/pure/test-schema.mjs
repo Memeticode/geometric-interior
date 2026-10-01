@@ -1,7 +1,7 @@
 /**
- * Tests for validateStillConfig, configToProfile, profileToConfig.
+ * Tests for ImageConfigSchema / validateImageConfig, ControlsSchema and ImageAssetMetaSchema.
  */
-import { validateStillConfig, configToProfile, profileToConfig, ControlsSchema, ImageAssetMetaSchema } from '../../dist/geometric-interior.js';
+import { validateImageConfig, ImageConfigSchema, ControlsSchema, ImageAssetMetaSchema } from '../../dist/geometric-interior.js';
 
 let passed = 0, failed = 0;
 
@@ -13,161 +13,61 @@ function test(name, fn) {
 function assert(cond, msg) { if (!cond) throw new Error(msg || 'assertion failed'); }
 
 const VALID = {
-    kind: 'still-v2',
-    name: 'Test Profile',
-    intent: 'test-seed',
-    color: { hue: 0.55, spectrum: 0.3, chroma: 0.5 },
-    structure: { density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, coherence: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
+    seed: [3, 12, 8],
+    controls: { hue: 0.55, spectrum: 0.3, chroma: 0.5, density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, coherence: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
+    camera: { zoom: 0.375, rotation: 0, elevation: 0 },
 };
 
 console.log('\n=== Schema Tests ===\n');
 
-test('validateStillConfig accepts valid config', () => {
-    const r = validateStillConfig(VALID);
-    assert(r.ok === true, `expected ok=true, got errors: ${r.errors?.join(', ')}`);
+// ── ImageConfig ──
+
+test('validateImageConfig accepts a valid config', () => {
+    const r = validateImageConfig(VALID);
+    assert(r.ok === true, `expected ok, got errors: ${r.errors.join(', ')}`);
 });
 
-test('validateStillConfig rejects missing kind', () => {
-    const { kind, ...rest } = VALID;
-    const r = validateStillConfig(rest);
-    assert(r.ok === false, 'expected rejection for missing kind');
+test('validateImageConfig rejects non-object input', () => {
+    assert(validateImageConfig(null).ok === false);
+    assert(validateImageConfig('config').ok === false);
 });
 
-test('validateStillConfig rejects wrong kind', () => {
-    const r = validateStillConfig({ ...VALID, kind: 'animation' });
-    assert(r.ok === false, 'expected rejection for wrong kind');
-    assert(r.errors.some(e => e.toLowerCase().includes('still')),
-        `expected error mentioning "still", got: ${r.errors}`);
+test('validateImageConfig rejects a text seed', () => {
+    const r = validateImageConfig({ ...VALID, seed: 'hello' });
+    assert(r.ok === false && r.errors.some(e => e.startsWith('seed')), `expected seed error, got ${r.errors.join(', ')}`);
 });
 
-test('validateStillConfig rejects missing name', () => {
-    const { name, ...rest } = VALID;
-    const r = validateStillConfig(rest);
-    assert(r.ok === false, 'expected rejection for missing name');
+test('validateImageConfig rejects invalid seed tags', () => {
+    for (const seed of [[1, 2], [1, 2, 3, 4], [0, 0, 18], [-1, 0, 0], [1.5, 2, 3]]) {
+        assert(validateImageConfig({ ...VALID, seed }).ok === false, `accepted bad seed ${JSON.stringify(seed)}`);
+    }
 });
 
-test('validateStillConfig rejects missing structure', () => {
-    const { structure, ...rest } = VALID;
-    const r = validateStillConfig(rest);
-    assert(r.ok === false, 'expected rejection for missing structure');
+test('validateImageConfig requires camera', () => {
+    const { camera, ...noCamera } = VALID;
+    const r = validateImageConfig(noCamera);
+    assert(r.ok === false && r.errors.some(e => e.startsWith('camera')), `expected camera error, got ${r.errors.join(', ')}`);
 });
 
-test('validateStillConfig rejects out-of-range structure values', () => {
-    const r = validateStillConfig({
-        ...VALID,
-        structure: { ...VALID.structure, density: 5.0 },
-    });
-    assert(r.ok === false, 'expected rejection for out-of-range density');
+test('validateImageConfig rejects out-of-range values', () => {
+    assert(validateImageConfig({ ...VALID, controls: { ...VALID.controls, density: 1.5 } }).ok === false);
+    assert(validateImageConfig({ ...VALID, camera: { ...VALID.camera, zoom: -0.1 } }).ok === false);
+    assert(validateImageConfig({ ...VALID, camera: { ...VALID.camera, rotation: 200 } }).ok === false);
 });
 
-test('validateStillConfig rejects missing color', () => {
-    const { color, ...rest } = VALID;
-    const r = validateStillConfig(rest);
-    assert(r.ok === false, 'expected rejection for missing color');
+test('error messages carry the field path', () => {
+    const r = validateImageConfig({ ...VALID, controls: { ...VALID.controls, hue: 2 } });
+    assert(r.errors.some(e => e.startsWith('controls.hue: ')), `got ${r.errors.join(', ')}`);
 });
 
-test('validateStillConfig rejects non-object input', () => {
-    const r = validateStillConfig('not an object');
-    assert(r.ok === false, 'expected rejection for string input');
+test('ImageConfigSchema fills omitted controls and camera fields with defaults', () => {
+    const c = ImageConfigSchema.parse({ seed: [1, 2, 3], controls: {}, camera: {} });
+    assert(c.controls.density === 0.5, `expected density 0.5, got ${c.controls.density}`);
+    assert(c.camera.zoom === 0.375, `expected default zoom 0.375, got ${c.camera.zoom}`);
+    assert(c.camera.rotation === 0 && c.camera.elevation === 0, 'expected zero camera angles');
 });
 
-test('configToProfile produces { name, profile }', () => {
-    const result = configToProfile(VALID);
-    assert(result !== null && typeof result === 'object', 'expected object');
-    assert(result.name === 'Test Profile', `expected name "Test Profile", got "${result.name}"`);
-    assert(result.profile !== undefined, 'missing profile');
-    assert(result.profile.seed === 'test-seed', `expected seed "test-seed", got "${result.profile.seed}"`);
-});
-
-test('profileToConfig produces valid StillConfig', () => {
-    const { name, profile } = configToProfile(VALID);
-    const config = profileToConfig(name, profile);
-    const r = validateStillConfig(config);
-    assert(r.ok === true, `roundtrip produced invalid config: ${r.errors?.join(', ')}`);
-});
-
-test('configToProfile → profileToConfig roundtrip preserves values', () => {
-    const { name, profile } = configToProfile(VALID);
-    const config = profileToConfig(name, profile);
-    assert(config.name === VALID.name);
-    assert(config.intent === VALID.intent);
-    assert(config.structure.density === VALID.structure.density);
-    assert(config.structure.luminosity === VALID.structure.luminosity);
-    assert(typeof config.color === 'object' && config.color !== null, 'expected color object');
-    assert(typeof config.color.hue === 'number', 'expected numeric color.hue');
-    assert(typeof config.color.chroma === 'number', 'expected numeric color.chroma');
-});
-
-// ── Seed tag config tests ──
-
-const VALID_V2_TAG = {
-    kind: 'still-v2',
-    name: 'Tag Profile',
-    seedTag: [5, 3, 11],
-    intent: 'Balanced, folded, bright',
-    color: { hue: 0.5, spectrum: 0.3, chroma: 0.6 },
-    structure: { density: 0.5, luminosity: 0.5, bloom: 0.5, fracture: 0.5, coherence: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
-};
-
-test('validateStillConfig accepts v2 config with seedTag', () => {
-    const r = validateStillConfig(VALID_V2_TAG);
-    assert(r.ok === true, `expected ok=true, got errors: ${r.errors?.join(', ')}`);
-});
-
-test('validateStillConfig accepts v2 config with seedTag and no intent', () => {
-    const { intent, ...noIntent } = VALID_V2_TAG;
-    const r = validateStillConfig(noIntent);
-    assert(r.ok === true, `expected ok=true, got errors: ${r.errors?.join(', ')}`);
-});
-
-test('validateStillConfig rejects invalid seedTag (wrong length)', () => {
-    const r = validateStillConfig({ ...VALID_V2_TAG, seedTag: [1, 2] });
-    assert(r.ok === false, 'expected rejection for wrong-length seedTag');
-});
-
-test('validateStillConfig rejects invalid seedTag (out of range)', () => {
-    const r = validateStillConfig({ ...VALID_V2_TAG, seedTag: [0, 18, 5] });
-    assert(r.ok === false, 'expected rejection for out-of-range seedTag element');
-});
-
-test('validateStillConfig rejects invalid seedTag (non-integer)', () => {
-    const r = validateStillConfig({ ...VALID_V2_TAG, seedTag: [1.5, 3, 5] });
-    assert(r.ok === false, 'expected rejection for non-integer seedTag element');
-});
-
-test('configToProfile extracts seedTag as seed', () => {
-    const result = configToProfile(VALID_V2_TAG);
-    assert(Array.isArray(result.profile.seed), 'expected array seed');
-    assert(JSON.stringify(result.profile.seed) === JSON.stringify([5, 3, 11]),
-        `expected [5,3,11], got ${JSON.stringify(result.profile.seed)}`);
-});
-
-test('profileToConfig emits seedTag for tag seed', () => {
-    const { name, profile } = configToProfile(VALID_V2_TAG);
-    const config = profileToConfig(name, profile);
-    assert(Array.isArray(config.seedTag), 'expected seedTag in config');
-    assert(JSON.stringify(config.seedTag) === JSON.stringify([5, 3, 11]),
-        `expected [5,3,11], got ${JSON.stringify(config.seedTag)}`);
-    assert(typeof config.intent === 'string' && config.intent.length > 0,
-        'expected intent string label for tag seed');
-});
-
-test('profileToConfig → configToProfile roundtrip preserves seedTag', () => {
-    const { name, profile } = configToProfile(VALID_V2_TAG);
-    const config = profileToConfig(name, profile);
-    const { profile: profile2 } = configToProfile(config);
-    assert(Array.isArray(profile2.seed), 'expected array seed after roundtrip');
-    assert(JSON.stringify(profile2.seed) === JSON.stringify([5, 3, 11]),
-        `roundtrip lost seedTag: got ${JSON.stringify(profile2.seed)}`);
-});
-
-test('profileToConfig does not emit seedTag for string seed', () => {
-    const config = profileToConfig('Test', { seed: 'hello', controls: VALID_V2_TAG.structure });
-    assert(config.seedTag === undefined, 'expected no seedTag for string seed');
-    assert(config.intent === 'hello', `expected intent "hello", got "${config.intent}"`);
-});
-
-// ── Defaults tests ──
+// ── Controls ──
 
 test('ControlsSchema.parse({}) produces valid defaults', () => {
     const c = ControlsSchema.parse({});
@@ -185,55 +85,24 @@ test('ControlsSchema.parse preserves explicit values', () => {
     assert(c.spectrum === 0.5, `expected spectrum default 0.5, got ${c.spectrum}`);
 });
 
-test('StillConfig with omitted optional structure fields gets defaults', () => {
-    const minimal = {
-        kind: 'still-v2',
-        name: 'Minimal',
-        intent: 'test',
-        color: { hue: 0.5, spectrum: 0.5, chroma: 0.5 },
-        structure: { density: 0.5, luminosity: 0.5, fracture: 0.5, coherence: 0.5 },
-    };
-    const r = validateStillConfig(minimal);
-    assert(r.ok === true, `expected ok=true, got errors: ${r.errors?.join(', ')}`);
-});
-
-// ── Asset metadata tests ──
+// ── Asset metadata ──
 
 test('ImageAssetMetaSchema accepts full meta with config', () => {
     const meta = {
         title: 'Test', altText: 'desc', commentary: 'notes',
-        seed: [3, 5, 7],
-        controls: { hue: 0.5, spectrum: 0.5, chroma: 0.5, density: 0.5, fracture: 0.5, coherence: 0.5, luminosity: 0.5, bloom: 0.5, scale: 0.5, division: 0.5, faceting: 0.5, flow: 0.5 },
+        config: VALID,
         nodeCount: 42, width: 1920, height: 1080,
     };
     const parsed = ImageAssetMetaSchema.parse(meta);
     assert(parsed.commentary === 'notes', `expected commentary "notes", got "${parsed.commentary}"`);
-    assert(Array.isArray(parsed.seed), 'expected seed array in parsed meta');
-    assert(parsed.controls.hue === 0.5, 'expected controls.hue in parsed meta');
+    assert(parsed.config.seed[1] === 12, 'expected config.seed in parsed meta');
+    assert(parsed.config.camera.zoom === 0.375, 'expected config.camera in parsed meta');
 });
 
 test('ImageAssetMetaSchema defaults commentary to empty string', () => {
-    const meta = {
-        title: 'Test', altText: 'desc',
-        seed: 'my-seed',
-        controls: {},
-        nodeCount: 10, width: 800, height: 600,
-    };
+    const meta = { title: 'Test', altText: 'desc', config: VALID, nodeCount: 10, width: 800, height: 600 };
     const parsed = ImageAssetMetaSchema.parse(meta);
     assert(parsed.commentary === '', `expected empty commentary, got "${parsed.commentary}"`);
-});
-
-test('ImageAssetMetaSchema includes optional camera', () => {
-    const meta = {
-        title: 'Test', altText: 'desc',
-        seed: [1, 2, 3],
-        controls: {},
-        camera: { rotation: 45, elevation: 10, zoom: 0.8 },
-        nodeCount: 10, width: 800, height: 600,
-    };
-    const parsed = ImageAssetMetaSchema.parse(meta);
-    assert(parsed.camera !== undefined, 'expected camera in parsed meta');
-    assert(parsed.camera.rotation === 45, `expected rotation 45, got ${parsed.camera.rotation}`);
 });
 
 export { passed, failed };

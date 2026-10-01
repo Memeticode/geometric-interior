@@ -12,12 +12,10 @@
     const canvas = document.getElementById('canvas');
     const renderer = createRenderer(canvas, { dpr: 1 });
 
-    /** Render one config and return the SHA-256 of its RGBA pixels. */
-    window.renderHash = async ({ seed, controls, camera, width, height }) => {
+    /** Render one ImageConfig and return the SHA-256 of its RGBA pixels. */
+    window.renderHash = async ({ config, width, height }) => {
       renderer.setTargetResolution(width, height);
-      if (camera) renderer.setCameraState(camera.distance, camera.rotation, camera.elevation);
-      else renderer.clearCameraState();
-      renderer.renderWith(seed, controls);
+      renderer.render(config);
 
       const copy = document.createElement('canvas');
       copy.width = canvas.width;

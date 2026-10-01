@@ -7,11 +7,11 @@
  */
 
 import { xmur3, mulberry32 } from '../../utils/prng.js';
-import type { SeedTag, Seed } from '../schemas.js';
+import type { SeedTag } from '../schemas.js';
 
 // ── Types ──
 
-export type { SeedTag, Seed } from '../schemas.js';
+export type { SeedTag } from '../schemas.js';
 
 export interface SceneRngStreams {
     arrangementRng: () => number;
@@ -105,27 +105,6 @@ export function slotBias(slotValue: number): number {
 }
 
 /**
- * Parse a seed into a normalized SeedTag.
- * - If already a SeedTag array, clamp and round each slot.
- * - If a string, hash via xmur3 to produce 3 deterministic slot values.
- */
-export function parseSeed(seed: Seed): SeedTag {
-    if (Array.isArray(seed) && seed.length === 3) {
-        return [
-            Math.max(0, Math.min(TAG_LIST_LENGTH - 1, Math.round(seed[0]))),
-            Math.max(0, Math.min(TAG_LIST_LENGTH - 1, Math.round(seed[1]))),
-            Math.max(0, Math.min(TAG_LIST_LENGTH - 1, Math.round(seed[2]))),
-        ];
-    }
-    const h = xmur3(String(seed));
-    return [
-        h() % TAG_LIST_LENGTH,
-        h() % TAG_LIST_LENGTH,
-        h() % TAG_LIST_LENGTH,
-    ];
-}
-
-/**
  * Create three independent PRNG streams and bias values from a SeedTag.
  * Each slot gets its own prefixed hash so changing one slot only
  * re-randomizes its subsystem.
@@ -165,14 +144,4 @@ export function deserializeSeedTag(s: string): SeedTag | null {
     const nums = parts.map(Number);
     if (nums.some(n => Number.isNaN(n) || n < 0 || n >= TAG_LIST_LENGTH || n !== Math.floor(n))) return null;
     return nums as unknown as SeedTag;
-}
-
-/** Check whether a value is a SeedTag array. */
-export function isSeedTag(seed: Seed): seed is SeedTag {
-    return Array.isArray(seed) && seed.length === 3 && seed.every(n => typeof n === 'number');
-}
-
-/** Canonical string key for a seed (for hashing / title generation). */
-export function seedToString(seed: Seed): string {
-    return Array.isArray(seed) ? seed.join('.') : seed;
 }

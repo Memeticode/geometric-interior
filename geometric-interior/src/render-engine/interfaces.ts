@@ -2,16 +2,14 @@
  * Renderer public contract and scene output types.
  */
 
-import type { Controls, RenderMeta } from '../core/schemas.js';
-import type { Seed } from '../core/text-generation/seed-tags.js';
+import type { CameraConfig, ImageConfig, RenderMeta } from '../core/schemas.js';
 
 /** Renderer instance returned by createRenderer() */
 export interface Renderer {
-    renderWith(seed: Seed, controls: Controls, locale?: string): RenderMeta;
-    /** Re-render the current scene (e.g. after a camera change) without rebuilding it. */
-    renderFrame(): void;
-    setCameraState(zoom: number, orbitY: number, orbitX: number): void;
-    clearCameraState(): void;
+    /** Build the scene for `config` and render it. */
+    render(config: ImageConfig, locale?: string): RenderMeta;
+    /** Change only the camera and re-render the current scene without rebuilding it. */
+    setCamera(camera: CameraConfig): void;
     resize(width: number, height: number): void;
     syncSize(): void;
     setTargetResolution(w: number, h: number): void;

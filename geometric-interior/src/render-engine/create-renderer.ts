@@ -14,12 +14,12 @@ import {
 } from 'postprocessing';
 import { xmur3, mulberry32 } from '../utils/prng.js';
 import { deriveParams } from '../core/params.js';
-import { parseSeed, createTagStreams } from '../core/text-generation/seed-tags.js';
+import { createTagStreams } from '../core/text-generation/seed-tags.js';
 import { generateTitle } from '../core/text-generation/title-text.js';
 import { generateAltText } from '../core/text-generation/alt-text.js';
 import { buildScene } from './scene/build-scene.js';
 import { createGlowTexture } from './scene/dots.js';
-import type { Controls, RenderMeta, Seed } from '../core/schemas.js';
+import type { CameraConfig, ImageConfig, RenderMeta } from '../core/schemas.js';
 import type { Renderer, RendererOptions } from './interfaces.js';
 import { Background } from './background.js';
 
@@ -144,11 +144,14 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
     /** Camera position before the zoom/orbit override is applied. */
     const baseCameraPos = new THREE.Vector3();
 
-    function renderWith(seed: Seed, controls: Controls, locale: string = 'en'): RenderMeta {
+    let hasScene = false;
+
+    /** Build the scene for `config` and render it. */
+    function render(config: ImageConfig, locale: string = 'en'): RenderMeta {
         syncSize();
 
-        const tag = parseSeed(seed);
-        const streams = createTagStreams(tag);
+        const { seed, controls } = config;
+        const streams = createTagStreams(seed);
         const params = deriveParams(controls);
 
         camera.fov = params.cameraFov;
@@ -174,11 +177,13 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         chromaticAberrationEffect.offset.set(params.chromaticAberration, params.chromaticAberration);
         vignetteEffect.darkness = params.vignetteStrength;
 
+        hasScene = true;
+        applyCamera(config.camera);
         renderFrame();
 
-        const titleRng = mulberry32(xmur3('title-' + tag[0] + '-' + tag[1] + '-' + tag[2])());
+        const titleRng = mulberry32(xmur3('title-' + seed[0] + '-' + seed[1] + '-' + seed[2])());
         const title = generateTitle(controls, titleRng, locale);
-        const altText = generateAltText(controls, result.nodeCount, title, locale, tag);
+        const altText = generateAltText(controls, result.nodeCount, title, locale, seed);
 
         return { title, altText, nodeCount: result.nodeCount };
     }
@@ -202,7 +207,7 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         renderer.setPixelRatio(Math.min(newDpr, 2));
     }
 
-    // --- Camera override (zoom / orbit) ---
+    // --- Camera (zoom / orbit around the origin) ---
     let cameraOverrideZoom = 1.0;
     let cameraOverrideOrbitY = 0;  // degrees
     let cameraOverrideOrbitX = 0;  // degrees
@@ -248,19 +253,19 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
         camera.updateProjectionMatrix();
     }
 
-    function setCameraState(zoom: number, orbitY: number, orbitX: number): void {
-        cameraOverrideZoom = zoom;
-        cameraOverrideOrbitY = orbitY;
-        cameraOverrideOrbitX = orbitX;
+    function applyCamera(cam: CameraConfig): void {
+        // zoom 0..1 → distance multiplier; written so the default 0.375 maps to exactly 1
+        cameraOverrideZoom = Math.pow(3, 1.6 * (0.375 - cam.zoom));
+        cameraOverrideOrbitY = cam.rotation;
+        cameraOverrideOrbitX = cam.elevation;
     }
 
-    function clearCameraState(): void {
-        cameraOverrideZoom = 1.0;
-        cameraOverrideOrbitY = 0;
-        cameraOverrideOrbitX = 0;
+    /** Change only the camera and re-render the current scene without rebuilding it. */
+    function setCamera(cam: CameraConfig): void {
+        applyCamera(cam);
+        if (hasScene) renderFrame();
     }
 
-    /** Re-render the current scene (e.g. after a camera change) without rebuilding it. */
     function renderFrame(): void {
         applyCameraOverride();
         bg.update(camera);
@@ -268,10 +273,9 @@ export function createRenderer(canvas: HTMLCanvasElement | OffscreenCanvas, opts
     }
 
     return {
-        renderWith, dispose, resize, syncSize, setDPR,
+        render, setCamera,
+        dispose, resize, syncSize, setDPR,
         setTargetResolution, clearTargetResolution,
-        renderFrame,
-        setCameraState, clearCameraState,
         getCanvas: () => canvas,
     };
 }

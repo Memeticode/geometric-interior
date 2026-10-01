@@ -1,26 +1,22 @@
 // Zod schemas (runtime values)
 export {
     ControlsSchema,
-    StillConfigSchema,
-    ProfileSchema,
+    ImageConfigSchema,
     SeedTagSchema,
-    SeedSchema,
     RenderMetaSchema,
     CameraConfigSchema,
     ImageAssetMetaSchema,
-    validateStillConfig,
+    validateImageConfig,
 } from './core/schemas.js';
 
 // Core types (all from schemas)
 export type {
     Controls,
-    StillConfig,
+    ImageConfig,
     RenderMeta,
-    Profile,
     ValidationResult,
     CameraConfig,
     SeedTag,
-    Seed,
     ImageAssetMeta,
 } from './core/schemas.js';
 
@@ -31,8 +27,7 @@ export type { DerivedParams } from './render-engine/models.js';
 // Renderer
 export { createRenderer } from './render-engine/create-renderer.js';
 
-// Config conversion
-export { configToProfile, profileToConfig } from './core/config-schema.js';
+// Params
 export { deriveParams } from './core/params.js';
 
 // Utils — math, PRNG, color
@@ -46,7 +41,6 @@ export { generateAltText } from './core/text-generation/alt-text.js';
 
 // Seed tags
 export {
-    parseSeed, createTagStreams, seedTagToLabel, serializeSeedTag, deserializeSeedTag,
-    isSeedTag, seedToString, slotBias,
+    createTagStreams, seedTagToLabel, serializeSeedTag, deserializeSeedTag, slotBias,
     ARRANGEMENT_WORDS, STRUCTURE_WORDS, DETAIL_WORDS, TAG_LIST_LENGTH,
 } from './core/text-generation/seed-tags.js';

@@ -27,20 +27,15 @@ export const SeedTagSchema = z.tuple([
     z.number().int().min(0).max(TAG_LIST_LENGTH - 1),
 ]);
 
-/** Seed: either a non-empty string or a SeedTag */
-export const SeedSchema = z.union([
-    z.string().min(1),
-    SeedTagSchema,
-]);
-
 // ──────────────────────────────────────
 // Camera
 // ──────────────────────────────────────
 
+/** zoom: 0 = far, 1 = close; 0.375 is the default framing. Angles in degrees. */
 export const CameraConfigSchema = z.object({
+    zoom: unit.default(0.375),
     rotation: z.number().min(-180).max(180).default(0),
     elevation: z.number().min(-180).max(180).default(0),
-    zoom: unit.default(0.5),
 });
 
 // ──────────────────────────────────────
@@ -63,50 +58,13 @@ export const ControlsSchema = z.object({
 });
 
 // ──────────────────────────────────────
-// StillConfig (canonical public config)
+// ImageConfig — everything that determines a rendered image
 // ──────────────────────────────────────
 
-export const StillConfigSchema = z.object({
-    kind: z.literal('still-v2', { message: 'must be "still-v2"' }),
-    name: z.string().max(40),
-    intent: z.string().max(120).optional(),
-    seedTag: SeedTagSchema.optional(),
-    color: z.object({
-        hue: unit,
-        spectrum: unit,
-        chroma: unit,
-    }),
-    structure: z.object({
-        density: unit,
-        luminosity: unit,
-        bloom: unit.default(0.5),
-        fracture: unit,
-        coherence: unit,
-        scale: unit.default(0.5),
-        division: unit.default(0.5),
-        faceting: unit.default(0.5),
-        flow: unit.default(0.5),
-    }),
-    camera: CameraConfigSchema.optional(),
-}).superRefine((data, ctx) => {
-    // When seedTag is absent, intent is required and must be non-empty
-    if (!data.seedTag) {
-        if (typeof data.intent !== 'string' || !data.intent.trim()) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: 'required, must be a non-empty string',
-                path: ['intent'],
-            });
-        }
-    }
-    // Validate name is non-empty after trimming
-    if (!data.name.trim()) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'required, must be a non-empty string',
-            path: ['name'],
-        });
-    }
+export const ImageConfigSchema = z.object({
+    seed: SeedTagSchema,
+    controls: ControlsSchema,
+    camera: CameraConfigSchema,
 });
 
 // ──────────────────────────────────────
@@ -117,16 +75,6 @@ export const RenderMetaSchema = z.object({
     title: z.string(),
     altText: z.string(),
     nodeCount: z.number().int().nonnegative(),
-});
-
-// ──────────────────────────────────────
-// Profile (internal storage format)
-// ──────────────────────────────────────
-
-export const ProfileSchema = z.object({
-    seed: SeedSchema,
-    controls: ControlsSchema,
-    camera: CameraConfigSchema.optional(),
 });
 
 // ──────────────────────────────────────
@@ -141,9 +89,7 @@ export const StarterGeneratedSchema = z.object({
 export const StarterPortraitSchema = z.object({
     name: z.string(),
     commentary: z.string().optional(),
-    seed: SeedTagSchema,
-    controls: ControlsSchema,
-    camera: CameraConfigSchema.optional(),
+    config: ImageConfigSchema,
     generated: StarterGeneratedSchema,
 });
 
@@ -165,9 +111,7 @@ export const ImageAssetMetaSchema = z.object({
     title: z.string(),
     altText: z.string(),
     commentary: z.string().default(''),
-    seed: SeedSchema,
-    controls: ControlsSchema,
-    camera: CameraConfigSchema.optional(),
+    config: ImageConfigSchema,
     nodeCount: z.number().int().nonnegative(),
     width: z.number().int().positive(),
     height: z.number().int().positive(),
@@ -178,12 +122,10 @@ export const ImageAssetMetaSchema = z.object({
 // ──────────────────────────────────────
 
 export type SeedTag = z.infer<typeof SeedTagSchema>;
-export type Seed = z.infer<typeof SeedSchema>;
 export type CameraConfig = z.infer<typeof CameraConfigSchema>;
 export type Controls = z.infer<typeof ControlsSchema>;
-export type StillConfig = z.infer<typeof StillConfigSchema>;
+export type ImageConfig = z.infer<typeof ImageConfigSchema>;
 export type RenderMeta = z.infer<typeof RenderMetaSchema>;
-export type Profile = z.infer<typeof ProfileSchema>;
 export type StarterGenerated = z.infer<typeof StarterGeneratedSchema>;
 export type StarterPortrait = z.infer<typeof StarterPortraitSchema>;
 export type StarterSection = z.infer<typeof StarterSectionSchema>;
@@ -200,11 +142,11 @@ export interface ValidationResult {
 }
 
 // ──────────────────────────────────────
-// Validation wrapper (backward-compat)
+// Validation wrapper
 // ──────────────────────────────────────
 
-export function validateStillConfig(data: unknown): ValidationResult {
-    const result = StillConfigSchema.safeParse(data);
+export function validateImageConfig(data: unknown): ValidationResult {
+    const result = ImageConfigSchema.safeParse(data);
     if (result.success) {
         return { ok: true, errors: [] };
     }

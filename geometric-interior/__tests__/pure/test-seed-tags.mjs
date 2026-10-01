@@ -2,8 +2,8 @@
  * Tests for the compositional seed tag system.
  */
 import {
-    parseSeed, createTagStreams, seedTagToLabel, serializeSeedTag,
-    deserializeSeedTag, isSeedTag, seedToString, slotBias,
+    createTagStreams, seedTagToLabel, serializeSeedTag,
+    deserializeSeedTag, slotBias,
     ARRANGEMENT_WORDS, STRUCTURE_WORDS, DETAIL_WORDS, TAG_LIST_LENGTH,
 } from '../../dist/geometric-interior.js';
 
@@ -35,53 +35,6 @@ test('Word lists each have TAG_LIST_LENGTH entries', () => {
     assertEqual(ARRANGEMENT_WORDS.length, TAG_LIST_LENGTH);
     assertEqual(STRUCTURE_WORDS.length, TAG_LIST_LENGTH);
     assertEqual(DETAIL_WORDS.length, TAG_LIST_LENGTH);
-});
-
-// ── parseSeed ──
-
-test('parseSeed: array input is passed through', () => {
-    const tag = parseSeed([3, 12, 8]);
-    assertDeepEqual(tag, [3, 12, 8]);
-});
-
-test('parseSeed: array input is clamped to valid range', () => {
-    const tag = parseSeed([-1, 20, 99]);
-    assertEqual(tag[0], 0, 'negative clamped to 0');
-    assertEqual(tag[1], 17, 'over max clamped to 17');
-    assertEqual(tag[2], 17, 'way over max clamped to 17');
-});
-
-test('parseSeed: array input rounds floats', () => {
-    const tag = parseSeed([3.7, 5.2, 10.5]);
-    assertEqual(tag[0], 4, '3.7 rounds to 4');
-    assertEqual(tag[1], 5, '5.2 rounds to 5');
-    assertEqual(tag[2], 11, '10.5 rounds to 11');
-});
-
-test('parseSeed: string seed is deterministic', () => {
-    const a = parseSeed('hello world');
-    const b = parseSeed('hello world');
-    assertDeepEqual(a, b);
-});
-
-test('parseSeed: different strings produce different tags', () => {
-    const a = parseSeed('alpha');
-    const b = parseSeed('beta');
-    // At least one slot should differ (probabilistically guaranteed for distinct strings)
-    assert(a[0] !== b[0] || a[1] !== b[1] || a[2] !== b[2],
-        `expected different tags for different strings: ${a} vs ${b}`);
-});
-
-test('parseSeed: string tag values are in valid range', () => {
-    const seeds = ['test', 'another', '', 'a very long seed string with lots of characters'];
-    for (const s of seeds) {
-        const tag = parseSeed(s);
-        for (let i = 0; i < 3; i++) {
-            assert(tag[i] >= 0 && tag[i] < TAG_LIST_LENGTH,
-                `slot ${i} out of range for seed "${s}": ${tag[i]}`);
-            assert(Number.isInteger(tag[i]), `slot ${i} not integer for seed "${s}": ${tag[i]}`);
-        }
-    }
 });
 
 // ── slotBias ──
@@ -267,35 +220,6 @@ test('serialize/deserialize roundtrip', () => {
         const deserialized = deserializeSeedTag(serialized);
         assertDeepEqual(deserialized, tag, `roundtrip failed for ${tag}`);
     }
-});
-
-// ── isSeedTag ──
-
-test('isSeedTag: true for valid tag', () => {
-    assert(isSeedTag([3, 12, 8]) === true);
-});
-
-test('isSeedTag: false for string', () => {
-    assert(isSeedTag('hello') === false);
-});
-
-test('isSeedTag: false for wrong-length array', () => {
-    assert(isSeedTag([1, 2]) === false);
-    assert(isSeedTag([1, 2, 3, 4]) === false);
-});
-
-test('isSeedTag: false for array with non-numbers', () => {
-    assert(isSeedTag(['a', 'b', 'c']) === false);
-});
-
-// ── seedToString ──
-
-test('seedToString: array seed → dot-joined', () => {
-    assertEqual(seedToString([3, 12, 8]), '3.12.8');
-});
-
-test('seedToString: string seed → pass-through', () => {
-    assertEqual(seedToString('hello world'), 'hello world');
 });
 
 export { passed, failed };

@@ -29,23 +29,24 @@ const all = v => Object.fromEntries(KEYS.map(k => [k, v]));
 let s = 12345;
 const rnd = () => (s = (s * 1103515245 + 12345) % 2147483648) / 2147483648;
 
+const DEFAULT_CAMERA = { zoom: 0.375, rotation: 0, elevation: 0 };
+const img = (name, seed, controls, extra = {}) =>
+    ({ name, config: { seed, controls, camera: extra.camera ?? DEFAULT_CAMERA }, width: extra.width, height: extra.height });
+
 const cases = [
-    { name: 'mid', seed: [0, 0, 0], controls: all(0.5) },
-    { name: 'all-zero', seed: [0, 0, 0], controls: all(0) },
-    { name: 'all-one', seed: [17, 17, 17], controls: all(1) },
-    { name: 'sparse-ordered', seed: [1, 3, 2], controls: { ...all(0.5), density: 0.03, coherence: 0.9, chroma: 0.2 } },
-    { name: 'dense-chaotic', seed: [15, 14, 16], controls: { ...all(0.5), density: 0.9, coherence: 0.1, fracture: 0.9 } },
-    { name: 'text-seed', seed: 'geometric interior', controls: all(0.5) },
-    { name: 'wide-aspect', seed: [4, 8, 12], controls: all(0.5), width: 400, height: 160 },
-    { name: 'camera-orbit', seed: [5, 5, 5], controls: all(0.5), camera: { distance: 0.8, rotation: 60, elevation: 25 } },
-    { name: 'camera-far', seed: [6, 2, 9], controls: all(0.5), camera: { distance: 1.6, rotation: -120, elevation: -40 } },
+    img('mid', [0, 0, 0], all(0.5)),
+    img('all-zero', [0, 0, 0], all(0)),
+    img('all-one', [17, 17, 17], all(1)),
+    img('sparse-ordered', [1, 3, 2], { ...all(0.5), density: 0.03, coherence: 0.9, chroma: 0.2 }),
+    img('dense-chaotic', [15, 14, 16], { ...all(0.5), density: 0.9, coherence: 0.1, fracture: 0.9 }),
+    img('wide-aspect', [4, 8, 12], all(0.5), { width: 400, height: 160 }),
+    img('camera-orbit', [5, 5, 5], all(0.5), { camera: { zoom: 0.6, rotation: 60, elevation: 25 } }),
+    img('camera-far', [6, 2, 9], all(0.5), { camera: { zoom: 0.1, rotation: -120, elevation: -40 } }),
 ];
 for (let i = 0; i < 12; i++) {
-    cases.push({
-        name: `random-${i}`,
-        seed: [(i * 2) % 18, (i * 5) % 18, (i * 7) % 18],
-        controls: Object.fromEntries(KEYS.map(k => [k, +rnd().toFixed(3)])),
-    });
+    cases.push(img(`random-${i}`,
+        [(i * 2) % 18, (i * 5) % 18, (i * 7) % 18],
+        Object.fromEntries(KEYS.map(k => [k, +rnd().toFixed(3)]))));
 }
 
 /* ── Run ── */
@@ -73,7 +74,7 @@ try {
 
     for (const c of cases) {
         results[c.name] = await page.evaluate(
-            c => window.renderHash({ width: 320, height: 200, ...c }), c);
+            ({ config, width, height }) => window.renderHash({ config, width: width ?? 320, height: height ?? 200 }), c);
     }
     if (pageErrors.length) throw new Error('page errors:\n  ' + pageErrors.join('\n  '));
 } finally {

@@ -5,7 +5,7 @@
  * Usage:
  *   const bg = new Background();
  *   scene.add(bg.mesh);              // once per scene rebuild
- *   bg.setCenterColor(fogColor);     // on renderWith
+ *   bg.setCenterColor(fogColor);     // on render
  *   bg.update(camera);               // after every camera update
  */
 

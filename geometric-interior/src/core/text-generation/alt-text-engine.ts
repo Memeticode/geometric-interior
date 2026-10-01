@@ -5,8 +5,7 @@
  */
 
 import { xmur3, mulberry32 } from '../../utils/prng.js';
-import type { Controls, Seed } from '../schemas.js';
-import { parseSeed } from './seed-tags.js';
+import type { Controls, SeedTag } from '../schemas.js';
 
 /* ── Quantization ── */
 
@@ -38,7 +37,7 @@ export function pickGraded(
  * Create a PRNG seeded from every input to generateAltText.
  * Any change to any parameter, nodeCount, or seed produces a new stream.
  */
-export function createTextRng(controls: Controls, nodeCount: number, seed?: Seed): () => number {
+export function createTextRng(controls: Controls, nodeCount: number, seed?: SeedTag): () => number {
     const parts: string[] = ['alt-v2'];
     const keys = Object.keys(controls).sort() as (keyof Controls)[];
     for (const k of keys) {
@@ -46,10 +45,7 @@ export function createTextRng(controls: Controls, nodeCount: number, seed?: Seed
         parts.push(typeof v === 'number' ? v.toFixed(6) : String(v));
     }
     parts.push(String(nodeCount));
-    if (seed != null) {
-        const tag = parseSeed(seed);
-        parts.push(tag.join('.'));
-    }
+    if (seed != null) parts.push(seed.join('.'));
     return mulberry32(xmur3(parts.join('|'))());
 }
 

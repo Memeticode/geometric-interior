@@ -240,7 +240,7 @@
     </div>
     <div class="control-group">
       <label>Seed</label>
-      <input type="text" id="seed" value="sampler-1" style="width:100px"/>
+      <input type="text" id="seed" value="0.0.0" title="Seed tag: arrangement.structure.detail (each 0–17)" style="width:100px"/>
     </div>
     <button id="renderBtn">Render Grid</button>
     <button id="cancelBtn" class="cancel" disabled>Cancel</button>
@@ -274,7 +274,10 @@
   <canvas id="renderCanvas" width="200" height="130" style="display:none"></canvas>
 
   <script type="module">
-    import { createRenderer } from './src/index.js';
+    import { createRenderer, deserializeSeedTag } from './src/index.js';
+
+    const DEFAULT_CAMERA = { zoom: 0.375, rotation: 0, elevation: 0 };
+    const readSeed = () => deserializeSeedTag(seedInput.value.trim()) ?? [0, 0, 0];
 
     /* ── Constants ── */
     const GRID = 8;
@@ -422,7 +425,7 @@
 
       const xAxis = xAxisSel.value;
       const yAxis = yAxisSel.value;
-      const seed = seedInput.value || 'sampler-1';
+      const seed = readSeed();
 
       // Gather held values
       const held = {};
@@ -468,7 +471,7 @@
           if (cancelled) break;
 
           // Render
-          const meta = renderer.renderWith(seed, controls);
+          const meta = renderer.render({ seed, controls, camera: DEFAULT_CAMERA });
           cells[idx].meta = meta;
 
           // Capture to cell canvas
@@ -514,10 +517,10 @@
       const data = cellData[idx];
       if (!data) return;
 
-      const seed = seedInput.value || 'sampler-1';
+      const seed = readSeed();
 
       const fr = getFullRenderer();
-      const meta = fr.renderWith(seed, data.controls);
+      const meta = fr.render({ seed, controls: data.controls, camera: DEFAULT_CAMERA });
 
       const xAxis = xAxisSel.value;
       const yAxis = yAxisSel.value;

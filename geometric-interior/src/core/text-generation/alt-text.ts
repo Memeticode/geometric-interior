@@ -7,8 +7,7 @@
  * Hard cap: 2000 characters total.
  */
 
-import type { Controls, Seed } from '../schemas.js';
-import { parseSeed } from './seed-tags.js';
+import type { Controls, SeedTag } from '../schemas.js';
 import { getHueWords } from './word-tables.js';
 import { injectColor } from '../../utils/string.js';
 import { createTextRng, pickGraded, pickOne, gradedIndex, truncateAt, joinSentences } from './alt-text-engine.js';
@@ -154,7 +153,7 @@ function paramInflection(c: Controls, rng: () => number, l: Lang): string | null
     return null;
 }
 
-function buildCoda(seed: Seed | undefined, controls: Controls, rng: () => number, l: Lang): string {
+function buildCoda(seed: SeedTag | undefined, controls: Controls, rng: () => number, l: Lang): string {
     let aFamily: number, sFamily: number, dFamily: number;
 
     if (seed == null) {
@@ -163,10 +162,9 @@ function buildCoda(seed: Seed | undefined, controls: Controls, rng: () => number
         sFamily = Math.floor(rng() * CODA_STRUCTURE[l].length);
         dFamily = Math.floor(rng() * CODA_DETAIL[l].length);
     } else {
-        const tag = parseSeed(seed);
-        aFamily = Math.floor(tag[0] / 2);  // 0-8
-        sFamily = Math.floor(tag[1] / 2);  // 0-8
-        dFamily = Math.floor(tag[2] / 2);  // 0-8
+        aFamily = Math.floor(seed[0] / 2);  // 0-8
+        sFamily = Math.floor(seed[1] / 2);  // 0-8
+        dFamily = Math.floor(seed[2] / 2);  // 0-8
     }
 
     const arrangement = pickOne(CODA_ARRANGEMENT[l][aFamily], rng);
@@ -194,7 +192,7 @@ export function generateAltText(
     nodeCount: number,
     _title: string,
     locale: string = 'en',
-    seed?: Seed,
+    seed?: SeedTag,
 ): string {
     const l = lang(locale);
     const rng = createTextRng(controls, nodeCount, seed);

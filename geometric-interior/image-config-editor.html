@@ -144,7 +144,7 @@
       </div>
 
       <div class="panel">
-        <h2>Config JSON (still-v2)</h2>
+        <h2>Image config JSON</h2>
         <textarea id="json" spellcheck="false"></textarea>
         <div id="jsonStatus"></div>
         <div class="buttons">
@@ -157,7 +157,7 @@
 
   <script type="module">
     import {
-      createRenderer, validateStillConfig, configToProfile, profileToConfig,
+      createRenderer, validateImageConfig, ImageConfigSchema,
       ARRANGEMENT_WORDS, STRUCTURE_WORDS, DETAIL_WORDS,
     } from './src/index.js';
     import starterProfiles from '../vite-app/src/stores/starter-profiles.json';
@@ -166,18 +166,14 @@
     const COLOR_KEYS = ['hue', 'spectrum', 'chroma'];
     const STRUCTURE_KEYS = ['density', 'luminosity', 'bloom', 'fracture', 'coherence', 'scale', 'division', 'faceting', 'flow'];
     const CAMERA_DEFS = [
-      { key: 'zoom',      min: 0,    max: 1,   step: 0.001, def: 0.375 },  // = renderer's un-overridden distance (1.0)
-      { key: 'rotation',  min: -180, max: 180, step: 1,     def: 0 },
-      { key: 'elevation', min: -180, max: 180, step: 1,     def: 0 },
+      { key: 'zoom',      min: 0,    max: 1,   step: 0.001 },
+      { key: 'rotation',  min: -180, max: 180, step: 1 },
+      { key: 'elevation', min: -180, max: 180, step: 1 },
     ];
-    const DEFAULT_STATE = {
-      name: 'Untitled',
-      seedTag: [0, 0, 0],
-      controls: Object.fromEntries([...COLOR_KEYS, ...STRUCTURE_KEYS].map(k => [k, 0.5])),
-      camera: Object.fromEntries(CAMERA_DEFS.map(d => [d.key, d.def])),
-    };
+    // Schema defaults: all controls 0.5, camera at the default framing
+    const defaultConfig = () => ImageConfigSchema.parse({ seed: [0, 0, 0], controls: {}, camera: {} });
 
-    let state = structuredClone(DEFAULT_STATE);
+    let config = defaultConfig();
 
     /* ── DOM ── */
     const $ = id => document.getElementById(id);
@@ -185,7 +181,7 @@
     const jsonEl = $('json');
     const jsonStatus = $('jsonStatus');
     const tagSelects = [$('tag0'), $('tag1'), $('tag2')];
-    const sliderEls = {};   // key → { input, val, row }
+    const sliderEls = {};   // key → { input, val }
 
     function makeSlider(host, key, min, max, step, onInput) {
       const row = document.createElement('div');
@@ -195,26 +191,25 @@
       const val = row.querySelector('.val');
       input.addEventListener('input', () => onInput(parseFloat(input.value)));
       host.appendChild(row);
-      sliderEls[key] = { input, val, row };
+      sliderEls[key] = { input, val };
     }
 
-    for (const k of COLOR_KEYS) makeSlider($('colorSliders'), k, 0, 1, 0.001, v => { state.controls[k] = v; changed(); });
-    for (const k of STRUCTURE_KEYS) makeSlider($('structureSliders'), k, 0, 1, 0.001, v => { state.controls[k] = v; changed(); });
-    for (const d of CAMERA_DEFS) makeSlider($('cameraSliders'), d.key, d.min, d.max, d.step, v => { state.camera[d.key] = v; changed({ cameraOnly: true }); });
+    for (const k of COLOR_KEYS) makeSlider($('colorSliders'), k, 0, 1, 0.001, v => { config.controls[k] = v; changed(); });
+    for (const k of STRUCTURE_KEYS) makeSlider($('structureSliders'), k, 0, 1, 0.001, v => { config.controls[k] = v; changed(); });
+    for (const d of CAMERA_DEFS) makeSlider($('cameraSliders'), d.key, d.min, d.max, d.step, v => { config.camera[d.key] = v; changed({ cameraOnly: true }); });
 
     [ARRANGEMENT_WORDS, STRUCTURE_WORDS, DETAIL_WORDS].forEach((words, slot) => {
       tagSelects[slot].innerHTML = words.map((w, i) => `<option value="${i}">${i} · ${w}</option>`).join('');
-      tagSelects[slot].addEventListener('change', () => { state.seedTag[slot] = +tagSelects[slot].value; changed(); });
+      tagSelects[slot].addEventListener('change', () => { config.seed[slot] = +tagSelects[slot].value; changed(); });
     });
 
-
-    /* ── Presets ── */
+    /* ── Presets (starter portraits) ── */
     const presets = [];
     for (const sectionId of starterProfiles['section-order']) {
       const section = starterProfiles.sections[sectionId];
       const group = document.createElement('optgroup');
       group.label = section.name;
-      for (const [id, p] of Object.entries(section.portraits)) {
+      for (const p of Object.values(section.portraits)) {
         presets.push(p);
         group.insertAdjacentHTML('beforeend', `<option value="${presets.length - 1}">${p.name}</option>`);
       }
@@ -222,48 +217,26 @@
     }
     $('preset').addEventListener('change', e => {
       if (e.target.value === '') return;
-      const p = presets[+e.target.value];
-      loadProfile(p.name, { seed: p.seed, controls: { ...DEFAULT_STATE.controls, ...p.controls } }, p.camera);
+      loadConfig(presets[+e.target.value].config);
     });
 
-    /* ── State ↔ config ── */
-    function stateToConfig() {
-      const config = profileToConfig(state.name, { seed: [...state.seedTag], controls: { ...state.controls } });
-      config.camera = { ...state.camera };
-      return config;
-    }
-
-    // Seed tags only: text-intent configs are schema-valid but rejected here
-    function validate(data) {
-      const res = validateStillConfig(data);
-      if (res.ok && !data.seedTag) return { ok: false, errors: ['seedTag: required (text seeds are not supported)'] };
-      return res;
-    }
-
-    function loadProfile(name, profile, camera) {
-      state.name = name;
-      state.seedTag = [...profile.seed];
-      state.controls = { ...DEFAULT_STATE.controls, ...profile.controls };
-      state.camera = { ...DEFAULT_STATE.camera, ...(camera || {}) };
+    /** Load a validated config (schema defaults fill any omitted fields). */
+    function loadConfig(data) {
+      config = ImageConfigSchema.parse(structuredClone(data));
       syncUI();
       changed();
     }
 
-    function loadConfig(config) {
-      const { name, profile } = configToProfile(config);
-      loadProfile(name, profile, config.camera);
-    }
-
     function syncUI() {
-      for (const k of [...COLOR_KEYS, ...STRUCTURE_KEYS]) sliderEls[k].input.value = state.controls[k];
-      for (const d of CAMERA_DEFS) sliderEls[d.key].input.value = state.camera[d.key];
-      state.seedTag.forEach((v, i) => { tagSelects[i].value = v; });
+      for (const k of [...COLOR_KEYS, ...STRUCTURE_KEYS]) sliderEls[k].input.value = config.controls[k];
+      for (const d of CAMERA_DEFS) sliderEls[d.key].input.value = config.camera[d.key];
+      config.seed.forEach((v, i) => { tagSelects[i].value = v; });
     }
 
     function syncLabels() {
-      for (const k of [...COLOR_KEYS, ...STRUCTURE_KEYS]) sliderEls[k].val.textContent = state.controls[k].toFixed(3);
+      for (const k of [...COLOR_KEYS, ...STRUCTURE_KEYS]) sliderEls[k].val.textContent = config.controls[k].toFixed(3);
       for (const d of CAMERA_DEFS) {
-        const v = state.camera[d.key];
+        const v = config.camera[d.key];
         sliderEls[d.key].val.textContent = d.step < 1 ? v.toFixed(3) : String(v);
       }
     }
@@ -274,16 +247,10 @@
 
     function applySize() {
       const [w, h] = $('size').value.split('x').map(Number);
-      // Pin render resolution; otherwise renderWith() syncs to the CSS display size
+      // Pin render resolution; otherwise render() syncs to the CSS display size
       renderer.setTargetResolution(w, h);
     }
     $('size').addEventListener('change', () => { applySize(); changed(); });
-
-    function applyCamera() {
-      // Same zoom → distance mapping as vite-app render-bridge sendCameraState()
-      const dist = Math.pow(3, 0.6 - 1.6 * state.camera.zoom);
-      renderer.setCameraState(dist, state.camera.rotation, state.camera.elevation);
-    }
 
     let pending = null;   // null | 'full' | 'camera'
     function changed({ cameraOnly = false } = {}) {
@@ -301,12 +268,11 @@
     function flush() {
       const kind = pending;
       pending = null;
-      applyCamera();
       const t0 = performance.now();
       if (kind === 'camera' && lastMeta) {
-        renderer.renderFrame();
+        renderer.setCamera(config.camera);
       } else {
-        lastMeta = renderer.renderWith([...state.seedTag], { ...state.controls });
+        lastMeta = renderer.render(structuredClone(config));
         $('title').textContent = lastMeta.title;
         $('altText').textContent = lastMeta.altText;
       }
@@ -319,7 +285,7 @@
     jsonEl.addEventListener('input', () => {
       jsonDirty = true;
       try {
-        const res = validate(JSON.parse(jsonEl.value));
+        const res = validateImageConfig(JSON.parse(jsonEl.value));
         setJsonStatus(res.ok ? 'Valid — click Apply' : res.errors.join('\n'), res.ok);
       } catch (err) {
         setJsonStatus(err.message, false);
@@ -333,14 +299,14 @@
 
     function writeJson() {
       if (jsonDirty) return;   // don't clobber in-progress edits
-      jsonEl.value = JSON.stringify(stateToConfig(), null, 2);
+      jsonEl.value = JSON.stringify(config, null, 2);
       setJsonStatus('', true);
     }
 
     $('applyJsonBtn').addEventListener('click', () => {
       try {
         const data = JSON.parse(jsonEl.value);
-        const res = validate(data);
+        const res = validateImageConfig(data);
         if (!res.ok) { setJsonStatus(res.errors.join('\n'), false); return; }
         jsonDirty = false;
         loadConfig(data);
@@ -351,16 +317,16 @@
     });
 
     $('copyJsonBtn').addEventListener('click', () => {
-      navigator.clipboard.writeText(JSON.stringify(stateToConfig(), null, 2));
+      navigator.clipboard.writeText(JSON.stringify(config, null, 2));
     });
 
     /* ── Buttons ── */
     $('randomizeBtn').addEventListener('click', () => {
-      for (const k of Object.keys(state.controls)) state.controls[k] = Math.round(Math.random() * 1000) / 1000;
-      state.seedTag = state.seedTag.map(() => Math.floor(Math.random() * ARRANGEMENT_WORDS.length));
+      for (const k of Object.keys(config.controls)) config.controls[k] = Math.round(Math.random() * 1000) / 1000;
+      config.seed = config.seed.map(() => Math.floor(Math.random() * ARRANGEMENT_WORDS.length));
       for (const d of CAMERA_DEFS) {
         const steps = Math.round((d.max - d.min) / d.step);
-        state.camera[d.key] = +(d.min + Math.floor(Math.random() * (steps + 1)) * d.step).toFixed(3);
+        config.camera[d.key] = +(d.min + Math.floor(Math.random() * (steps + 1)) * d.step).toFixed(3);
       }
       jsonDirty = false;
       syncUI();
@@ -368,33 +334,31 @@
     });
 
     $('resetBtn').addEventListener('click', () => {
-      state = structuredClone(DEFAULT_STATE);
       jsonDirty = false;
       $('preset').value = '';
-      syncUI();
-      changed();
+      loadConfig(defaultConfig());
     });
 
     $('downloadBtn').addEventListener('click', () => {
       const a = document.createElement('a');
       a.href = canvas.toDataURL('image/png');
-      const slug = (lastMeta?.title || state.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const slug = (lastMeta?.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
       a.download = `${slug || 'render'}.png`;
       a.click();
     });
 
     $('copyLinkBtn').addEventListener('click', () => navigator.clipboard.writeText(location.href));
 
-    /* ── URL hash persistence (#<encoded still-v2 config>) ── */
+    /* ── URL hash persistence (#<encoded ImageConfig>) ── */
     function writeHash() {
-      history.replaceState(null, '', '#' + encodeURIComponent(JSON.stringify(stateToConfig())));
+      history.replaceState(null, '', '#' + encodeURIComponent(JSON.stringify(config)));
     }
 
     function readHash() {
       if (location.hash.length < 2) return false;
       try {
         const data = JSON.parse(decodeURIComponent(location.hash.slice(1)));
-        if (!validate(data).ok) return false;
+        if (!validateImageConfig(data).ok) return false;
         loadConfig(data);
         return true;
       } catch {
